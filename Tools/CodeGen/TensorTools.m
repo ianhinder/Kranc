@@ -432,7 +432,10 @@ makeSplitOverFrees[x_, is_] :=
 
 (* Give the components of an expression wrt a free lower index *)
 makeSplitOverFreeIndex[x_, j:TensorIndex[_,lower]] := 
-  Module[{i}, Table[x /. j -> -i, {i, 3}]];
+  Module[{i}, Table[x /. j -> i, {i, 3}]];
+
+  (* FIXME: Changing the above is very drastic; does it have any major
+  consequences? *)
 
 (* Give the components of an expression wrt a free upper index *)
 makeSplitOverFreeIndex[x_, j:TensorIndex[_,upper]] := 
@@ -451,7 +454,7 @@ listComponents[x_, i:TensorIndex[_,_]] :=
    for the lowered components. *)
 listComponents[x_, index1:(TensorIndex[_,lower]), index2:(TensorIndex[_,upper])] := 
   Module[{i},
-    Table[(x /. index1 -> -i) /. index2 -> i, {i, 3}]];
+    Table[(x /. index1 -> i) /. index2 -> i, {i, 3}]];
 
 listComponentsOfDummyIndex[x_, i:(TensorIndex[_,lower])] := 
   listComponents[x, i, toggleIndex[i]];
@@ -516,8 +519,14 @@ componentNameRule :=
 
 (* Convert references to ordinary derivative components into single-symbol
    names; i.e. PD[x, 1, 2, 3] -> D123[x]. *)
+
+(* This is disabled now (by introducing a dummy pattern), because we
+   would like all differencing to be performed by our custom
+   operators.  Note that at the moment this means we can't control
+   order of differencing by macros etc. *)
+
 derivativeNameRule := 
-  PD[x_, y__] :> 
+  wibblePD[x_, y__] :> 
     Symbol["D" <> StringJoin[Map[ToString[Abs[#]]&,{y}]]] [x];
 
 makeSuffix[is_List] := 

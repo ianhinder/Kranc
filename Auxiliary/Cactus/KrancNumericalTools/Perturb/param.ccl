@@ -1,0 +1,45 @@
+# Parameter definitions for thorn Perturb
+# $Header$
+
+#------------------------------------------------------------------------------
+# Private:
+#------------------------------------------------------------------------------
+private:
+
+BOOLEAN apply_id_perturb "Add perturbation to initial data"
+{
+} "no"
+
+BOOLEAN apply_bc_perturb "Add perturbation to boundary data"
+{
+} "no"
+
+STRING id_vars "Initial data variables to modify with perturbation"
+{
+  .* :: "A regex which matches everything"
+} ""
+
+STRING bc_vars "Variables to modify with perturbation at boundary"
+{
+  .* :: "A regex which matches everything"
+} ""
+
+BOOLEAN perturb_boundaries[6] "At which boundaries to apply perturbation"
+{
+} "yes"
+
+INT perturb_stencil[3] "Number of boundary points"
+{
+  0:* :: "0:*"
+} 1
+
+REAL amplitude "Amplitude of perturbation data"
+{
+  0: :: "Positive number"
+} 0.000001
+
+REAL period "period of perturbation data"
+{
+  0: :: "Positive number"
+} 1.0
+

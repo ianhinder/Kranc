@@ -1,0 +1,7 @@
+# Interface definition for thorn Perturb
+# $Header$
+
+IMPLEMENTS: perturb
+
+INHERITS: grid
+

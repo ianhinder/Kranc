@@ -39,7 +39,7 @@ Schedule, Sources, Makefile, Filename, Contents, ThornName,
 BaseImplementation, EvolvedGFs, PrimitiveGFs, Groups, Calculation,
 GridFunctions, Shorthands, Equations, Parameter, Value, UsesFunctions,
 ArgString, Conditional, D1, D2, D3, D11, D22, D33, D21, D31, D32,
-Textual, TriggerGroups};
+Textual, TriggerGroups, Include};
 
 {ExcisionGFs};
 
@@ -408,7 +408,13 @@ calculationMacros[] :=
    CodeGen representation of a source file that defines a function for
    each Calculation. *)
 
-CreateSetterSource[calcs_, debug_] :=
+CreateSetterSource[calcs_, debug_, opts___] :=
+  Module[{include},
+  include = lookupDefault[{opts}, Include, {}];
+
+  If[!MatchQ[include, _List],
+    Throw["CreateSetterSource: Include should be a list but is in fact " <> ToString[include]]];
+
   {whoWhen[CodeGen`SOURCELANGUAGE],
 
    "#define KRANC_" <> ToUpperCase[CodeGen`SOURCELANGUAGE] <> "\n\n",
@@ -418,14 +424,14 @@ CreateSetterSource[calcs_, debug_] :=
          "\n"
       ],
 
-   Map[IncludeFile, {"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h",
-                     "precomputations.h", "GenericFD.h", "Differencing.h"}],
+   Map[IncludeFile, Join[{"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h",
+                     "precomputations.h", "GenericFD.h", "Differencing.h"}, include]],
    calculationMacros[],
 
    (* For each function structure passed, create the function and
       insert it *)
    Map[CreateCalculationFunction[# , debug]& , 
-       calcs]};
+       calcs]}];
 
 
 

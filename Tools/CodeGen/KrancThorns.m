@@ -50,7 +50,7 @@ EndPackage[];
 
 
 BeginPackage["KrancThorns`", 
-             {"CodeGen`", "sym`", "Thorn`", "MapLookup`", "KrancGroups`"}];
+             {"CodeGen`", "sym`", "Thorn`", "MapLookup`", "KrancGroups`", "Differencing`"}];
 
 CodeGen`SetSourceLanguage["C"];
 
@@ -69,6 +69,7 @@ CreateEvaluatorThorn::usage  =
 CreateTranslatorThorn::usage = 
 "create a Cactus thorn which translates variables beween ADMBase and a Kranc
 arrangement";
+CreateDifferencingThorn::usage = "";
 
 CreateThornList::usage       = "create a Cactus THORNLIST file from information produced by Create*Thorn functions";
 
@@ -246,6 +247,7 @@ thornName          = lookupDefault[opts, ThornName, systemName <> "Evolve"];
 implementation     = lookupDefault[opts, Implementation, thornName];
 
 createExcisionCode =  lookup[opts, CreateExcisionCode];
+pddefs = lookupDefault[opts, PartialDerivatives, {}];
 
 (* Find the evolved groups from the calculation *)
 evolvedGFs    = Cases[calculation, dot[x_] -> x, Infinity];
@@ -364,7 +366,7 @@ calc2 = mapEnsureKey[calculation, SyncGroups, allowedToSync];
 
 namedCalc = augmentCalculation[calc2, thornName <> "_CalcRHS", 
                                baseImplementation, Join[groups, rhsGroupDefinitions], 
-                               allParameters];
+                               allParameters, pddefs];
 
 calcrhsName    = lookup[namedCalc, Name];
 
@@ -509,6 +511,9 @@ Print["create excision files: ", createExcisionCode];
 
 ext = CodeGen`SOURCESUFFIX;
 
+(* Write the differencing header file *)
+diffHeader = CreateDifferencingHeader[pddefs];
+
 If[createExcisionCode, 
 sources =  {
             {Filename -> StartupName            <> ".c",   Contents -> startup}, 
@@ -516,14 +521,16 @@ sources =  {
             {Filename -> molboundariesFileName  <> ".c",   Contents -> molboundaries},
             {Filename -> molexcisionName        <> ".F90", Contents -> molexcision},
             {Filename -> setterFileName         <> ext,    Contents -> calcrhs}, 
-            {Filename -> precompheaderName,                Contents -> precompheader}
+            {Filename -> precompheaderName,                Contents -> precompheader},
+                         {Filename -> "Differencing.h",    Contents -> diffHeader}
            },
 sources =  {
             {Filename -> StartupName            <> ".c",   Contents -> startup}, 
             {Filename -> molregisterName        <> ".c",   Contents -> molregister},
             {Filename -> molboundariesFileName  <> ".c",   Contents -> molboundaries},
             {Filename -> setterFileName         <> ext,    Contents -> calcrhs}, 
-            {Filename -> precompheaderName,                Contents -> precompheader}
+            {Filename -> precompheaderName,                Contents -> precompheader},
+                         {Filename -> "Differencing.h",    Contents -> diffHeader}
            }
 ];
 
@@ -597,6 +604,7 @@ implementation     = lookupDefault[opts, Implementation, thornName];
 baseImplementation = systemName <> "Base";
 
 setTime            = lookup[opts, SetTime];
+pddefs = lookupDefault[opts, PartialDerivatives, {}];
 
 debug              = lookup[opts, DeBug];
 If[debug,
@@ -604,6 +612,7 @@ If[debug,
   Print["Debugging switched off"]
  ];
 
+Print["a"];
 
   allowedSetTimes = {"initial_only", "poststep_only", "initial_and_poststep"};
 
@@ -636,7 +645,7 @@ ThornList = {{ThornName -> "GenericFD", ThornArrangement -> "KrancNumericalTools
 };
 
 namedCalc = augmentCalculation[calc, thornName <> "_Set", 
-                               baseImplementation, groups, allParameters];
+                               baseImplementation, groups, allParameters, pddefs];
 
 setgroups = calculationSetGroups[namedCalc];
 
@@ -648,15 +657,19 @@ precompheaderName = "precomputations.h";
 
 newparams = {};
 
+Print["b"];
+
+
 
 before = If[mapContains[namedCalc, Before],
-            " BEFORE (" <> FlattenBlock@SpaceSeparated@lookup[namedCalc, Before] <> ") ",
+            " BEFORE (" <> FlattenBlock @ SpaceSeparated @ lookup[namedCalc, Before] <> ") ",
             "" ];
-
+Print["c"];
 
 after  = If[mapContains[namedCalc, After],
             " AFTER (" <> FlattenBlock@SpaceSeparated@lookup[namedCalc, After] <> ") ",
             "" ];
+Print["d"];
 
 (* INTERFACE *)
 inheritedImplementations = Join[{baseImplementation, "Grid", "GenericFD"}, 
@@ -665,6 +678,7 @@ inheritedImplementations = Join[{baseImplementation, "Grid", "GenericFD"},
 includeFiles             = {"GenericFD.h"};
 
 newgroups = {}; 
+Print["e"];
 
 interface = CreateInterface[implementation, inheritedImplementations, includeFiles, newgroups];
 
@@ -696,19 +710,22 @@ scheduledPOSTSTEP  = {Name               -> calcrhsName,
                                                  {}
                                               ],
                       Comment            -> "set values"};
+Print["f"];
 
 If[(setTime == "initial_only"),
    scheduledFunctions = {scheduledPOSTINITIAL};
 ];
  
-
+Print["1"];
 If[(setTime == "poststep_only"),
    scheduledFunctions = {scheduledPOSTSTEP};
 ];
+Print["2"];
 
 If[(setTime == "initial_and_poststep"),
    scheduledFunctions = {scheduledPOSTINITIAL, scheduledPOSTSTEP};
 ];
+Print["3"];
 
 schedule = CreateSchedule[globalStorageGroups, {}, scheduledFunctions];
 
@@ -724,6 +741,7 @@ If[(setTime == "initial_and_poststep"),
 
   AppendTo[newparams, {Name -> "set_poststep", Type -> "BOOLEAN", Default -> "\"true\"",
   Description -> "whether to set data after intermediate MoL steps", Visibility -> "private"}]];
+Print["4"];
 
 
 If[baseParamsTrueQ,
@@ -736,20 +754,28 @@ If[baseParamsTrueQ,
 ];
 
 param = CreateParam[paramspec];
+Print["5"];
 
 
 (* STARTUP *)
 startup = CreateStartupFile[thornName, thornName <> ": set values"];
 
+Print["6"];
 
 (* CALCULATION and PRECOMP MACROS *)
 setrhs        = CreateSetterSource[{namedCalc}, debug];
 precompheader = CreatePrecompMacros[ namedCalc ];
+Print["7"];
 
 ext = CodeGen`SOURCESUFFIX;
 
 (* MAKEFILE *)
 make = CreateMakefile[{StartupName <> ".c", calcrhsName <> ext}];
+Print["8"];
+
+(* Write the differencing header file *)
+diffHeader = CreateDifferencingHeader[pddefs];
+Print["9"];
 
 
 (* CREATE THORN *)
@@ -762,7 +788,8 @@ thornspec = {Name      -> thornName,
              Sources   -> {
                   {Filename -> StartupName       <> ".c", Contents -> startup},
                   {Filename -> calcrhsName       <> ext,  Contents -> setrhs}, 
-                  {Filename -> precompheaderName,         Contents -> precompheader}
+                  {Filename -> precompheaderName,         Contents -> precompheader},
+                         {Filename -> "Differencing.h",    Contents -> diffHeader}
                           }
 };
 CreateThorn[thornspec];
@@ -825,6 +852,8 @@ allParameters = Join[realParameters, intParameters, realBaseParameters, intBaseP
 thornName           = lookupDefault[opts, ThornName, systemName <> "Evaluator"];
 implementation      = lookupDefault[opts, Implementation, thornName];
 
+pddefs = lookupDefault[opts, PartialDerivatives, {}];
+
 arrangementDirectory = parentDirectory <> "/" <> systemName;
 
 ensureDirectory[parentDirectory];
@@ -834,6 +863,10 @@ Print["Creating files in directory " <> arrangementDirectory];
 
 
 baseParamsTrueQ = Length@realBaseParameters + Length@intBaseParameters > 0;
+
+
+
+
 
 
 If[debug,
@@ -913,7 +946,7 @@ interface = CreateInterface[implementation, inheritedImplementations,
 augmentEvaluationDefinition[{gName_, calc_}] :=
   {gName, 
    augmentCalculation[calc, thornName <> "_" <> unqualifiedGroupName[gName] <> "_Eval", 
-                      implementation, groups, allParameters]};
+                      implementation, groups, allParameters, pddefs]};
 
 augmentedEvaluationDefinitions = 
   Map[augmentEvaluationDefinition, evaluationDefinitions];
@@ -969,10 +1002,11 @@ startup = CreateStartupFile[thornName, thornName <> ": evaluate grid functions"]
 
 
 evalCalcs = Map[Last, augmentedEvaluationDefinitions];
+Print["A"];
 
 setrhs = CreateSetterSource[evalCalcs, debug];
 
-
+Print["B"];
 
 (* PRECOMP MACROS *)
 
@@ -985,6 +1019,9 @@ ext = CodeGen`SOURCESUFFIX;
 make = CreateMakefile[{StartupName <> ".c", calcrhsName <> ext}];
 
 
+(* Write the differencing header file *)
+diffHeader = CreateDifferencingHeader[pddefs];
+
 (* CREATE THORN *)
 
 thornspec = {Name      -> thornName, 
@@ -996,7 +1033,8 @@ thornspec = {Name      -> thornName,
              Sources   -> {
                          {Filename -> StartupName <> ".c", Contents -> startup},
                          {Filename -> calcrhsName <> ext,  Contents -> setrhs}, 
-                         {Filename -> precompheaderName,   Contents -> precompheader}
+                         {Filename -> precompheaderName,   Contents -> precompheader},
+                         {Filename -> "Differencing.h",    Contents -> diffHeader}
                           }
 };
 
@@ -1201,8 +1239,8 @@ Append[thornList, thisThorn]
 
 (* imp is the implementation to be used for any groups whose
    implementation is not included in its name *)
-augmentCalculation[calc_, name_, imp_, groups_, parameters_] :=
-  Module[{c, imps, simpleGroups, coordGroup},
+augmentCalculation[calc_, name_, imp_, groups_, parameters_, pddefs_] :=
+  Module[{c, imps, simpleGroups, coordGroup, fullGroups},
     coordGroup = {"grid::coordinates", {sym`x,sym`y,sym`z,sym`r}};
 
     fullGroups = Map[renameGroup[#, qualifyGroupName[groupName[#], imp]] &, 
@@ -1212,6 +1250,7 @@ augmentCalculation[calc_, name_, imp_, groups_, parameters_] :=
     c = mapEnsureKey[calc, Name, name];
     c = mapEnsureKey[c, Groups, fullGroups];
     c = mapEnsureKey[c, Parameters, parameters];
+    c = mapEnsureKey[c, PartialDerivatives, pddefs];
 
     If[mapContains[c, SyncGroups],
        (* Make sure they are fully qualified *)
@@ -1292,6 +1331,7 @@ Module[{options, dirName, thornName, cleanADMBaseRules,
     realBaseParameters = lookup[opts, RealBaseParameters];
     intBaseParameters  = lookup[opts, IntBaseParameters];
     allParameters      = Join[realParameters, intParameters, realBaseParameters, intBaseParameters];
+pddefs = lookupDefault[opts, PartialDerivatives, {}];
 
     baseParamsTrueQ = Length@realBaseParameters + Length@intBaseParameters > 0;
 
@@ -1316,13 +1356,13 @@ Module[{options, dirName, thornName, cleanADMBaseRules,
       augmentCalculation[translatorInCalculation,
                          thornName <> "_ADMToEvolve", 
                          baseImplementation, 
-                         groups, allParameters] /. cleanADMBaseRules;
+                         groups, allParameters, pddefs] /. cleanADMBaseRules;
 
     namedTranslatorOutCalculation = 
       augmentCalculation[translatorOutCalculation,
                          thornName <> "_EvolveToADM", 
                          baseImplementation, 
-                         groups, allParameters] /. cleanADMBaseRules;
+                         groups, allParameters, pddefs] /. cleanADMBaseRules;
 
 
 (* the list of thorns = return argument! *)
@@ -1450,6 +1490,9 @@ ext = CodeGen`SOURCESUFFIX;
 make = CreateMakefile[{StartupName <> ".c", setterFileName <> ext}];
 
 
+(* Write the differencing header file *)
+diffHeader = CreateDifferencingHeader[pddefs];
+
 (* CREATE THORN *)
 
 thornspec = {Name      -> thornName, 
@@ -1461,7 +1504,8 @@ thornspec = {Name      -> thornName,
              Sources   -> {
                   {Filename -> StartupName       <> ".c", Contents -> startup},
                   {Filename -> setterFileName    <> ext,  Contents -> setrhs}, 
-                  {Filename -> precompheaderName,         Contents -> precompheader}
+                  {Filename -> precompheaderName,         Contents -> precompheader},
+                         {Filename -> "Differencing.h",    Contents -> diffHeader}
                           }
 };
 
@@ -1540,6 +1584,18 @@ Map[Print, thornspaths];
 Map[pr,    thornspaths];
 ];
 
+
+
+CreateDifferencingHeader[pddefs_] :=
+  Module[{},
+    macros = Flatten[Map[ConvertPartialDerivativeToMacros, pddefs],1];
+    contents = FlattenBlock[Map[{#, "\n\n"} &, macros]]];
+
+
 End[];
 EndPackage[];
+
+
+
+
 

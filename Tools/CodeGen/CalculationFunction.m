@@ -526,6 +526,8 @@ equationLoop[eqs_, gfs_, shorts_, incs_, groups_, syncGroups_, pddefs_] :=
   lhsGroupNames    = containingGroups[gfsInLHS, groups];
   actualSyncGroups = Intersection[lhsGroupNames, syncGroups];
 
+  If[Not@derivSwitch, actualSyncGroups = {}]; (* only sync when derivs are taken *)
+
   If[Length@actualSyncGroups > 0,
     Print["Synchronizing groups: ", actualSyncGroups];
      syncCode = Map[syncGroup, actualSyncGroups];

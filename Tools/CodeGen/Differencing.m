@@ -117,7 +117,8 @@ BeginPackage["sym`"];
 
 EndPackage[];
 
-BeginPackage["Differencing`", {"CodeGen`", "sym`", "MapLookup`"}];
+BeginPackage["Differencing`", {"CodeGen`", "sym`", "MapLookup`", 
+             "LinearAlgebra`MatrixManipulation`"}];
 
 CreateDifferencingHeader::usage = "";
 PrecomputeDerivatives::usage = "";
@@ -371,6 +372,24 @@ ConstructDifferenceMacro[name_, op_] :=
     FlattenBlock[{"#define ", name, "(u,i,j,k) ", rhs2}]];
 
 
+
+
+
+(* Return a difference operator approximating a derivative of order p
+   using m grid points before and m grid points after the centre
+   point. Return an error if this is not possible. *)
+
+StandardCenteredDifferenceOperator[p_, m_, i_] :=
+  Module[{f, h, coeffs, expansion, e1, e2, eqs, mat, vec, result, deriv},
+    coeffs = Table[Symbol["c" <> ToString[n]], {n, 1, 2m + 1}];
+    expansion = Apply[Plus, Thread[coeffs Table[f[n h], {n, -m, +m}]]];
+    e1 = expansion /. f[n_ h] -> Series[f[n h], {h, 0, 2m + 1}];
+    e2 = Table[Coefficient[e1, Derivative[n][f][0]], {n, 0, 2m + 1}];
+    eqs = Table[e2[[n]] == If[n - 1 == p, 1, 0], {n, 1, 2m + 1}];
+    {mat, vec} = LinearEquationsToMatrices[eqs, coeffs];
+    result = Inverse[mat].vec;
+    deriv = expansion /. Thread[coeffs -> result];
+    deriv /. {f[n_ h] -> shift[i]^n, f[h]->shift[i], h -> spacing[i]}];
 
 End[];
 

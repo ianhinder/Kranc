@@ -414,7 +414,7 @@ CreateSetterSource[calcs_, debug_] :=
       ],
 
    Map[IncludeFile, {"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h",
-                     "precomputations.h", "GenericFD.h"}],
+                     "precomputations.h", "GenericFD.h", "Differencing.h"}],
    calculationMacros[],
 
    (* For each function structure passed, create the function and

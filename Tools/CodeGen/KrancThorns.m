@@ -612,8 +612,6 @@ If[debug,
   Print["Debugging switched off"]
  ];
 
-Print["a"];
-
   allowedSetTimes = {"initial_only", "poststep_only", "initial_and_poststep"};
 
   If[!MemberQ[allowedSetTimes, setTime],
@@ -657,19 +655,16 @@ precompheaderName = "precomputations.h";
 
 newparams = {};
 
-Print["b"];
 
 
 
 before = If[mapContains[namedCalc, Before],
             " BEFORE (" <> FlattenBlock @ SpaceSeparated @ lookup[namedCalc, Before] <> ") ",
             "" ];
-Print["c"];
 
 after  = If[mapContains[namedCalc, After],
             " AFTER (" <> FlattenBlock@SpaceSeparated@lookup[namedCalc, After] <> ") ",
             "" ];
-Print["d"];
 
 (* INTERFACE *)
 inheritedImplementations = Join[{baseImplementation, "Grid", "GenericFD"}, 
@@ -678,7 +673,6 @@ inheritedImplementations = Join[{baseImplementation, "Grid", "GenericFD"},
 includeFiles             = {"GenericFD.h"};
 
 newgroups = {}; 
-Print["e"];
 
 interface = CreateInterface[implementation, inheritedImplementations, includeFiles, newgroups];
 
@@ -710,22 +704,18 @@ scheduledPOSTSTEP  = {Name               -> calcrhsName,
                                                  {}
                                               ],
                       Comment            -> "set values"};
-Print["f"];
 
 If[(setTime == "initial_only"),
    scheduledFunctions = {scheduledPOSTINITIAL};
 ];
  
-Print["1"];
 If[(setTime == "poststep_only"),
    scheduledFunctions = {scheduledPOSTSTEP};
 ];
-Print["2"];
 
 If[(setTime == "initial_and_poststep"),
    scheduledFunctions = {scheduledPOSTINITIAL, scheduledPOSTSTEP};
 ];
-Print["3"];
 
 schedule = CreateSchedule[globalStorageGroups, {}, scheduledFunctions];
 
@@ -741,7 +731,6 @@ If[(setTime == "initial_and_poststep"),
 
   AppendTo[newparams, {Name -> "set_poststep", Type -> "BOOLEAN", Default -> "\"true\"",
   Description -> "whether to set data after intermediate MoL steps", Visibility -> "private"}]];
-Print["4"];
 
 
 If[baseParamsTrueQ,
@@ -754,28 +743,23 @@ If[baseParamsTrueQ,
 ];
 
 param = CreateParam[paramspec];
-Print["5"];
 
 
 (* STARTUP *)
 startup = CreateStartupFile[thornName, thornName <> ": set values"];
 
-Print["6"];
 
 (* CALCULATION and PRECOMP MACROS *)
 setrhs        = CreateSetterSource[{namedCalc}, debug];
 precompheader = CreatePrecompMacros[ namedCalc ];
-Print["7"];
 
 ext = CodeGen`SOURCESUFFIX;
 
 (* MAKEFILE *)
 make = CreateMakefile[{StartupName <> ".c", calcrhsName <> ext}];
-Print["8"];
 
 (* Write the differencing header file *)
 diffHeader = CreateDifferencingHeader[pddefs];
-Print["9"];
 
 
 (* CREATE THORN *)
@@ -1002,11 +986,9 @@ startup = CreateStartupFile[thornName, thornName <> ": evaluate grid functions"]
 
 
 evalCalcs = Map[Last, augmentedEvaluationDefinitions];
-Print["A"];
 
 setrhs = CreateSetterSource[evalCalcs, debug];
 
-Print["B"];
 
 (* PRECOMP MACROS *)
 
@@ -1074,9 +1056,6 @@ CreateBaseThorn[groups1_, evolvedGroupNames_, primitiveGroupNames_, optArgs___] 
           startup,make,thornSpec,thisThorn, groups},
 
   Print["\n*** CreateBaseThorn ***"];
-
-  Print["evolvedGroupNames == ", evolvedGroupNames];
-  Print["primitiveGroupNames == ", primitiveGroupNames];
 
 (* We don't want the implementation names in these group names.  It
    may not have been supplied, but if it has been, we strip it. *)

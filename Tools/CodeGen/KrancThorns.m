@@ -42,7 +42,7 @@ SystemNameDefault, SystemParentDirectory, ThornArrangement, ThornGroups,
 ThornImplementation,
 ThornName, ThornParameters, ThornType, Timelevels, TranslatorInCalculation,
 TranslatorOutCalculation, Type, UsedParameters, Value, Variables,
-VariableType, Visibility, WhereTrigger, InheritedImplementations, ZeroDimensions};
+VariableType, Visibility, WhereTrigger, InheritedImplementations, ZeroDimensions, GuessTensorTypes};
 
 (* used in interface to AEI Black Hole Excision Thorns *)
 {ExcisionGFs, exnormx, exnormy, exnormz};
@@ -1237,7 +1237,8 @@ Options[CreateBaseThorn] =
    DeBug -> False,
    SystemParentDirectory -> ".",
    EvolutionTimeLevels  -> 3,
-   CreateExcisionCode -> False
+   CreateExcisionCode -> False,
+   GuessTensorTypes -> False
    (* The following have nontrivial defaults, so should not be included
       here: ThornName, Implementation, SystemDescription *)};
 
@@ -1377,7 +1378,10 @@ tType[group_] := Module[{comps, baseNameLen, indices, type},
 
 completeEvolvedGroupStruct[group_] := 
   {Name -> First@group, VariableType -> "CCTK_REAL", 
-   Timelevels -> evTimeLevels,  GridType -> "GF" <> tensorType[group],
+   Timelevels -> evTimeLevels,  
+   If[lookupDefault[opts, GuessTensorTypes, False],
+      GridType -> "GF" <> tensorType[group],
+      GridType -> "GF"],
    Comment -> First@group, Visibility -> "public", Variables -> Last@group};
 
 completePrimitiveGroupStruct[group_] := 

@@ -28,7 +28,7 @@ EndPackage[];
 BeginPackage["MexicoTests`", {"sym`", "MapLookup`", "KrancThorns`", "Helpers`"}];
 (* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
-MexicoTests = {"robust", 
+MexicoTests = {"robust", "robust2D",
                "GaugeWave", "GaugeWave2D", 
                "LinearWave", "LinearWave2D", 
                "PolarizedGowdyExpansion", "PolarizedGowdyCollapse"};
@@ -43,6 +43,9 @@ xbaseRes["robust"] := 50;
 ybaseRes["robust"] := 3;
 zbaseRes["robust"] := 3;
 
+xbaseRes["robust2D"] := 50;
+ybaseRes["robust2D"] := 50;
+zbaseRes["robust2D"] := 3;
 
 xbaseRes["GaugeWave"] := 50;
 ybaseRes["GaugeWave"] := 1;
@@ -77,12 +80,14 @@ ybaseRes[type_] := 50;
 zbaseRes[type_] := 50;
 
 
-dtFactor["robust"] := 0.5;
+dtFactor["robust"]   := 0.1;
+dtFactor["robust2D"] := 0.1;
 dtFactor["PolarizedGowdyCollapse"] := -0.25;
 dtFactor[type_]    := 0.25;
 
 
 XTimes["robust"] := 1000;
+XTimes["robust2D"] := 1000;
 XTimes[type_]    := 1000;
 
 
@@ -171,6 +176,7 @@ BeginPackage["Parfiles`", {"CodeGen`", "sym`", "MapLookup`",
 CreateParfile::usage       = "create a `generic` Cactus par file";
 
 CreateRobustTest::usage    = "create a Cactus par file for the robust stability test";
+CreateRobust2DTest::usage    = "create a Cactus par file for the robust 2D stability test";
 CreatePolarizedGowdyTest::usage = "create a Cactus par file for the Gowdy test";
 CreateGaugeWaveTest::usage = "create a Cactus par file for the GaugeWave test";
 CreateLinearWaveTest::usage= "create a Cactus par file for the LinearWave test";
@@ -227,7 +233,6 @@ Module[{},
 "# base and evolution thorns\n",
 
 "ActiveThorns = \"" <> spacePad[lookup[evolutionSpec, ActiveThorns]] <> "\"\n",
-
 lookup[evolutionSpec, EvolutionSettings],
 "\n"
 }
@@ -414,6 +419,8 @@ Module[{},
 "",
 
 "IOASCII::out_format      = " <> lookup[ioSpec, outFormat],
+"",
+"IOBasic::out_format      = " <> lookup[ioSpec, outFormat],
 ""
 }
 ]
@@ -470,6 +477,29 @@ Options[CreateParfile] = {Name                    -> "MyTest",
 
 
 Options[CreateRobustTest] = {Name                   -> "MyFormulation",
+                             Directory              -> "par",
+                             NoiseAmp               -> 1.0 * 10^(-10),
+                             NoiseGroups            -> {},
+                             Resolution             -> 1,
+                             GaugeThorns            -> {},
+                             GaugeParameterSettings -> {},
+                             IDSpec                 -> {ActiveThorns -> {},
+                                                        IDSettings   -> {}},
+                             EvolutionSpec          -> {ActiveThorns -> {},
+                                                        EvolutionSettings -> {}},
+                             EvaluationSpec         -> {ActiveThorns -> {},
+                                                        EvaluationSettings -> {}},
+                             StencilWidth           -> 1,
+                             NumDifferentiations    -> 2,
+                             hamGF                  -> "ADMBase::ham",
+                             lapseGF                -> "ADMBase::alp",
+                             ioInfoGFs              -> {}, 
+                             io0dGFs                -> {}, 
+                             io1dGFs                -> {}, 
+                             io2dGFs                -> {}
+};
+
+Options[CreateRobust2DTest] = {Name                   -> "MyFormulation",
                              Directory              -> "par",
                              NoiseAmp               -> 1.0 * 10^(-10),
                              NoiseGroups            -> {},
@@ -691,6 +721,57 @@ CreateParfile[Name                   -> name,
               NoiseAmp               -> noiseBasic /  (2 ^ lookup[opts, Resolution])^2,
               NoiseGroups            -> lookup[opts, NoiseGroups],
               Resolution             -> {lookup[opts, Resolution],0,0}, 
+              StencilWidth           -> lookup[opts, StencilWidth],
+              NumDifferentiations    -> lookup[opts, NumDifferentiations],
+              GaugeThorns            -> lookup[opts, GaugeThorns],
+              GaugeParameterSettings -> lookup[opts, GaugeParameterSettings],
+              IDSpec                 -> {ActiveThorns -> {}, IDSettings
+                   -> {"admbase::initial_data = \"Cartesian Minkowski\""}},
+              EvolutionSpec          -> lookup[opts, EvolutionSpec],
+              EvaluationSpec         -> lookup[opts, EvaluationSpec],
+              IOSpec -> {outDir -> name,
+              outFormat -> ".16e",
+              ioEvery -> {100, 
+                crossingSteps, crossingSteps * 10, -1*(2 ^ lookup[opts, Resolution])},
+              ioInfoGFs -> Union@Flatten@{hamgf, lapsegf, lookup[opts, ioInfoGFs]}, 
+              io0dGFs   -> Union@Flatten@{hamgf, lapsegf, lookup[opts, NoiseGroups],
+                                                         lookup[opts, io0dGFs]}, 
+              io1dGFs   -> Union@Flatten@{hamgf, lapsegf, lookup[opts, io1dGFs]}, 
+              io2dGFs   -> Union@Flatten@{lookup[opts, io2dGFs]},
+
+              out1D -> {"yes", "no", "no"} }];
+]
+
+CreateRobust2DTest[optArgs___]:= Module[
+{opts, par, noiseBasic, crossingSteps, name, hamgf, lapsegf},
+
+opts = GetOptions[CreateRobust2DTest, {optArgs}];
+
+
+Print["Create robust 2D stability test parameter file"];
+
+noiseBasic = 10^(-10);
+
+crossingSteps = 
+ Abs@IntegerPart[(xbaseRes["robust2D"]*(2 ^ lookup[opts, Resolution]))*(1./dtFactor["robust2D"])];
+
+Print["time steps for one crossing time: ", crossingSteps];
+
+Print["Creating parameter file for robust 2D stability test."];
+
+name = lookup[opts, Name] <> "Robust2D"  <> "_rho" <>ToString[2^lookup[opts, Resolution]];
+
+
+
+hamgf   = ToString@lookup[opts, hamGF]; 
+lapsegf = ToString@lookup[opts, lapseGF]; 
+
+CreateParfile[Name                   -> name,
+              Type                   -> "robust2D",
+              Directory              -> lookup[opts, Directory],
+              NoiseAmp               -> noiseBasic /  (2 ^ lookup[opts, Resolution])^2,
+              NoiseGroups            -> lookup[opts, NoiseGroups],
+              Resolution             -> {lookup[opts, Resolution],lookup[opts, Resolution],0}, 
               StencilWidth           -> lookup[opts, StencilWidth],
               NumDifferentiations    -> lookup[opts, NumDifferentiations],
               GaugeThorns            -> lookup[opts, GaugeThorns],

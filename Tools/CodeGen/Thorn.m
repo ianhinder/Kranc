@@ -783,14 +783,7 @@ CreateMoLBoundariesSource[spec_] :=
 
    cleanCPP@DefineCCTKFunction[lookup[spec,ThornName] <> "_CheckBoundaries",
    "CCTK_INT",
-     {"/* check whether we can use excision */\n\n",
-      "#ifdef LEGOEXCISION_OFF\n",
-      "CCTK_INFO(\"Do not compile code using LegoExcision\");\n",
-      "#else\n",
-      "CCTK_INFO(\"Compiling with code using LegoExcision\");\n",
-      "#endif\n",
-      "\n",
-      "return 0;\n"}],
+     {"return 0;\n"}],
 
 
    cleanCPP@DefineCCTKFunction[lookup[spec,ThornName] <> "_ApplyBoundConds", 
@@ -831,7 +824,7 @@ CreateMoLExcisionSource[spec_] :=
   currentlang = CodeGen`SOURCELANGUAGE;
   CodeGen`SOURCELANGUAGE = "Fortran";
 
-  excisionExtrap[gf_] :=  "  call excision_extrapolate(ierr, "
+  excisionExtrap[gf_] :=  "  call ExcisionExtrapolate(ierr, "
     <> ToString@gf <> ", " <> ToString@gf
     <> "_p, emask, exnormx, exnormy, exnormz, nx, ny, nz, "<> ToString@gf  <> "_bound_limit)\n";
 
@@ -849,8 +842,7 @@ CreateMoLExcisionSource[spec_] :=
       "! are currently applied in separate functions      \n\n"},
 
    cleanCPP@DefineCCTKSubroutine[lookup[spec,ThornName] <> "_FindBoundary",
-     {"#ifndef LEGOEXCISION_OFF\n",
-      "! APPLY EXCISION\n\n",
+     {"! APPLY EXCISION\n\n",
       DefineVariable["ierr", "CCTK_INT :: ", "0"],
       "",
 
@@ -864,16 +856,14 @@ CreateMoLExcisionSource[spec_] :=
 
       "if ( (excision .ne. 0).AND.(find_excision_boundary .ne. 0) ) then\n\n",
 
-      "  call excision_findboundary(ierr, emask, nx, ny, nz)\n",
+      "  call ExcisionFindBoundary(ierr, emask, nx, ny, nz)\n",
       "  if (ierr < 0) call CCTK_WARN(2, \"findboundary exited with an error\")\n\n",
 
-     "endif\n",
-      "#endif\n\n",
-      "return\n"}],
+     "endif\n\n",
+     "return\n"}],
 
    cleanCPP@DefineCCTKSubroutine[lookup[spec,ThornName] <> "_FindNormals",
-     {"#ifndef LEGOEXCISION_OFF\n",
-      "! APPLY EXCISION\n\n",
+     {"! APPLY EXCISION\n\n",
       DefineVariable["ierr", "CCTK_INT :: ", "0"],
       "",
 
@@ -887,17 +877,15 @@ CreateMoLExcisionSource[spec_] :=
 
       "if ( (excision .ne. 0).AND.(find_excision_normals .ne. 0) ) then\n\n",
 
-      "  call excision_findnormals(ierr, emask, exnormx, exnormy, exnormz, nx, ny, nz)\n",
+      "  call ExcisionFindNormals(ierr, emask, exnormx, exnormy, exnormz, nx, ny, nz)\n",
       "  if (ierr < 0) call CCTK_WARN(2, \"findnormals exited with an error\")\n\n",
 
-     "endif\n",
-      "#endif\n\n",
-      "return\n"}],
+     "endif\n\n",
+     "return\n"}],
 
 
    cleanCPP@DefineCCTKSubroutine[lookup[spec,ThornName] <> "_ApplyExcision",
-     {"#ifndef LEGOEXCISION_OFF\n",
-      "! APPLY EXCISION\n\n",
+     {"! APPLY EXCISION\n\n",
       DefineVariable["ierr", "CCTK_INT :: ", "0"],
       "",
 
@@ -914,9 +902,8 @@ CreateMoLExcisionSource[spec_] :=
       "  call CCTK_INFO(\"Applying LegoExcision\")\n\n",
 
      Map[excisionExtrap, gfs],
-     "endif\n",
-      "#endif\n\n",
-      "return\n"}]
+     "endif\n\n",
+     "return\n"}]
 };
 
 CodeGen`SOURCELANGUAGE = currentlang;

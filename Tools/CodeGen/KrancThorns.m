@@ -106,6 +106,8 @@ ThornType::usage        = "symbol to specify thorn types in ThornList structures
 CactusGroup::usage   = "CactusGroup[Thorns_, groupname_] extracts a Cactus
 style group name from a Kranc thorns list, i.e. metric -> ADMBase::metric";
 
+SafeDelete::usage = "SafeDelete[filename_] deletes a file only after checking that the file actually exists and is a normal file";
+
 Begin["`Private`"];
 
 (****************************************************************************)
@@ -171,6 +173,9 @@ CactusGroup[Thorns_, gr_] := Module[{newthorns, name},
 
   First@Cases[Map[name, newthorns], x_?StringQ]
 ];
+
+SafeDelete[filename_?StringQ] := 
+             If[FileType@filename == "File", DeleteFile@filename];
 
 
 (* "constants" used to specify default options *)
@@ -1721,7 +1726,8 @@ If[debug,
 (* write file *)
 
 file = arrangementDirectory <> "/" <> systemName <> ".th";
-DeleteFile[file];
+
+SafeDelete@file;
 
 filepointer = OpenAppend[file, PageWidth -> 74];
 

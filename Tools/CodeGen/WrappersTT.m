@@ -104,7 +104,6 @@ CreateMoLThornTT[calc_, groups_, optArgs___] :=
 
 CreateBaseThornTT[groups_, evolvedGroupNames_, primitiveGroupNames_, optArgs___] :=
   Module[{groups2},
-    Print["{optArgs} == ", {optArgs}];
     groups2 = Map[makeGroupExplicit, groups];
     CreateBaseThorn[groups2, evolvedGroupNames, primitiveGroupNames, optArgs]];
 

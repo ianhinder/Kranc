@@ -50,7 +50,7 @@ EndPackage[];
 
 
 BeginPackage["KrancThorns`", 
-             {"CodeGen`", "sym`", "Thorn`", "MapLookup`", "KrancGroups`", "Differencing`"}];
+             {"CodeGen`", "sym`", "Thorn`", "MapLookup`", "KrancGroups`", "Differencing`", "CalculationFunction`"}];
 
 CodeGen`SetSourceLanguage["C"];
 
@@ -942,20 +942,33 @@ augmentedEvaluationDefinitions =
 
 scheduledGroups = {};
 
+Print["Testing for groups"];
+
+
+
+
 newGroupScheduleStructure[{groupName_, calc_}] := 
   {Name          -> lookup[calc, Name],
    SchedulePoint -> "at ANALYSIS",
    Language      -> CodeGen`SOURCELANGUAGE,
    TriggerGroups -> {groupName},
-   StorageGroups -> {{Group -> groupName, Timelevels -> 1}},
+
+   allGroups = Union[{groupName}, calculationUsedGroups[calc]];
+   allStorageGroups = Map[{Group -> #, Timelevels -> 1} &, allGroups];
+   StorageGroups -> allStorageGroups,
    Comment       -> "evaluate GFs"};
 
 scheduledFunctions = Map[newGroupScheduleStructure, augmentedEvaluationDefinitions];
 
 Print["TriggerGroups: ", evaluatedGroupNames];
 
+globalStorageGroups =
+Module[{cs},
+  cs = Map[#[[2]] &, augmentedEvaluationDefinitions];
+  gs = Flatten[Map[calculationUsedGroups[#] &, cs]];
+  Map[{Group -> #, Timelevels -> 1} &, gs]];
 
-globalStorageGroups = {};
+Print["globalStorageGroups == ", globalStorageGroups];
 
 schedule = CreateSchedule[globalStorageGroups, scheduledGroups, scheduledFunctions];
 

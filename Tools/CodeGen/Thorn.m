@@ -252,8 +252,12 @@ interfaceGroupBlock[spec_] :=
 *)
 
 usesFunction[f_] :=
-  {lookup[f, Type], " FUNCTION ", lookup[f, Name], "(", lookup[f,ArgString], ")\n",
-   "USES FUNCTION ", lookup[f, Name], "\n\n"};
+If[lookup[f, Type] == "SUBROUTINE",
+{lookup[f, Type], " ", lookup[f, Name], "(", lookup[f,ArgString], ")\n",
+   "USES FUNCTION ", lookup[f, Name], "\n\n"},
+{lookup[f, Type], " FUNCTION ", lookup[f, Name], "(", lookup[f,ArgString], ")\n",
+   "USES FUNCTION ", lookup[f, Name], "\n\n"}
+];
 
 
 (* Given the name of an implementation, a list of implementation names
@@ -319,7 +323,8 @@ groupStorage[spec_] :=
 scheduleUnconditionalFunction[spec_] :=
   {"schedule ", lookup[spec, Name], " ", lookup[spec,SchedulePoint], "\n",
    SuffixedCBlock[
-     {"LANG: ", lookup[spec, Language], "\n\n",
+     {If[lookup[spec, Language] == "None", "# no language specified\n",
+                                   "LANG: " <> lookup[spec, Language] <> "\n\n"],
 
       (* Insert a SYNC line for each group we want to synchronize. *)
       Map[{"SYNC: ", #, "\n"} &, lookupDefault[spec, SynchronizedGroups, {}]],
@@ -394,7 +399,7 @@ calculationMacros[] :=
   CommentedBlock["Define macros used in calculations",
     Map[{"#define ", #, "\n"} &,
        {"INITVALUE  (42)",
-        "INV(x) ((1) / (x))"   ,        
+        "INV(x) ((1.0) / (x))"   ,        
         "SQR(x) ((x) * (x))"   ,        
         "CUB(x) ((x) * (x) * (x))"   , 
         "QAD(x) ((x) * (x) * (x) * (x))"}]];
@@ -565,11 +570,13 @@ tmp
 (* the boundary treatment is split into 3 steps:
   1. excision                                      
   2. symmetries                                    
-  3. "other" boundary conditions, e.g. radiative   
+  3. "other" boundary conditions, e.g. flat, radiative   
 
-To simplify scheduling, testing, etc. the 3 steps are currently applied
-in separate functions!
-*)
+To simplify scheduling, testing, etc. the 3 steps are currently applied in separate functions!*)
+
+(* boundary conditions may have to be applied per GF or goup ; per group
+should be more efficient, but sometimes there will be a GF-dependent parameter,
+e.g. for radiation BC's *)
 
 cleanCPP[x_] := Map[StringReplace[FlattenBlock[#],  "  #" -> "#"]&, x];
 
@@ -577,22 +584,183 @@ cleanCPP[x_] := Map[StringReplace[FlattenBlock[#],  "  #" -> "#"]&, x];
    CodeGen structure of a source file which does nothing yet! *)
 CreateMoLBoundariesSource[spec_] :=
 
-  Module[{groups, tmp, lang},
+  Module[{gfs, groups, tmp, lang},
 
+  gfs = lookup[spec, EvolvedGFs];
   groups = lookup[spec, Groups];
-  groups = Map[lookup[spec, BaseImplementation] <> "::" <> ToString@# &, groups];
 
-    noBCGroup[group_] :=
-     "   ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, 1, -1, \"" <>
-     ToString@group <> "\",\t\"None\");\n";
+    listBCparfileEntry[gforgroup_] := Module[{prefix},
+    (* include a comment block with template parameter file entries *)
+    prefix =  "#$bound$#" <> lookup[spec, ThornImplementation] <> "::";
+    {
+     prefix <> ToString@gforgroup <> "_bound       = \"skip\"\n",
+     prefix <> ToString@gforgroup <> "_bound_speed = 1.0\n",
+     prefix <> ToString@gforgroup <> "_bound_limit = 0.0\n",
+     prefix <> ToString@gforgroup <> "_bound_value = 0.0\n\n"
+    }];
+
+    trivialBCGroup[group_] := Module[{boundpar, fullgroupname},
+    (* boundary conditions that do not have parameters besides their name *)
+
+    boundpar = group <> "_bound";
+    fullgroupname = lookup[spec, BaseImplementation] <> "::" <> ToString@group;
+
+    {"\n",
+     "if (CCTK_EQUALS(" <> boundpar <> ", \"none\"  ) ||\n",
+     "    CCTK_EQUALS(" <> boundpar <> ", \"static\") ||\n",
+     "    CCTK_EQUALS(" <> boundpar <> ", \"flat\"  ) ||\n",
+     "    CCTK_EQUALS(" <> boundpar <> ", \"zero\"  ) ) \n",
+     "{\n",
+
+     "  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, 1, -1, \n",
+     "                    \"" <> fullgroupname <> "\", " <> boundpar <> ");\n",
+
+     "  if (ierr < 0)\n",
+     "     CCTK_WARN(-1, \"Failed to register "<>boundpar<>" BC for "<>fullgroupname<>"!\");\n",
+
+     "}\n"}];
 
 
-    flatBCGroup[group_] :=
-     "   ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, 1, -1, \"" <>
-     ToString@group <> "\",\t\"Flat\");\n";
+    trivialBCGF[gf_] := Module[{boundpar, fullgfname},
+    (* boundary conditions that do not have parameters besides their name *)
 
-	 lang = CodeGen`SOURCELANGUAGE;
-         CodeGen`SOURCELANGUAGE = "C";
+    boundpar = ToString@gf <> "_bound";
+    fullgfname = lookup[spec, BaseImplementation] <> "::" <> ToString@gf;
+
+    {"\n",
+     "if (CCTK_EQUALS(" <> boundpar <> ", \"none\"  ) ||\n",
+     "    CCTK_EQUALS(" <> boundpar <> ", \"static\") ||\n",
+     "    CCTK_EQUALS(" <> boundpar <> ", \"flat\"  ) ||\n",
+     "    CCTK_EQUALS(" <> boundpar <> ", \"zero\"  ) ) \n",
+     "{\n",
+
+     "  ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1, \n",
+     "                    \"" <> fullgfname <> "\", " <> boundpar <> ");\n",
+
+     "  if (ierr < 0)\n",
+     "     CCTK_WARN(-1, \"Failed to register "<>boundpar<>" BC for "<>fullgfname<>"!\");\n",
+
+     "}\n"}];
+
+    radiationBCGroup[group_] := Module[{boundpar, fullgroupnamei, myhandle},
+    (* a simple radiation boundary condition *)
+
+    boundpar = group <> "_bound";
+    fullgroupname = lookup[spec, BaseImplementation] <> "::" <> ToString@group;
+    myhandle = "handle_" <> boundpar;
+
+    {"\n",
+     "if (CCTK_EQUALS(" <> boundpar <> ", \"radiative\"))\n",
+     "{\n /* apply radiation boundary condition */\n  ",
+
+      DefineVariable[myhandle, "CCTK_INT", "Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE)"],
+
+      "  if ("<>myhandle<>" < 0) CCTK_WARN(-1, \"could not create table!\");\n",
+
+      "  if (Util_TableSetReal("<>myhandle<>" , "<> boundpar <>"_limit, \"LIMIT\") < 0)\n",
+      "     CCTK_WARN(-1, \"could not set LIMIT value in table!\");\n",
+
+      "  if (Util_TableSetReal("<>myhandle<>" ," <> boundpar <> "_speed, \"SPEED\") < 0)\n",
+      "     CCTK_WARN(-1, \"could not set SPEED value in table!\");\n",
+
+      "\n",
+      "  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, 1, "<>myhandle<>", \n",
+      "                    \"" <> fullgroupname <> "\", \"Radiation\");\n\n",
+
+      "  if (ierr < 0)\n",
+      "     CCTK_WARN(-1, \"Failed to register Radiation BC for "<>fullgroupname<>"!\");\n",
+
+      "\n}\n"}];
+
+
+    radiationBCGF[gf_] := Module[{boundpar, fullgfname, myhandle},
+    (* a simple radiation boundary condition *)
+
+    boundpar = ToString@gf <> "_bound";
+    fullgfname = lookup[spec, BaseImplementation] <> "::" <> ToString@gf;
+    myhandle = "handle_" <> boundpar;
+
+    {"\n",
+     "if (CCTK_EQUALS(" <> boundpar <> ", \"radiative\"))\n",
+     "{\n /* apply radiation boundary condition */\n  ",
+
+      DefineVariable[myhandle, "CCTK_INT", "Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE)"],
+
+      "  if ("<>myhandle<>" < 0) CCTK_WARN(-1, \"could not create table!\");\n",
+
+      "  if (Util_TableSetReal("<>myhandle<>" , "<> boundpar <>"_limit, \"LIMIT\") < 0)\n",
+      "     CCTK_WARN(-1, \"could not set LIMIT value in table!\");\n",
+
+      "  if (Util_TableSetReal("<>myhandle<>" ," <> boundpar <> "_speed, \"SPEED\") < 0)\n",
+      "      CCTK_WARN(-1, \"could not set SPEED value in table!\");\n",
+
+      "\n",
+      "  ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, "<>myhandle<>", \n",
+      "                    \"" <> fullgfname <> "\", \"Radiation\");\n\n",
+
+      "  if (ierr < 0)\n",
+      "     CCTK_WARN(-1, \"Failed to register Radiation BC for "<>fullgfname<>"!\");\n",
+
+     "\n}\n"}];
+
+    scalarBCGroup[group_] := Module[{boundpar, fullgroupnamei, myhandle},
+    (* simple dirichlet boundary condition *)
+
+    boundpar = group <> "_bound";
+    fullgroupname = lookup[spec, BaseImplementation] <> "::" <> ToString@group;
+    myhandle = "handle_" <> boundpar;
+
+    {"\n",
+     "if (CCTK_EQUALS(" <> boundpar <> ", \"scalar\"))\n",
+     "{\n /* apply scalar boundary condition */\n  ",
+
+      DefineVariable[myhandle, "CCTK_INT", "Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE)"],
+
+      "  if ("<>myhandle<>" < 0) CCTK_WARN(-1, \"could not create table!\");\n",
+
+      "  if (Util_TableSetReal("<>myhandle<>" ," <> boundpar <> "_scalar, \"SCALAR\") < 0)\n",
+      "      CCTK_WARN(-1, \"could not set SCALAR value in table!\");\n",
+
+      "\n",
+      "  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, 1, "<>myhandle<>", \n",
+      "                    \"" <> fullgroupname <> "\", \"scalar\");\n\n",
+
+      "  if (ierr < 0)\n",
+      "     CCTK_WARN(-1, \"Failed to register Scalar BC for "<>fullgroupname<>"!\");\n",
+
+      "\n}\n"}];
+
+
+    scalarBCGF[gf_] := Module[{boundpar, fullgfname, myhandle},
+    (* simple dirichlet boundary condition *)
+
+    boundpar = ToString@gf <> "_bound";
+    fullgfname = lookup[spec, BaseImplementation] <> "::" <> ToString@gf;
+    myhandle = "handle_" <> boundpar;
+
+    {"\n",
+     "if (CCTK_EQUALS(" <> boundpar <> ", \"scalar\"))\n",
+     "{\n /* apply scalar boundary condition */\n  ",
+
+      DefineVariable[myhandle, "CCTK_INT", "Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE)"],
+
+      "  if ("<>myhandle<>" < 0) CCTK_WARN(-1, \"could not create table!\");\n",
+
+      "  if (Util_TableSetReal("<>myhandle<>" ," <> boundpar <> "_scalar, \"SCALAR\") < 0)\n",
+      "    CCTK_WARN(-1, \"could not set SCALAR value in table!\");\n",
+
+      "\n",
+      "  ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, "<>myhandle<>", \n",
+      "                    \"" <> fullgfname <> "\", \"scalar\");\n\n",
+
+      "  if (ierr < 0)\n",
+      "     CCTK_WARN(-1, \"Error in registering Scalar BC for "<>fullgfname<>"!\");\n",
+
+     "\n}\n"}];
+
+
+   lang = CodeGen`SOURCELANGUAGE;
+   CodeGen`SOURCELANGUAGE = "C";
 
   tmp = {whoWhen["C"],
 
@@ -613,8 +781,10 @@ CreateMoLBoundariesSource[spec_] :=
    cleanCPP@DefineCCTKFunction[lookup[spec,ThornName] <> "_CheckBoundaries",
    "CCTK_INT",
      {"/* check whether we can use excision */\n\n",
-      "#ifdef EXCISION_LEGOEXCISION\n",
-      "CCTK_INFO(\"Compiled with LegoExcision\");\n",
+      "#ifdef LEGOEXCISION_OFF\n",
+      "CCTK_INFO(\"Do not compile code using LegoExcision\");\n",
+      "#else\n",
+      "CCTK_INFO(\"Compiling with code using LegoExcision\");\n",
       "#endif\n",
       "\n",
       "return 0;\n"}],
@@ -622,29 +792,25 @@ CreateMoLBoundariesSource[spec_] :=
 
    cleanCPP@DefineCCTKFunction[lookup[spec,ThornName] <> "_ApplyBoundConds", 
    "CCTK_INT",
-     {DefineVariable["ierr", "CCTK_INT", "0"],
+     {DefineVariable["ierr",   "CCTK_INT", "0"],
 
-     "\n",
-     "if (CCTK_EQUALS(bound, \"none\"  )  ||\n",
-     "    CCTK_EQUALS(bound, \"static\")  ||\n",
-     "    CCTK_EQUALS(bound, \"zero\"  ) )  \n",
-     "{\n",
-     " /*  None or static: Do nothing, as well for Zero - why?? */\n",
+       Map[trivialBCGroup,   groups],
+       Map[trivialBCGF,      gfs],
 
-     Map[noBCGroup, groups],
+       Map[radiationBCGroup, groups],
+       Map[radiationBCGF,    gfs],
 
-     "}\n",
+       Map[scalarBCGroup,    groups],
+       Map[scalarBCGF,       gfs],
 
-     "else if(CCTK_EQUALS(bound, \"flat\"))\n",
-     "{\n",
-     " /* Flat BCs ... what was it that they do??  */\n",
+      "return ierr;\n"
+     }],
 
-     Map[flatBCGroup, groups],
-
-     "}\n",
-
-
-      "return ierr;\n"}]
+     "\n\n\n",
+     "/* template for entries in parameter file:\n",
+      Map[listBCparfileEntry, groups],
+      Map[listBCparfileEntry, gfs],
+     "*/\n\n"
      };
 
 	 CodeGen`SOURCELANGUAGE = lang;
@@ -662,9 +828,9 @@ CreateMoLExcisionSource[spec_] :=
   currentlang = CodeGen`SOURCELANGUAGE;
   CodeGen`SOURCELANGUAGE = "Fortran";
 
-  excisionExtrap[gf_] :=  "call excision_extrapolate(ierr, "
+  excisionExtrap[gf_] :=  "  call excision_extrapolate(ierr, "
     <> ToString@gf <> ", " <> ToString@gf
-    <> "_p, emask, exnormx, exnormy, exnormz, nx, ny, nz, v0)\n";
+    <> "_p, emask, exnormx, exnormy, exnormz, nx, ny, nz, "<> ToString@gf  <> "_bound_limit)\n";
 
   body = {whoWhen["Fortran"],
 
@@ -681,13 +847,12 @@ CreateMoLExcisionSource[spec_] :=
 
 
    cleanCPP@DefineCCTKSubroutine[lookup[spec,ThornName] <> "_ApplyExcision",
-     {"#ifdef EXCISION_LEGOEXCISION\n",
+     {"#ifndef LEGOEXCISION_OFF\n",
       "! APPLY EXCISION\n\n",
-      DefineVariable["ierr", "CCTK_INT", "0"],
+      DefineVariable["ierr", "CCTK_INT :: ", "0"],
       "",
 
       "integer   :: nx, ny, nz\n\n",
-      "CCTK_REAL :: v0 = 0.0d0 ! constant value used within excision mask\n\n",
 
       "! grid parameters\n",
 
@@ -695,15 +860,18 @@ CreateMoLExcisionSource[spec_] :=
       "ny = cctk_lsh(2)\n", 
       "nz = cctk_lsh(3)\n\n", 
 
-      "call excision_findboundary(ierr, emask, nx, ny, nz)\n",
-      "call excision_findnormals (ierr, emask, exnormx, exnormy, exnormz, nx, ny, nz)",
+      "if (excision) then\n",
+
+      "  call CCTK_INFO(\"Applying LegoExcision\")\n\n",
+
+      "  call excision_findboundary(ierr, emask, nx, ny, nz)\n",
+      "  call excision_findnormals (ierr, emask, exnormx, exnormy, exnormz, nx, ny, nz)",
       "\n\n",
 
      Map[excisionExtrap, gfs],
-     "",
+     "endif\n",
       "#endif\n\n",
-      "return\n",
-      "end subroutine\n"}]
+      "return\n"}]
 };
 
 CodeGen`SOURCELANGUAGE = currentlang;

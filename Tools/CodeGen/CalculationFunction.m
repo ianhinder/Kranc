@@ -330,7 +330,12 @@ CreateCalculationFunction[calc_, debug_] :=
 
     If[gfs != {},
       {
-       InitialiseGridLoopVariables[],
+      (* This has been moved into equationLoop, in order           *)
+      (* to be able to discriminate between the offsets necessary  *)
+      (* depending on whether or not we take derivatives           *)
+
+       (* InitialiseGridLoopVariables[], *)
+
 
        (* Have removed ability to include external header files here.
           Can be put back when we need it. *)
@@ -355,7 +360,7 @@ syncGroup[name_] :=
 
 
 equationLoop[eqs_, gfs_, shorts_, incs_, groups_, syncGroups_, pddefs_] :=
-  Module[{rhss, lhss, gfsInRHS, gfsInLHS, localGFs, localMap, eqs2},
+  Module[{rhss, lhss, gfsInRHS, gfsInLHS, localGFs, localMap, eqs2, derivSwitch},
 
     rhss = Map[#[[2]] &, eqs];
     lhss = Map[#[[1]] &, eqs];
@@ -366,11 +371,15 @@ equationLoop[eqs_, gfs_, shorts_, incs_, groups_, syncGroups_, pddefs_] :=
     localGFs = Map[localName, gfs];
     localMap = Map[# -> localName[#] &, gfs];
 
+    derivSwitch = derivativesUsed[eqs] != {};
+
     (* Replace the partial derivatives *)
 
     eqs2 = ReplaceDerivatives[pddefs, eqs];
 
-  {GridLoop[
+   {InitialiseGridLoopVariables[derivSwitch],
+
+   GridLoop[
    {CommentedBlock["Assign local copies of grid functions",
                    Map[AssignVariable[localName[#], GridName[#]] &, 
                        gfsInRHS]],

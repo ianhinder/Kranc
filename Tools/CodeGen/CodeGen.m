@@ -199,7 +199,7 @@ If[SOURCELANGUAGE == "C" || SOURCELANGUAGE == "C++",
    indentBlock[block],
    "}\n"},
 
-  {"Do ", name, " = ", start, ", ", endplusone - 1, "\n",
+  {"Do ", name, " = ", start, ", ", endplusone, "\n",
    "\n",
    indentBlock[block],
    "End Do\n"}
@@ -297,9 +297,9 @@ InitialiseFDVariables[] :=
   { If[SOURCELANGUAGE == "Fortran",
        InitialiseFDSpacingVariablesFortran[],
        InitialiseFDSpacingVariablesC[]],
-    AssignVariable["dxi", "1 / dx"],
-    AssignVariable["dyi", "1 / dy"],
-    AssignVariable["dzi", "1 / dz"],
+    AssignVariable["dxi", "1.0 / dx"],
+    AssignVariable["dyi", "1.0 / dy"],
+    AssignVariable["dzi", "1.0 / dz"],
     AssignVariable["hdxi", "0.5 * dxi"],
     AssignVariable["hdyi", "0.5 * dyi"],
     AssignVariable["hdzi", "0.5 * dzi"]}];
@@ -315,7 +315,8 @@ DeclareGridLoopVariables[] :=
 
      Map[DeclareVariable[#, "CCTK_INT"] &, 
          {"i", "j", "k", "istart", "jstart", "kstart", 
-          "iend", "jend", "kend"}],
+          "iend", "jend", "kend",
+          "index_offset_x", "index_offset_y", "index_offset_z"}],
 
      If[SOURCELANGUAGE == "C", DeclareVariable["index", "CCTK_INT"], "\n"]
   }];
@@ -328,27 +329,42 @@ arrayElement[var_, i_] :=
      {var, "(", arrayIndex[i], ")"}];
 
 (* Given a C-style variable index, return the corresponding index for
-   the language currently in use.  The idea is that the caller doesn't
+   the language currently in use.  The idea is that the caller does not
    need to know what language is being used. *)
 arrayIndex[i_] :=
   If[SOURCELANGUAGE == "C",
      i,
      If[NumberQ[i], i+1, {i, " + 1"}]];
 
-InitialiseGridLoopVariables[] :=
+InitialiseGridLoopVariables[derivativesUsedSwitch_] :=
   CommentedBlock["Set up variables used in the grid loop for the physical grid points",
-  {
-  AssignVariable["istart", arrayIndex[arrayElement["cctk_nghostzones", 0]]],
-  AssignVariable["jstart", arrayIndex[arrayElement["cctk_nghostzones", 1]]],
-  AssignVariable["kstart", arrayIndex[arrayElement["cctk_nghostzones", 2]]],
 
-  AssignVariable["iend", {arrayIndex[arrayElement["cctk_lsh", 0]], 
-                          " - ", arrayElement["cctk_nghostzones", 0]}],
-  AssignVariable["jend", {arrayIndex[arrayElement["cctk_lsh", 1]], 
-                          " - ", arrayElement["cctk_nghostzones", 1]}],
-  AssignVariable["kend", {arrayIndex[arrayElement["cctk_lsh", 2]], 
-                          " - ", arrayElement["cctk_nghostzones", 2]}]
-  }];
+  If[ (derivativesUsedSwitch),
+  {
+  AssignVariable["index_offset_x", "Max(stencil_width, stencil_width_x)"],
+  AssignVariable["index_offset_y", "Max(stencil_width, stencil_width_y)"],
+  AssignVariable["index_offset_z", "Max(stencil_width, stencil_width_z)"],
+
+  AssignVariable["istart", arrayIndex["index_offset_x"]],
+  AssignVariable["jstart", arrayIndex["index_offset_y"]],
+  AssignVariable["kstart", arrayIndex["index_offset_z"]],
+
+  AssignVariable["iend", {arrayElement["cctk_lsh", 0], " - index_offset_x"}],
+  AssignVariable["jend", {arrayElement["cctk_lsh", 1], " - index_offset_y"}],
+  AssignVariable["kend", {arrayElement["cctk_lsh", 2], " - index_offset_z"}]
+  },
+
+  {
+  AssignVariable["istart", arrayIndex[0]],
+  AssignVariable["jstart", arrayIndex[0]],
+  AssignVariable["kstart", arrayIndex[0]],
+
+  AssignVariable["iend", arrayElement["cctk_lsh", 0]],
+  AssignVariable["jend", arrayElement["cctk_lsh", 1]],
+  AssignVariable["kend", arrayElement["cctk_lsh", 2]]
+  }]
+];
+
 
 ConditionalOnParameter[name_, value_, block_] :=
   SeparatedBlock[

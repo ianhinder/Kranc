@@ -30,7 +30,8 @@ BeginPackage["sym`"];
 {AllowedValues, BaseImplementation, BaseThornDefault, Calculation,
 CollectList, Comment, Conditional, Contents, CreateExcisionCode,
 DeBug, Default, Description,
-Directory, Equations, EvolvedGFs, Filename, GridFunctions, GridType, Group,
+Directory, Equations, EvolutionTimeLevels,
+EvolvedGFs, Filename, GridFunctions, GridType, Group,
 Groups, Implementation, Implementations, IntBaseParameters,
 Interface, IntParameters, Language, Makefile, Name, NewParameters, Param,
 Parameters, Parameter, PrimitiveDefinitions, PrimitiveGFs, PrimitiveGroups, Primitives,
@@ -217,9 +218,10 @@ CreateMoLThorn[calculation_, groups_, optArgs___] :=
           file, globalStorageGroups, implementation, intParameters, ListOfEvolvedGFs,
           ListOfEvolvedGroups, ListOfPrimitiveGFs, ListOfPrimitiveGroups,
           ListOfRHSGroups, molboundaries, molboundariesFileName, molexcision,
-          molexcisionName, MoLParameters, molregisterName, opts,
-          precompheaderName, primitiveGroups, realParameters, setterFileName,
-          sourceFiles, sources, ThornList, thornName, whatitevolves, ext},
+          molexcisionName, molImplementation, MoLParameters, molregisterName, opts,
+          precompheaderName, primitiveGroups, realParameters, selectBoundaryGroup,
+          selectBoundaryVar, setterFileName, genericFDImplementation,
+          sourceFiles, sources, ThornList, thornName, whatitevolves, ext, useFuns},
 
 Print["\n*** CreateMoLThorn ***"];
 
@@ -341,16 +343,41 @@ registerConstrained =
    Type      -> "CCTK_INT",
    ArgString -> "CCTK_INT IN ConstrainedIndex"};
 
-selectBoundary =
+selectBoundaryGroup =
   {Name      -> "Boundary_SelectGroupForBC",
    Type      -> "CCTK_INT",
    ArgString -> "CCTK_POINTER_TO_CONST IN GH, CCTK_INT IN faces, CCTK_INT IN boundary_width, CCTK_INT IN table_handle, CCTK_STRING IN group_name, CCTK_STRING IN bc_name"};
 
+selectBoundaryVar =
+  {Name      -> "Boundary_SelectVarForBC",
+   Type      -> "CCTK_INT",
+   ArgString -> "CCTK_POINTER_TO_CONST IN GH, CCTK_INT IN faces, CCTK_INT IN boundary_width, CCTK_INT IN table_handle, CCTK_STRING IN var_name, CCTK_STRING IN bc_name"};
+
+excisionFindBoundary =
+  {Name      -> "ExcisionFindBoundary",
+   Type      -> "SUBROUTINE",
+   ArgString -> "CCTK_INT OUT ierr, CCTK_REAL INOUT ARRAY mask, CCTK_INT IN ni, CCTK_INT IN nj, CCTK_INT IN nk"};
+
+excisionExtrapolate =
+  {Name      -> "ExcisionExtrapolateBoundary",
+   Type      -> "SUBROUTINE",
+   ArgString -> "CCTK_INT OUT ierr, CCTK_REAL INOUT ARRAY var, CCTK_REAL IN ARRAY oldvar, CCTK_REAL IN ARRAY mask, CCTK_REAL IN ARRAY dirx, CCTK_REAL IN ARRAY diry, CCTK_REAL IN ARRAY dirz, CCTK_INT IN ni, CCTK_INT IN nj, CCTK_INT IN nk, CCTK_REAL IN var0"};
+
+excisionFindNormals =
+  {Name      -> "ExcisionFindNormals",
+   Type      -> "SUBROUTINE",
+   ArgString -> "CCTK_INT OUT ierr, CCTK_REAL IN ARRAY mask, CCTK_REAL IN ARRAY dirx, CCTK_REAL IN ARRAY diry, CCTK_REAL IN ARRAY dirz, CCTK_INT IN ni, CCTK_INT IN nj, CCTK_INT IN nk"};
+
+If[createExcisionCode, 
+
+ useFuns = {registerEvolved, registerConstrained, selectBoundaryGroup, selectBoundaryVar,
+                     excisionFindBoundary, excisionExtrapolate, excisionFindNormals},
+ useFuns = {registerEvolved, registerConstrained, selectBoundaryGroup, selectBoundaryVar}
+];
 
 interface = 
   CreateInterface[implementation, inheritedImplementations, includeFiles, {}, 
-                  UsesFunctions -> 
-                    {registerEvolved, registerConstrained, selectBoundary}];
+                  UsesFunctions -> useFuns];
 
 
 (* SCHEDULE *)
@@ -376,7 +403,7 @@ globalStorageGroups =
        Map[simpleGroupStruct[#,1]&, primitiveGroups]];
 
 scheduledGroups     = {{Name          -> "ApplyBCs",
-                        Language      -> "C",
+                        Language      -> "None", (* groups do not have a language *)
                         SchedulePoint -> "as " <> thornName <> "_ApplyBCs in MoL_PostStep "
                                       <> " after " <> molboundariesName, 
                         Comment       -> "Apply boundary conditions "
@@ -407,7 +434,7 @@ scheduledFunctions  = {{Name          -> molregisterName,
 If[createExcisionCode, AppendTo[scheduledFunctions, 
                    {Name               -> molexcisionName,
                     SchedulePoint      -> "in MoL_PostStep",
-                    SynchronizedGroups -> {},
+                    SynchronizedGroups -> evolvedGroups,
                     Language           -> "Fortran",
                     Comment            -> "apply excision"}]
 ];
@@ -415,23 +442,82 @@ schedule = CreateSchedule[globalStorageGroups, scheduledGroups, scheduledFunctio
 
 
 (* PARAM *)
-boundaryParam = {Name          ->  "bound", 
-                 Type          ->  "KEYWORD", 
-                 Default       ->  "none", 
-                 Description   ->  "Boundary condition to implement", 
+
+createBoundTypeParam[groupOrGF_] := {
+                 Name          ->  ToString@groupOrGF <> "_bound",
+                 Type          ->  "KEYWORD",
+                 Default       ->  "skip",
+                 Description   ->  "Boundary condition to implement",
                  Visibility    ->  "private",
                  AllowedValues ->  {
         {Value -> "flat",      Description -> "Flat boundary condition"},
         {Value -> "none",      Description -> "No boundary condition"},
         {Value -> "static",    Description -> "Boundaries held fixed"},
-        {Value -> "zero",      Description -> "Zero boundary condition"},
-        {Value -> "minkowski", Description -> "Minkowski Dirichlet boundary condition"},
         {Value -> "radiative", Description -> "Radiation boundary condition"},
-        {Value -> "staticrad", Description -> "Static radiation boundary condition"},
-        {Value -> "newrad",    Description -> "Improved radiative boundary condition"}
+        {Value -> "scalar",    Description -> "Dirichlet boundary condition"},
+        {Value -> "newrad",    Description -> "Improved radiative boundary condition"},
+        {Value -> "skip",      Description -> "skip boundary condition code"}
 }};
 
-nEvolved = Length[evolvedGFs];
+
+createBoundSpeedParam[groupOrGF_] := {
+                 Name          ->  ToString@groupOrGF <> "_bound_speed",
+                 Type          ->  "CCTK_REAL",
+                 Default       ->  1.0,
+                 Description   ->  "characteristic speed at boundary",
+                 Visibility    ->  "private",
+                 AllowedValues ->  {{Value -> "0:*" ,
+                      Description -> "outgoing characteristic speed > 0"}}
+};
+
+createBoundLimitParam[groupOrGF_] := {
+                 Name          ->  ToString@groupOrGF <> "_bound_limit",
+                 Type          ->  "CCTK_REAL",
+                 Default       ->  0.0,
+                 Description   ->  "limit value for r -> infinity",
+                 Visibility    ->  "private",
+                 AllowedValues ->  {{Value -> "*:*" ,
+                      Description -> "value of limit value is unrestricted"}}
+};
+
+createBoundScalarParam[groupOrGF_] := {
+                 Name          ->  ToString@groupOrGF <> "_bound_scalar",
+                 Type          ->  "CCTK_REAL",
+                 Default       ->  0.0,
+                 Description   ->  "Dirichlet boundary value",
+                 Visibility    ->  "private",
+                 AllowedValues ->  {{Value -> "*:*" ,
+                      Description -> "unrestricted"}}
+};
+
+(* boundaryParam = Join[Map[createBoundTypeParam, Join[evolvedGFs,    primitiveGFs]],
+                     Map[createBoundTypeParam, Join[evolvedGroups, primitiveGroups]],
+ 
+                     Map[createBoundSpeedParam, Join[evolvedGFs,    primitiveGFs]],
+                     Map[createBoundSpeedParam, Join[evolvedGroups, primitiveGroups]],
+
+                     Map[createBoundLimitParam, Join[evolvedGFs,    primitiveGFs]],
+                     Map[createBoundLimitParam, Join[evolvedGroups, primitiveGroups]],
+
+                     Map[createBoundScalarParam, Join[evolvedGFs,    primitiveGFs]],
+                     Map[createBoundScalarParam, Join[evolvedGroups, primitiveGroups]]
+*)
+
+boundaryParam = Join[Map[createBoundTypeParam, evolvedGFs],
+                     Map[createBoundTypeParam, evolvedGroups],
+
+                     Map[createBoundSpeedParam, evolvedGFs],
+                     Map[createBoundSpeedParam, evolvedGroups],
+
+                     Map[createBoundLimitParam, evolvedGFs],
+                     Map[createBoundLimitParam, evolvedGroups],
+
+                     Map[createBoundScalarParam, evolvedGFs],
+                     Map[createBoundScalarParam, evolvedGroups]
+];
+ 
+
+nEvolved   = Length[evolvedGFs];
 nPrimitive = Length[primitiveGFs];
 
 evolvedMoLParam =
@@ -453,12 +539,29 @@ constrainedMoLParam =
    AllowedValues -> {{Value -> ToString[nPrimitive] <> ":" <> ToString[nPrimitive] , 
                       Description -> "Number of constrained variables used by this thorn"}}};
 
-newParams = {boundaryParam, evolvedMoLParam, constrainedMoLParam};
+excisionParam =
+  {Name -> "excision",
+   Type -> "BOOLEAN",
+   Default -> "\"true\"",
+   Description -> "whether to apply excision or not",
+   Visibility -> "restricted"};
+
+If[createExcisionCode,
+ newParams = Join[boundaryParam, {excisionParam}, {evolvedMoLParam, constrainedMoLParam}];,
+ newParams = Join[boundaryParam, {evolvedMoLParam, constrainedMoLParam}];
+];
 
 molImplementation =
 {Name -> "MethodOfLines",
  UsedParameters -> {{Name -> "MoL_Num_Evolved_Vars",     Type -> "CCTK_INT"},
                     {Name -> "MoL_Num_Constrained_Vars", Type -> "CCTK_INT"}}};
+
+genericFDImplementation = 
+{Name -> "GenericFD",
+ UsedParameters -> {{Name -> "stencil_width",    Type -> "CCTK_INT"},
+                    {Name -> "stencil_width_x",  Type -> "CCTK_INT"},
+                    {Name -> "stencil_width_y",  Type -> "CCTK_INT"},
+                    {Name -> "stencil_width_z",  Type -> "CCTK_INT"}}};
 
 baseImp = 
   {Name -> baseImplementation, 
@@ -467,8 +570,8 @@ baseImp =
           Map[implementationIntParamStruct,  intBaseParameters]]};
 
 If[baseParamsTrueQ,
-   implementations = {molImplementation, baseImp},
-   implementations = {molImplementation}];
+   implementations = {molImplementation, genericFDImplementation, baseImp},
+   implementations = {molImplementation, genericFDImplementation}];
 
 paramspec = {Implementations -> implementations,
              NewParameters -> newParams};
@@ -488,9 +591,10 @@ molregister = CreateMoLRegistrationSource[molspec, debug];
 
 
 (* BOUNDARIES *)
-molspec = {Groups -> Join[evolvedGroups, primitiveGroups], 
+molspec = {Groups -> evolvedGroups, 
+           EvolvedGFs -> evolvedGFs,
            BaseImplementation -> baseImplementation, ThornName -> thornName,
-           ExcisionGFs -> evolvedGFs};
+           ThornImplementation -> implementation, ExcisionGFs -> evolvedGFs};
 
 molboundaries = CreateMoLBoundariesSource[molspec];
 
@@ -576,9 +680,9 @@ Options[CreateSetterThorn] =
 CreateSetterThorn[calc_, groups_, optArgs___] :=
 
 Module[{after, allowedSetTimes, baseImplementation, baseParamsTrueQ, before, calcrhsName, debug,
-        file, GFs, globalStorageGroups, implementation, intParameters,
+        file, GFs, globalStorageGroups, implementation, implementations, intParameters,
         namedCalc, precompheaderName, realParameters, RHSs, setgroups, setTime,
-        ThornList, ext},
+        ThornList, ext, genericFDImplementation, baseImp},
 
     Print["\n*** CreateSetterThorn ***"];
 
@@ -683,8 +787,8 @@ scheduledFunctions  = {};
 globalStorageGroups = Map[simpleGroupStruct[#, 1]&, setgroups];
 
 
-scheduledPOSTINITIAL  = {Name               -> calcrhsName,
-                         SchedulePoint      -> "AT POSTINITIAL" <> before <> after,
+scheduledINITIAL      = {Name               -> calcrhsName,
+                         SchedulePoint      -> "AT INITIAL" <> before <> after,
                          SynchronizedGroups -> {} (* setgroups, *),
                          Language           -> CodeGen`SOURCELANGUAGE, 
                          
@@ -706,7 +810,7 @@ scheduledPOSTSTEP  = {Name               -> calcrhsName,
                       Comment            -> "set values"};
 
 If[(setTime == "initial_only"),
-   scheduledFunctions = {scheduledPOSTINITIAL};
+   scheduledFunctions = {scheduledINITIAL};
 ];
  
 If[(setTime == "poststep_only"),
@@ -714,7 +818,7 @@ If[(setTime == "poststep_only"),
 ];
 
 If[(setTime == "initial_and_poststep"),
-   scheduledFunctions = {scheduledPOSTINITIAL, scheduledPOSTSTEP};
+   scheduledFunctions = {scheduledINITIAL, scheduledPOSTSTEP};
 ];
 
 schedule = CreateSchedule[globalStorageGroups, {}, scheduledFunctions];
@@ -733,14 +837,26 @@ If[(setTime == "initial_and_poststep"),
   Description -> "whether to set data after intermediate MoL steps", Visibility -> "private"}]];
 
 
-If[baseParamsTrueQ,
-  paramspec = {Implementations -> {{Name -> baseImplementation, UsedParameters ->
-                                    Flatten[{Map[implementationRealParamStruct, realBaseParameters],
-                                             Map[implementationIntParamStruct,  intBaseParameters]}, 1]}},
-               NewParameters -> newparams},
+genericFDImplementation =
+{Name -> "GenericFD",
+ UsedParameters -> {{Name -> "stencil_width",    Type -> "CCTK_INT"},
+                    {Name -> "stencil_width_x",  Type -> "CCTK_INT"},
+                    {Name -> "stencil_width_y",  Type -> "CCTK_INT"},
+                    {Name -> "stencil_width_z",  Type -> "CCTK_INT"}}};
 
-  paramspec = {NewParameters -> newparams}
+
+baseImp = {Name -> baseImplementation,
+           UsedParameters -> Flatten[{Map[implementationRealParamStruct, realBaseParameters],
+                                      Map[implementationIntParamStruct,  intBaseParameters]   }, 1]};
+
+If[baseParamsTrueQ,
+   implementations = {genericFDImplementation, baseImp},
+   implementations = {genericFDImplementation}
 ];
+
+
+paramspec = {Implementations -> implementations,
+             NewParameters   -> newparams};
 
 param = CreateParam[paramspec];
 
@@ -812,7 +928,7 @@ Module[{file, implementation, debug, newgroupnames,
         realParameters, intParameters,
         realBaseParameters, intBaseParameters, baseParamsTrueQ,
         parentDirectory, systemName, thornName, systemDescriptipion, 
-        arrangementDirectory},
+        arrangementDirectory, genericFDImplementation, baseImp, implementations},
 
 opts = GetOptions[CreateEvaluatorThorn, {optArgs}];
 
@@ -978,14 +1094,23 @@ Map[AppendTo[newparams, #]&,
           Flatten[{Map[completeRealParamStruct, realParameters],
                    Map[completeIntParamStruct,  intParameters]}, 1]];
 
-If[baseParamsTrueQ,
-   paramspec = {Implementations -> {{Name -> baseImplementation, UsedParameters ->
-                                    Flatten[{Map[implementationRealParamStruct, realBaseParameters],
-                                             Map[implementationIntParamStruct,  intBaseParameters]}, 1]}},
-                NewParameters -> newparams},
+genericFDImplementation =
+{Name -> "GenericFD",
+ UsedParameters -> {{Name -> "stencil_width",    Type -> "CCTK_INT"},
+                    {Name -> "stencil_width_x",  Type -> "CCTK_INT"},
+                    {Name -> "stencil_width_y",  Type -> "CCTK_INT"},
+                    {Name -> "stencil_width_z",  Type -> "CCTK_INT"}}};
 
-   paramspec = {NewParameters -> newparams}
+baseImp = {Name -> baseImplementation, 
+           UsedParameters -> Flatten[{Map[implementationRealParamStruct, realBaseParameters],
+                                      Map[implementationIntParamStruct,  intBaseParameters]   }, 1]};
+
+If[baseParamsTrueQ,
+   implementations = {genericFDImplementation, baseImp},
+   implementations = {genericFDImplementation}
 ];
+
+paramspec = {Implementations -> implementations, NewParameters -> newparams};
 
 param = CreateParam[paramspec];
 
@@ -1054,7 +1179,9 @@ Options[CreateBaseThorn] =
    IntBaseParameters -> {},
    SystemName -> SystemNameDefault,
    DeBug -> False,
-   SystemParentDirectory -> "."
+   SystemParentDirectory -> ".",
+   EvolutionTimeLevels  -> 3,
+   CreateExcisionCode -> False
    (* The following have nontrivial defaults, so should not be included
       here: ThornName, Implementation, SystemDescription *)};
 
@@ -1062,15 +1189,15 @@ CreateBaseThorn[groups1_, evolvedGroupNames_, primitiveGroupNames_, optArgs___] 
   Module[{debug,directory,systemName,thornName,
           implementation,systemDescription,thornList,completePrimitiveGroups,
           evolvedGFs,primitiveGFs,allGFs,
-          rhsGroups,rhsGroupNames,allGroupNames,
+          rhsGroups,rhsGroupNames,allGroupNames, localPrimitiveGroupNames,
           completeEvolvedGroupStruct,completePrimitiveGroupStruct,groupStructures,
           inheritedImplementations,includeFiles,interface,storageGroups,
           scheduledGroups,scheduledFunctions,schedule,paramSpec,param,symmetries,
-          startup,make,thornSpec,thisThorn, groups},
+          startup,make,evTimeLevels,thornSpec,thisThorn, groups, createExcisionCode},
 
   Print["\n*** CreateBaseThorn ***"];
 
-(* We don't want the implementation names in these group names.  It
+(* We do not want the implementation names in these group names.  It
    may not have been supplied, but if it has been, we strip it. *)
 groups = Map[{unqualifiedGroupName[groupName[#]], Last[#]} &, groups1];
 
@@ -1083,6 +1210,8 @@ systemName           = ToString@lookup[opts, SystemName];
 thornName            = lookupDefault[opts, ThornName, systemName <> "Base"];
 implementation       = lookupDefault[opts, Implementation, thornName];
 systemDescription    = lookupDefault[opts, SystemDescription, systemName];
+evTimeLevels         = lookupDefault[opts, EvolutionTimeLevels, 3];
+createExcisionCode   = lookupDefault[opts, CreateExcisionCode, False];
 arrangementDirectory = parentDirectory <> "/" <> systemName;
 
 Print["Creating files in directory " <> arrangementDirectory];
@@ -1134,12 +1263,19 @@ rhsGroupNames = Map[groupName, rhsGroups];
 allGroups     = Join[groups, {excisionGroup}, rhsGroups];
 allGroupNames = Map[groupName, allGroups];
 
+groups = allGroups;
+
 (* All the grid functions that are either evolved or primitive *)
-allGFs       = Join[variablesFromGroups[evolvedGroupNames, allGroups],
-                    variablesFromGroups[primitiveGroupNames, allGroups]];
+If[createExcisionCode, Print["Creating Excision Code"];,
+                       Print["Not Creating Excision Code"];];
+
+If[createExcisionCode, localPrimitiveGroupNames = Flatten@{primitiveGroupNames, "ExcisionNormals"};,
+                       localPrimitiveGroupNames = primitiveGroupNames;];
+
+allGFs       = Join[variablesFromGroups[evolvedGroupNames,   allGroups],
+                    variablesFromGroups[localPrimitiveGroupNames, allGroups]];
 
 If[debug,
-  Print["groups        == ", groups];
   Print["rhsGroups     == ", rhsGroups];
   Print["rhsGroupNames == ", rhsGroupNames];
   Print["allGroups     == ", allGroups];
@@ -1150,7 +1286,7 @@ If[debug,
 
 completeEvolvedGroupStruct[group_] := 
   {Name -> First@group, VariableType -> "CCTK_REAL", 
-   Timelevels -> 2,  GridType -> "GF",
+   Timelevels -> evTimeLevels,  GridType -> "GF",
    Comment -> First@group, Visibility -> "public", Variables -> Last@group};
 
 completePrimitiveGroupStruct[group_] := 
@@ -1159,22 +1295,22 @@ completePrimitiveGroupStruct[group_] :=
    Comment -> First@group, Visibility -> "public", Variables -> Last@group};
 
 evolvedBlock = Map[completeEvolvedGroupStruct[groupFromName[#, allGroups]] &, evolvedGroupNames];
-
-primitiveBlock = Map[completePrimitiveGroupStruct[groupFromName[#, allGroups]] &, primitiveGroupNames];
-
+primitiveBlock = Map[completePrimitiveGroupStruct[groupFromName[#, allGroups]] &, localPrimitiveGroupNames];
 rhsBlock = Map[completePrimitiveGroupStruct[groupFromName[#, allGroups]] &, rhsGroupNames];
 
 groupStructures = Join[evolvedBlock, primitiveBlock, rhsBlock];
 
 inheritedImplementations = Join[{"Grid"},lookupDefault[opts, InheritedImplementations, {}]];
 includeFiles             = {};
-
 interface = CreateInterface[implementation, inheritedImplementations, 
                             includeFiles, groupStructures];
 
 (* SCHEDULE *)
-storageGroups   = {};
 scheduledGroups = {};
+storageGroups   = {};
+If[createExcisionCode, storageGroups = {{Group -> "ExcisionNormals",
+                                                  Timelevels -> 1}}];
+
 
 scheduledFunctions = {{Name          -> thornName <> "_Startup",
                        SchedulePoint -> "at STARTUP", 
@@ -1262,7 +1398,7 @@ allGroupVariables[groups_] :=
 
 (* Return the group names of any gridfunctions set in the calculation *)
 calculationSetGroups[calc_] :=
-  Module[{},
+  Module[{equations, groups, allVars, lhss, gfLhss},
     equations = Flatten[lookup[calc, Equations],1];
     groups    = lookup[calc,Groups];
     allVars   = allGroupVariables[groups];
@@ -1301,7 +1437,7 @@ Module[{after, baseImplementation, before, cleanADMBaseRules, dirName,
           OutGFs, GFs, RHSs, setgroups, translatorInCalculation,
           translatorOutCalculation, scheduledStartup,
           scheduledADMToEvolve, scheduledEvolveToADM, setterFileName,
-          baseParamsTrueQ},
+          baseParamsTrueQ, genericFDImplementation, baseImp, implementations},
 
     Print["\n*** CreateTranslatorThorn ***"];
 
@@ -1438,7 +1574,7 @@ after  = If[mapContains[translatorInCalculation, After],
 
 
 scheduledADMToEvolve  = {Name          -> lookup[namedTranslatorInCalculation, Name],
-                         SchedulePoint -> "at POSTINITIAL as ADMToEvolve"  <> before <> after,
+                         SchedulePoint -> "at INITIAL as ADMToEvolve"  <> before <> after,
                          Comment       -> "ADMBase -> Evolution vars translation",
                          StorageGroups -> storageGroups,
                          Language      -> CodeGen`SOURCELANGUAGE,
@@ -1476,16 +1612,27 @@ newparams = {};
 
 AppendTo[newparams, {Name -> "translateToADM", Type -> "BOOLEAN", Default -> "\"true\"",
          Description -> "whether to translate back to ADM variables", Visibility -> "private"}];
+
+genericFDImplementation =
+{Name -> "GenericFD",
+ UsedParameters -> {{Name -> "stencil_width",    Type -> "CCTK_INT"},
+                    {Name -> "stencil_width_x",  Type -> "CCTK_INT"},
+                    {Name -> "stencil_width_y",  Type -> "CCTK_INT"},
+                    {Name -> "stencil_width_z",  Type -> "CCTK_INT"}}};
+
+baseImp = {Name -> baseImplementation,
+           UsedParameters -> Flatten[{Map[implementationRealParamStruct, realBaseParameters],
+                                      Map[implementationIntParamStruct,  intBaseParameters]   }, 1]};
+
 If[baseParamsTrueQ,
-paramspec = {Implementations -> {{Name -> baseImplementation, UsedParameters -> 
-                     Flatten[{Map[implementationRealParamStruct, realBaseParameters],
-                              Map[implementationIntParamStruct,  intBaseParameters]}, 1]}},
-             NewParameters -> newparams},
-paramspec = {NewParameters -> newparams}];
+   implementations = {genericFDImplementation, baseImp},
+   implementations = {genericFDImplementation}
+];
+
 
 (* Should we have the boundaryParam stuff above *)
-
-
+paramspec = {Implementations -> implementations,
+             NewParameters   -> newparams};
 param = CreateParam[paramspec];
 
 

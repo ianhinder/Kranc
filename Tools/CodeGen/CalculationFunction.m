@@ -23,13 +23,14 @@
 BeginPackage["sym`"];
 
 {GridFunctions, Shorthands, Equations, t, DeclarationIncludes,
-LoopPreIncludes, GroupImplementations, DerivativeDiscretizations,Dplus1, Dplus2, Dplus3}
+LoopPreIncludes, GroupImplementations, PartialDerivatives, Dplus1, Dplus2, Dplus3}
 
 {INV, SQR, CUB, QAD, dot, pow, exp} 
 
 EndPackage[];
 
-BeginPackage["CalculationFunction`", {"CodeGen`", "sym`", "MapLookup`", "KrancGroups`"}];
+BeginPackage["CalculationFunction`", {"CodeGen`", "sym`", "MapLookup`", "KrancGroups`", 
+  "Differencing`"}];
 
 (* This is the only externally callable function *)
 CreateCalculationFunction::usage = "";
@@ -39,25 +40,6 @@ Begin["`Private`"];
 (* -------------------------------------------------------------------------- 
    General Utility Functions
    -------------------------------------------------------------------------- *)
-
-(* Take an expression x and replace occurrences of Powers with the C
-macros SQR, CUB, QAD *)
-replacePowers[x_] :=
-  Module[{rhs},
-    rhs = x   /. Power[xx_, 2] -> SQR[xx];
-    rhs = rhs /. Power[xx_, 3] -> CUB[xx];
-    rhs = rhs /. Power[xx_, 4] -> QAD[xx];
-    rhs = rhs /. Power[xx_, -1] -> INV[xx];
-
-    If[SOURCELANGUAGE == "C",
-           Module[{},
-             rhs = rhs /. Power[E, power_] -> exp[power];
-             rhs = rhs /. Power[xx_, power_] -> pow[xx, power]],
-
-           rhs = rhs /. Power[xx_, power_] -> xx^power
-       ];
-    rhs
-    ];
 
 (* remove the 'rhs' at the end of a symbol or string *)
 removeRHS[x_] := Module[{string = ToString[x]},
@@ -116,11 +98,9 @@ derivativeHeads = {D1, D2, D3,
 hideDerivatives[x_] :=
   Module[{derivatives, unhide, hide},
     derivatives = Union[Cases[x, _ ? (MemberQ[derivativeHeads, #] &)[__],Infinity]];
-    Print["expression == ", x];
-    Print["derivatives == ", derivatives];
     unhide = Map[Unique[] -> # &, derivatives];
     hide = invertMap[unhide];
-    Print["hide map == ", hide];
+
 (*    Print["Expression with derivatives hidden: ", x /. hide]; *)
     {x /. hide, unhide}];
 
@@ -152,7 +132,7 @@ assignVariableFromExpression[dest_, expr_] := Module[{tSym, cleanExpr, code},
       
       tSym = Unique[];
       
-      cleanExpr = replacePowers[expr] /. sym`t -> tSym;
+      cleanExpr = ReplacePowers[expr] /. sym`t -> tSym;
   
       If[SOURCELANGUAGE == "C",      
         code = ToString[dest == cleanExpr, CForm,       PageWidth -> 80] <> ";\n",
@@ -218,7 +198,7 @@ printEq[eq_] :=
     split[-x_ + y___] := {-x, " + ..."};
     split[ x_       ] := { x, ""};
 
-    rhsSplit = split[Expand@replacePowers@rhs];
+    rhsSplit = split[Expand@ReplacePowers@rhs];
 
     rhsString = ToString@CForm[rhsSplit[[1]]] <> rhsSplit[[2]];
 
@@ -249,6 +229,23 @@ simplifyEquationList[eqs_] :=
 simplifyEquation[lhs_ -> rhs_] :=
   lhs -> Simplify[rhs];
   
+VerifyListContent[l_, type_] :=
+  Module[{types},
+    If[!(Head[l] === List),
+      Throw["Expecting a list of " <> ToString[type] <> " objects, but found " <> ToString[l]]];
+    types = Union[Map[Head, l]];
+    If [!(types === {type}) && !(types === {}),
+      Throw["Expecting a list of " <> ToString[type] <> " objects, but found " <> ToString[l]]]];
+
+VerifyCalculation[calc_] :=
+  Module[{},
+    If[Head[calc] != List,
+      Throw["Invalid Calculation structure: " <> ToString[calc]]];
+
+    VerifyListContent[calc, Rule];
+
+    If[mapContains[calc, Shorthands],
+      VerifyListContent[lookup[calc, Shorthands], Symbol]]];
 
 (* Calculation function generation *)
 
@@ -260,7 +257,9 @@ CreateCalculationFunction[calc_, debug_] :=
           parameters = lookupDefault[calc, Parameters, {}],
           functionName, dsUsed, 
           groups = lookup[calc, Groups],
-          derivDiscs = lookupDefault[calc, DerivativeDiscretizations, {}]},
+          pddefs = lookupDefault[calc, PartialDerivatives, {}]},
+
+  VerifyCalculation[calc];
 
   gfs = allVariables[groups];
   functionName = ToString@lookup[calc, Name];
@@ -296,22 +295,36 @@ CreateCalculationFunction[calc_, debug_] :=
 
   (* Check that there are no unknown symbols in the calculation *)
 
+  Print["10"];
+
   allSymbols = calculationSymbols[calc];
   knownSymbols = Join[gfs, shorts, parameters, {t, Pi, E}];
+  Print["11"];
+
+  Print["allSymbols == ", allSymbols];
+  Print["knownSymbols == ", knownSymbols];
 
   unknownSymbols = Complement[allSymbols, knownSymbols];
+  Print["12"];
 
   If[unknownSymbols != {},
      Module[{},
        Print["Unknown symbols in calculation: ", unknownSymbols];
        Print["Failed verification of calculation: ", calc];
        Throw["Unknown symbols in calculation"]]];
+  Print["13"];
+
+  allPDs = ListAllPDs[pddefs];
+  allGFDs = GFDsInExpression[eqs, pddefs];
+  Print["14"];
+
 
   DefineCCTKSubroutine[lookup[calc, Name],
   { DeclareGridLoopVariables[],
     DeclareFDVariables[],
     declareVariablesForCalculation[calc],
     declarePrecomputedDerivatives[dsUsed],
+    Map[DeclareDerivative, allGFDs],
 
     CommentedBlock["Include user-supplied include files",
       Map[IncludeFile, lookupDefault[calc, DeclarationIncludes, {}]]],
@@ -325,7 +338,7 @@ CreateCalculationFunction[calc_, debug_] :=
        (* Have removed ability to include external header files here.
           Can be put back when we need it. *)
 
-       Map[equationLoop[#, gfs, shorts, {}, groups, syncGroups, derivDiscs] &, eqs]},
+       Map[equationLoop[#, gfs, shorts, {}, groups, syncGroups, pddefs] &, eqs]},
       {}]}]];
 
 allVariables[groups_] :=
@@ -344,7 +357,7 @@ syncGroup[name_] :=
   ];
 
 
-equationLoop[eqs_, gfs_, shorts_, incs_, groups_, syncGroups_, derivDiscs_] :=
+equationLoop[eqs_, gfs_, shorts_, incs_, groups_, syncGroups_, pddefs_] :=
   Module[{rhss, lhss, gfsInRHS, gfsInLHS, localGFs, localMap, eqs2},
 
     rhss = Map[#[[2]] &, eqs];
@@ -356,7 +369,17 @@ equationLoop[eqs_, gfs_, shorts_, incs_, groups_, syncGroups_, derivDiscs_] :=
     localGFs = Map[localName, gfs];
     localMap = Map[# -> localName[#] &, gfs];
 
-    eqs2 = eqs /. Flatten[derivDiscs,1];
+    (* Replace the partial derivatives *)
+
+    Print["1"];
+
+    eqs2 = eqs /. AllGFDRules[pddefs];
+    Print["2"];
+  allPDs = ListAllPDs[pddefs];
+    Print["3"];
+  allGFDs = GFDsInExpression[eqs, pddefs];
+    Print["4"];
+
 
   {GridLoop[
    {CommentedBlock["Assign local copies of grid functions",
@@ -366,13 +389,16 @@ equationLoop[eqs_, gfs_, shorts_, incs_, groups_, syncGroups_, derivDiscs_] :=
     CommentedBlock["Include user supplied include files",
                    Map[IncludeFile, incs]],
 
-    CommentedBlock["Precompute derivatives",
+    CommentedBlock["Precompute derivatives (new style)",
+                   Map[PrecomputeDerivative, allGFDs]],
+
+    CommentedBlock["Precompute derivatives (old style)",
                    Map[precomputeDerivative, derivativesUsed[eqs]]],
 
     CommentedBlock["Calculate temporaries and grid functions",
                    Map[{assignVariableFromExpression[#[[1]], #[[2]]], "\n"}  &,
                    replaceDerivatives[
-                     replaceWithDerivativesHidden[eqs2, localMap],derivDiscs]]],
+                     replaceWithDerivativesHidden[eqs2, localMap],{}]]],
 
     If[debugInLoop, Map[InfoVariable[#[[1]]] &, eqs2 /. localMap], ""], 
 

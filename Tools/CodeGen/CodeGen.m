@@ -161,7 +161,7 @@ CommaInitSeparated[l_] :=
 NameRoot[name_] := Module[{dropNumberRule, root},
 
       dropNumberRule = {"1" -> "", "2" -> "", "3" -> "", "4" -> "", "5" -> "",
-                        "6" -> "", "7" -> "", "8" -> "", "9" -> "", "0" -> ""};
+                        "6" -> "", "7" -> "", "8" -> "", "9" -> "", "0" -> "", "rhs" -> ""};
 
       root = StringReplace[ToString@name, dropNumberRule]
       ];
@@ -170,16 +170,11 @@ PartitionVarList[list_]:= Module[{partition, split},
 
 partition[locallist_] := Module[{cutoff},
   cutoff = 6;
-  Print["local list: ", locallist];
   If[Length@locallist > cutoff, Partition[locallist, cutoff, cutoff, {1,1}, {}], {locallist}]
 ];
 
-
 split = Split[list, NameRoot[#1] == NameRoot[#2] &];
-Print["split: ", split];
-
 split = Flatten[Map[partition, split], 1];
-Print["split: ", split];
 
 split
 ];

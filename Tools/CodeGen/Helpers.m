@@ -27,12 +27,18 @@ BeginPackage["Helpers`", {"sym`"}];
 
 TensorName::usage = "get the base name of a tensor object, i.e. TensorName[g[la, lb]]";
 EnsureDirectory::usage = "create a directory if it does not already exist"
+AddSuffix::usage = "AddSuffix[object_,suffixString_] adds a suffix to an object";
+GFsFromGroupList::usage = "GFsFromGroupList[g_] gives the GFs from a group list in the from {\"group\", {gf1, gf2, ...}}";
 
 Begin["`Private`"];
 
 TensorName[t_[i__]] := t 
 
+AddSuffix[object_,suffix_]:=ToExpression[ToString@object<>ToString@suffix]
+
 EnsureDirectory[name_] := If[FileType[name] == None, CreateDirectory[name]];
+
+GFsFromGroupList[g_] := Flatten@Map[Last,g]
 
 End[];
 

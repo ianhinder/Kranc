@@ -1057,7 +1057,7 @@ interfaceGroupStructure[name_] :=
   {Name           ->  unqualifiedGroupName[name], 
    VariableType   ->  "CCTK_REAL", 
    Timelevels     ->  1,  
-   GridType       ->  "GF",
+   GridType       ->  "GF tags='Prolongation=\"None\"'",
    Comment        ->  unqualifiedGroupName[name], 
    Visibility     ->  "private", 
    Variables      ->  variablesInGroup[name, groups]};
@@ -1348,7 +1348,7 @@ tensorType[group_] := Module[{comps, type},
     If[comps == 1, type = "scalar",
       type = tType[group]];
     
-    " tags = 'tensortypealias=\"" <>type <> "\" tensormetric=\"" <> implementation <> "::h\"'"
+    " tags='tensortypealias=\"" <>type <> "\" tensormetric=\"" <> implementation <> "::h\"'"
     ];
 
 
@@ -1382,7 +1382,7 @@ completeEvolvedGroupStruct[group_] :=
 
 completePrimitiveGroupStruct[group_] := 
   {Name -> First@group, VariableType -> "CCTK_REAL",
-   Timelevels -> 1,  GridType -> "GF tags='Prolongation=None'",
+   Timelevels -> 1,  GridType -> "GF tags='Prolongation=\"None\"'",
    Comment -> First@group, Visibility -> "public", Variables -> Last@group};
 
 evolvedBlock = Map[completeEvolvedGroupStruct[groupFromName[#, allGroups]] &, evolvedGroupNames];

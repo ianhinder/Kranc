@@ -25,7 +25,7 @@ EndPackage[];
 
 
 (* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
-BeginPackage["MexicoTests`", {"sym`", "MapLookup`", "KrancThorns`"}];
+BeginPackage["MexicoTests`", {"sym`", "MapLookup`", "KrancThorns`", "Helpers`"}];
 (* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
 MexicoTests = {"robust", 
@@ -199,10 +199,6 @@ whoWhen[] := Module[{},
  "# $Id" <> "$"                                         <> "\n\n"}
 
 ];
-
-(* Create a directory if it does not exist already *)
-ensureDirectory[name_] :=  If[FileType[name] == None,
-     CreateDirectory[name]];
 
 (* -------------------------------------------------------------------------- 
    Parameter Block specific functions
@@ -607,7 +603,7 @@ evaluationSpec          = lookup[opts, EvaluationSpec];
 $name                   = lookup[opts, Name] <> ".par";
 paramdir                = lookup[opts, Directory];
 
-ensureDirectory[paramdir];
+EnsureDirectory[paramdir];
 
 
 DomainSize = 1;

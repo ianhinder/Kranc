@@ -868,7 +868,7 @@ CreateMoLExcisionSource[spec_] :=
       "ny = cctk_lsh(2)\n",
       "nz = cctk_lsh(3)\n\n",
 
-      "if ( (excision).AND.(find_excision_boundary) ) then\n\n",
+      "if ( (excision .ne. 0).AND.(find_excision_boundary .ne. 0) ) then\n\n",
 
       "  call excision_findboundary(ierr, emask, nx, ny, nz)\n",
       "  if (ierr < 0) call CCTK_WARN(2, \"findboundary exited with an error\")\n\n",
@@ -891,7 +891,7 @@ CreateMoLExcisionSource[spec_] :=
       "ny = cctk_lsh(2)\n",
       "nz = cctk_lsh(3)\n\n",
 
-      "if ( (excision).AND.(find_excision_normals) ) then\n\n",
+      "if ( (excision .ne. 0).AND.(find_excision_normals .ne. 0) ) then\n\n",
 
       "  call excision_findnormals(ierr, emask, exnormx, exnormy, exnormz, nx, ny, nz)\n",
       "  if (ierr < 0) call CCTK_WARN(2, \"findnormals exited with an error\")\n\n",

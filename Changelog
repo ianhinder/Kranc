@@ -1,0 +1,30 @@
+1.0.1-cvs
+=========
+
+- Changed the default name for a function in an evaluator thorn to
+  contain the thorn name.  Helps to avoid conflicts with other thorns.
+
+- Fixed bug whereby the name of the calculation in an evaluator thorn
+  was not used for the function name.
+
+- Added "InheritedImplementations" option to all the Kranc thorns.
+
+- Updated README for Cactus beta14
+
+- Check the value of SetTimes for CreateSetterThorn, throw an error if
+  the value is not allowed (otherwise, a typo in the option fails to
+  create a schedule entry without any warning or error).
+
+- Removed (historical) dependency on "Format" package
+
+- Added symbols for "pow" and "exp" that used to be provided by the
+  Format package
+
+- Removed "External" directory from the paths of the examples
+
+- Deleted obsolete global parameters from GenericFD (stencil widths)
+
+1.0.0 (06-Apr-2004)
+===================
+
+- Initial release

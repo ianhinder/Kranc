@@ -74,9 +74,9 @@ cvs -d :pserver:cvs_anon@cvs.cactuscode.org:/cactusdevcvs login
 Enter the password "anon".
 
 Check out the Cactus "flesh" from CVS.  This command will check out
-the beta 13 version.
+the beta 14 version.
 
-  cvs -d :pserver:cvs_anon@cvs.cactuscode.org:/cactusdevcvs co -r Cactus_4_0_Beta_13 Cactus
+  cvs -d :pserver:cvs_anon@cvs.cactuscode.org:/cactusdevcvs co -r Cactus_4_0_Beta_14 Cactus
 
 Change into the Cactus directory:
 
@@ -98,13 +98,17 @@ Run the program used for checking out public thorns:
 
   gmake checkout
 
-Enter "tl" to download thorns based on a thorn list.  Choose MKG.th.
-Press enter to have a quiet checkout.  Press q to quit the checkout
-program.
+Enter "arr" to download thorns by arrangement, choose default option to
+download all arrangements. Press q to quit the checkout program.
+
+For consistency with the Cactus 4.0 Beta14 release, you need to
+checkout the MoL thorns separately. Enter the Cactus/arrangements directory
+and issue the command 
+
+  cvs -d :pserver:cvs_anon@cvs.cactuscode.org:/cactusdevcvs co -r Cactus_4_0_Beta_14 AlphaThorns/MoL
 
 Verify that the thorns have been downloaded into the Cactus/arrangements
-directory. Any that could not be found will be skipped by the "gmake
-checkout" program.  These should just be the GenericFD and MKG* thorns.
+directory.
 
 Linking the extra thorns into your Cactus installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -188,6 +192,14 @@ Link the AEIThorns arrangement into your Cactus/arrangements directory:
 
 ln -s ~/Cactus/AEIThorns ~/Cactus/arrangements/AEIThorns
 
+You also have to add the following thorns to the thornlist KrancADM.th:
+
+AEIThorns/Exact
+CactusEinstein/ADMCoupling
+CactusEinstein/CoordGauge
+CactusEinstein/StaticConformal
+
+
 NB: You will need a Fortran 90 compiler to compile the Exact thorn,
 and several of the standard Cactus thorns needed for Einstein's
 equations.  We recommend the Intel Fortran Compiler, version 8 as of
@@ -201,8 +213,10 @@ Sascha Husa, Christiane Lechner
 
   Max Planck Institute for Gravitational Physics / Albert Einstein Institute
   Am Muehlenberg 1
-  14476 Golm
+  14476 Potsdam
   Germany
+
+  http://numrel.aei.mpg.de
 
 
 
@@ -212,3 +226,5 @@ Ian Hinder
   Highfield
   SO17 1BJ
   UK
+
+  http://www.maths.soton.ac.uk/

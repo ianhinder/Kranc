@@ -41,7 +41,7 @@ SystemNameDefault, SystemParentDirectory, ThornArrangement, ThornGroups,
 ThornImplementation,
 ThornName, ThornParameters, ThornType, Timelevels, TranslatorInCalculation,
 TranslatorOutCalculation, Type, UsedParameters, Value, Variables,
-VariableType, Visibility, WhereTrigger};
+VariableType, Visibility, WhereTrigger, InheritedImplementations};
 
 (* used in interface to AEI Black Hole Excision Thorns *)
 {ExcisionGFs, exnormx, exnormy, exnormz};
@@ -50,7 +50,7 @@ EndPackage[];
 
 
 BeginPackage["KrancThorns`", 
-             {"CodeGen`", "sym`", "Format`", "Thorn`", "MapLookup`", "KrancGroups`"}];
+             {"CodeGen`", "sym`", "Thorn`", "MapLookup`", "KrancGroups`"}];
 
 CodeGen`SetSourceLanguage["C"];
 
@@ -324,8 +324,8 @@ If[createExcisionCode, AppendTo[sourceFiles,  molexcisionName <> ".F90"] ];
 
 (* INTERFACE *)
 
-inheritedImplementations = {baseImplementation, "Grid", "Boundary", "SpaceMask",
-                            "GenericFD"};
+inheritedImplementations = Join[{baseImplementation, "Grid", "Boundary", "SpaceMask",
+                            "GenericFD"}, lookupDefault[opts, InheritedImplementations, {}]];
 
 includeFiles             = {"Boundary.h", "Symmetry.h", "GenericFD.h"};
 
@@ -598,19 +598,20 @@ baseImplementation = systemName <> "Base";
 
 setTime            = lookup[opts, SetTime];
 
-debug             = lookup[opts, DeBug];
+debug              = lookup[opts, DeBug];
 If[debug,
   Print["Debugging switched on"],
   Print["Debugging switched off"]
  ];
 
-allowedSetTimes = {"initial_only", "poststep_only", "initial_and_poststep"};
 
-If[!MemberQ[allowedSetTimes, setTime],
-   Module[{},
-     Print["Unknown value for option SetTime: ", SetTime];
-     Throw["Allowed values for option SetTime are: \"initial_only\", \"poststep
-_only\" and \"initial_and_poststep\""]]];
+  allowedSetTimes = {"initial_only", "poststep_only", "initial_and_poststep"};
+
+  If[!MemberQ[allowedSetTimes, setTime],
+     Module[{},
+       Print["Unknown value for option SetTime: ", SetTime];
+       Throw["Allowed values for option SetTime are: \"initial_only\", \"poststep_only\" and \"initial_and_poststep\""]]];
+
 
 
 baseParamsTrueQ = Length@realBaseParameters + Length@intBaseParameters > 0;
@@ -658,7 +659,8 @@ after  = If[mapContains[namedCalc, After],
             "" ];
 
 (* INTERFACE *)
-inheritedImplementations = {baseImplementation, "Grid", "GenericFD"};
+inheritedImplementations = Join[{baseImplementation, "Grid", "GenericFD"}, 
+                                lookupDefault[opts, InheritedImplementations, {}]];
 
 includeFiles             = {"GenericFD.h"};
 
@@ -888,7 +890,7 @@ ThornList = {{ThornName -> "GenericFD", ThornArrangement -> "KrancNumericalTools
 EvaluateParameters = {};
 
 
-
+(* This is the name for the source file *)
 calcrhsName       = thornName <> "_Eval";
 precompheaderName = "precomputations.h";
 
@@ -898,12 +900,23 @@ newparams = {};
 (* INTERFACE *)
 
 
-inheritedImplementations = {baseImplementation, "Grid", "GenericFD"};
+inheritedImplementations = Join[{baseImplementation, "Grid", "GenericFD"}, 
+                                 lookupDefault[opts, InheritedImplementations, {}]];
 
 includeFiles             = {"GenericFD.h"};
 
 interface = CreateInterface[implementation, inheritedImplementations, 
                             includeFiles, newGroupInterfaceStructures];
+
+(* RHS CALCULATION *)
+
+augmentEvaluationDefinition[{gName_, calc_}] :=
+  {gName, 
+   augmentCalculation[calc, thornName <> "_" <> unqualifiedGroupName[gName] <> "_Eval", 
+                      implementation, groups, allParameters]};
+
+augmentedEvaluationDefinitions = 
+  Map[augmentEvaluationDefinition, evaluationDefinitions];
 
 
 (* SCHEDULE *)
@@ -912,15 +925,15 @@ interface = CreateInterface[implementation, inheritedImplementations,
 
 scheduledGroups = {};
 
-newGroupScheduleStructure[name_] := 
-  {Name          -> unqualifiedGroupName[name] <> "_Eval",
+newGroupScheduleStructure[{groupName_, calc_}] := 
+  {Name          -> lookup[calc, Name],
    SchedulePoint -> "at ANALYSIS",
    Language      -> CodeGen`SOURCELANGUAGE,
-   TriggerGroups -> {name},
-   StorageGroups -> {{Group -> name, Timelevels -> 1}},
+   TriggerGroups -> {groupName},
+   StorageGroups -> {{Group -> groupName, Timelevels -> 1}},
    Comment       -> "evaluate GFs"};
 
-scheduledFunctions = Map[newGroupScheduleStructure, evaluatedGroupNames];
+scheduledFunctions = Map[newGroupScheduleStructure, augmentedEvaluationDefinitions];
 
 Print["TriggerGroups: ", evaluatedGroupNames];
 
@@ -953,15 +966,6 @@ startup = CreateStartupFile[thornName, thornName <> ": evaluate grid functions"]
 
 
 
-(* RHS CALCULATION *)
-
-augmentEvaluationDefinition[{gName_, calc_}] :=
-  {gName, 
-   augmentCalculation[calc, unqualifiedGroupName[gName] <> "_Eval", 
-                      implementation, groups, allParameters]};
-
-augmentedEvaluationDefinitions = 
-  Map[augmentEvaluationDefinition, evaluationDefinitions];
 
 
 evalCalcs = Map[Last, augmentedEvaluationDefinitions];
@@ -1132,7 +1136,7 @@ rhsBlock = Map[completePrimitiveGroupStruct[groupFromName[#, allGroups]] &, rhsG
 
 groupStructures = Join[evolvedBlock, primitiveBlock, rhsBlock];
 
-inheritedImplementations = {"Grid"};
+inheritedImplementations = Join[{"Grid"},lookupDefault[opts, InheritedImplementations, {}]];
 includeFiles             = {};
 
 interface = CreateInterface[implementation, inheritedImplementations, 
@@ -1359,7 +1363,8 @@ precompheaderName = "precomputations.h";
 
 (* INTERFACE *)
 
-inheritedImplementations = {baseImplementation, "Grid", "GenericFD", "ADMBase"};
+inheritedImplementations = Join[{baseImplementation, "Grid", "GenericFD", "ADMBase"}, 
+                                lookupDefault[opts, InheritedImplementations, {}]];
 
 includeFiles             = {"GenericFD.h"};
 

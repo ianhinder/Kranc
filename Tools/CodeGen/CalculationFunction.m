@@ -25,11 +25,11 @@ BeginPackage["sym`"];
 {GridFunctions, Shorthands, Equations, t, DeclarationIncludes,
 LoopPreIncludes, GroupImplementations}
 
-{INV, SQR, CUB, QAD, dot} 
+{INV, SQR, CUB, QAD, dot, pow, exp} 
 
 EndPackage[];
 
-BeginPackage["CalculationFunction`", {"CodeGen`", "Format`", "sym`", "MapLookup`", "KrancGroups`"}];
+BeginPackage["CalculationFunction`", {"CodeGen`", "sym`", "MapLookup`", "KrancGroups`"}];
 
 (* This is the only externally callable function *)
 CreateCalculationFunction::usage = "";

@@ -326,6 +326,39 @@ sourceFiles = {setterFileName  <> ext, StartupName <> ".c",
 If[createExcisionCode, AppendTo[sourceFiles,  molexcisionName <> ".F90"] ];
 
 
+(* assemble RHS groups and namedCalc structure  *)
+
+rhsGroups = Select[Flatten@groups, StringQ];
+rhsGroups = Select[rhsGroups, StringMatchQ[#, "*rhs"]& ];
+
+If [Length[Intersection[ Map[ToString, Flatten@variablesFromGroups[rhsGroups, groups]],
+                         Map[ToString, Flatten@Map[addrhs, evolvedGFs]]  ]] == 0,
+  rhsGroups = Map[addrhs, evolvedGroups];,
+  Print["Taking RHS groups from argument list: ", rhsGroups];
+];
+
+evolvedGroupDefinitions = Map[groupFromName[#, groups] &, evolvedGroups];
+rhsGroupDefinitions = Map[evolvedGroupToRHSGroup[#, evolvedGroupDefinitions] &, evolvedGroups];
+
+allowedToSync = Map[groupName, groups];
+
+calc2 = mapEnsureKey[calculation, SyncGroups, allowedToSync];
+
+namedCalc = augmentCalculation[calc2, thornName <> "_CalcRHS", 
+                               baseImplementation, Join[groups, rhsGroupDefinitions], 
+                               allParameters, pddefs];
+
+Print["number of equations in calculation: ", numeq = Length@lookup[namedCalc, Equations]];
+
+
+calcrhsName    = lookup[namedCalc, Name];
+
+
+(* RHS CALCULATION and PRECOMP MACROS *)
+
+calcrhs       = CreateSetterSource[{namedCalc}, debug];
+precompheader = CreatePrecompMacros[namedCalc];
+
 (* INTERFACE *)
 
 inheritedImplementations = Join[{baseImplementation, "Grid", "Boundary", "SpaceMask",
@@ -381,28 +414,6 @@ interface =
 
 
 (* SCHEDULE *)
-
-rhsGroups = Select[Flatten@groups, StringQ];
-rhsGroups = Select[rhsGroups, StringMatchQ[#, "*rhs"]& ];
-
-If [Length[Intersection[ Map[ToString, Flatten@variablesFromGroups[rhsGroups, groups]],
-                         Map[ToString, Flatten@Map[addrhs, evolvedGFs]]  ]] == 0,
-  rhsGroups = Map[addrhs, evolvedGroups];,
-  Print["Taking RHS groups from argument list: ", rhsGroups];
-];
-
-evolvedGroupDefinitions = Map[groupFromName[#, groups] &, evolvedGroups];
-rhsGroupDefinitions = Map[evolvedGroupToRHSGroup[#, evolvedGroupDefinitions] &, evolvedGroups];
-
-allowedToSync = Map[groupName, groups];
-
-calc2 = mapEnsureKey[calculation, SyncGroups, allowedToSync];
-
-namedCalc = augmentCalculation[calc2, thornName <> "_CalcRHS", 
-                               baseImplementation, Join[groups, rhsGroupDefinitions], 
-                               allParameters, pddefs];
-
-calcrhsName    = lookup[namedCalc, Name];
 
 (* in the following the Union takes care of the case when rhs groups have been explicitly
    declared as primitive groups *)
@@ -645,12 +656,6 @@ molboundaries = CreateMoLBoundariesSource[molspec];
 
 If[createExcisionCode, molexcision   = CreateMoLExcisionSource[molspec]];
 
-(* RHS CALCULATION and PRECOMP MACROS *)
-
-calcrhs       = CreateSetterSource[{namedCalc}, debug];
-precompheader = CreatePrecompMacros[namedCalc];
-
-
 (* MAKEFILE *)
 make = CreateMakefile[sourceFiles];
 
@@ -879,26 +884,12 @@ precompheader = CreatePrecompMacros[ namedCalc ];
 
 ext = CodeGen`SOURCESUFFIX;
 
-IsNotEmptyString[x_] := TrueQ[x != ""];
-PickMatch[x_?StringQ, form_?StringQ] := If[StringMatchQ[x, form], x, ""];
-
 (* search for SYNCs *)
-grepSYNC = Map[PickMatch[#, "*SYNC*"] &, Flatten[setrhs, Infinity]];
-grepSYNC = Select[grepSYNC, IsNotEmptyString];
-
-
-grepSYNC = Map[StringReplace[#, "/* SYNC: " -> ""]&, grepSYNC];
-grepSYNC = Map[StringReplace[#, "*/"        -> ""]&, grepSYNC];
-
-Print["found groups to SYNC: ", grepSYNC];
-
-SafeStringReplace[x_, string1_?StringQ, string2_?StringQ] := If[StringQ@x, StringReplace[x, string1 -> string2], x];
-
-If[numeq > 1, grepSYNC = {};
-   setrhs = Map[SafeStringReplace[#, "/* sync via schedule instead of ", ""]&, setrhs, Infinity];
-   setrhs = Map[SafeStringReplace[#, ") -cut- */", ")"]&,  setrhs, Infinity]; (* for Fortran *)
-   setrhs = Map[SafeStringReplace[#, "); -cut- */", ")"]&, setrhs, Infinity]; (* for C       *)
-               Print["> 1 loop in thorn -> scheduling in source code, incompatible with Multipatch!"];
+If[numeq <= 1, 
+   grepSYNC = GrepSyncGroups[setrhs, calcrhsName]; ,
+   grepSYNC = {};
+   setRHS = UncommentSourceSync[setrhs, calcrhsName];
+   Print["> 1 loop in thorn -> scheduling in source code, incompatible with Multipatch!"];
 ];
 
 
@@ -1195,9 +1186,7 @@ param = CreateParam[paramspec];
 
 startup = CreateStartupFile[thornName, thornName <> ": evaluate grid functions"];
 
-
-
-
+(* SET RHSs *)
 
 evalCalcs = Map[Last, augmentedEvaluationDefinitions];
 
@@ -1211,7 +1200,7 @@ precompheader = CreatePrecompMacros[calculation];
 
 
 (* MAKEFILE *)
-ext = CodeGen`SOURCESUFFIX;
+ext  = CodeGen`SOURCESUFFIX;
 make = CreateMakefile[{StartupName <> ".c", calcrhsName <> ext}];
 
 

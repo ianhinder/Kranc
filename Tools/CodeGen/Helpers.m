@@ -28,15 +28,21 @@ BeginPackage["Helpers`", {"sym`"}];
 TensorName::usage = "get the base name of a tensor object, i.e. TensorName[g[la, lb]]";
 
 EnsureDirectory::usage = "create a directory if it does not already exist"
-SafeDelete::usage = "SafeDelete[filename_] deletes a file only after checking that the file actually exists and is a normal file";
+SafeDelete::usage = "SafeDelete[filename] deletes a file only after checking that the file actually exists and is a normal file";
 
-AddSuffix::usage = "AddSuffix[object_,suffixString_] adds a suffix to an object";
+AddSuffix::usage = "AddSuffix[object,suffixString] adds a suffix to an object";
 
-GFsFromGroupList::usage = "GFsFromGroupList[g_] gives the GFs from a group list in the form {\"group\", {gf1, gf2, ...}}";
+GFsFromGroupList::usage = "GFsFromGroupList[g] gives the GFs from a group list in the form {\"group\", {gf1, gf2, ...}}";
+
+IsNotEmptyString::usage  = "IsNotEmptyString[x] returns False if x == \"\" and True otherwise.";
+PickMatch::usage         = "PickMatch[x, form] returns string x if it matches form, and \"\" otherwise.";
+SafeStringReplace::usage = "SafeStringReplace[x, string1, string2] replaces string1 in x by string2 if x is a " <>
+                           "string and otherwise returns x.";
+
 GroupStruct::usage = "GroupStruct[g_] returns a group structure the from {\"group\", {gf1, gf2, ...}}";
 
-ComponentList::usage = "ComponentList[T_[index_]] creates a list of tensor components.";
-TextComponentList::usage = "TextComponentList[T_[index_]] call ComponentList and converts to plain text format (no sub- or superscripts).";
+ComponentList::usage = "ComponentList[T[index]] creates a list of tensor components.";
+TextComponentList::usage = "TextComponentList[T[index]] call ComponentList and converts to plain text format (no sub- or superscripts).";
 
 Begin["`Private`"];
 
@@ -49,6 +55,12 @@ EnsureDirectory[name_] := If[FileType[name] == None, CreateDirectory[name]];
 SafeDelete[filename_?StringQ] := If[FileType@filename == File, DeleteFile@filename];
 
 GFsFromGroupList[g_] := Flatten@Map[Last,g]
+
+IsNotEmptyString[x_] := TrueQ[x != ""];
+PickMatch[x_?StringQ, form_?StringQ] := If[StringMatchQ[x, form], x, ""];
+SafeStringReplace[x_, string1_?StringQ, string2_?StringQ] := 
+            If[StringQ@x, StringReplace[x, string1 -> string2], x];
+
 
 If[ValueQ@Global`tensorNames2componentNames[x],
 (* DecomposeTools.m is loaded *)

@@ -30,11 +30,15 @@ LoopPreIncludes, GroupImplementations, PartialDerivatives, Dplus1, Dplus2, Dplus
 EndPackage[];
 
 BeginPackage["CalculationFunction`", {"CodeGen`", "sym`", "MapLookup`", "KrancGroups`", 
-  "Differencing`"}];
+  "Differencing`", "Helpers`"}];
 
 (* This is the only externally callable function *)
 CreateCalculationFunction::usage = "";
 calculationUsedGroups::usage = "";
+
+UncommentSourceSync::usage = "UncommentSourceSync[source_struct] uncomments calls to CCTK_SyncGroup.";
+GrepSyncGroups::usage = "GrepSyncGroups[source_struct] 'greps' a list of groups to be SYNC'ed from" <>
+                        "code produced by CreateCalculationFunction."
 
 Begin["`Private`"];
 
@@ -237,7 +241,7 @@ calculationUsedGroups[calc_] :=
     gfs = calculationUsedGFs[calc];
     containingGroups[gfs, lookup[calc, Groups]]];
 
-(* Return the names of any gridfunctions used in the RHS's of calculation *)
+(* Return the names of any gridfunctions used in the RHSs of calculation *)
 calculationUsedShorthands[calc_] :=
   Module[{calcSymbols, allShorthands},
     calcSymbols = calculationSymbolsRHS[calc];
@@ -311,14 +315,65 @@ cleancalc
 ];
 
 
+syncGroup[name_] :=
+ If[SOURCELANGUAGE == "C",
+  {"/* SYNC: "<>name<>" */\n", "/* sync via schedule instead of CCTK_SyncGroup(cctkGH, \"", name, "\"); -cut- */\n"},
+  {"/* SYNC: "<>name<>" */\n", "/* sync via schedule instead of call CCTK_SyncGroup(i, cctkGH, \"", name, "\") -cut- */\n"}
+  ];
 
+UncommentSourceSync[setRHS_]:= Module[{cleanRHS},
+   cleanRHS = Map[SafeStringReplace[#, "/* sync via schedule instead of ", ""]&, setRHS, Infinity];
+   cleanRHS = Map[SafeStringReplace[#, ") -cut- */", ")"]&,  cleanRHS, Infinity]; (* for Fortran *)
+   cleanRHS = Map[SafeStringReplace[#, "); -cut- */", ")"]&, cleanRHS, Infinity]; (* for C       *)
+
+   cleanRHS
+];
+
+InsertSyncFuncName[setRHS_, funcName_]:=
+     Map[SafeStringReplace[#, "/* SYNC: ", "/* SYNC: " <> funcName <> "//"]&, setRHS, Infinity];
+
+GrepSyncGroups[setRHS_]:= Module[{grepSYNC},
+ grepSYNC = Map[PickMatch[#, "*SYNC*"] &, Flatten[setRHS, Infinity]];
+ grepSYNC = Select[grepSYNC, IsNotEmptyString];
+
+ grepSYNC = Map[StringReplace[#, "/* SYNC: " -> ""]&, grepSYNC];
+ grepSYNC = Map[StringReplace[#, "*/"        -> ""]&, grepSYNC];
+
+ Print["found groups to SYNC: ", grepSYNC];
+
+ grepSYNC
+];
+
+	 (*   OBSOLETE
+GrepSyncFuncGroup[setRHS_]:= Module[{grepSYNC},
+ grepSYNC = Map[PickMatch[#, "*SYNC*"] &, Flatten[setRHS, Infinity]];
+ grepSYNC = Select[grepSYNC, IsNotEmptyString];
+
+ grepSYNC = Map[StringReplace[#, "/* SYNC: " -> ""]&, grepSYNC];
+ grepSYNC = Map[StringReplace[#, "*/"        -> ""]&, grepSYNC];
+
+ Print["found functions//groups to SYNC: ", grepSYNC];
+
+ grepSYNC
+];
+	  *)
+
+GrepSyncGroups[x_, func_] := Module[{pick},
+
+    pick = GrepSyncGroups[x];
+    pick = Map[PickMatch[#, func <> "//*"] & , pick];
+    pick = Select[pick, IsNotEmptyString];
+    
+    Print["function name is ", func];
+    pick = Map[StringReplace[#,  func <> "//" -> ""] &, pick]
+    ]
 
 (* Calculation function generation *)
 
 CreateCalculationFunction[calc_, debug_] :=
   Module[{gfs, allSymbols, knownSymbols,
           shorts, eqs, syncGroups, parameters,
-          functionName, dsUsed, groups, pddefs, cleancalc},
+          functionName, dsUsed, groups, pddefs, cleancalc, numeq, eqLoop, GrepSYNC},
 
    cleancalc = cleanCalculation[calc];
    cleancalc = cleanCalculation[cleancalc];
@@ -331,6 +386,7 @@ CreateCalculationFunction[calc_, debug_] :=
           groups = lookup[cleancalc, Groups];
           pddefs = lookupDefault[cleancalc, PartialDerivatives, {}];
 
+  Print["number of equations in calculation: ", numeq = eqs];
 
   VerifyCalculation[cleancalc];
 
@@ -363,17 +419,16 @@ CreateCalculationFunction[calc_, debug_] :=
 
   Print["\n\nEquations:"];
 
-   Map[Map[printEq, #]&, eqs];
-   Print[];
+  Map[Map[printEq, #]&, eqs];
+  Print[];
 
   (* Check that there are no unknown symbols in the calculation *)
-
 
   allSymbols = calculationSymbols[cleancalc];
   knownSymbols = Join[gfs, shorts, parameters, {t, Pi, E}];
 
-(*  Print["allSymbols == ", allSymbols];
-  Print["knownSymbols == ", knownSymbols];*)
+  (* Print["allSymbols == ", allSymbols];
+  Print["knownSymbols == ", knownSymbols]; *)
 
   unknownSymbols = Complement[allSymbols, knownSymbols];
 
@@ -407,8 +462,21 @@ CreateCalculationFunction[calc_, debug_] :=
        (* Have removed ability to include external header files here.
           Can be put back when we need it. *)
 
-       Map[equationLoop[#, gfs, shorts, {}, groups, syncGroups, pddefs] &, eqs]},
+	eqLoop = Map[equationLoop[#, gfs, shorts, {}, groups, syncGroups, pddefs] &, eqs]};
+
+       (* search for SYNCs *)
+       If[numeq <= 1,
+         GrepSYNC = GrepSyncGroups[eqLoop]; ,
+         GrepSYNC = {};
+         eqLoop = UncommentSourceSync[eqLoop];
+         Print["> 1 loop in thorn -> scheduling in source code, incompatible with Multipatch!"];
+       ];
+
+       Print["grepSync from eqLoop: ",GrepSyncGroups[eqLoop] ];
+
+       InsertSyncFuncName[eqLoop, lookup[cleancalc, Name]],
       {}]}]];
+
 
 allVariables[groups_] :=
   Flatten[Map[variablesInGroup, groups], 1];
@@ -419,16 +487,10 @@ variablesInGroup[g_] :=
 groupName[g_] :=
   g[[1]];
 
-syncGroup[name_] :=
-  If[SOURCELANGUAGE == "C",
-    {"/* SYNC: " <> name <> " */\n", "/* sync via schedule instead of CCTK_SyncGroup(cctkGH, \"", name, "\"); -cut- */\n"},
-    {"/* SYNC: " <> name <> " */\n", "/* sync via schedule instead of call CCTK_SyncGroup(i, cctkGH, \"", name, "\") -cut- */\n"}
-  ];
-
-
 
 equationLoop[eqs_, gfs_, shorts_, incs_, groups_, syncGroups_, pddefs_] :=
-  Module[{rhss, lhss, gfsInRHS, gfsInLHS, localGFs, localMap, eqs2, derivSwitch},
+  Module[{rhss, lhss, gfsInRHS, gfsInLHS, localGFs, localMap, eqs2,
+          derivSwitch, actualSyncGroups, code, syncCode},
 
     rhss = Map[#[[2]] &, eqs];
     lhss = Map[#[[1]] &, eqs];
@@ -445,7 +507,7 @@ equationLoop[eqs_, gfs_, shorts_, incs_, groups_, syncGroups_, pddefs_] :=
 
     eqs2 = ReplaceDerivatives[pddefs, eqs];
 
-   {InitialiseGridLoopVariables[derivSwitch],
+   code = {InitialiseGridLoopVariables[derivSwitch],
 
    GridLoop[
    {CommentedBlock["Assign local copies of grid functions",
@@ -472,14 +534,22 @@ equationLoop[eqs_, gfs_, shorts_, incs_, groups_, syncGroups_, pddefs_] :=
                    Map[AssignVariable[GridName[#], localName[#]] &, 
                        gfsInLHS]],
 
-    If[debugInLoop, Map[InfoVariable[GridName[#]] &, gfsInLHS], ""]}],
+    If[debugInLoop, Map[InfoVariable[GridName[#]] &, gfsInLHS], ""]}]
+   };
 
-    CommentedBlock["Synchronize the groups that have just been set",
+  lhsGroupNames    = containingGroups[gfsInLHS, groups];
+  actualSyncGroups = Intersection[lhsGroupNames, syncGroups];
 
-    lhsGroupNames = containingGroups[gfsInLHS, groups];
-    Print["Synchronizing groups: ", Intersection[lhsGroupNames, syncGroups]];
-    Map[syncGroup, Intersection[lhsGroupNames, syncGroups]]]
-   }];
+  If[Length@actualSyncGroups > 0,
+    Print["Synchronizing groups: ", actualSyncGroups];
+     syncCode = Map[syncGroup, actualSyncGroups];
+
+    AppendTo[code, CommentedBlock["Synchronize the groups that have just been set", syncCode]];
+];
+
+code
+];
+
 
 End[];
 

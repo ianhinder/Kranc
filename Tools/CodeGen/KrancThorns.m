@@ -1281,8 +1281,8 @@ Options[CreateTranslatorThorn] =
 
 CreateTranslatorThorn[groups_, optArgs___] :=
 
-Module[{options, dirName, thornName, cleanADMBaseRules,
-          baseImplementation, translatedToADMGroups, toEvolveSetgroups,
+Module[{after, baseImplementation, before, cleanADMBaseRules, dirName,
+          options, thornName, translatedToADMGroups, toEvolveSetgroups,
           translatedFromADMGroups, ThornList, TranslatorParameters,
           gridFunctions, shorthandDefinitions, shorthands, InGFs,
           OutGFs, GFs, RHSs, setgroups, translatorInCalculation,
@@ -1412,23 +1412,45 @@ scheduledStartup = {Name          -> thornName <> "_Startup",
                     Language      -> "C",
                     Comment       -> "create banner"};
 
+textLookup[s_, t_] :=  FlattenBlock@SpaceSeparated@lookup[s, t];
+
+
+before = If[mapContains[translatorInCalculation, Before],
+         " BEFORE (" <> textLookup[translatorInCalculation, Before] <> ") ",
+            ""];
+
+after  = If[mapContains[translatorInCalculation, After],
+            " AFTER (" <> textLookup[translatorInCalculation, After] <> ") ",
+            "" ];
+
 
 scheduledADMToEvolve  = {Name          -> lookup[namedTranslatorInCalculation, Name],
-                         SchedulePoint -> "at POSTINITIAL as ADMToEvolve",
+                         SchedulePoint -> "at POSTINITIAL as ADMToEvolve"  <> before <> after,
                          Comment       -> "ADMBase -> Evolution vars translation",
                          StorageGroups -> storageGroups,
                          Language      -> CodeGen`SOURCELANGUAGE,
                          SynchronizedGroups -> {} (* toEvolveSetgroups*)};
 
 
+before = If[mapContains[translatorOutCalculation, Before],
+            " BEFORE (" <> textLookup[translatorOutCalculation, Before] <> ") ",
+            "" ];
+
+
+after  = If[mapContains[translatorOutCalculation, After],
+            " AFTER (" <> textLookup[translatorOutCalculation, After] <> ") ",
+            "" ];
+
+
 scheduledEvolveToADM  = {Name    -> lookup[namedTranslatorOutCalculation, Name],
-                         SchedulePoint -> "at POSTSTEP as EvolveToADM",
+                         SchedulePoint -> "at POSTSTEP as EvolveToADM"  <> before <> after,
                          StorageGroups -> storageGroups,
-                         SynchronizedGroups -> {} (* {"ADMBase::metric", 
+                         SynchronizedGroups -> {} (* {"ADMBase::metric",
                                                 "ADMbase::curv"} *),
-		         Conditional   -> {Textual -> "translateToADM"},
+                         Conditional   -> {Textual -> "translateToADM"},
                          Language -> CodeGen`SOURCELANGUAGE,
                          Comment       -> "Evolution vars -> ADMBase translation"};
+
 
 scheduledFunctions = {scheduledStartup, scheduledADMToEvolve, scheduledEvolveToADM};
 

@@ -42,7 +42,7 @@ SystemNameDefault, SystemParentDirectory, ThornArrangement, ThornGroups,
 ThornImplementation,
 ThornName, ThornParameters, ThornType, Timelevels, TranslatorInCalculation,
 TranslatorOutCalculation, Type, UsedParameters, Value, Variables,
-VariableType, Visibility, WhereTrigger, InheritedImplementations, ZeroDimensions, Include, GuessTensorTypes};
+    VariableType, Visibility, WhereTrigger, InheritedImplementations, ZeroDimensions, Include, GuessTensorTypes, RHSGroups};
 
 (* used in interface to AEI Black Hole Excision Thorns *)
 {ExcisionGFs, exnormx, exnormy, exnormz};
@@ -70,6 +70,9 @@ CreateEvaluatorThorn::usage  =
 CreateTranslatorThorn::usage = 
 "create a Cactus thorn which translates variables beween ADMBase and a Kranc
 arrangement";
+CreateMPCharThorn::usage = 
+"create a Cactus thorn that provides information on the characteristics in a format suitable to interface to the
+AEIDevelopemt/MultiPatch thorn";
 CreateDifferencingThorn::usage = "";
 
 CreateThornList::usage       = "create a Cactus THORNLIST file from information produced by Create*Thorn functions";
@@ -167,6 +170,22 @@ CactusGroup[Thorns_, gr_] := Module[{newthorns, name},
 ];
 
 
+assembleRHSGroups[groups_?ListQ]:= Module[{rhsGroups},
+rhsGroups = Select[Flatten@groups, StringQ];
+rhsGroups = Select[rhsGroups, StringMatchQ[#, "*rhs"]& ];
+
+If[Length[Intersection[Map[ToString, Flatten@variablesFromGroups[rhsGroups, groups]],
+                       Map[ToString, Flatten@Map[addrhs, evolvedGFs]]  ]] == 0,
+    rhsGroups = Map[addrhs, evolvedGroups];,
+    Print["Taking RHS groups from argument list: ", rhsGroups];
+  ];
+
+rhsGroups
+];
+
+
+
+
 (* "constants" used to specify default options *)
 
 SystemNameDefault         = "myPDE";
@@ -201,6 +220,7 @@ Options[CreateMoLThorn] =
    IntParameters         -> {},
    SystemName            -> SystemNameDefault,
    CreateExcisionCode    -> False,
+   UseLSUSummationByParts -> False,
    EvolutionTimeLevels  -> 3,
    DeBug                 -> False,
    SystemParentDirectory -> ".", 
@@ -218,7 +238,7 @@ CreateMoLThorn[calculation_, groups_, optArgs___] :=
           opts, precompheaderName, primitiveGroups, realParameters, 
           selectBoundaryGroup, selectBoundaryVar, setterFileName, 
           genericFDImplementation, sourceFiles, sources, ThornList, thornName,
-          whatitevolves, ext, useFuns},
+          whatitevolves, ext, useFuns, provideFuns, useLSUSBP},
 
 Print["\n*** CreateMoLThorn ***"];
 
@@ -246,6 +266,7 @@ thornName          = lookupDefault[opts, ThornName, systemName <> "Evolve"];
 implementation     = lookupDefault[opts, Implementation, thornName];
 
 createExcisionCode =  lookup[opts, CreateExcisionCode];
+useLSUSBP          =  lookup[opts, UseLSUSummationByParts];
 evTimeLevels       =  lookup[opts, EvolutionTimeLevels];
 pddefs = lookupDefault[opts, PartialDerivatives, {}];
 
@@ -327,15 +348,7 @@ If[createExcisionCode, AppendTo[sourceFiles,  molexcisionName <> ".F90"] ];
 
 
 (* assemble RHS groups and namedCalc structure  *)
-
-rhsGroups = Select[Flatten@groups, StringQ];
-rhsGroups = Select[rhsGroups, StringMatchQ[#, "*rhs"]& ];
-
-If [Length[Intersection[ Map[ToString, Flatten@variablesFromGroups[rhsGroups, groups]],
-                         Map[ToString, Flatten@Map[addrhs, evolvedGFs]]  ]] == 0,
-  rhsGroups = Map[addrhs, evolvedGroups];,
-  Print["Taking RHS groups from argument list: ", rhsGroups];
-];
+rhsGroups = assembleRHSGroups@groups;
 
 evolvedGroupDefinitions = Map[groupFromName[#, groups] &, evolvedGroups];
 rhsGroupDefinitions = Map[evolvedGroupToRHSGroup[#, evolvedGroupDefinitions] &, evolvedGroups];
@@ -410,7 +423,8 @@ If[createExcisionCode,
 
 interface = 
   CreateInterface[implementation, inheritedImplementations, includeFiles, {}, 
-                  UsesFunctions -> useFuns];
+                  UsesFunctions     -> useFuns,
+                  ProvidesFunctions -> {}];
 
 
 (* SCHEDULE *)
@@ -429,9 +443,16 @@ scheduledGroups     = {{Name          -> "ApplyBCs",
                         Comment       -> "Apply boundary conditions "
                                       <> "controlled by thorn Boundary"}};
 
-scheduledFunctions  = {{Name          -> molregisterName,
+scheduledFunctions  = {{Name          -> thornName <> "_Startup",
+                        SchedulePoint -> "at STARTUP",
+                        Language      -> "C",
+                        Options       -> "meta",
+                        Comment       -> "create banner"},
+(* *)
+                       {Name          -> molregisterName,
                         SchedulePoint -> "in MoL_Register", 
                         Language      -> "C", 
+                        Options       -> "meta",
                         Comment       -> "Register Variables for MoL"},
 (* *)
                        {Name          -> calcrhsName,
@@ -443,10 +464,12 @@ scheduledFunctions  = {{Name          -> molregisterName,
                         SchedulePoint -> "in MoL_PostStep",
                         SynchronizedGroups -> evolvedGroups,
                         Language      -> "C",
+                        Options       -> "level", 
                         Comment       -> "apply boundary conditions"},
 (* *)
                        {Name          -> checkboundariesName,
                         SchedulePoint -> "at BASEGRID",
+                        Options       -> "meta",
                         Language      -> "C",
                         Comment       -> "check boundaries treatment"}
 };
@@ -733,7 +756,8 @@ CreateSetterThorn[calc_, groups_, optArgs___] :=
 Module[{after, allowedSetTimes, baseImplementation, baseParamsTrueQ, before, calcrhsName, debug,
         file, GFs, globalStorageGroups, implementation, implementations, intParameters,
         namedCalc, precompheaderName, realParameters, RHSs, setgroups, setTime,
-        ThornList, ext, include, genericFDImplementation, baseImp, numeq, grepSYNC},
+        ThornList, ext, include, genericFDImplementation, baseImp, numeq, grepSYNC, scheduledStartup,
+        sheduledINITIAL, scheduledPOSTSTEP},
 
     Print["\n*** CreateSetterThorn ***"];
 
@@ -898,18 +922,22 @@ scheduledGroups     = {};
 scheduledFunctions  = {};
 globalStorageGroups = Map[simpleGroupStruct[#, 1]&, setgroups];
 
+scheduledStartup = {Name          -> thornName <> "_Startup",
+                    SchedulePoint -> "at STARTUP",
+                    Language      -> "C",
+                    Options       -> "meta",
+                    Comment       -> "create banner"};
 
-scheduledINITIAL      = {Name               -> calcrhsName,
-                         SchedulePoint      -> "AT INITIAL" <> before <> after,
-                         SynchronizedGroups -> grepSYNC,
-                         Language           -> CodeGen`SOURCELANGUAGE, 
-                         
-                         Conditional        -> If[setTime == "initial_and_poststep", 
+
+scheduledINITIAL  = {Name               -> calcrhsName,
+                     SchedulePoint      -> "AT POSTINITIAL" <> before <> after,
+                     SynchronizedGroups -> grepSYNC,
+                     Language           -> CodeGen`SOURCELANGUAGE, 
+                     Conditional        -> If[setTime == "initial_and_poststep", 
                                                     {Textual -> "set_initial_data"}, 
                                                     {}
                                                  ],
-                                              
-                         Comment            -> "set initial values"};
+                     Comment            -> "set initial values"};
 
 scheduledPOSTSTEP  = {Name               -> calcrhsName,
                       SchedulePoint      -> "in MoL_PostStep" <> before <> after, 
@@ -1143,6 +1171,14 @@ newGroupScheduleStructure[{groupName_, calc_}] :=
 
 scheduledFunctions = Map[newGroupScheduleStructure, augmentedEvaluationDefinitions];
 
+AppendTo[scheduledFunctions, {Name          -> thornName <> "_Startup",
+                              SchedulePoint -> "at STARTUP",
+                              Language      -> "C",
+                              Options       -> "meta",
+                              Comment       -> "create banner"}
+        ];
+
+
 Print["TriggerGroups: ", evaluatedGroupNames];
 
 globalStorageGroups =
@@ -1339,38 +1375,52 @@ If[debug,
 
 (* INTERFACE *)
 
-tensorType[group_] := Module[{comps, type},
+tensorType[group_] := Module[{comps, type, tmetric, tweight, tspecial},
     comps = Length@group[[2]]  ;
+ 
+    If[   StringQ@Global`UserSetTensorWeight[group[[1]]], 
+       tweight = " tensorweight=" <> Global`UserSetTensorWeight[group[[1]]], 
+       tweight = ""];
+
+
+    If[    StringQ@Global`UserSetTensorSpecial[group[[1]]],
+       tspecial = " tensorspecial=\"" <> Global`UserSetTensorSpecial[group[[1]]] <> "\"", 
+       tspecial = ""];
+
+    If[   StringQ@Global`UserSetTensorMetric[group[[1]]],
+       tmetric = " tensormetric=\"" <> Global`UserSetTensorMetric[group[[1]]] <> "\"", 
+       tmetric = ""];
+
+    type = tType@group;
+    Print["Group ", group[[1]],  " marked as tensor type " <> type];
     
-    If[comps == 1, type = "scalar",
-      type = tType[group]];
-    
-    " tags='tensortypealias=\"" <>type <> "\" tensormetric=\"" <> implementation <> "::h\"'"
+    " tags='tensortypealias=\"" <> type <> "\"" <> tmetric <> tweight <> tspecial <>"'"
     ];
 
 
-tType[group_] := Module[{comps, baseNameLen, indices, type},
-    comps = Length@group[[2]]  ;
-    
-    baseNameLen = StringLength@group[[1]];
-    
-    indices = Map[StringDrop[#, baseNameLen] &, Map[ToString, group[[2]]]];
-    
-    type = "scalar";
-    
-    If [Complement[
-          indices, {"11", "21", "22", "31", "32", "33", "12", "13", 
-            "23"}] == {}, type = "DD"];
-    If [Complement[indices, {"11", "21", "22", "31", "32", "33"}] == {}, 
-      type = "DD_sym"];
-    
-    If [Complement[indices, {"11", "12", "22", "13", "23", "33"}] == {}, 
-      type = "UU_sym"];
-    
-    If [Complement[indices, {"1", "2", "3"}] == {}, type = "U"];
-    
+tType[group_] := Module[{comps, indices, type},
+
+    comps = Map[ToString,     group[[2]] ] ;
+
+    indices = Map[BreakTensorComponentName, comps];
+    indices = Map[#[[2]] &, indices];
+
+    type = "scalar"; (* the default *)
+
+    If [Sort@indices == Sort@{"11", "21", "22", "31", "32", "33", "12", "13", "23"}, type = "DD"];
+    If [Sort@indices == Sort@{"11", "21", "22", "31", "32", "33"},                   type = "DD_sym"];
+    If [Sort@indices == Sort@{"33", "23", "22", "13", "12", "11"},                   type = "UU_sym"];
+
+
+    If [indices == {"1", "2", "3"}, type = "D"];
+    If [indices == {"3", "2", "1"}, type = "U"];
+
+
+    If[ValueQ@Global`UserSetTensorType[x], type = Global`UserSetTensorType[group[[1]]] ];
+
     type
     ];
+
 
 completeEvolvedGroupStruct[group_] := 
   {Name -> First@group, VariableType -> "CCTK_REAL", 
@@ -1378,16 +1428,19 @@ completeEvolvedGroupStruct[group_] :=
    If[lookupDefault[opts, GuessTensorTypes, False],
       GridType -> "GF" <> tensorType[group],
       GridType -> "GF"],
-   Comment -> First@group, Visibility -> "public", Variables -> Last@group};
+   Comment -> First@group, Visibility -> "public", 
+   Variables -> SortTensorComponentsCactusStyle[Map[ToString, Last@group], tType@group]};
 
 completePrimitiveGroupStruct[group_] := 
   {Name -> First@group, VariableType -> "CCTK_REAL",
-   Timelevels -> 1,  GridType -> "GF tags='Prolongation=\"None\"'",
-   Comment -> First@group, Visibility -> "public", Variables -> Last@group};
+   Timelevels -> 1, 
+   GridType -> "GF" <> StringReplace[tensorType[group], "tags='" -> "tags='Prolongation=\"None\" "],
+   Comment -> First@group, Visibility -> "public",
+   Variables -> SortTensorComponentsCactusStyle[Map[ToString, Last@group], tType@group]};
 
-evolvedBlock = Map[completeEvolvedGroupStruct[groupFromName[#, allGroups]] &, evolvedGroupNames];
+evolvedBlock   = Map[completeEvolvedGroupStruct[  groupFromName[#, allGroups]] &, evolvedGroupNames];
 primitiveBlock = Map[completePrimitiveGroupStruct[groupFromName[#, allGroups]] &, localPrimitiveGroupNames];
-rhsBlock = Map[completePrimitiveGroupStruct[groupFromName[#, allGroups]] &, rhsGroupNames];
+rhsBlock       = Map[completePrimitiveGroupStruct[groupFromName[#, allGroups]] &, rhsGroupNames];
 
 groupStructures = Join[evolvedBlock, primitiveBlock, rhsBlock];
 
@@ -1395,22 +1448,23 @@ inheritedImplementations = Join[{"Grid"},lookupDefault[opts, InheritedImplementa
 includeFiles             = {};
 interface = CreateInterface[implementation, inheritedImplementations, 
                             includeFiles, groupStructures];
-
 (* SCHEDULE *)
 scheduledGroups = {};
 storageGroups   = {};
-If[createExcisionCode, storageGroups = {{Group -> "ExcisionNormals",
-                                                  Timelevels -> 1}}];
+If[createExcisionCode, storageGroups = {{Group      -> "ExcisionNormals",
+                                         Timelevels -> 1}}];
 
 
 scheduledFunctions = {{Name          -> thornName <> "_Startup",
                        SchedulePoint -> "at STARTUP", 
                        Language      -> "C",
+                       Options       -> "meta",
                        Comment       -> "create banner"},
 
                       {Name          -> thornName <> "_RegisterSymmetries",
                        SchedulePoint -> "at BASEGRID", 
                        Language      -> "C",
+                       Options       -> "meta",
                        Comment       -> "register symmetries"}};
 
 schedule = CreateSchedule[storageGroups, scheduledGroups, scheduledFunctions];
@@ -1656,6 +1710,7 @@ If[debug, Print["storageGroups: ", storageGroups]];
 scheduledStartup = {Name          -> thornName <> "_Startup",
                     SchedulePoint -> "at STARTUP",
                     Language      -> "C",
+                    Options       -> "meta",
                     Comment       -> "create banner"};
 
 textLookup[s_, t_] :=  FlattenBlock@SpaceSeparated@lookup[s, t];
@@ -1671,7 +1726,7 @@ after  = If[mapContains[translatorInCalculation, After],
 
 
 scheduledADMToEvolve  = {Name          -> lookup[namedTranslatorInCalculation, Name],
-                         SchedulePoint -> "at INITIAL as ADMToEvolve"  <> before <> after,
+                         SchedulePoint -> "at POSTINITIAL as ADMToEvolve"  <> before <> after,
                          Comment       -> "ADMBase -> Evolution vars translation",
                          StorageGroups -> storageGroups,
                          Language      -> CodeGen`SOURCELANGUAGE,
@@ -1772,6 +1827,291 @@ Append[ThornList,
         ThornParameters    -> SetParameters,
         ThornType          -> "Translate"}]
 ];
+
+
+(****************************************************************************)
+(*         penalty multipatch characteristics thorn                         *)
+(****************************************************************************)
+
+Options[CreateMPCharThorn] = 
+ (* The following have nontrivial defaults, so should not be included
+      here: ThornName, Implementation, SystemDescription *)
+  {RealBaseParameters    -> {},
+   IntBaseParameters     -> {},
+   RealParameters        -> {},
+   IntParameters         -> {},
+   SystemName            -> SystemNameDefault,
+   CreateExcisionCode    -> False,
+   EvolutionTimeLevels  -> 3,
+   DeBug                 -> True,
+   SystemParentDirectory -> ".", 
+   PrimitiveGroups       -> {}};
+
+CreateMPCharThorn[calculations_, groups_, optArgs___] :=
+  Module[{baseParamsTrueQ, boundaryParam, calcrhsName,
+          debug, evTimeLevels, file, globalStorageGroups, implementation, 
+          intParameters, ListOfEvolvedGFs, ListOfEvolvedGroups, 
+          ListOfPrimitiveGFs, ListOfPrimitiveGroups, ListOfRHSGroups, 
+          opts, precompheaderName, primitiveGroups, realParameters, 
+          selectBoundaryGroup, selectBoundaryVar, setterFileName, 
+          genericFDImplementation, sourceFiles, sources, ThornList, thornName,
+          whatitevolves, ext, useFuns, provideFuns, systemDesc, prim2char, char2prim,
+          namedCharStruct, calculation},
+
+Print["\n*** CreateMPCharThorn ***"];
+
+(* processs optional arguments *)
+
+opts = GetOptions[CreateMPCharThorn, {optArgs}];
+
+(* These should be the same for all the thorns *)
+parentDirectory    = lookup[opts, SystemParentDirectory];
+systemName         = lookup[opts, SystemName];
+systemDescription  = lookupDefault[opts, SystemDescription, systemName];
+
+baseImplementation = systemName <> "Base";
+
+(* thorn specific *)
+realParameters     = lookup[opts, RealParameters];
+intParameters      = lookup[opts, IntParameters];
+realBaseParameters = lookup[opts, RealBaseParameters];
+intBaseParameters  = lookup[opts, IntBaseParameters];
+allParameters = Join[realParameters, intParameters, realBaseParameters, intBaseParameters];
+
+primitiveGroups    = lookup[opts, PrimitiveGroups];
+
+thornName          = lookupDefault[opts, ThornName, systemName <> "Evolve"];
+implementation     = lookupDefault[opts, Implementation, thornName];
+
+evTimeLevels       =  lookup[opts, EvolutionTimeLevels];
+pddefs = lookupDefault[opts, PartialDerivatives, {}];
+
+(* Find the evolved groups from the calculation *)
+evolvedGFs    = Cases[calculations, dot[x_] -> x, Infinity];
+evolvedGroups = containingGroups[evolvedGFs, groups];
+
+(* All the variables in all the groups listed as "primitive" by the user *)
+primitiveGFs = Flatten[Map[variablesInGroup[#, groups] &, primitiveGroups],1];
+
+
+debug = lookup[opts, DeBug];
+If[debug,
+   Print["Debugging switched on"],
+   Print["Debugging switched off"]
+ ];
+
+If[debug,
+   Print["evolvedGroups   == ", evolvedGroups];
+   Print["evolvedGFs      == ", evolvedGFs];
+   Print["primitiveGroups == ", primitiveGroups];
+   Print["primitiveGFs    == ", primitiveGFs];
+ ];
+
+(* define directories and create if needed *)
+arrangementDirectory = parentDirectory <> "/" <> systemName;
+
+EnsureDirectory[parentDirectory];
+EnsureDirectory[arrangementDirectory];
+
+(* create parameter, GF and Groups lists *)
+baseParamsTrueQ = Length@realBaseParameters + Length@intBaseParameters > 0;
+
+
+(* the list of thorns = return argument! *)
+
+ThornList = {{ThornName -> "GenericFD", ThornArrangement -> "KrancNumericalTools",
+              ThornGroups -> {},
+              ThornParameters -> {}, ThornType -> "External"},
+(* *)
+              {ThornName -> "CoordBase", ThornArrangement -> "CactusBase", ThornGroups -> {},
+              ThornParameters -> {}, ThornType -> "External"},
+(* *)
+              {ThornName -> "SymBase", ThornArrangement -> "CactusBase", ThornGroups -> {},
+              ThornParameters -> {}, ThornType -> "External"},
+(* *)
+              {ThornName -> "CartGrid3D", ThornArrangement -> "CactusBase", ThornGroups -> {},
+              ThornParameters -> {}, ThornType -> "External"},
+(* *)
+              {ThornName -> "SpaceMask", ThornArrangement -> "CactusEinstein", ThornGroups -> {},
+              ThornParameters -> {}, ThornType -> "External"},
+(* *)
+              {ThornName -> "MoL", ThornArrangement -> "CactusBase", ThornGroups -> {},
+              ThornParameters -> {}, ThornType -> "External"},
+(* *)
+              {ThornName -> "NaNChecker", ThornArrangement -> "CactusUtils", ThornGroups -> {},
+	       ThornParameters -> {}, ThornType -> "External"},
+(* *)
+              {ThornName -> "MultiPatch", ThornArrangement -> "AEIDevelopment", ThornGroups -> {},
+	       ThornParameters -> {}, ThornType -> "External"},
+(* *)
+              {ThornName -> "SummationByParts", ThornArrangement -> "AEIDevelopment", ThornGroups -> {},
+	       ThornParameters -> {}, ThornType -> "External"}
+};
+
+(* define how we want to call files and functions *)
+setterFileName   = thornName <> "_setCharInfo";
+precompheaderName = "precomputations.h";
+
+sourceFiles = {setterFileName <> ".c", StartupName <> ".c"};
+
+(* assemble RHS groups *)
+rhsGroups = assembleRHSGroups@groups;
+Print["RHSGroups:\n", rhsGroups];
+
+evolvedGroupDefinitions = Map[groupFromName[#, groups] &, evolvedGroups];
+
+namedCharStruct = {Name       -> thornName, 
+                   Groups     -> groups,
+                   EvolvedGFs -> Map[qualifyGFName[#, groups, baseImplementation]& , evolvedGFs],
+                   RHSGroups  -> rhsGroups};
+
+(* create C & F90 source files for characteristic info *)
+charDescSource = CreateMPCharSource[namedCharStruct, debug];
+
+(* INTERFACE *)
+
+inheritedImplementations = Join[{baseImplementation, "Grid", "MultiPatch", "SummationByParts",
+                            "GenericFD"}, lookupDefault[opts, InheritedImplementations, {}]];
+
+includeFiles             = {"Boundary.h", "GenericFD.h"};
+
+systemDesc =
+  {Name      -> "Multipatch_SystemDescription",
+   Type      -> "FUNCTION",
+   With      -> thornName <> "_Multipatch_SystemDescription",
+   ArgString -> "CCTK_POINTER_TO_CONST IN cctkGH, \
+         CCTK_INT IN nvars,               \
+         CCTK_INT ARRAY OUT prim,         \
+         CCTK_INT ARRAY OUT rhs,          \
+         CCTK_REAL OUT sigma)"};
+
+char2prim =
+  {Name      -> "Multipatch_Char2Prim",
+   Type      -> "FUNCTION",
+   With      -> thornName <> "_Multipatch_Char2Prim",
+   ArgString -> "CCTK_POINTER_TO_CONST IN cctkGH, \
+         CCTK_INT IN dir,                      \
+         CCTK_INT IN face,                     \
+         CCTK_REAL ARRAY IN base,              \
+         CCTK_INT ARRAY IN lbnd,               \
+         CCTK_INT ARRAY IN lsh,                \
+         CCTK_INT IN rhs_flag,                 \
+         CCTK_INT IN num_modes,                \
+         CCTK_POINTER_TO_CONST ARRAY IN modes"};
+
+prim2char =
+  {Name      -> "Multipatch_Prim2Char",
+   Type      -> "FUNCTION",
+   With      -> thornName <> "_Multipatch_Prim2Char",
+   ArgString -> "CCTK_POINTER_TO_CONST IN cctkGH, \
+         CCTK_INT IN dir,                 \
+         CCTK_INT IN face,                \
+         CCTK_REAL ARRAY IN base,         \
+         CCTK_INT ARRAY IN lbnd,          \
+         CCTK_INT ARRAY IN lsh,           \
+         CCTK_INT IN rhs_flag,            \
+         CCTK_INT IN num_modes,           \
+         CCTK_POINTER ARRAY IN modes,     \
+         CCTK_POINTER ARRAY IN speeds"};
+
+useFuns = {};
+provideFuns = {systemDesc, prim2char, char2prim};
+
+interface = 
+  CreateInterface[implementation, inheritedImplementations, includeFiles, {}, 
+                  UsesFunctions     -> useFuns,
+                  ProvidesFunctions -> provideFuns];
+
+
+(* SCHEDULE *)
+globalStorageGroups = {};
+
+scheduledGroups     = {};
+
+scheduledFunctions  = {{Name          -> thornName <> "_Startup",
+                        SchedulePoint -> "at STARTUP",
+                        Language      -> "C",
+                        Options       -> "meta",
+                        Comment       -> "create banner"}};
+
+schedule = CreateSchedule[globalStorageGroups, scheduledGroups, scheduledFunctions];
+
+
+(* PARAM *)
+
+nEvolved   = Length[evolvedGFs];
+nPrimitive = Length[primitiveGFs];
+
+newParams = {};
+
+genericFDImplementation = 
+{Name -> "GenericFD",
+ UsedParameters -> {{Name -> "stencil_width",    Type -> "CCTK_INT"},
+                    {Name -> "stencil_width_x",  Type -> "CCTK_INT"},
+                    {Name -> "stencil_width_y",  Type -> "CCTK_INT"},
+                    {Name -> "stencil_width_z",  Type -> "CCTK_INT"}}};
+
+baseImp = 
+  {Name -> baseImplementation, 
+   UsedParameters -> 
+     Join[Map[implementationRealParamStruct, realBaseParameters],
+          Map[implementationIntParamStruct,  intBaseParameters]]};
+
+If[baseParamsTrueQ,
+   implementations = {genericFDImplementation, baseImp},
+   implementations = {genericFDImplementation}];
+
+Map[AppendTo[newParams, #]&,
+          Flatten[{Map[completeRealParamStruct, realParameters],
+                   Map[completeIntParamStruct,  intParameters]}, 1]];
+
+paramspec = {Implementations -> implementations,
+             NewParameters -> newParams};
+
+param = CreateParam[paramspec];
+
+
+(* STARTUP  <> ": set RHSs for MoL" *)
+startup = CreateStartupFile[thornName, thornName];
+
+(* MAKEFILE *)
+make = CreateMakefile[sourceFiles];
+
+(* CREATE THORN *)
+
+(* Write the differencing header file *)
+diffHeader = CreateDifferencingHeader[pddefs, lookupDefault[opts, ZeroDimensions, {}]];
+
+
+sources =  {
+            {Filename -> StartupName            <> ".c",   Contents -> startup}, 
+            {Filename -> setterFileName         <> ".c",   Contents -> charDescSource}, 
+            {Filename -> precompheaderName,                Contents -> precompheader},
+                         {Filename -> "Differencing.h",    Contents -> diffHeader}
+};
+
+thornspec = {Name      -> thornName, 
+             Directory -> arrangementDirectory,
+	     Interface -> interface, 
+             Schedule  -> schedule, 
+             Param     -> param, 
+             Makefile  -> make,
+             Sources   -> sources
+};
+
+CreateThorn[thornspec];
+
+Print["Finished creating Multipatch Characteristics thorn"];
+
+Append[ThornList,
+       {ThornName          ->  thornName,
+	ThornImplementation -> implementation, 
+        ThornArrangement   ->  systemName,
+        ThornGroups        ->  {}, 
+        ThornParameters    ->  {"MISSING"},
+        ThornType          ->  "Evolve"}]			    
+];
+
 
 
 (****************************************************************************)

@@ -16,7 +16,7 @@ BeginPackage["sym`"];
 {Amplitude, NoiseAmp, NoiseGroups};
 
 {IDSpec,  IDSettings};
-{EvolutionSpec,  EvolutionSettings};
+{EvolutionSpec,  EvolutionSettings, IntegratorSettings};
 {EvaluationSpec, EvaluationSettings};
 
 {NumDifferentiations};
@@ -331,7 +331,7 @@ Module[{},
 ] 
 
 
-numericalGridBlock[sw_] :=
+numericalGridBlock[sw_,evolutionSpec_] :=
 
 Module[{ActiveThorns},
 
@@ -345,11 +345,8 @@ ActiveThorns = "MoL GenericFD";
 "ActiveThorns = \"" <> ActiveThorns <> "\"\n",
 
 "GenericFD::stencil_width = " <> ToString@sw <> "\n",
-
-"methodoflines::ode_method    = \"icn\"",
-"# methodoflines::mol_intermediate_steps = 3",
-"\n",
-
+"",
+lookup[evolutionSpec,IntegratorSettings],
 ""} 
 ] 
 
@@ -464,7 +461,8 @@ Options[CreateParfile] = {Name                    -> "MyTest",
                                   IDSettings   -> {"# no parameters"}},
                           EvolutionSpec           -> 
                                  {ActiveThorns      -> {},
-                                  EvolutionSettings -> {"# no parameters"}},
+                                  EvolutionSettings -> {"# no parameters"},
+                                  IntegratorSettings -> {"# no parameters"}},
                           EvaluationSpec          -> 
                                  {ActiveThorns       -> {},
                                   EvaluationSettings -> {"# no parameters"}},
@@ -486,7 +484,8 @@ Options[CreateRobustTest] = {Name                   -> "MyFormulation",
                              IDSpec                 -> {ActiveThorns -> {},
                                                         IDSettings   -> {}},
                              EvolutionSpec          -> {ActiveThorns -> {},
-                                                        EvolutionSettings -> {}},
+                                                        EvolutionSettings -> {},
+                                                        IntegratorSettings -> {"# no parameters"}},
                              EvaluationSpec         -> {ActiveThorns -> {},
                                                         EvaluationSettings -> {}},
                              StencilWidth           -> 1,
@@ -509,7 +508,8 @@ Options[CreateRobust2DTest] = {Name                   -> "MyFormulation",
                              IDSpec                 -> {ActiveThorns -> {},
                                                         IDSettings   -> {}},
                              EvolutionSpec          -> {ActiveThorns -> {},
-                                                        EvolutionSettings -> {}},
+                                                        EvolutionSettings -> {},
+                                                        IntegratorSettings -> {"# no parameters"}},
                              EvaluationSpec         -> {ActiveThorns -> {},
                                                         EvaluationSettings -> {}},
                              StencilWidth           -> 1,
@@ -535,7 +535,8 @@ Options[CreateGaugeWaveTest] = {Name                -> "MyFormulation",
                              IDSpec                 -> {ActiveThorns -> {},
                                                         IDSettings   -> {}},
                              EvolutionSpec          -> {ActiveThorns -> {},
-                                                        EvolutionSettings -> {}},
+                                                        EvolutionSettings -> {},
+                                                        IntegratorSettings -> {"# no parameters"}},
                              EvaluationSpec         -> {ActiveThorns -> {},
                                                         EvaluationSettings -> {}},
                              StencilWidth           -> 1,
@@ -562,7 +563,8 @@ Options[CreateLinearWaveTest] = {Name                -> "MyFormulation",
                              IDSpec                 -> {ActiveThorns -> {},
                                                         IDSettings   -> {}},
                              EvolutionSpec          -> {ActiveThorns -> {},
-                                                        EvolutionSettings -> {}},
+                                                        EvolutionSettings -> {},
+                                                        IntegratorSettings -> {"# no parameters"}},
                              EvaluationSpec         -> {ActiveThorns -> {},
                                                         EvaluationSettings -> {}},
                              StencilWidth           -> 1,
@@ -588,7 +590,8 @@ Options[CreatePolarizedGowdyTest] = {Name           -> "MyFormulation",
                              IDSpec                 -> {ActiveThorns -> {},
                                                         IDSettings   -> {}},
                              EvolutionSpec          -> {ActiveThorns -> {},
-                                                        EvolutionSettings -> {}},
+                                                        EvolutionSettings -> {},
+                                                        IntegratorSettings -> {"# no parameters"}},
                              EvaluationSpec         -> {ActiveThorns -> {},
                                                         EvaluationSettings -> {}},
                              StencilWidth           -> 1,
@@ -666,7 +669,7 @@ par = Flatten@{whoWhen[],
        periodicGridBlock[gridSpec],
        noiseBlock[$NoiseAmp, $NoiseGroups],
        ADMcouplingGridBlock[],
-       numericalGridBlock[$StencilWidth],
+       numericalGridBlock[$StencilWidth,evolutionSpec],
        exactGridBlock[$Type, $amp],
        initialDataBlock[idSpec],
        evolutionBlock[evolutionSpec],

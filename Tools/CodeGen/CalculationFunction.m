@@ -152,6 +152,7 @@ assignVariableFromExpression[dest_, expr_] := Module[{tSym, cleanExpr, code},
       ];
 
       code = StringReplace[code, "=="          -> " = "];
+      code = StringReplace[code, "BesselJ"-> "gsl_sf_bessel_Jn"];
       code = StringReplace[code, ToString@tSym -> "cctk_time"];
       
       {code}];
@@ -368,8 +369,8 @@ CreateCalculationFunction[calc_, debug_] :=
   allSymbols = calculationSymbols[cleancalc];
   knownSymbols = Join[gfs, shorts, parameters, {t, Pi, E}];
 
-  Print["allSymbols == ", allSymbols];
-  Print["knownSymbols == ", knownSymbols];
+(*  Print["allSymbols == ", allSymbols];
+  Print["knownSymbols == ", knownSymbols];*)
 
   unknownSymbols = Complement[allSymbols, knownSymbols];
 

@@ -39,7 +39,7 @@ Schedule, Sources, Makefile, Filename, Contents, ThornName,
 BaseImplementation, EvolvedGFs, PrimitiveGFs, Groups, Calculation,
 GridFunctions, Shorthands, Equations, Parameter, Value, UsesFunctions,
 ArgString, Conditional, D1, D2, D3, D11, D22, D33, D21, D31, D32,
-Textual, TriggerGroups, Include};
+Textual, TriggerGroups, Include, RHSGroups};
 
 {ExcisionGFs};
 
@@ -61,6 +61,7 @@ CreateMoLRegistrationSource::usage = "";
 CreateMoLBoundariesSource::usage = "";
 CreateMoLExcisionSource::usage = "";
 CreateSetterSource::usage = "";
+CreateMPCharSource::usage = "";
 CreatePrecompMacros::usage = "";
 CreateStartupFile::usage = "";
 
@@ -254,6 +255,15 @@ If[lookup[f, Type] == "SUBROUTINE",
 ];
 
 
+providesFunction[f_] :=
+If[lookup[f, Type] == "SUBROUTINE",
+{lookup[f, Type], " ", lookup[f, Name], "(", lookup[f,ArgString], ")\n",
+   "PROVIDES FUNCTION ", lookup[f, Name], "\n\n"},
+{lookup[f, Type], " FUNCTION ", lookup[f, Name], "(", lookup[f,ArgString], ")\n",
+   "PROVIDES FUNCTION ", lookup[f, Name], "\n\n"}
+];
+
+
 (* Given the name of an implementation, a list of implementation names
    that we inherit from, a list of include files to mention, and a
    list of group structures as defined above, return a CodeGen block
@@ -271,7 +281,9 @@ CreateInterface[implementation_, inheritedImplementations_, includeFiles_,
    Map[{"USES INCLUDE: ", #, "\n"} &, includeFiles],
    "\n",
 
-   Map[usesFunction, lookupDefault[{opts}, UsesFunctions, {}]],
+   Map[usesFunction,     lookupDefault[{opts}, UsesFunctions, {}]],
+
+   Map[providesFunction, lookupDefault[{opts}, ProvidesFunctions, {}]],
 
 
    NewlineSeparated[Map[FlattenBlock[interfaceGroupBlock[#]] &, groups]]};
@@ -296,6 +308,7 @@ CreateInterface[implementation_, inheritedImplementations_, includeFiles_,
   {Name -> "ADM_BSSN_CalcRHS_fn", SchedulePoint -> "in POSTINITIAL before ExternalLapse", 
    Language -> "C", Comment -> "", 
    (optional) SynchronizedGroups -> {ADM_BSSN_gamma, ...}, 
+   (optional) Options -> {"meta", "level", ...},
    (optional) StorageGroups -> {Group -> "mygroup", Timelevels -> 1},
    (optional) Conditional -> {Parameter -> "", Value -> ""}}
 
@@ -318,10 +331,15 @@ scheduleUnconditionalFunction[spec_] :=
   {"schedule ", lookup[spec, Name], " ", lookup[spec,SchedulePoint], "\n",
    SuffixedCBlock[
      {If[lookup[spec, Language] == "None", "# no language specified\n",
-                                   "LANG: " <> lookup[spec, Language] <> "\n\n"],
+                                   "LANG: " <> lookup[spec, Language] <> "\n"],
+
+      If[lookupDefault[spec, Options, ""] != "",
+         "\nOPTIONS: " <> lookup[spec, Options] <> "\n",
+         "\n"],
 
       (* Insert a SYNC line for each group we want to synchronize. *)
-      Map[{"SYNC: ", #, "\n"} &, lookupDefault[spec, SynchronizedGroups, {}]],
+      Map[{"SYNC: ", #, "\n"}     &, lookupDefault[spec, SynchronizedGroups, {}]],
+
 
       Map[{"TRIGGERS: ", #, "\n"} &, lookupDefault[spec, TriggerGroups, {}]],
 
@@ -560,8 +578,6 @@ tmp
 (* ------------------------------------------------------------------------
    MoL Boundaries
    ------------------------------------------------------------------------ *)
-(* currently this only does periodic boundaries, i.e. provides
-   a place for SYNCing evolution variables *)
 
 (* boundaries spec = {Groups -> {trK, h11, ...},
                        BaseImplementation -> "ADMBase", ThornName -> "ADMMoL"} *)
@@ -575,7 +591,7 @@ To simplify scheduling, testing, etc. the 3 steps are currently applied in separ
 
 (* boundary conditions may have to be applied per GF or goup ; per group
 should be more efficient, but sometimes there will be a GF-dependent parameter,
-e.g. for radiation BC's *)
+e.g. for radiation BCs *)
 
 cleanCPP[x_] := Map[StringReplace[FlattenBlock[#],  "  #" -> "#"]&, x];
 
@@ -911,6 +927,250 @@ CodeGen`SOURCELANGUAGE = currentlang;
 body
 ];
 
+
+
+(* ------------------------------------------------------------------------ *)
+(*   set Characteristic Info for MultiPatch                                 *)
+(* ------------------------------------------------------------------------ *)
+
+(* boundaries spec = {TO BE DEFINED} *)
+
+charInfoFunction[type_, spec_, debug_]:= Module[{funcName, argString, headerComment1, headerComment2,
+                                                 thornName, gfs, rhs, groups, tmp, lang, numvars, tab},
+
+  gfs = Map[ToString, lookup[spec, EvolvedGFs]];
+  rhs = Map[AddSuffix[#, "rhs"]&, gfs];
+
+  Print["createCharInfoFunction with type:\n", type];
+
+  thornName = lookup[spec, Name];
+ 
+  numvars = Length@gfs;
+
+  groups = Map[unqualifiedGroupName, lookup[spec, Groups]];
+
+  tab = "\t\t\t";
+
+If[type == "P2C", 
+
+   funcName = lookup[spec,Name] <> "_MultiPatch_Prim2Char";
+   argString =  "CCTK_POINTER_TO_CONST const cctkGH_,\n"       <>
+        tab <>  "CCTK_INT const dir,\n"                        <>
+        tab <>  "CCTK_INT const face,\n"                       <>
+        tab <>  "CCTK_REAL const * restrict const base,\n"     <>
+        tab <>  "CCTK_INT const * restrict const off,\n"       <>
+        tab <>  "CCTK_INT const * restrict const len,\n"       <>
+        tab <>  "CCTK_INT const rhs_flag,\n"                   <>
+        tab <>  "CCTK_INT const num_modes,\n"                  <>
+        tab <>  "CCTK_POINTER const * restrict const modes,\n" <>
+        tab <>  "CCTK_POINTER const * restrict const speeds";
+
+   headerComment1 = "/* translate from primary to characteristic variables           */\n";
+   headerComment2 = "/* Output:                                                      */\n" <>
+                    "/*       CCTK_POINTER ARRAY IN modes  ... array if char. vars   */\n" <>    
+                    "/*       CCTK_POINTER ARRAY IN speeds ... array of char. speeds */\n\n";
+];
+
+
+If[type == "C2P", 
+
+   funcName = lookup[spec,Name] <> "_MultiPatch_Char2Prim";
+   argString =  "CCTK_POINTER_TO_CONST const cctkGH_,\n"       <>
+        tab <>  "CCTK_INT const dir,\n"                        <>
+        tab <>  "CCTK_INT const face,\n"                       <>
+        tab <>  "CCTK_REAL const * restrict const base,\n"     <>
+        tab <>  "CCTK_INT const * restrict const off,\n"       <>
+        tab <>  "CCTK_INT const * restrict const len,\n"       <>
+        tab <>  "CCTK_INT const rhs_flag,\n"                   <>
+        tab <>  "CCTK_INT const num_modes,\n"                  <>
+        tab <>  "CCTK_POINTER_TO_CONST const * restrict const modes";
+
+   headerComment1 = "/* translate from characteristic to primary variables          */\n";
+   headerComment2 = "/* Output:                                                     */\n" <>  
+                    "/*       CCTK_POINTER ARRAY IN modes   ... array of char. vars */\n\n";
+];
+
+
+
+
+code = {
+
+DefineFunction[funcName, "CCTK_INT", argString,
+
+{headerComment1,
+"/* Input:                                                         */\n",
+"/*       CCTK_POINTER_TO_CONST cctkGH   ... CCTK grid hierarchy   */\n",
+"/*       CCTK_INT              dir      ...              */\n",
+"/*       CCTK_INT              face     ...              */\n",
+"/*       CCTK_REAL ARRAY       base     ...              */\n",
+"/*       CCTK_INT ARRAY        lbnd     ...              */\n",
+"/*       CCTK_INT ARRAY        lsh      ...              */\n",
+"/*       CCTK_INT              rhs_flag ...              */\n",
+"/*       CCTK_INT              num_modes...              */\n",
+headerComment2,
+"{\n",
+"  cGH const * restrict const cctkGH = cctkGH_;\n",
+"  DECLARE_CCTK_ARGUMENTS;\n",
+"  DECLARE_CCTK_PARAMETERS;\n\n",
+
+"  CCTK_REAL const * restrict prims["   <> ToString@numvars <> "];\n",
+"  CCTK_REAL       * restrict chars["   <> ToString@numvars <> "];\n",
+"  CCTK_REAL       * restrict cspeeds[" <> ToString@numvars <> "];\n",
+
+"  CCTK_REAL normal[3], normal_base[3];\n",
+"  CCTK_REAL tangent[2][3];\n",
+
+ (* "  CCTK_REAL gama[3][3], gamau[3][3], beta[3], alfa;\n", *)
+"  CCTK_REAL lambda[" <> ToString@numvars <> "];\n",
+
+"  CCTK_REAL xform[" <> ToString@numvars <> "][" <> ToString@numvars <> "];\n",
+"  CCTK_REAL norm_normal;\n",
+"  CCTK_REAL norm_tangent[2];\n",
+
+"  int n, m;                     /* mode               */\n",
+"  int i, j, k;                  /* grid point indices */\n",
+"  int d, e;                     /* dimension          */\n\n",
+
+"  /* Check arguments */\n",
+"  assert (cctkGH);\n",
+"  assert (cctk_dim == 3);\n",
+"  assert (dir  >= 0 && dir  < cctk_dim);\n",
+"  assert (face >= 0 && face < 2);\n",
+"  assert (base);\n",
+"  assert (off);\n",
+"  assert (len);\n\n",
+
+"  for (d = 0; d < 3; ++d) {\n",
+"    assert (off[d] >= 0 && len[d] >= 0 && off[d] + len[d] <= cctk_lsh[d]);\n",
+"  }\n\n",
+
+"  assert (modes);\n",
+"  assert (speeds);\n",
+
+"  for (d = 0; d < 3; ++d) {\n",
+"    normal_base[d] = base[d];\n",
+"    tangent[ 0][d] = base[  cctk_dim+d];\n",
+"    tangent[ 1][d] = base[2*cctk_dim+d];\n",
+"  }\n\n",
+
+"  {\n",
+"    CCTK_REAL normal_length = 0;\n",
+"    for (d = 0; d < 3; ++d) {\n",
+"      normal_length += fabs(normal_base[d]);\n",
+"    }\n",
+"    assert (normal_length > 0);\n",
+"  }\n\n",
+
+"  assert (num_modes == " <> ToString@numvars <> ");\n",
+
+"  for (n = 0; n < num_modes; ++n) {\n",
+"    assert (modes[n]);\n",
+"  }\n\n",
+
+"  /* Get variable pointers */\n",
+"  if (rhs_flag) {\n",
+Table["    rhs[" <> ToString[i-1] <> "] = CCTK_VarIndex(\"" <> ToString@rhs[[i]] <> "\");\n", 
+      {i, 1, numvars}],
+"  } else {\n",
+Table["    prim[" <> ToString[i-1] <> "] = CCTK_VarIndex(\"" <> gfs[[i]] <> "\");\n", 
+      {i, 1, numvars}],
+"  }\n\n",
+"    for (n = 0; n < num_vars ; ++n) {\n",
+"      chars[  n] = modes[ n];\n",
+"      cspeeds[n] = speeds[n];\n",
+"    }\n\n",
+"/* compute characteristic variables and speeds */\n",
+
+
+
+
+
+"  /* Return 0 for Success! */\n",
+"  return 0;\n"}]
+(* this was it, let`s go for a beer *)
+};
+
+code];
+
+CreateMPCharSource[spec_, debug_] :=
+
+  Module[{thornName, gfs, rhs, groups, tmp, lang, numvars},
+
+  gfs = Map[ToString, lookup[spec, EvolvedGFs]];
+  rhs = Map[AddSuffix[#, "rhs"]&, gfs];
+
+  Print["CreateMPCharSource uses RHS GFs:\n", rhs];
+
+  thornName = lookup[spec, Name];
+ 
+  numvars = Length@gfs;
+
+  groups = Map[unqualifiedGroupName, lookup[spec, Groups]];
+
+  lang = CodeGen`SOURCELANGUAGE;
+  CodeGen`SOURCELANGUAGE = "C";
+
+  tmp = {whoWhen["C"],
+
+
+   Map[IncludeFile,
+        {"assert.h", "math.h", "cctk.h", "cctk_Arguments.h", "cctk_Parameters.h"}],
+
+(* declare lapack function DGESV: compute solution to system of linear equations  E * X = B *)
+{"\n/* declare lapack function DGESV for solving linear systems */\n",
+"void CCTK_FCALL\n",
+"CCTK_FNAME(dgesv) (int    const * n,\n",
+"                   int    const * nrhs,\n",
+"                   double       * a,\n",
+"                   int    const * lda,\n",
+"                   int          * ipiv,\n",
+"                   double       * b,\n",
+"                   int    const * ldb,\n",
+"                   int          * info);\n\n\n"},
+
+DefineFunction[lookup[spec,Name] <> "_MultiPatch_SystemDescription", "CCTK_INT", 
+   "CCTK_POINTER_TO_CONST const cctkGH_, CCTK_INT const nvars,\n"     <>
+   "    CCTK_INT * restrict const prim, CCTK_INT * restrict const rhs,\n" <>
+   "    CCTK_REAL * restrict const sigma", 
+
+{
+"/* this function is called twice:                                            */\n",
+"/* first to set the number of modes, then to set the rest of the information */\n",
+"  cGH const * restrict const cctkGH = cctkGH_;\n",
+"  DECLARE_CCTK_PARAMETERS;\n\n",
+"  int n;\n\n",
+"  /* Check arguments */\n",
+"  assert (cctkGH);\n",
+"  assert (nvars >= 0);\n\n",
+"  /* Fill in return values on second call */\n",
+"  if (nvars == " <> ToString@numvars <> ") {\n",
+"    assert (prim);\n\n",
+Table["    prim[" <> ToString[i-1] <> "] = CCTK_VarIndex(\"" <> gfs[[i]] <> "\");\n", {i,1,numvars}],
+"\n",
+"    for (n = 0; n < " <> ToString@numvars <> "; ++n) {\n",
+"      assert (prim[n] >= 0);\n",
+"    }\n\n",
+"    assert (rhs);\n\n",
+Table["    rhs[" <> ToString[i-1] <> "] = CCTK_VarIndex(\"" <> ToString@rhs[[i]] <> "\");\n", {i,1,numvars}],
+"\n",
+"    for (n = 0; n < " <> ToString@numvars <> "; ++n) {\n",
+"      assert (rhs[n] >= 0);\n",
+"    }\n\n",
+"  }\n\n",
+"  /* Coefficient for the scalar product via SummationByParts Thorn */\n",
+"  *sigma = GetScalProdCoeff();\n\n",
+"  /* Return the number of modes -- needed at first call! */\n",
+"  return " <> ToString@numvars <> ";\n"}],
+
+(*  *)
+charInfoFunction["P2C", spec, debug],      "\n\n",
+charInfoFunction["C2P", spec, debug],      "\n\n",
+charInfoFunction["WHATEVER", spec, debug]
+};
+
+CodeGen`SOURCELANGUAGE = lang;
+tmp
+];
 
 
 (* -------------------------------------------------------------------------- 

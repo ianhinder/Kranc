@@ -19,8 +19,12 @@
     along with Foobar; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
+BeginPackage["sym`"];
+{INV, SQR, CUB, QAD, exp, pow};
 
-BeginPackage["CodeGen`"];
+EndPackage[];
+
+BeginPackage["CodeGen`", {"sym`"}];
 
 SOURCELANGUAGE::usage = "global variable == \"C\" or \"Fortran\" determines language
                         for code generation";
@@ -83,6 +87,7 @@ InitialiseFDVariables::usage = "";
 
 CommaNewlineSeparated::usage = ""; (* This shouldn't really be in CodeGen *)
 CommaSeparated::usage = "";
+ReplacePowers::usage = "";
 
 Begin["`Private`"];
 
@@ -402,6 +407,27 @@ insertFile[name_] :=
     contents = ReadList[istream, String];
     Close[istream];
     contents];
+
+(* Take an expression x and replace occurrences of Powers with the C
+macros SQR, CUB, QAD *)
+ReplacePowers[x_] :=
+  Module[{rhs},
+    rhs = x   /. Power[xx_, 2] -> SQR[xx];
+    rhs = rhs /. Power[xx_, 3] -> CUB[xx];
+    rhs = rhs /. Power[xx_, 4] -> QAD[xx];
+    rhs = rhs /. Power[xx_, -1] -> INV[xx];
+
+    If[SOURCELANGUAGE == "C",
+           Module[{},
+             rhs = rhs /. Power[E, power_] -> exp[power];
+             rhs = rhs /. Power[xx_, 0.5] -> sqrt[xx];
+             rhs = rhs /. Power[xx_, power_] -> pow[xx, power]],
+
+           rhs = rhs /. Power[xx_, power_] -> xx^power
+       ];
+    rhs
+    ];
+
 
 End[];
 

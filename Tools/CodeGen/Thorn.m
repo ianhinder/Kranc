@@ -542,9 +542,8 @@ CreateMoLRegistrationSource[spec_, debug_] :=
 
       CommentedBlock["Register all the evolved grid functions with MoL",
 
-      Map[{"ierr += MoLRegisterEvolved(CCTK_VarIndex(\"", 
-           lookup[spec,BaseImplementation], "::", #, "\"), CCTK_VarIndex(\"",
-           lookup[spec,BaseImplementation], "::", #, "rhs\"));\n"} &,
+      Map[{"ierr += MoLRegisterEvolved(CCTK_VarIndex(\"", #, "\"),  CCTK_VarIndex(\"",
+           lookup[spec,BaseImplementation], "::", unqualifiedGroupName[#], "rhs\"));\n"} &,
           lookup[spec, EvolvedGFs]]],
 
       CommentedBlock["Register all the primitive grid functions with MoL",

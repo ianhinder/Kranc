@@ -314,12 +314,20 @@ cleanCalculation[calc_] := Module[
 cleancalc
 ];
 
+(*
+syncGroup[name_] :=
+ If[SOURCELANGUAGE == "C",
+  {"/* SYNC: "<>name<>" */\n", "/* sync via schedule instead of CCTK_SyncGroup(cctkGH, \"", name, "\"); -cut- */\n"},
+  {"/* SYNC: "<>name<>" */\n", "/* sync via schedule instead of call CCTK_SyncGroup(i, cctkGH, \"", name, "\") -cut- */\n"}
+  ];
+*)
 
 syncGroup[name_] :=
  If[SOURCELANGUAGE == "C",
   {"/* SYNC: "<>name<>" */\n", "/* sync via schedule instead of CCTK_SyncGroup(cctkGH, \"", name, "\"); -cut- */\n"},
   {"/* SYNC: "<>name<>" */\n", "/* sync via schedule instead of call CCTK_SyncGroup(i, cctkGH, \"", name, "\") -cut- */\n"}
   ];
+
 
 UncommentSourceSync[setRHS_]:= Module[{cleanRHS},
    cleanRHS = Map[SafeStringReplace[#, "/* sync via schedule instead of ", ""]&, setRHS, Infinity];
@@ -339,24 +347,8 @@ GrepSyncGroups[setRHS_]:= Module[{grepSYNC},
  grepSYNC = Map[StringReplace[#, "/* SYNC: " -> ""]&, grepSYNC];
  grepSYNC = Map[StringReplace[#, "*/"        -> ""]&, grepSYNC];
 
- Print["found groups to SYNC: ", grepSYNC];
-
  grepSYNC
 ];
-
-	 (*   OBSOLETE
-GrepSyncFuncGroup[setRHS_]:= Module[{grepSYNC},
- grepSYNC = Map[PickMatch[#, "*SYNC*"] &, Flatten[setRHS, Infinity]];
- grepSYNC = Select[grepSYNC, IsNotEmptyString];
-
- grepSYNC = Map[StringReplace[#, "/* SYNC: " -> ""]&, grepSYNC];
- grepSYNC = Map[StringReplace[#, "*/"        -> ""]&, grepSYNC];
-
- Print["found functions//groups to SYNC: ", grepSYNC];
-
- grepSYNC
-];
-	  *)
 
 GrepSyncGroups[x_, func_] := Module[{pick},
 
@@ -364,7 +356,6 @@ GrepSyncGroups[x_, func_] := Module[{pick},
     pick = Map[PickMatch[#, func <> "//*"] & , pick];
     pick = Select[pick, IsNotEmptyString];
     
-    Print["function name is ", func];
     pick = Map[StringReplace[#,  func <> "//" -> ""] &, pick]
     ]
 
@@ -386,7 +377,7 @@ CreateCalculationFunction[calc_, debug_] :=
           groups = lookup[cleancalc, Groups];
           pddefs = lookupDefault[cleancalc, PartialDerivatives, {}];
 
-  Print["number of equations in calculation: ", numeq = eqs];
+  Print["number of equations in calculation: ", numeq = Length@eqs];
 
   VerifyCalculation[cleancalc];
 

@@ -51,7 +51,7 @@ EndPackage[];
 
 
 BeginPackage["KrancThorns`", 
-             {"CodeGen`", "sym`", "Thorn`", "MapLookup`", "KrancGroups`", "Differencing`", "CalculationFunction`"}];
+             {"CodeGen`", "sym`", "Thorn`", "MapLookup`", "KrancGroups`", "Differencing`", "CalculationFunction`", "Helpers`"}];
 
 CodeGen`SetSourceLanguage["C"];
 
@@ -106,8 +106,6 @@ ThornType::usage        = "symbol to specify thorn types in ThornList structures
 CactusGroup::usage   = "CactusGroup[Thorns_, groupname_] extracts a Cactus
 style group name from a Kranc thorns list, i.e. metric -> ADMBase::metric";
 
-SafeDelete::usage = "SafeDelete[filename_] deletes a file only after checking that the file actually exists and is a normal file";
-
 Begin["`Private`"];
 
 (****************************************************************************)
@@ -123,12 +121,6 @@ GetOptions[f_, optList_] :=
     Map[# -> lookupDefault[optList, #, 
                            lookupDefault[Options[f],#, "NOT FOUND"]] &, 
         allKeys]];
-
-
-
-
-ensureDirectory[name_] := If[FileType[name] == None, CreateDirectory[name]];
-
 
 simpleGroupStruct[thisgroup_, thistimelevel_] := {Group      -> thisgroup, 
                                                   Timelevels -> thistimelevel};
@@ -173,9 +165,6 @@ CactusGroup[Thorns_, gr_] := Module[{newthorns, name},
 
   First@Cases[Map[name, newthorns], x_?StringQ]
 ];
-
-SafeDelete[filename_?StringQ] := 
-             If[FileType@filename == "File", DeleteFile@filename];
 
 
 (* "constants" used to specify default options *)
@@ -284,8 +273,8 @@ If[debug,
 (* define directories and create if needed *)
 arrangementDirectory = parentDirectory <> "/" <> systemName;
 
-ensureDirectory[parentDirectory];
-ensureDirectory[arrangementDirectory];
+EnsureDirectory[parentDirectory];
+EnsureDirectory[arrangementDirectory];
 
 (* create parameter, GF and Groups lists *)
 baseParamsTrueQ = Length@realBaseParameters + Length@intBaseParameters > 0;
@@ -791,8 +780,8 @@ baseParamsTrueQ = Length@realBaseParameters + Length@intBaseParameters > 0;
 (* define directories and create if needed *)
 arrangementDirectory = parentDirectory <> "/" <> systemName;
 
-ensureDirectory[parentDirectory];
-ensureDirectory[arrangementDirectory];
+EnsureDirectory[parentDirectory];
+EnsureDirectory[arrangementDirectory];
 
 
 (* the list of thorns = return argument! *)
@@ -1016,8 +1005,8 @@ pddefs = lookupDefault[opts, PartialDerivatives, {}];
 
 arrangementDirectory = parentDirectory <> "/" <> systemName;
 
-ensureDirectory[parentDirectory];
-ensureDirectory[arrangementDirectory];
+EnsureDirectory[parentDirectory];
+EnsureDirectory[arrangementDirectory];
 
 Print["Creating files in directory " <> arrangementDirectory];
 
@@ -1277,8 +1266,8 @@ arrangementDirectory = parentDirectory <> "/" <> systemName;
 
 Print["Creating files in directory " <> arrangementDirectory];
 
-ensureDirectory[parentDirectory];
-ensureDirectory[arrangementDirectory];
+EnsureDirectory[parentDirectory];
+EnsureDirectory[arrangementDirectory];
 
 (* the list of thorns = return argument! *)
 thornList = 
@@ -1310,9 +1299,9 @@ thornList =
      ThornParameters -> {}, ThornType -> "Driver"}};
 
 
-(****************************************************************)
-(* Add some new groups that the user doesn't need to know about *)
-(****************************************************************)
+(*****************************************************************)
+(* Add some new groups that the user does not need to know about *)
+(*****************************************************************)
 
 (* This is needed for excision *)
 excisionGroup = {"ExcisionNormals", {exnormx, exnormy, exnormz}};
@@ -1562,8 +1551,8 @@ pddefs = lookupDefault[opts, PartialDerivatives, {}];
 
     baseParamsTrueQ = Length@realBaseParameters + Length@intBaseParameters > 0;
 
-    ensureDirectory[parentDirectory];
-    ensureDirectory[arrangementDirectory];
+    EnsureDirectory[parentDirectory];
+    EnsureDirectory[arrangementDirectory];
 
     Print["Creating files in directory " <> arrangementDirectory];
 
@@ -1805,8 +1794,8 @@ debug               = lookup[opts, DeBug];
 
 arrangementDirectory = parentDirectory <> "/" <> systemName;
 
-ensureDirectory[parentDirectory];
-ensureDirectory[arrangementDirectory];
+EnsureDirectory[parentDirectory];
+EnsureDirectory[arrangementDirectory];
 
 Print["Creating files in directory " <> arrangementDirectory];
 

@@ -26,9 +26,17 @@ EndPackage[];
 BeginPackage["Helpers`", {"sym`"}];
 
 TensorName::usage = "get the base name of a tensor object, i.e. TensorName[g[la, lb]]";
+
 EnsureDirectory::usage = "create a directory if it does not already exist"
+SafeDelete::usage = "SafeDelete[filename_] deletes a file only after checking that the file actually exists and is a normal file";
+
 AddSuffix::usage = "AddSuffix[object_,suffixString_] adds a suffix to an object";
-GFsFromGroupList::usage = "GFsFromGroupList[g_] gives the GFs from a group list in the from {\"group\", {gf1, gf2, ...}}";
+
+GFsFromGroupList::usage = "GFsFromGroupList[g_] gives the GFs from a group list in the form {\"group\", {gf1, gf2, ...}}";
+GroupStruct::usage = "GroupStruct[g_] returns a group structure the from {\"group\", {gf1, gf2, ...}}";
+
+ComponentList::usage = "ComponentList[T_[index_]] creates a list of tensor components.";
+TextComponentList::usage = "TextComponentList[T_[index_]] call ComponentList and converts to plain text format (no sub- or superscripts).";
 
 Begin["`Private`"];
 
@@ -38,7 +46,22 @@ AddSuffix[object_,suffix_]:=ToExpression[ToString@object<>ToString@suffix]
 
 EnsureDirectory[name_] := If[FileType[name] == None, CreateDirectory[name]];
 
+SafeDelete[filename_?StringQ] := If[FileType@filename == File, DeleteFile@filename];
+
 GFsFromGroupList[g_] := Flatten@Map[Last,g]
+
+If[ValueQ@Global`tensorNames2componentNames[x],
+(* DecomposeTools.m is loaded *)
+
+  ComponentList[T_]     := T /. Global`makeSplitRules[T];
+  TextComponentList[T_] := Global`tensorNames2componentNames@ComponentList[T];
+
+  ComponentList[expr_,     T_?AtomQ[index__]] := expr /. Global`makeSplitRules[T[index]];
+  TextComponentList[expr_, T_?AtomQ[index__]] := Global`tensorNames2componentNames@ComponentList[expr, T[index]];
+
+  GroupStruct[t_[i__]]  := {ToString@t, ComponentList@t[i]} // Global`tensorNames2componentNames;
+  GroupStruct[S_?AtomQ] := {ToString@S,{S}};
+];
 
 End[];
 

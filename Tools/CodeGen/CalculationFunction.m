@@ -168,10 +168,10 @@ debugInLoop = False;
 declareVariablesForCalculation[calc_] :=
   Module[{shorthands, localGFs},
 
-    shorthands = Union@Map[ToString, Union@Flatten@calculationUsedShorthands@calc];
+    shorthands = Sort@Union@Map[ToString, Union@Flatten@calculationUsedShorthands@calc];
     shorthands = PartitionVarList@shorthands;
 
-    localGFs = Map[localName, Union@Map[ToString, Union@Flatten@calculationUsedGFs@calc]];
+    localGFs = Map[localName, Sort@Union@Map[ToString, Union@Flatten@calculationUsedGFs@calc]];
     localGFs = PartitionVarList@localGFs;
 
     {CommentedBlock["Declare shorthands",

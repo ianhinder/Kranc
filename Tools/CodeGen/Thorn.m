@@ -45,7 +45,7 @@ Textual, TriggerGroups, Include};
 
 EndPackage[];
 
-BeginPackage["Thorn`", "CodeGen`", "CalculationFunction`", "MapLookup`", "KrancGroups`"];
+BeginPackage["Thorn`", "CodeGen`", "CalculationFunction`", "MapLookup`", "KrancGroups`", "Helpers`"];
 
 (* These functions are externally visible, and comprise the public
    interface to this package. *)
@@ -73,12 +73,6 @@ Begin["`Private`"];
 (* ------------------------------------------------------------------------ 
    Miscellaneous definitions, could be moved elsewhere
    ------------------------------------------------------------------------ *)
-
-(* Create a directory if it does not exist already *)
-ensureDirectory[name_] :=
-  If[FileType[name] == None,
-     CreateDirectory[name]];
-
 
 (* date, user, etc. *)
 date[] := ToString[Date[][[3]]] <> "/" <>
@@ -992,8 +986,8 @@ CreateThorn[thorn_] :=
 
     Print["Creating thorns in directory ", thornDirectory];
 
-    ensureDirectory[thornDirectory];
-    ensureDirectory[sourceDirectory];
+    EnsureDirectory[thornDirectory];
+    EnsureDirectory[sourceDirectory];
 
     GenerateFile[thornDirectory <> "/interface.ccl", lookup[thorn, Interface]];
     GenerateFile[thornDirectory <> "/param.ccl",     lookup[thorn, Param]];

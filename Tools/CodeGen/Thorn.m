@@ -915,7 +915,7 @@ CreateMoLExcisionSource[spec_] :=
       "ny = cctk_lsh(2)\n", 
       "nz = cctk_lsh(3)\n\n", 
 
-      "if (excision) then\n",
+      "if (excision .ne. 0) then\n",
 
       "  call CCTK_INFO(\"Applying LegoExcision\")\n\n",
 

@@ -390,7 +390,8 @@ interface =
 rhsGroups = Select[Flatten@groups, StringQ];
 rhsGroups = Select[rhsGroups, StringMatchQ[#, "*rhs"]& ];
 
-If [Length@rhsGroups == 0,
+If [Length[Intersection[ Map[ToString, Flatten@variablesFromGroups[rhsGroups, groups]],
+                         Map[ToString, Flatten@Map[addrhs, evolvedGFs]]  ]] == 0,
   rhsGroups = Map[addrhs, evolvedGroups];,
   Print["Taking RHS groups from argument list: ", rhsGroups];
 ];

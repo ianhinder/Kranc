@@ -1031,11 +1031,6 @@ Print["Creating files in directory " <> arrangementDirectory];
 
 baseParamsTrueQ = Length@realBaseParameters + Length@intBaseParameters > 0;
 
-
-
-
-
-
 If[debug,
   Print["Debugging switched on"],
   Print["Debugging switched off"]
@@ -1097,6 +1092,27 @@ precompheaderName = "precomputations.h";
 newparams = {};
 
 
+(* RHS CALCULATION *)
+
+augmentEvaluationDefinition[{gName_, calc_}] :=
+  {gName, 
+   augmentCalculation[calc, thornName <> "_" <> unqualifiedGroupName[gName] <> "_Eval", 
+                      implementation, groups, allParameters, pddefs]};
+
+augmentedEvaluationDefinitions = 
+  Map[augmentEvaluationDefinition, evaluationDefinitions];
+
+evalCalcs = Map[Last, augmentedEvaluationDefinitions];
+
+setrhs = CreateSetterSource[evalCalcs, debug];
+
+
+(* PRECOMP MACROS *)
+
+(* this is currenly not functional, is kept here for future use *)
+precompheader = CreatePrecompMacros[calculation];
+
+
 (* INTERFACE *)
 
 
@@ -1108,38 +1124,22 @@ includeFiles             = {"GenericFD.h"};
 interface = CreateInterface[implementation, inheritedImplementations, 
                             includeFiles, newGroupInterfaceStructures];
 
-(* RHS CALCULATION *)
-
-augmentEvaluationDefinition[{gName_, calc_}] :=
-  {gName, 
-   augmentCalculation[calc, thornName <> "_" <> unqualifiedGroupName[gName] <> "_Eval", 
-                      implementation, groups, allParameters, pddefs]};
-
-augmentedEvaluationDefinitions = 
-  Map[augmentEvaluationDefinition, evaluationDefinitions];
-
-
 (* SCHEDULE *)
 
 (* globalStorageGroups = {Map[simpleGroupStruct[#, 1]&, Map[ToString, evaluationGroupStructs]]};*)
 
 scheduledGroups = {};
 
-Print["Testing for groups"];
-
-
-
-
 newGroupScheduleStructure[{groupName_, calc_}] := 
-  {Name          -> lookup[calc, Name],
-   SchedulePoint -> "at ANALYSIS",
-   Language      -> CodeGen`SOURCELANGUAGE,
-   TriggerGroups -> {groupName},
-
+  {Name               -> lookup[calc, Name],
+   SchedulePoint      -> "at ANALYSIS",
+   SynchronizedGroups -> GrepSyncGroups[setrhs, lookup[calc, Name]],
+   Language           -> CodeGen`SOURCELANGUAGE,
+   TriggerGroups      -> {groupName},
    allGroups = Union[{groupName}, calculationUsedGroups[calc]];
    allStorageGroups = Map[{Group -> #, Timelevels -> 1} &, allGroups];
-   StorageGroups -> allStorageGroups,
-   Comment       -> "evaluate GFs"};
+   StorageGroups      -> allStorageGroups,
+   Comment            -> "evaluate GFs"};
 
 scheduledFunctions = Map[newGroupScheduleStructure, augmentedEvaluationDefinitions];
 
@@ -1185,19 +1185,6 @@ param = CreateParam[paramspec];
 (* STARTUP *)
 
 startup = CreateStartupFile[thornName, thornName <> ": evaluate grid functions"];
-
-(* SET RHSs *)
-
-evalCalcs = Map[Last, augmentedEvaluationDefinitions];
-
-setrhs = CreateSetterSource[evalCalcs, debug];
-
-
-(* PRECOMP MACROS *)
-
-(* this is currenly not functional, is kept here for future use *)
-precompheader = CreatePrecompMacros[calculation];
-
 
 (* MAKEFILE *)
 ext  = CodeGen`SOURCESUFFIX;
@@ -1563,7 +1550,7 @@ Module[{after, baseImplementation, before, cleanADMBaseRules, dirName,
     realBaseParameters = lookup[opts, RealBaseParameters];
     intBaseParameters  = lookup[opts, IntBaseParameters];
     allParameters      = Join[realParameters, intParameters, realBaseParameters, intBaseParameters];
-pddefs = lookupDefault[opts, PartialDerivatives, {}];
+    pddefs             = lookupDefault[opts, PartialDerivatives, {}];
 
     baseParamsTrueQ = Length@realBaseParameters + Length@intBaseParameters > 0;
 
@@ -1633,6 +1620,12 @@ precompheaderName = "precomputations.h";
 
 
 
+(* RHS CALCULATION and PRECOMP MACROS *)
+Print["Creating setter source"];
+setrhs        = CreateSetterSource[{namedTranslatorInCalculation, namedTranslatorOutCalculation}, debug];
+precompheader = CreatePrecompMacros[{namedTranslatorInCalculation, namedTranslatorOutCalculation}];
+
+
 (* INTERFACE *)
 
 inheritedImplementations = Join[{baseImplementation, "Grid", "GenericFD", "ADMBase"}, 
@@ -1682,8 +1675,8 @@ scheduledADMToEvolve  = {Name          -> lookup[namedTranslatorInCalculation, N
                          Comment       -> "ADMBase -> Evolution vars translation",
                          StorageGroups -> storageGroups,
                          Language      -> CodeGen`SOURCELANGUAGE,
-                         SynchronizedGroups -> {} (* toEvolveSetgroups*)};
-
+                         SynchronizedGroups -> GrepSyncGroups[setrhs, 
+                                                          lookup[namedTranslatorInCalculation, Name]] };
 
 before = If[mapContains[translatorOutCalculation, Before],
             " BEFORE (" <> textLookup[translatorOutCalculation, Before] <> ") ",
@@ -1695,14 +1688,15 @@ after  = If[mapContains[translatorOutCalculation, After],
             "" ];
 
 
-scheduledEvolveToADM  = {Name    -> lookup[namedTranslatorOutCalculation, Name],
-                         SchedulePoint -> "at POSTSTEP as EvolveToADM"  <> before <> after,
-                         StorageGroups -> storageGroups,
-                         SynchronizedGroups -> {} (* {"ADMBase::metric",
-                                                "ADMbase::curv"} *),
-                         Conditional   -> {Textual -> "translateToADM"},
-                         Language -> CodeGen`SOURCELANGUAGE,
-                         Comment       -> "Evolution vars -> ADMBase translation"};
+scheduledEvolveToADM  = {Name               -> lookup[namedTranslatorOutCalculation, Name],
+                         SchedulePoint      -> "at POSTSTEP as EvolveToADM"  <> before <> after,
+                         StorageGroups      -> storageGroups,
+                         SynchronizedGroups ->  GrepSyncGroups[setrhs, 
+                                                          lookup[namedTranslatorInCalculation, Name]]
+                         (* {"ADMBase::metric", "ADMbase::curv"} *),
+                         Conditional        -> {Textual -> "translateToADM"},
+                         Language           -> CodeGen`SOURCELANGUAGE,
+                         Comment            -> "Evolution vars -> ADMBase translation"};
 
 
 scheduledFunctions = {scheduledStartup, scheduledADMToEvolve, scheduledEvolveToADM};
@@ -1742,13 +1736,6 @@ param = CreateParam[paramspec];
 
 (* STARTUP *)
 startup = CreateStartupFile[thornName, thornName <> ": translate to/from ADMBase"];
-
-Print["Creating setter source"];
-
-(* RHS CALCULATION and PRECOMP MACROS *)
-setrhs        = CreateSetterSource[{namedTranslatorInCalculation, namedTranslatorOutCalculation}, debug];
-precompheader = CreatePrecompMacros[{namedTranslatorInCalculation, namedTranslatorOutCalculation}];
-
 
 (* MAKEFILE *)
 ext = CodeGen`SOURCESUFFIX;

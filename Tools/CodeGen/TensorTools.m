@@ -108,7 +108,7 @@ duplicated elements from list.  Useful with MakeExplicit where some of
 the tensor symmetries cause duplicates to be created.";
 
 (* This is for compatibility with MathTensor notation *)
-OD = PD;
+(*OD = PD;*)
 
 Begin["`Private`"];
 listOfTensors = {};
@@ -525,8 +525,10 @@ componentNameRule :=
    operators.  Note that at the moment this means we can't control
    order of differencing by macros etc. *)
 
+(* FIXME *)
+
 derivativeNameRule := 
-  PD[x_, y__] :> 
+  wibble[x_, y__] :> 
     Symbol["D" <> StringJoin[Map[ToString[Abs[#]]&,{y}]]] [x];
 
 makeSuffix[is_List] := 
@@ -651,9 +653,9 @@ getDefaultConnection[] :=
    connection, register these so that the conversion of the covariant
    derivative to the ordinary derivative can use the correct
    Christoffel symbol. *)
-DefineConnection[cd_, gamma_] :=
+DefineConnection[cd_, pd_, gamma_] :=
   Module[{},
-    connections = Join[connections, {{cd, gamma}}]];
+    connections = Join[connections, {{cd, pd, gamma}}]];
 
 
 (* Things we can do with covariant derivatives:
@@ -733,12 +735,13 @@ CDtoPDDefaultConnection[x_] :=
   x //. CDtoPDFullRule //. removeSingleTensorProducts;
 
 CDtoPDForConnection[x_, connection_] :=
-  Module[{cd,gamma, y, oldGamma, result},
+  Module[{cd,pd,gamma, y, oldGamma, result},
     cd = connection[[1]];
-    gamma = connection[[2]];
+    pd = connection[[2]];
+    gamma = connection[[3]];
     oldGamma = getDefaultConnection[];
     setDefaultConnection[gamma];
-    y = x /. cd :> CD;
+    y = x /. {cd :> CD, pd :> PD};
     result = CDtoPDDefaultConnection[y];
     setDefaultConnection[oldGamma];
     result];

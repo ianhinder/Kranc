@@ -314,14 +314,6 @@ cleanCalculation[calc_] := Module[
 cleancalc
 ];
 
-(*
-syncGroup[name_] :=
- If[SOURCELANGUAGE == "C",
-  {"/* SYNC: "<>name<>" */\n", "/* sync via schedule instead of CCTK_SyncGroup(cctkGH, \"", name, "\"); -cut- */\n"},
-  {"/* SYNC: "<>name<>" */\n", "/* sync via schedule instead of call CCTK_SyncGroup(i, cctkGH, \"", name, "\") -cut- */\n"}
-  ];
-*)
-
 syncGroup[name_] :=
  If[SOURCELANGUAGE == "C",
   {"/* SYNC: "<>name<>" */\n", "/* sync via schedule instead of CCTK_SyncGroup(cctkGH, \"", name, "\"); -cut- */\n"},

@@ -165,7 +165,9 @@ debugInLoop = False;
 
 declareVariablesForCalculation[calc_] :=
   Module[{shorthands, localGFs},
+
     shorthands = calculationUsedShorthands[calc];
+
     localGFs = Map[localName, calculationUsedGFs[calc]];
 
     {CommentedBlock["Declare shorthands",
@@ -212,15 +214,29 @@ calculationUsedGFs[calc_] :=
     allGFs = allVariables[lookup[calc, Groups]];
     Intersection[calcSymbols, allGFs]];
 
+calculationUsedGFsLHS[calc_] :=
+  Module[{calcSymbols, allGFs},
+    calcSymbols = calculationSymbolsLHS[calc];
+    allGFs = allVariables[lookup[calc, Groups]];
+    Intersection[calcSymbols, allGFs]];
+
+
+calculationUsedGFsRHS[calc_] :=
+  Module[{calcSymbols, allGFs},
+    calcSymbols = calculationSymbolsRHS[calc];
+    allGFs = allVariables[lookup[calc, Groups]];
+    Intersection[calcSymbols, allGFs]];
+
+
 calculationUsedGroups[calc_] :=
   Module[{gfs},
     gfs = calculationUsedGFs[calc];
     containingGroups[gfs, lookup[calc, Groups]]];
 
-(* Return the names of any gridfunctions used in the calculation *)
+(* Return the names of any gridfunctions used in the RHS's of calculation *)
 calculationUsedShorthands[calc_] :=
   Module[{calcSymbols, allShorthands},
-    calcSymbols = calculationSymbols[calc];
+    calcSymbols = calculationSymbolsRHS[calc];
     allShorthands = lookupDefault[calc, Shorthands, {}];
     Intersection[calcSymbols, allShorthands]];
 
@@ -228,6 +244,18 @@ calculationSymbols[calc_] :=
   Module[{allAtoms},
     allAtoms = Union[Level[lookup[calc, Equations], {-1}]];
     Cases[allAtoms, x_Symbol]];
+
+calculationSymbolsLHS[calc_] :=
+  Module[{allAtoms},
+    allAtoms = Union[Map[First, Flatten@lookup[calc, Equations] ]];
+    Cases[allAtoms, x_Symbol]];
+
+calculationSymbolsRHS[calc_] :=
+  Module[{allAtoms},
+    allAtoms = Union[Map[Last, Flatten@lookup[calc, Equations] ]];
+    allAtoms = Union[Level[allAtoms, {-1}]];
+    Cases[allAtoms, x_Symbol]];
+
 
 simplifyEquationList[eqs_] :=
   Map[simplifyEquation, eqs];
@@ -253,22 +281,57 @@ VerifyCalculation[calc_] :=
     If[mapContains[calc, Shorthands],
       VerifyListContent[lookup[calc, Shorthands], Symbol]]];
 
+
+cleanCalculation[calc_] := Module[
+  {cleancalc, shorthands, assignedGFs, neededSymbols, eqs},
+
+    shorthands = calculationUsedShorthands[calc];
+
+     Print["Deleted unused shorthands: ",
+      Complement[lookupDefault[calc, Shorthands, {}], shorthands]];
+
+    assignedGFs = calculationUsedGFsLHS[calc];
+    neededSymbols = Union[shorthands, assignedGFs];
+
+    testShort[x_] := Not@MemberQ[neededSymbols, x];
+
+    cleancalc = mapReplace[calc, Shorthands, shorthands];
+
+    eqs = lookupDefault[calc, Equations, {{}}];
+
+    eqs = DeleteCases[eqs, a_?testShort -> x_, 2];
+
+    cleancalc = mapReplace[cleancalc, Equations, eqs];
+
+cleancalc
+];
+
+
+
+
 (* Calculation function generation *)
 
 CreateCalculationFunction[calc_, debug_] :=
   Module[{gfs, allSymbols, knownSymbols,
-          shorts = lookupDefault[calc, Shorthands, {}],
-          eqs    = lookup[calc, Equations],
-          syncGroups = lookupDefault[calc, SyncGroups, {}],
-          parameters = lookupDefault[calc, Parameters, {}],
-          functionName, dsUsed, 
-          groups = lookup[calc, Groups],
-          pddefs = lookupDefault[calc, PartialDerivatives, {}]},
+          shorts, eqs, syncGroups, parameters,
+          functionName, dsUsed, groups, pddefs, cleancalc},
 
-  VerifyCalculation[calc];
+   cleancalc = cleanCalculation[calc];
+   cleancalc = cleanCalculation[cleancalc];
+   cleancalc = cleanCalculation[cleancalc];
+
+          shorts = lookupDefault[cleancalc, Shorthands, {}];
+          eqs    = lookup[cleancalc, Equations];
+          syncGroups = lookupDefault[cleancalc, SyncGroups, {}];
+          parameters = lookupDefault[cleancalc, Parameters, {}];
+          groups = lookup[cleancalc, Groups];
+          pddefs = lookupDefault[cleancalc, PartialDerivatives, {}];
+
+
+  VerifyCalculation[cleancalc];
 
   gfs = allVariables[groups];
-  functionName = ToString@lookup[calc, Name];
+  functionName = ToString@lookup[cleancalc, Name];
   dsUsed = derivativesUsed[eqs];
 
   Print["Creating Calculation Function: " <> functionName];
@@ -286,9 +349,9 @@ CreateCalculationFunction[calc_, debug_] :=
 
   If[debug, Print[" grid functions:", gfs]];
 
-   If[Length@lookupDefault[calc, CollectList, {}] > 0,
+   If[Length@lookupDefault[cleancalc, CollectList, {}] > 0,
 
-     eqs = Table[Map[First[#] -> simpCollect[lookup[calc, CollectList], 
+     eqs = Table[Map[First[#] -> simpCollect[lookup[cleancalc, CollectList], 
                                              Last[ #], 
                                              First[#], debug]&, 
                  eqs[[i]] ], {i, 1, Length@eqs}]
@@ -302,7 +365,7 @@ CreateCalculationFunction[calc_, debug_] :=
   (* Check that there are no unknown symbols in the calculation *)
 
 
-  allSymbols = calculationSymbols[calc];
+  allSymbols = calculationSymbols[cleancalc];
   knownSymbols = Join[gfs, shorts, parameters, {t, Pi, E}];
 
   Print["allSymbols == ", allSymbols];
@@ -313,18 +376,18 @@ CreateCalculationFunction[calc_, debug_] :=
   If[unknownSymbols != {},
      Module[{},
        Print["Unknown symbols in calculation: ", unknownSymbols];
-       Print["Failed verification of calculation: ", calc];
+       Print["Failed verification of calculation: ", cleancalc];
        Throw["Unknown symbols in calculation"]]];
 
-  DefineCCTKSubroutine[lookup[calc, Name],
+  DefineCCTKSubroutine[lookup[cleancalc, Name],
   { DeclareGridLoopVariables[],
     DeclareFDVariables[],
-    declareVariablesForCalculation[calc],
+    declareVariablesForCalculation[cleancalc],
     declarePrecomputedDerivatives[dsUsed],
     DeclareDerivatives[pddefs, eqs],
 
     CommentedBlock["Include user-supplied include files",
-      Map[IncludeFile, lookupDefault[calc, DeclarationIncludes, {}]]],
+      Map[IncludeFile, lookupDefault[cleancalc, DeclarationIncludes, {}]]],
 
     InitialiseFDVariables[],
 
@@ -409,7 +472,7 @@ equationLoop[eqs_, gfs_, shorts_, incs_, groups_, syncGroups_, pddefs_] :=
     CommentedBlock["Synchronize the groups that have just been set",
 
     lhsGroupNames = containingGroups[gfsInLHS, groups];
-    Print["Synchronizing groups: ", lhsGroupNames];
+    Print["Synchronizing groups: ", Intersection[lhsGroupNames, syncGroups]];
     Map[syncGroup, Intersection[lhsGroupNames, syncGroups]]]
    }];
 

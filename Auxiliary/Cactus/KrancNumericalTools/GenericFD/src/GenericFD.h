@@ -432,14 +432,25 @@
 /* (only for C atm)                                   */
 /******************************************************/
 
-#define Dplus1(gf,i,j,k)                       \
+
+#define Dplus1(gf,i,j,k)   string(Dplus1,gf)
+#define Dplus2(gf,i,j,k)   string(Dplus2,gf)
+#define Dplus3(gf,i,j,k)   string(Dplus3,gf)
+
+
+#define Dplus1gf(gf,i,j,k)   Dplus1x(gf, i,j,k)
+#define Dplus2gf(gf,i,j,k)   Dplus2x(gf, i,j,k)
+#define Dplus3gf(gf,i,j,k)   Dplus3x(gf, i,j,k)
+
+
+#define Dplus1x(gf,i,j,k)                     \
 	 ((gf[CCTK_GFINDEX3D(cctkGH,i+1,j,k)] \
 	 - gf[CCTK_GFINDEX3D(cctkGH,i,j,k)]) * dxi)
 
-#define Dplus2(gf,i,j,k)                       \
+#define Dplus2x(gf,i,j,k)                     \
 	 ((gf[CCTK_GFINDEX3D(cctkGH,i,j+1,k)] \
 	 - gf[CCTK_GFINDEX3D(cctkGH,i,j,k)]) * dyi)
 
-#define Dplus3(gf,i,j,k)                       \
+#define Dplus3x(gf,i,j,k)                     \
 	 ((gf[CCTK_GFINDEX3D(cctkGH,i,j,k+1)] \
 	 - gf[CCTK_GFINDEX3D(cctkGH,i,j,k)]) * dzi)

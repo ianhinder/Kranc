@@ -433,8 +433,8 @@
 
 /*****************************************************/
 /*                                                    */
-/*         One-sided derivatives                      */
-/* (only for C atm)                                   */
+/*  Poor man's one-sided derivatives                  */
+/*                                                    */
 /******************************************************/
 
 
@@ -447,6 +447,7 @@
 #define Dplus2gf(gf,i,j,k)   Dplus2x(gf, i,j,k)
 #define Dplus3gf(gf,i,j,k)   Dplus3x(gf, i,j,k)
 
+#ifdef KRANC_C
 
 #define Dplus1x(gf,i,j,k)                     \
 	 ((gf[CCTK_GFINDEX3D(cctkGH,i+1,j,k)] \
@@ -459,3 +460,11 @@
 #define Dplus3x(gf,i,j,k)                     \
 	 ((gf[CCTK_GFINDEX3D(cctkGH,i,j,k+1)] \
 	 - gf[CCTK_GFINDEX3D(cctkGH,i,j,k)]) * dzi)
+
+#else
+
+#define Dplus1x(gf,i,j,k)  ( ( gf(i+1, j,     k)     - gf(i,j,k) ) * dxi )
+#define Dplus2x(gf,i,j,k)  ( ( gf(i,   j + 1, k)     - gf(i,j,k) ) * dxi )
+#define Dplus3x(gf,i,j,k)  ( ( gf(i,   j,     k + 1) - gf(i,j,k) ) * dxi )
+
+#endif

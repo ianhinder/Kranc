@@ -418,7 +418,7 @@ calcrhsName    = lookup[namedCalc, Name];
 (* in the following the Union takes care of the case when rhs groups have been explicitly
    declared as primitive groups *)
 globalStorageGroups =
-  Union@Join[Map[simpleGroupStruct[#,evTimeLevles]&, evolvedGroups],
+  Union@Join[Map[simpleGroupStruct[#,evTimeLevels]&, evolvedGroups],
              Map[simpleGroupStruct[#,1           ]&, rhsGroups],
              Map[simpleGroupStruct[#,1           ]&, primitiveGroups]];
 
@@ -1342,9 +1342,42 @@ If[debug,
 
 (* INTERFACE *)
 
+tensorType[group_] := Module[{comps, type},
+    comps = Length@group[[2]]  ;
+    
+    If[comps == 1, type = "scalar",
+      type = tType[group]];
+    
+    " tags = 'tensortypealias=\"" <>type <> "\" tensormetric=\"" <> implementation <> "::h\"'"
+    ];
+
+
+tType[group_] := Module[{comps, baseNameLen, indices, type},
+    comps = Length@group[[2]]  ;
+    
+    baseNameLen = StringLength@group[[1]];
+    
+    indices = Map[StringDrop[#, baseNameLen] &, Map[ToString, group[[2]]]];
+    
+    type = "scalar";
+    
+    If [Complement[
+          indices, {"11", "21", "22", "31", "32", "33", "12", "13", 
+            "23"}] == {}, type = "DD"];
+    If [Complement[indices, {"11", "21", "22", "31", "32", "33"}] == {}, 
+      type = "DD_sym"];
+    
+    If [Complement[indices, {"11", "12", "22", "13", "23", "33"}] == {}, 
+      type = "UU_sym"];
+    
+    If [Complement[indices, {"1", "2", "3"}] == {}, type = "U"];
+    
+    type
+    ];
+
 completeEvolvedGroupStruct[group_] := 
   {Name -> First@group, VariableType -> "CCTK_REAL", 
-   Timelevels -> evTimeLevels,  GridType -> "GF",
+   Timelevels -> evTimeLevels,  GridType -> "GF" <> tensorType[group],
    Comment -> First@group, Visibility -> "public", Variables -> Last@group};
 
 completePrimitiveGroupStruct[group_] := 

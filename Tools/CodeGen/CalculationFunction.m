@@ -361,6 +361,9 @@ CreateCalculationFunction[calc_, debug_] :=
    cleancalc = cleanCalculation[calc];
    cleancalc = cleanCalculation[cleancalc];
    cleancalc = cleanCalculation[cleancalc];
+   cleancalc = cleanCalculation[cleancalc];
+   cleancalc = cleanCalculation[cleancalc];
+
 
           shorts = lookupDefault[cleancalc, Shorthands, {}];
           eqs    = lookup[cleancalc, Equations];

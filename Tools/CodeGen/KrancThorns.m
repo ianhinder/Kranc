@@ -42,7 +42,7 @@ SystemNameDefault, SystemParentDirectory, ThornArrangement, ThornGroups,
 ThornImplementation,
 ThornName, ThornParameters, ThornType, Timelevels, TranslatorInCalculation,
 TranslatorOutCalculation, Type, UsedParameters, Value, Variables,
-VariableType, Visibility, WhereTrigger, InheritedImplementations, ZeroDimensions, GuessTensorTypes};
+VariableType, Visibility, WhereTrigger, InheritedImplementations, ZeroDimensions, Include, GuessTensorTypes};
 
 (* used in interface to AEI Black Hole Excision Thorns *)
 {ExcisionGFs, exnormx, exnormy, exnormz};
@@ -731,14 +731,15 @@ Options[CreateSetterThorn] =
    DeBug                 -> False,
    SystemParentDirectory -> ".",
    SetTime               -> "initial_and_poststep",
-   Groups                -> {}};
+   Groups                -> {},
+   Include               -> {}};
 
 CreateSetterThorn[calc_, groups_, optArgs___] :=
 
 Module[{after, allowedSetTimes, baseImplementation, baseParamsTrueQ, before, calcrhsName, debug,
         file, GFs, globalStorageGroups, implementation, implementations, intParameters,
         namedCalc, precompheaderName, realParameters, RHSs, setgroups, setTime,
-        ThornList, ext, genericFDImplementation, baseImp},
+        ThornList, ext, include, genericFDImplementation, baseImp},
 
     Print["\n*** CreateSetterThorn ***"];
 
@@ -767,6 +768,9 @@ setTime            = lookup[opts, SetTime];
 pddefs = lookupDefault[opts, PartialDerivatives, {}];
 
 debug              = lookup[opts, DeBug];
+include = lookupDefault[opts, Include, {}];
+
+
 If[debug,
   Print["Debugging switched on"],
   Print["Debugging switched off"]
@@ -922,7 +926,7 @@ startup = CreateStartupFile[thornName, thornName <> ": set values"];
 
 
 (* CALCULATION and PRECOMP MACROS *)
-setrhs        = CreateSetterSource[{namedCalc}, debug];
+setrhs        = CreateSetterSource[{namedCalc}, debug, Include -> include];
 precompheader = CreatePrecompMacros[ namedCalc ];
 
 ext = CodeGen`SOURCESUFFIX;

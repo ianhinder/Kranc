@@ -134,7 +134,6 @@ ExactEntry["GaugeWave", amp_] :=
 "##################################################################",
 "",
 "Exact::Minkowski_gauge_wave__lambda                     = 1.0",
-"Exact::Minkowski_gauge_wave__diagonal                   = \"no\"",
 ""
 }
 
@@ -145,7 +144,7 @@ ExactEntry["GaugeWave2D", amp_] :=
 "",
 "Exact::Minkowski_gauge_wave__what_fn      = \"sin\"",
 "Exact::Minkowski_gauge_wave__amplitude    = " <> ToString@amp,
-"Exact::Minkowski_gauge_wave__diagonal     = \"no\"",
+"Exact::Minkowski_gauge_wave__diagonal     = \"yes\"",
 "Exact::Minkowski_gauge_wave__omega        = 1.0",
 "Exact::Minkowski_gauge_wave__phase        = 0.0",
 "",
@@ -155,7 +154,6 @@ ExactEntry["GaugeWave2D", amp_] :=
 "##################################################################",
 "",
 "Exact::Minkowski_gauge_wave__lambda                     = 1.0",
-"Exact::Minkowski_gauge_wave__diagonal                   = \"yes\"",
 ""
 }
 

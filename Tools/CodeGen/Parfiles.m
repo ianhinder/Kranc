@@ -345,6 +345,8 @@ ActiveThorns = "MoL GenericFD";
 "# numerics\n",
 "ActiveThorns = \"" <> ActiveThorns <> "\"\n",
 
+"GenericFD::stencil_width = " <> ToString@sw <> "\n",
+
 "methodoflines::ode_method    = \"icn\"",
 "# methodoflines::mol_intermediate_steps = 3",
 "\n",

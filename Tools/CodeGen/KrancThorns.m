@@ -888,6 +888,7 @@ grepSYNC = Select[grepSYNC, IsNotEmptyString];
 
 
 grepSYNC = Map[StringReplace[#, "/* SYNC: " -> ""]&, grepSYNC];
+grepSYNC = Map[StringReplace[#, "*/"        -> ""]&, grepSYNC];
 
 Print["found groups to SYNC: ", grepSYNC];
 
@@ -895,7 +896,9 @@ SafeStringReplace[x_, string1_?StringQ, string2_?StringQ] := If[StringQ@x, Strin
 
 If[numeq > 1, grepSYNC = {};
    setrhs = Map[SafeStringReplace[#, "/* sync via schedule instead of ", ""]&, setrhs, Infinity];
-               Print["> 1 loop in thorn -> scheduling in source code, incompatible with Multipatch!"]
+   setrhs = Map[SafeStringReplace[#, ") -cut- */", ")"]&,  setrhs, Infinity]; (* for Fortran *)
+   setrhs = Map[SafeStringReplace[#, "); -cut- */", ")"]&, setrhs, Infinity]; (* for C       *)
+               Print["> 1 loop in thorn -> scheduling in source code, incompatible with Multipatch!"];
 ];
 
 

@@ -336,19 +336,23 @@ arrayIndex[i_] :=
      i,
      If[NumberQ[i], i+1, {i, " + 1"}]];
 
+max[]:= If[SOURCELANGUAGE == "C", "IMAX", "max"];
+
 InitialiseGridLoopVariables[derivativesUsedSwitch_] :=
   CommentedBlock["Set up variables used in the grid loop for the physical grid points",
 
   If[ (derivativesUsedSwitch),
   {
-  AssignVariable["index_offset_x", "Max(stencil_width, stencil_width_x)"],
-  AssignVariable["index_offset_y", "Max(stencil_width, stencil_width_y)"],
-  AssignVariable["index_offset_z", "Max(stencil_width, stencil_width_z)"],
+  AssignVariable["index_offset_x", max[] <>"(stencil_width, stencil_width_x)"],
+  AssignVariable["index_offset_y", max[] <>"(stencil_width, stencil_width_y)"],
+  AssignVariable["index_offset_z", max[] <>"(stencil_width, stencil_width_z)"],
 
+  "\n",
   AssignVariable["istart", arrayIndex["index_offset_x"]],
   AssignVariable["jstart", arrayIndex["index_offset_y"]],
   AssignVariable["kstart", arrayIndex["index_offset_z"]],
 
+  "\n",
   AssignVariable["iend", {arrayElement["cctk_lsh", 0], " - index_offset_x"}],
   AssignVariable["jend", {arrayElement["cctk_lsh", 1], " - index_offset_y"}],
   AssignVariable["kend", {arrayElement["cctk_lsh", 2], " - index_offset_z"}]
@@ -359,6 +363,7 @@ InitialiseGridLoopVariables[derivativesUsedSwitch_] :=
   AssignVariable["jstart", arrayIndex[0]],
   AssignVariable["kstart", arrayIndex[0]],
 
+  "\n",
   AssignVariable["iend", arrayElement["cctk_lsh", 0]],
   AssignVariable["jend", arrayElement["cctk_lsh", 1]],
   AssignVariable["kend", arrayElement["cctk_lsh", 2]]
@@ -438,6 +443,13 @@ ReplacePowers[x_] :=
            Module[{},
              rhs = rhs /. Power[E, power_] -> exp[power];
              rhs = rhs /. Power[xx_, 0.5] -> sqrt[xx];
+
+             (* there have been some problems doing the Max/Min
+                replacement via the preprocessor for C, so we do it
+                here *)
+             rhs = rhs /. Max[xx_, yy_] -> fmax[xx, yy];
+             rhs = rhs /. Min[xx_, yy_] -> fmin[xx, yy];
+
              rhs = rhs /. Power[xx_, power_] -> pow[xx, power]],
 
            rhs = rhs /. Power[xx_, power_] -> xx^power

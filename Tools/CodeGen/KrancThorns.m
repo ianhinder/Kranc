@@ -1203,7 +1203,7 @@ Options[CreateBaseThorn] =
 CreateBaseThorn[groups1_, evolvedGroupNames_, primitiveGroupNames_, optArgs___] :=
   Module[{debug,directory,systemName,thornName,
           implementation,systemDescription,thornList,completePrimitiveGroups,
-          evolvedGFs,primitiveGFs,allGFs,
+          evolvedGFs,primitiveGFs,allGFs, newGroupNames,
           rhsGroups,rhsGroupNames,allGroupNames, localPrimitiveGroupNames,
           completeEvolvedGroupStruct,completePrimitiveGroupStruct,groupStructures,
           inheritedImplementations,includeFiles,interface,storageGroups,
@@ -1277,6 +1277,7 @@ rhsGroupNames = Map[groupName, rhsGroups];
 
 allGroups     = Join[groups, {excisionGroup}, rhsGroups];
 allGroupNames = Map[groupName, allGroups];
+newGroupNames = Join[evolvedGroupNames, primitiveGroupNames , Map[groupName, Join[{excisionGroup}, rhsGroups]]];
 
 groups = allGroups;
 
@@ -1291,6 +1292,7 @@ allGFs       = Join[variablesFromGroups[evolvedGroupNames,   allGroups],
                     variablesFromGroups[localPrimitiveGroupNames, allGroups]];
 
 If[debug,
+  Print["newGroupNames == ", newGroupNames];
   Print["rhsGroups     == ", rhsGroups];
   Print["rhsGroupNames == ", rhsGroupNames];
   Print["allGroups     == ", allGroups];
@@ -1372,7 +1374,7 @@ CreateThorn[thornSpec];
 
 thisThorn = {ThornName -> thornName, ThornImplementation -> implementation,
              ThornArrangement -> systemName,
-             ThornGroups -> allGroupNames, 
+             ThornGroups -> newGroupNames, 
              ThornParameters -> paramSpec,
              ThornType -> "Base"};
 

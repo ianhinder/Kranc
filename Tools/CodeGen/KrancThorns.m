@@ -41,7 +41,7 @@ SystemNameDefault, SystemParentDirectory, ThornArrangement, ThornGroups,
 ThornImplementation,
 ThornName, ThornParameters, ThornType, Timelevels, TranslatorInCalculation,
 TranslatorOutCalculation, Type, UsedParameters, Value, Variables,
-VariableType, Visibility, WhereTrigger, InheritedImplementations};
+VariableType, Visibility, WhereTrigger, InheritedImplementations, ZeroDimensions};
 
 (* used in interface to AEI Black Hole Excision Thorns *)
 {ExcisionGFs, exnormx, exnormy, exnormz};
@@ -512,7 +512,7 @@ Print["create excision files: ", createExcisionCode];
 ext = CodeGen`SOURCESUFFIX;
 
 (* Write the differencing header file *)
-diffHeader = CreateDifferencingHeader[pddefs];
+diffHeader = CreateDifferencingHeader[pddefs, lookupDefault[opts, ZeroDimensions, {}]];
 
 If[createExcisionCode, 
 sources =  {
@@ -759,7 +759,7 @@ ext = CodeGen`SOURCESUFFIX;
 make = CreateMakefile[{StartupName <> ".c", calcrhsName <> ext}];
 
 (* Write the differencing header file *)
-diffHeader = CreateDifferencingHeader[pddefs];
+diffHeader = CreateDifferencingHeader[pddefs, lookupDefault[opts, ZeroDimensions, {}]];
 
 
 (* CREATE THORN *)
@@ -1015,7 +1015,7 @@ make = CreateMakefile[{StartupName <> ".c", calcrhsName <> ext}];
 
 
 (* Write the differencing header file *)
-diffHeader = CreateDifferencingHeader[pddefs];
+diffHeader = CreateDifferencingHeader[pddefs, lookupDefault[opts, ZeroDimensions, {}]];
 
 (* CREATE THORN *)
 
@@ -1505,7 +1505,7 @@ make = CreateMakefile[{StartupName <> ".c", setterFileName <> ext}];
 
 
 (* Write the differencing header file *)
-diffHeader = CreateDifferencingHeader[pddefs];
+diffHeader = CreateDifferencingHeader[pddefs, lookupDefault[opts, ZeroDimensions, {}]];
 
 (* CREATE THORN *)
 

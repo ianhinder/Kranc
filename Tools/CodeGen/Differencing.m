@@ -149,11 +149,17 @@ DZero[n_] := (DPlus[n] + DMinus[n])/2;
 (* User API *)
 (*************************************************************)
 
-CreateDifferencingHeader[derivOps_] :=
-  Module[{componentDerivOps, dupsRemoved, expressions},
+CreateDifferencingHeader[derivOps_, zeroDims_] :=
+  Module[{componentDerivOps, dupsRemoved, expressions, componentDerivOps2, zeroDimRules, derivOps2},
     Map[DerivativeOperatorVerify, derivOps];
+
+    zeroDimRules = Map[shift[#] -> 1 &, zeroDims];
+
     componentDerivOps = Flatten[Map[DerivativeOperatorToComponents, derivOps]];
-    dupsRemoved = RemoveDuplicateRules[componentDerivOps];
+
+    componentDerivOps2 = componentDerivOps /. zeroDimRules;
+
+    dupsRemoved = RemoveDuplicateRules[componentDerivOps2];
     expressions = Flatten[Map[ComponentDerivativeOperatorMacroDefinition, dupsRemoved]];
     Map[{#, "\n"} &, expressions]];
 
@@ -243,15 +249,19 @@ DifferenceGF[op_, i_, j_, k_] :=
    operator *)
 DifferenceGFTerm[op_, i_, j_, k_] :=
   Module[{nx, ny, nz, remaining},
-    If[Head[op] != Times,
-      Throw["Expecting Times in " <> FullForm[op]]];
+
+    If[op === 0,
+      Return[0]];
+
+    If[!(Head[op] === Times) && !(Head[op] === Power),
+      Throw["Expecting Times in " <> ToString[FullForm[op]]]];
 
     nx = Exponent[op, shift[1]];
     ny = Exponent[op, shift[2]];
     nz = Exponent[op, shift[3]];
 
     remaining = op / (shift[1]^nx) / (shift[2]^ny) / (shift[3]^nz);
-
+    
     remaining "u[CCTK_GFINDEX3D(cctkGH," <> ToString[i+nx] <> "," <> 
       ToString[j+ny] <> "," <> ToString[k+nz] <> ")]"];
 

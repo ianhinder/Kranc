@@ -10,3 +10,9 @@ schedule GenericFD_Startup at STARTUP
 {                            
   LANG: C                    
 }   "Register Banner"        
+
+schedule GenericFD_ParamCheck at ParamCheck
+{
+  LANG: Fortran
+}   "check stencil width parameters for consistency"
+

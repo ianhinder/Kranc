@@ -12,4 +12,26 @@ KEYWORD FDscheme "Type of finite differencing to use"
   "4th order centered macro"      :: "centered 4th order implemented with macros"
 } "2nd order centered macro"
 
+restricted:
+
+CCTK_INT  stencil_width "stencil width used near boundary"
+{
+  -1:* :: "outgoing characteristic speed > 0, default of -1 is intentionally invalid"
+} -1
+
+CCTK_INT  stencil_width_x "stencil width used near boundary"
+{
+  -1:* :: "outgoing characteristic speed > 0, default of -1 is intentionally invalid"
+} -1
+
+CCTK_INT  stencil_width_y "stencil width used near boundary"
+{
+  -1:* :: "outgoing characteristic speed > 0, default of -1 is intentionally invalid"
+} -1
+
+CCTK_INT  stencil_width_z "stencil width used near boundary"
+{
+  -1:* :: "outgoing characteristic speed > 0, default of -1 is intentionally invalid"
+} -1
+
 

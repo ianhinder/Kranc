@@ -2,7 +2,16 @@
 #define Power(x, y)   (pow((x), (y)))
 #define Sqrt(x)       (sqrt((x)))
 
+
+#ifdef KRANC_C
 #define Abs(x)        (fabs((x)))
+#define Min(x, y)     (fmin((x), (y)))
+#define Max(x, y)     (fmax((x), (y)))
+#else
+#define Abs(x)        (abs((x)))
+#define Min(x, y)     (min((x), (y)))
+#define Max(x, y)     (max((x), (y)))
+#endif
 
 #define Exp(x)        (exp((x)))
 #define Log(x)        (log((x)))

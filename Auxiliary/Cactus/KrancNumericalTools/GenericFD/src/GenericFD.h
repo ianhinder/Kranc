@@ -65,6 +65,11 @@
 #define string(d,f) d/**/f
 #endif
 
+#if defined(KRANC_C)
+#define IMAX(int1, int2) (int1 > int2) ? int1 : int2
+#endif
+
+
 #include "MathematicaCompat.h"
 
 /* finite differencing macros */

@@ -1,0 +1,12 @@
+# GenericFD/schedule.ccl 
+# Schedule definition for thorn GenericFD
+# author: S. Husa
+
+# $Header$ 
+
+
+
+schedule GenericFD_Startup at STARTUP          
+{                            
+  LANG: C                    
+}   "Register Banner"        

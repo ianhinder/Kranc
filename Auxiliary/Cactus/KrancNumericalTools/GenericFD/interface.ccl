@@ -1,0 +1,10 @@
+# GenericFD/interface.ccl 
+# Interface definition for thorn GenericFD
+# author: S. Husa 
+
+# $Header$ 
+
+implements: GenericFD
+
+INCLUDE HEADER: GenericFD.h in GenericFD.h
+

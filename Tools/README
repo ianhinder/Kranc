@@ -1,0 +1,6 @@
+what's here:
+
+CodeGen/         code generation related scripts
+External/        external packages
+TensorFactory/   general tensor manipulation scripts
+

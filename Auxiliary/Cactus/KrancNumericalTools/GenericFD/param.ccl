@@ -1,0 +1,15 @@
+# GenericFD/param.ccl 
+# Parameter definition for thorn GenericFD
+# author: S. Husa
+
+# $Header$ 
+
+private:    
+
+KEYWORD FDscheme "Type of finite differencing to use"
+{                                                     
+  "2nd order centered macro"      :: "centered 2nd order implemented with macros"          
+  "4th order centered macro"      :: "centered 4th order implemented with macros"
+} "2nd order centered macro"
+
+

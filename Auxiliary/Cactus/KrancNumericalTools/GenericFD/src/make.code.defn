@@ -1,0 +1,8 @@
+# Main make.code.defn file for thorn GenericFD
+# $Header$
+
+# Source files in this directory
+SRCS = Startup.c GenericFD.c
+
+# Subdirectories containing source files
+SUBDIRS =

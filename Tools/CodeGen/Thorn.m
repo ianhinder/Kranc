@@ -589,14 +589,16 @@ CreateMoLBoundariesSource[spec_] :=
   gfs = lookup[spec, EvolvedGFs];
   groups = Map[unqualifiedGroupName, lookup[spec, Groups]];
 
-    listBCparfileEntry[gforgroup_] := Module[{prefix},
+    listBCparfileEntry[gforgroup_] := Module[{prefix, unqualName},
     (* include a comment block with template parameter file entries *)
     prefix =  "#$bound$#" <> lookup[spec, ThornImplementation] <> "::";
+    unqualName = unqualifiedGroupName@ToString@gforgroup;
+
     {
-     prefix <> ToString@gforgroup <> "_bound       = \"skip\"\n",
-     prefix <> ToString@gforgroup <> "_bound_speed = 1.0\n",
-     prefix <> ToString@gforgroup <> "_bound_limit = 0.0\n",
-     prefix <> ToString@gforgroup <> "_bound_value = 0.0\n\n"
+     prefix <> unqualName <> "_bound       = \"skip\"\n",
+     prefix <> unqualName <> "_bound_speed = 1.0\n",
+     prefix <> unqualName <> "_bound_limit = 0.0\n",
+     prefix <> unqualName <> "_bound_value = 0.0\n\n"
     }];
 
     trivialBCGroup[group_] := Module[{boundpar, fullgroupname},
@@ -624,8 +626,8 @@ CreateMoLBoundariesSource[spec_] :=
     trivialBCGF[gf_] := Module[{boundpar, fullgfname},
     (* boundary conditions that do not have parameters besides their name *)
 
-    boundpar = ToString@gf <> "_bound";
-    fullgfname = lookup[spec, BaseImplementation] <> "::" <> ToString@gf;
+    boundpar   = unqualifiedGroupName@ToString@gf <> "_bound";
+    fullgfname = ToString@gf;
 
     {"\n",
      "if (CCTK_EQUALS(" <> boundpar <> ", \"none\"  ) ||\n",
@@ -677,8 +679,9 @@ CreateMoLBoundariesSource[spec_] :=
     radiationBCGF[gf_] := Module[{boundpar, fullgfname, myhandle},
     (* a simple radiation boundary condition *)
 
-    boundpar = ToString@gf <> "_bound";
-    fullgfname = lookup[spec, BaseImplementation] <> "::" <> ToString@gf;
+    boundpar   = unqualifiedGroupName@ToString@gf <> "_bound";
+    fullgfname = ToString@gf;
+
     myhandle = "handle_" <> boundpar;
 
     {"\n",
@@ -735,8 +738,8 @@ CreateMoLBoundariesSource[spec_] :=
     scalarBCGF[gf_] := Module[{boundpar, fullgfname, myhandle},
     (* simple dirichlet boundary condition *)
 
-    boundpar = ToString@gf <> "_bound";
-    fullgfname = lookup[spec, BaseImplementation] <> "::" <> ToString@gf;
+    boundpar   = unqualifiedGroupName@ToString@gf <> "_bound";
+    fullgfname = ToString@gf;
     myhandle = "handle_" <> boundpar;
 
     {"\n",

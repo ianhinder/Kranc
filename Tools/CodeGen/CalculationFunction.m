@@ -421,9 +421,10 @@ groupName[g_] :=
 
 syncGroup[name_] :=
   If[SOURCELANGUAGE == "C",
-    {"CCTK_SyncGroup(cctkGH, \"", name, "\");\n"},
-    {"call CCTK_SyncGroup(i, cctkGH, \"", name, "\")\n"}
+    {"/* SYNC: " <> name <> "\n", "/* sync via schedule instead of CCTK_SyncGroup(cctkGH, \"", name, "\");*/\n"},
+    {"/* SYNC: " <> name <> "\n", "/* sync via schedule instead of call CCTK_SyncGroup(i, cctkGH, \"", name, "\")\n"}
   ];
+
 
 
 equationLoop[eqs_, gfs_, shorts_, incs_, groups_, syncGroups_, pddefs_] :=

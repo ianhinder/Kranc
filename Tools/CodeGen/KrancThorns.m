@@ -728,7 +728,7 @@ CreateSetterThorn[calc_, groups_, optArgs___] :=
 Module[{after, allowedSetTimes, baseImplementation, baseParamsTrueQ, before, calcrhsName, debug,
         file, GFs, globalStorageGroups, implementation, implementations, intParameters,
         namedCalc, precompheaderName, realParameters, RHSs, setgroups, setTime,
-        ThornList, ext, include, genericFDImplementation, baseImp},
+        ThornList, ext, include, genericFDImplementation, baseImp, numeq, grepSYNC},
 
     Print["\n*** CreateSetterThorn ***"];
 
@@ -754,10 +754,10 @@ implementation     = lookupDefault[opts, Implementation, thornName];
 baseImplementation = systemName <> "Base";
 
 setTime            = lookup[opts, SetTime];
-pddefs = lookupDefault[opts, PartialDerivatives, {}];
+pddefs             = lookupDefault[opts, PartialDerivatives, {}];
 
 debug              = lookup[opts, DeBug];
-include = lookupDefault[opts, Include, {}];
+include            = lookupDefault[opts, Include, {}];
 
 
 If[debug,
@@ -795,21 +795,19 @@ ThornList = {{ThornName -> "GenericFD", ThornArrangement -> "KrancNumericalTools
 (* *)
 };
 
+
 namedCalc = augmentCalculation[calc, thornName <> "_Set", 
                                baseImplementation, groups, allParameters, pddefs];
+
+Print["number of equations in calculation: ", numeq = Length@lookup[namedCalc, Equations]];
+
 
 setgroups = calculationSetGroups[namedCalc];
 
 Print["setgroups: ", setgroups];
 
-
 calcrhsName       = lookup[namedCalc, Name];
 precompheaderName = "precomputations.h";
-
-newparams = {};
-
-
-
 
 before = If[mapContains[namedCalc, Before],
             " BEFORE (" <> FlattenBlock @ SpaceSeparated @ lookup[namedCalc, Before] <> ") ",
@@ -819,60 +817,21 @@ after  = If[mapContains[namedCalc, After],
             " AFTER (" <> FlattenBlock@SpaceSeparated@lookup[namedCalc, After] <> ") ",
             "" ];
 
+
 (* INTERFACE *)
 inheritedImplementations = Join[{baseImplementation, "Grid", "GenericFD"}, 
                                 lookupDefault[opts, InheritedImplementations, {}]];
 
 includeFiles             = {"GenericFD.h"};
 
-newgroups = {}; 
 
+newgroups = {}; 
 interface = CreateInterface[implementation, inheritedImplementations, includeFiles, newgroups];
 
 
-(* SCHEDULE *)
-scheduledGroups     = {};
-scheduledFunctions  = {};
-globalStorageGroups = Map[simpleGroupStruct[#, 1]&, setgroups];
-
-
-scheduledINITIAL      = {Name               -> calcrhsName,
-                         SchedulePoint      -> "AT INITIAL" <> before <> after,
-                         SynchronizedGroups -> {} (* setgroups, *),
-                         Language           -> CodeGen`SOURCELANGUAGE, 
-                         
-                         Conditional        -> If[setTime == "initial_and_poststep", 
-                                                    {Textual -> "set_initial_data"}, 
-                                                    {}
-                                                 ],
-                                              
-                         Comment            -> "set initial values"};
-
-scheduledPOSTSTEP  = {Name               -> calcrhsName,
-                      SchedulePoint      -> "in MoL_PostStep" <> before <> after, 
-                      SynchronizedGroups -> {} (* setgroups *) ,
-                      Language           -> CodeGen`SOURCELANGUAGE, 
-                      Conditional        -> If[setTime == "initial_and_poststep", 
-                                                 {Textual -> "set_poststep"}, 
-                                                 {}
-                                              ],
-                      Comment            -> "set values"};
-
-If[(setTime == "initial_only"),
-   scheduledFunctions = {scheduledINITIAL};
-];
- 
-If[(setTime == "poststep_only"),
-   scheduledFunctions = {scheduledPOSTSTEP};
-];
-
-If[(setTime == "initial_and_poststep"),
-   scheduledFunctions = {scheduledINITIAL, scheduledPOSTSTEP};
-];
-
-schedule = CreateSchedule[globalStorageGroups, {}, scheduledFunctions];
-
 (* PARAM *)
+newparams = {}; 
+
 Map[AppendTo[newparams, #]&,
           Flatten[{Map[completeRealParamStruct, realParameters],
                    Map[completeIntParamStruct,  intParameters]}, 1]];
@@ -920,12 +879,77 @@ precompheader = CreatePrecompMacros[ namedCalc ];
 
 ext = CodeGen`SOURCESUFFIX;
 
-(* MAKEFILE *)
-make = CreateMakefile[{StartupName <> ".c", calcrhsName <> ext}];
+IsNotEmptyString[x_] := TrueQ[x != ""];
+PickMatch[x_?StringQ, form_?StringQ] := If[StringMatchQ[x, form], x, ""];
+
+(* search for SYNCs *)
+grepSYNC = Map[PickMatch[#, "*SYNC*"] &, Flatten[setrhs, Infinity]];
+grepSYNC = Select[grepSYNC, IsNotEmptyString];
+
+
+grepSYNC = Map[StringReplace[#, "/* SYNC: " -> ""]&, grepSYNC];
+
+Print["found groups to SYNC: ", grepSYNC];
+
+SafeStringReplace[x_, string1_?StringQ, string2_?StringQ] := If[StringQ@x, StringReplace[x, string1 -> string2], x];
+
+If[numeq > 1, grepSYNC = {};
+   setrhs = Map[SafeStringReplace[#, "/* sync via schedule instead of ", ""]&, setrhs, Infinity];
+               Print["> 1 loop in thorn -> scheduling in source code, incompatible with Multipatch!"]
+];
+
+
+(* SCHEDULE *)
+scheduledGroups     = {};
+scheduledFunctions  = {};
+globalStorageGroups = Map[simpleGroupStruct[#, 1]&, setgroups];
+
+
+scheduledINITIAL      = {Name               -> calcrhsName,
+                         SchedulePoint      -> "AT INITIAL" <> before <> after,
+                         SynchronizedGroups -> grepSYNC,
+                         Language           -> CodeGen`SOURCELANGUAGE, 
+                         
+                         Conditional        -> If[setTime == "initial_and_poststep", 
+                                                    {Textual -> "set_initial_data"}, 
+                                                    {}
+                                                 ],
+                                              
+                         Comment            -> "set initial values"};
+
+scheduledPOSTSTEP  = {Name               -> calcrhsName,
+                      SchedulePoint      -> "in MoL_PostStep" <> before <> after, 
+                      SynchronizedGroups -> grepSYNC,
+                      Language           -> CodeGen`SOURCELANGUAGE, 
+                      Conditional        -> If[setTime == "initial_and_poststep", 
+                                                 {Textual -> "set_poststep"}, 
+                                                 {}
+                                              ],
+                      Comment            -> "set values"};
+
+If[(setTime == "initial_only"),
+   scheduledFunctions = {scheduledINITIAL};
+];
+ 
+If[(setTime == "poststep_only"),
+   scheduledFunctions = {scheduledPOSTSTEP};
+];
+
+If[(setTime == "initial_and_poststep"),
+   scheduledFunctions = {scheduledINITIAL, scheduledPOSTSTEP};
+];
+
+
+schedule = CreateSchedule[globalStorageGroups, {}, scheduledFunctions];
+
+
 
 (* Write the differencing header file *)
 diffHeader = CreateDifferencingHeader[pddefs, lookupDefault[opts, ZeroDimensions, {}]];
 
+
+(* MAKEFILE *)
+make = CreateMakefile[{StartupName <> ".c", calcrhsName <> ext}];
 
 (* CREATE THORN *)
 thornspec = {Name      -> thornName, 

@@ -42,6 +42,7 @@ Begin["`Private`"];
    General Utility Functions
    -------------------------------------------------------------------------- *)
 
+
 (* remove the 'rhs' at the end of a symbol or string *)
 removeRHS[x_] := Module[{string = ToString[x]},
       
@@ -136,8 +137,8 @@ assignVariableFromExpression[dest_, expr_] := Module[{tSym, cleanExpr, code},
       cleanExpr = ReplacePowers[expr] /. sym`t -> tSym;
   
       If[SOURCELANGUAGE == "C",      
-        code = ToString[dest == cleanExpr, CForm,       PageWidth -> 80] <> ";\n",
-        code = ToString[dest] <> ".eq." <> ToString[cleanExpr, FortranForm, PageWidth -> 120] <> "\n"
+        code = ToString[dest == cleanExpr, CForm,       PageWidth -> 120] <> ";\n",
+        code = ToString@dest <> ".eq." <> ToString[cleanExpr, FortranForm, PageWidth -> 120] <> "\n"
        ];
  
       If[SOURCELANGUAGE != "C",
@@ -146,8 +147,8 @@ assignVariableFromExpression[dest_, expr_] := Module[{tSym, cleanExpr, code},
            code = StringReplace[code, "   -  "    -> " &  "];
            code = StringReplace[code, ".eq."      -> " = "];
            code = StringReplace[code, "=        " -> "="];
-           code = StringReplace[code, "\\"         -> ""];
-           code = StringReplace[code, "(index)"      -> "(i,j,k)"];
+           code = StringReplace[code, "\\"        -> ""];
+           code = StringReplace[code, "(index)"   -> "(i,j,k)"];
          ];
       ];
 
@@ -167,15 +168,17 @@ debugInLoop = False;
 declareVariablesForCalculation[calc_] :=
   Module[{shorthands, localGFs},
 
-    shorthands = calculationUsedShorthands[calc];
+    shorthands = Union@Map[ToString, Union@Flatten@calculationUsedShorthands@calc];
+    shorthands = PartitionVarList@shorthands;
 
-    localGFs = Map[localName, calculationUsedGFs[calc]];
+    localGFs = Map[localName, Union@Map[ToString, Union@Flatten@calculationUsedGFs@calc]];
+    localGFs = PartitionVarList@localGFs;
 
     {CommentedBlock["Declare shorthands",
-       Map[DeclareVariable[#, "CCTK_REAL"] &, shorthands]],
+       Map[DeclareVariables[#, "CCTK_REAL"] &, shorthands]],
 
      CommentedBlock["Declare local copies of grid functions",
-       Map[DeclareVariable[#, "CCTK_REAL"] &, localGFs]]}];
+       Map[DeclareVariables[#, "CCTK_REAL"] &, localGFs]]}];
 
 (* Derivative precomputation *)
 
@@ -185,8 +188,8 @@ derivativesUsed[x_] :=
 (* Expects a list of the form {D11[h22], ...} *)
 declarePrecomputedDerivatives[derivs_] :=
   Module[{vars},
-    vars = Map[ToString[Head[#]] <> ToString[First[#]] &, derivs];
-    {Map[DeclareVariable[#, "CCTK_REAL"] &, vars], "\n\n"}];
+    vars = PartitionVarList@Map[ToString[Head[#]] <> ToString[First[#]] &, derivs];
+    {Map[DeclareVariables[#, "CCTK_REAL"] &, vars], "\n\n"}];
 
 precomputeDerivative[d_] :=
   Module[{h=ToString[Head[d]], f = ToString[First[d]]},

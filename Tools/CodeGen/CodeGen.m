@@ -43,6 +43,9 @@ IncludeFile::usage = "IncludeFile[name] returns a block of code" <>
 DeclareVariable::usage = "DeclareVariable[name, type] returns a block of code " <>
   "that declares a variable of given name and type.  'name' and 'type' should be " <>
   "strings.";
+DeclareVariables::usage = "DeclareVariable[names, type] returns a block of code " <>
+  "that declares a list of variables of given name and type.  'names' should be a list" <>
+  " of strings and 'type' should be a string string.";
 DefineVariable::usage = "DefineVariable[name, type, value] returns a block of " <>
   "code that declares and initialised a variable 'name' of type 'type' to value 'value'.";
 AssignVariable::usage = "AssignVariable[dest_, src_] returns a block of code " <>
@@ -74,8 +77,8 @@ DeclareArray::usage = "";
 DefineFunction::usage = "";
 ConditionalOnParameterTextual::usage = "";
 
-SpaceSeparated::usage = "";   (* This shouldn't really be in CodeGen *)
-NewlineSeparated::usage = ""; (* This shouldn't really be in CodeGen *)
+SpaceSeparated::usage = "";   (* This should not really be in CodeGen *)
+NewlineSeparated::usage = ""; (* This should not really be in CodeGen *)
 
 CBlock::usage = "";
 SuffixedCBlock::usage = "";
@@ -85,10 +88,14 @@ DeclareFDVariables::usage = "";
 
 InitialiseFDVariables::usage = "";
 
-CommaNewlineSeparated::usage = ""; (* This shouldn't really be in CodeGen *)
+CommaNewlineSeparated::usage = ""; (* This should not really be in CodeGen *)
 CommaSeparated::usage = "";
 ReplacePowers::usage = "";
 CFormHideStrings::usage = "";
+
+
+NameRoot::usage = "";
+PartitionVarList::usage = "";
 
 Begin["`Private`"];
 
@@ -146,6 +153,37 @@ CommaSeparated[l_] :=
 NewlineSeparated[l_] := 
   intersperse[l, "\n"];
 
+CommaInitSeparated[l_] :=
+  intersperse[l, " = INITVALUE, "];
+
+
+
+NameRoot[name_] := Module[{dropNumberRule, root},
+
+      dropNumberRule = {"1" -> "", "2" -> "", "3" -> "", "4" -> "", "5" -> "",
+                        "6" -> "", "7" -> "", "8" -> "", "9" -> "", "0" -> ""};
+
+      root = StringReplace[ToString@name, dropNumberRule]
+      ];
+
+PartitionVarList[list_]:= Module[{partition, split},
+
+partition[locallist_] := Module[{cutoff},
+  cutoff = 6;
+  Print["local list: ", locallist];
+  If[Length@locallist > cutoff, Partition[locallist, cutoff, cutoff, {1,1}, {}], {locallist}]
+];
+
+
+split = Split[list, NameRoot[#1] == NameRoot[#2] &];
+Print["split: ", split];
+
+split = Flatten[Map[partition, split], 1];
+Print["split: ", split];
+
+split
+];
+
 
 (* Code generation for generic C and C-preprocessed Fortran *)
 
@@ -157,8 +195,15 @@ IncludeFile[filename_] :=
 DeclareVariable[name_, type_] :=
 If[SOURCELANGUAGE == "C",
   {type, " ",    name, " = INITVALUE" <> EOL[]},
-  {type, " :: ", name, " = INITVALUE" <> EOL[]}
+  {type, " :: ", name, EOL[]} (* no value init here to avoid implicit SAVE attribute *)
   ];
+
+
+DeclareVariables[names_?ListQ, type_] := 
+If[SOURCELANGUAGE == "C",
+   {type, " ",    CommaInitSeparated@names, EOL[]},
+   {type, " :: ", CommaSeparated@names,     EOL[]} (* no value init avoids implicit SAVE attribute *)
+   ];
 
 DeclareArray[name_, dim_, type_] :=
   If[SOURCELANGUAGE == "C",
@@ -242,7 +287,7 @@ defineSubroutineC[name_, args_, contents_] :=
 defineSubroutineF[name_, args_, contents_] :=
   SeparatedBlock[
     {"subroutine ", name, "(", args, ")", "\n",
-     "implicit none\n",
+     "\nimplicit none\n\n",
      contents,
      "end subroutine\n"}];
 
@@ -275,9 +320,10 @@ DefineCCTKSubroutine[name_, contents_] :=
 
 DeclareFDVariables[] := 
   CommentedBlock["Declare finite differencing variables",
-    Map[DeclareVariable[#, "CCTK_REAL"] &, {"dx", "dy", "dz", 
-                                            "dxi", "dyi", "dzi",
-                                            "hdxi", "hdyi", "hdzi"}]];
+    Map[DeclareVariables[#, "CCTK_REAL"] &, {{"dx", "dy", "dz"}, 
+                                             {"dxi", "dyi", "dzi"},
+                                             {"hdxi", "hdyi", "hdzi"}}]];
+
 InitialiseFDSpacingVariablesC[] := 
   {
     AssignVariable["dx", "CCTK_DELTA_SPACE(0)"],
@@ -312,11 +358,10 @@ GridName[x_] := If[SOURCELANGUAGE == "C",
 DeclareGridLoopVariables[] :=
   SeparatedBlock[
     {insertComment["Declare the variables used for looping over grid points"],
-
-     Map[DeclareVariable[#, "CCTK_INT"] &, 
-         {"i", "j", "k", "istart", "jstart", "kstart", 
-          "iend", "jend", "kend",
-          "index_offset_x", "index_offset_y", "index_offset_z"}],
+     Map[DeclareVariables[#, "CCTK_INT"] &, 
+         {{"i", "j", "k"}, {"istart", "jstart", "kstart"}, 
+          {"iend", "jend", "kend"},
+          {"index_offset_x", "index_offset_y", "index_offset_z"}}],
 
      If[SOURCELANGUAGE == "C", DeclareVariable["index", "CCTK_INT"], "\n"]
   }];
@@ -393,7 +438,7 @@ GridLoop[block_] :=
 
        { If[SOURCELANGUAGE == "C",  
             AssignVariable["index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"],
-            "\n"],
+            ""],
 	 block
        }
         ]]]];

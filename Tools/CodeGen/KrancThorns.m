@@ -568,7 +568,7 @@ Options[CreateSetterThorn] =
 
 CreateSetterThorn[calc_, groups_, optArgs___] :=
 
-Module[{after, baseImplementation, baseParamsTrueQ, before, calcrhsName, debug,
+Module[{after, allowedSetTimes, baseImplementation, baseParamsTrueQ, before, calcrhsName, debug,
         file, GFs, globalStorageGroups, implementation, intParameters,
         namedCalc, precompheaderName, realParameters, RHSs, setgroups, setTime,
         ThornList, ext},
@@ -603,6 +603,15 @@ If[debug,
   Print["Debugging switched on"],
   Print["Debugging switched off"]
  ];
+
+allowedSetTimes = {"initial_only", "poststep_only", "initial_and_poststep"};
+
+If[!MemberQ[allowedSetTimes, setTime],
+   Module[{},
+     Print["Unknown value for option SetTime: ", SetTime];
+     Throw["Allowed values for option SetTime are: \"initial_only\", \"poststep
+_only\" and \"initial_and_poststep\""]]];
+
 
 baseParamsTrueQ = Length@realBaseParameters + Length@intBaseParameters > 0;
 

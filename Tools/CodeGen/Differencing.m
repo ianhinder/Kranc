@@ -228,7 +228,7 @@ ComponentDerivativeOperatorMacroDefinition[componentDerivOp:(name_[inds___] -> e
     rhs = DifferenceGF[expr, i, j, k];
     spacings = {spacing[1] -> 1/"dxi", spacing[2] -> 1/"dyi", spacing[3] -> 1/"dzi"};
     rhs2 = CFormHideStrings[ReplacePowers[rhs /. spacings]];
-    FlattenBlock[{"#define ", macroName, "(u,i,j,k) ", rhs2}]];
+    FlattenBlock[{"#define ", macroName, "(u,i,j,k) ", "(", rhs2, ")"}]];
 
 ComponentDerivativeOperatorMacroName[componentDerivOp:(name_[inds___] -> expr_)] :=
   Module[{stringName},
@@ -377,37 +377,10 @@ PDToReplacementRule[pd_[inds__]] :=
 AllGFDRules[pddefs_] :=
   Map[PDToReplacementRule, ListAllPDs[pddefs]];
 
-(* Given a single derivative, return the macro that defines it *)
-ConvertPartialDerivativeToMacros[pd_] :=
-  Module[{name, all, rules, spacings, rhss, names, pairs, macros},
-    name = lookup[pd, Name];
-    all = AllDerivatives[name];
-    rules = lookup[pd, Definitions];
-    spacings = {spacing[1] -> 1/dxi, spacing[2] -> 1/dyi, spacing[3] -> 1/dzi};
-    rhss = all /. rules /. spacings;
-    names = all /. name[inds__] :> DerivativeName[name[inds]];
-    pairs = Thread[Rule[names, rhss]];
-
-
-    macros = Map[ConstructDifferenceMacro[#[[1]], #[[2]]] &, pairs];
-
-    macros];
 
 (* List all the derivatives with a particular name  *)
 AllDerivatives[name_] :=
   Join[Table[name[i],{i,1,3}], Flatten[Table[name[i,j], {i,1,3},{j,1,3}],1]];
-
-(* Given the name of a derivative, and its expression in terms of
-   shift operators, return a codegen block defining the macro *)
-ConstructDifferenceMacro[name_, op_] :=
-  Module[{rhs, rhs2, b},
-    rhs = DifferenceGF[op, i, j, k];
-    rhs2 = CFormHideStrings[ReplacePowers[rhs]];
-    FlattenBlock[{"#define ", name, "(u,i,j,k) ", rhs2}]];
-
-
-
-
 
 (* Return a difference operator approximating a derivative of order p
    using m grid points before and m grid points after the centre

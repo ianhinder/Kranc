@@ -8,10 +8,10 @@ The user works in terms of "partial derivatives".  For example,
 expressions of the form PD[phi,1,2] for the mixed partial derivative
 of the function phi in the 1 and 2 directions.
 
-Each of these partial derivatives (i.e. "PD") is defined in terms of a
-"difference operator", e.g. dzero[i_], where i is the direction.  So
-whenever the user enters PD[phi,1,2], what gets calculated is dzero[1]
-dzero[2] phi.
+Each of these partial derivatives (i.e. "PD") is defined in terms of
+an expression involving "difference operators", e.g. dzero[i_], where
+i is the direction.  So whenever the user enters PD[phi,1,2], what
+gets calculated is dzero[1] dzero[2] phi.
 
 These difference operators are defined in terms of the elementary
 "shift" operators: dplus[i_] := (shift[i] - 1)/spacing[i], and can be
@@ -19,32 +19,8 @@ composed with each other as a result: dzero[i_] := (dplus[i] +
 dminus[i]) / 2.
 
 The definition of a partial derivative in terms of difference
-operators is local to a particular calculation.  The definition is
-given in the form:
+operators is given in the form:
 
-PD[u_, i_] -> dzero[i],
-PD[u_, i_] -> dzero[i],
-PD[u_, i_, i_] -> dplus[i] dminus[i],
-PD[u_, i_, j_] -> dzero[i] dzero[j]
-
-The source code generated contains the definitions of these difference
-operators as macros.  E.g. 
-
-#define PD_1(u,i,j,k) (u[i+1,j,k] - u[i-1,j,k]) hdxi
-
-Then, at the start of each loop, all necessary derivatives are
-precomputed:
-
-PD_1_phi = PD_1(phi,i,j,k);
-
-Then, in the calculation itself, the variable PD_1_phi is used.
-
-In order to maintain compatibility with the existing method of
-operation, we allow a partial derivative definition to be conditional
-on a particular preprocessor macro.  So the full definition of a
-PartialDerivative is: *)
-
-(*
 partialDerivative = 
 {Name -> PD,
  Macro -> FD_C2,
@@ -52,14 +28,18 @@ partialDerivative =
  {PD[i_] -> dzero[i],
   PD[i_, i_] -> dplus[i] dminus[i],
   PD[i_, j_] -> dzero[i] dzero[j]}};
-*)
 
-(* 
+The source code generated contains the definitions of these difference
+operators as macros.  E.g. 
 
-If such a conditional is present, then the definition of the PD_1 etc
-macros will use it.  This allows several different differencing
-schemes to be implemented, and the behaviour to be chosen at Cactus
-configuration time.
+#define PD1(u,i,j,k) (u[i+1,j,k] - u[i-1,j,k]) hdxi
+
+Then, at the start of each loop, all necessary derivatives are
+precomputed:
+
+PD1phi = PD1(phi,i,j,k);
+
+Then, in the calculation itself, the variable PD1phi is used.
 
 *)
 
@@ -80,82 +60,72 @@ DPlus::usage = "";
 DMinus::usage = "";
 DZero::usage = "";
 
-
 Begin["`Private`"];
-
 
 DPlus[n_] := (shift[n] - 1)/spacing[n];
 DMinus[n_] := (1 - 1/shift[n])/spacing[n];
 DZero[n_] := (DPlus[n] + DMinus[n])/2;
 
-
+(* Given a grid function derivative, return the C variable name that
+   we will use to precompute its value. *)
 GFDerivativeName[pd_[gf_, i_]] := 
 Symbol["Global`" <> ToString[pd] <> ToString[i] <> ToString[gf]];
 
+(* Given a grid function derivative, return the C variable name that
+   we will use to precompute its value. *)
 GFDerivativeName[pd_[gf_, i_, j_]] := 
 Symbol["Global`" <> ToString[pd] <> ToString[i] <> ToString[j] <> ToString[gf]];
 
+
+(* Given a derivative, return the macro name used for it *)
 DerivativeName[pd_[i_]] := Symbol["Global`" <> ToString[pd] <> ToString[i]];
 DerivativeName[pd_[i_, j_]] := Symbol["Global`" <> ToString[pd] <> ToString[i] <> ToString[j]];
 
+(* Return a codegen block to precompute the given grid function
+   derivative *)
 PrecomputeDerivative[d:pd_[gf_, inds__]] :=
   AssignVariable[GFDerivativeName[d], {DerivativeName[pd[inds]], "(", gf,", i, j, k)"}];
 
+(* Return a codegen block to declare a grid function derivative
+   precompute variable *)
 DeclareDerivative[d:pd_[gf_, inds__]] :=
   DeclareVariable[GFDerivativeName[d], "CCTK_REAL"];
 
+(* Given a derivative definition, return all the derivatives that
+   could be defined using the name of the definition *)
 PDsFromDefinition[def_] :=
   AllDerivatives[lookup[def, Name]];
 
+(* Given a list of derivative definitions, return all the possible
+   derivatives that could be defined in it *)
 ListAllPDs[defs_] :=
   Apply[Join, Map[PDsFromDefinition, defs]];
 
-
+(* List all the grid function derivatives in x that are defined in
+   pddefs *)
 GFDsInExpression[x_, pddefs_] :=
   Module[{},
     pds = Flatten[Map[PDsFromDefinition, pddefs],1];
-    Print["pds == ", pds];
     gfds = Flatten[Map[GFDsInExpressionForPD[x,#] &, pds], 1];
     gfds];
 
+(* List all the grid function derivatives in x that are generated from
+   pd *)
 GFDsInExpressionForPD[x_, pd_[inds__]] :=
   Union[Cases[x, pd[gf_, inds], Infinity]];
 
+(* Given a derivative, return a rule that can be applied to an
+   expression to convert that derivative into its corresponding macro
+   call *)
 PDToReplacementRule[pd_[inds__]] :=
   pd[x_, inds] :> GFDerivativeName[pd[x,inds]];
 
-
+(* Return all the rules for converting derivatives into macros that
+   are defined in pddefs *)
 AllGFDRules[pddefs_] :=
   Map[PDToReplacementRule, ListAllPDs[pddefs]];
 
-
-
-(*
-
-A "partial derivative" or "PD" is an expression of the form
-pd_[inds__].  A "grid function derivative" or "GFD" is an expression
-of the form pd_[gf_, inds__].  A "partial derivative definition" or
-"pdd" is the structure that defines the differencing for a partial
-derivative.
-
-Get a list of all the PDs that could exist.
-
-Find all the GFDs in whatever expressions we want to precompute for.
-
-Output the code to precompute these derivatives.
-
-Convert the GFDs into rules for replacing each GFD with its variable
-name.
-
-Apply these rules to the expression.
-
-*)
-
-
-
-
-
-
+(* Given a single derivative, return the macro that defines it *)
 ConvertPartialDerivativeToMacros[pd_] :=
   Module[{name, all, rules, spacings, rhss, names, pairs, macros},
     name = lookup[pd, Name];
@@ -171,56 +141,23 @@ ConvertPartialDerivativeToMacros[pd_] :=
 
     macros];
 
+(* List all the derivatives with a particular name  *)
 AllDerivatives[name_] :=
   Join[Table[name[i],{i,1,3}], Flatten[Table[name[i,j], {i,1,3},{j,1,3}],1]];
 
+(* Given the name of a derivative, and its expression in terms of
+   shift operators, return a codegen block defining the macro *)
 ConstructDifferenceMacro[name_, op_] :=
   Module[{rhs, rhs2, b},
+    rhs = DifferenceGF[op, i, j, k];
+    rhs2 = CFormHideStrings[ReplacePowers[rhs]];
+    FlattenBlock[{"#define ", name, "(u,i,j,k) ", rhs2}]];
 
-  rhs = DifferenceGF[op, i, j, k];
-
-  rhs2 = CFormHideStrings[ReplacePowers[rhs]];
-(*
-  rhs2 = CFormReplace[rhs, IndexFunction[i_,j_,k_] -> "u[CCTK_GFINDEX3D(cctkGH, " 
-<> ToString[CForm[i]] <> 
-    ", " <> ToString[CForm[j]] <> ", " <> ToString[CForm[k]] <> ")]"];*)
-
-  b = FlattenBlock[{"#define ", name, "(u,i,j,k) ", rhs2}];
-  b];
-
-
-
-(*
-  hide = Map[# -> Unique[] &, Cases[rhs, IndexFunction[__], Infinity]];
-
-  renderIndexFunction[IndexFunction[u_, i_, j_, k_]] :=
-    "u[CCTK_GFINDEX3D(cctkGH, " <> ToString[CForm[i]] <> 
-    ", " <> ToString[CForm[j]] <> ", " <> ToString[CForm[k]] <> ")]";
-
-  restore = Map[#[[2]] -> #[[1]] &, hide];
-
-  restore2 = Map[ToString[#[[1]]] -> renderIndexFunction[#[[2]]] & , restore];
-
-  rhs2 = ToString[CForm[rhs /. hide]];
-
-  rhs3 = StringReplace[rhs2, restore2];
-
-  FlattenBlock[
-  {"#define ", name, "(u,i,j,k) ", rhs3}]];
-*)
-
-
-CFormReplace[x_, a_ -> b_] :=
-  Module[{hide, restore, restore2, x2, x3},
-    hide = Map[# -> Unique[] &, Cases[x, a, Infinity]];
-    restore = Map[#[[2]] -> #[[1]] &, hide];
-    Print["a -> b == ", a -> b];
-    restore2 = Map[ToString[#[[1]]] -> (#[[2]] /. a :> b) & , restore];
-    x2 = ToString[CForm[x /. hide]];
-    x3 = StringReplace[x2, restore2]];
-
+(* Convert an expression to CForm, but remove the quotes from any
+   strings present *)
 CFormHideStrings[x_] := StringReplace[ToString[CForm[x]], "\"" -> ""];
 
+(* Farm out each term of a difference operator *)
 DifferenceGF[op_, i_, j_, k_] :=
   Module[{expanded},
     expanded = Expand[op];
@@ -228,9 +165,10 @@ DifferenceGF[op_, i_, j_, k_] :=
     If[Head[expanded] != Plus,
     Throw["Expecting Plus as head of " <> op]];
 
-
     Apply[Plus, Map[DifferenceGFTerm[#, i, j, k] &, expanded]]];
 
+(* Return the fragment of a macro definition for defining a derivative
+   operator *)
 DifferenceGFTerm[op_, i_, j_, k_] :=
   Module[{nx, ny, nz, remaining},
     If[Head[op] != Times,

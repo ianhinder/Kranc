@@ -137,7 +137,7 @@ assignVariableFromExpression[dest_, expr_] := Module[{tSym, cleanExpr, code},
   
       If[SOURCELANGUAGE == "C",      
         code = ToString[dest == cleanExpr, CForm,       PageWidth -> 80] <> ";\n",
-        code = ToString[dest] <> ".eq." <> ToString[cleanExpr, FortranForm, PageWidth -> 70] <> "\n"
+        code = ToString[dest] <> ".eq." <> ToString[cleanExpr, FortranForm, PageWidth -> 120] <> "\n"
        ];
  
       If[SOURCELANGUAGE != "C",

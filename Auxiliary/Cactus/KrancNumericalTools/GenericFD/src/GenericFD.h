@@ -424,4 +424,22 @@
 #define D1_c2c4(gf,i,j,k)  (fdweight_c2*D1_c2(gf, i,j,k) + fdweight_c4*D1_c4(gf,i,j,k))
 #define D2_c2c4(gf,i,j,k)  (fdweight_c2*D2_c2(gf, i,j,k) + fdweight_c4*D2_c4(gf,i,j,k))
 #define D3_c2c4(gf,i,j,k)  (fdweight_c2*D3_c2(gf, i,j,k) + fdweight_c4*D3_c4(gf,i,j,k))
-	
+
+
+/*****************************************************/
+/*                                                    */
+/*         One-sided derivatives                      */
+/* (only for C atm)                                   */
+/******************************************************/
+
+#define Dplus1(gf,i,j,k)                       \
+	 ((gf[CCTK_GFINDEX3D(cctkGH,i+1,j,k)] \
+	 - gf[CCTK_GFINDEX3D(cctkGH,i,j,k)]) * dxi)
+
+#define Dplus2(gf,i,j,k)                       \
+	 ((gf[CCTK_GFINDEX3D(cctkGH,i,j+1,k)] \
+	 - gf[CCTK_GFINDEX3D(cctkGH,i,j,k)]) * dyi)
+
+#define Dplus3(gf,i,j,k)                       \
+	 ((gf[CCTK_GFINDEX3D(cctkGH,i,j,k+1)] \
+	 - gf[CCTK_GFINDEX3D(cctkGH,i,j,k)]) * dzi)

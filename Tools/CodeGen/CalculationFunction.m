@@ -23,7 +23,7 @@
 BeginPackage["sym`"];
 
 {GridFunctions, Shorthands, Equations, t, DeclarationIncludes,
-LoopPreIncludes, GroupImplementations}
+LoopPreIncludes, GroupImplementations, DerivativeDiscretizations,Dplus1, Dplus2, Dplus3}
 
 {INV, SQR, CUB, QAD, dot, pow, exp} 
 
@@ -105,7 +105,7 @@ invertMap[m_] := Map[#[[2]] -> #[[1]] &, m];
 derivativeHeads = {D1, D2, D3, 
                           D11,
                           D21, D22,
-                          D31, D32, D33};
+                          D31, D32, D33, Dplus1, Dplus2, Dplus3};
 
 (* Take an expression containing derivatives (i.e. D1[<stuff> etc) and
    "hide" all the derivatives and their contents by replacing them
@@ -115,9 +115,12 @@ derivativeHeads = {D1, D2, D3,
    can be used to return the symbols to the derivatives *)
 hideDerivatives[x_] :=
   Module[{derivatives, unhide, hide},
-    derivatives = Union[Cases[x, _ ? (MemberQ[derivativeHeads, #] &)[_],Infinity]];
+    derivatives = Union[Cases[x, _ ? (MemberQ[derivativeHeads, #] &)[__],Infinity]];
+    Print["expression == ", x];
+    Print["derivatives == ", derivatives];
     unhide = Map[Unique[] -> # &, derivatives];
     hide = invertMap[unhide];
+    Print["hide map == ", hide];
 (*    Print["Expression with derivatives hidden: ", x /. hide]; *)
     {x /. hide, unhide}];
 
@@ -130,8 +133,19 @@ replaceWithDerivativesHidden[x_, map_] :=
     (newExpr /. map) /. unhide];
 
 (* Change D21[g11] into D21[g11,i,j,k] (for example)*)
-replaceDerivatives[x_] :=
-  x /. (d_ ? (MemberQ[derivativeHeads, #] &)[f_] -> d[f,Symbol["i"],Symbol["j"],Symbol["k"]]);
+replaceDerivatives[x_, derivRules_] :=
+  Module[{},
+    replaceStandard = (d_ ? (MemberQ[derivativeHeads, #] &)[f_] -> d[f,Symbol["i"],Symbol["j"],Symbol["k"]]);
+
+    replaceCustom = Flatten[derivRules,1];
+(*    Print["derivRules == ", derivRules//FullForm];
+    Print["replaceCustom == ", replaceCustom];*)
+
+(*    If[Length[derivRules] != 0,
+      Print["Before replace: ", x];
+      Print["After replace: ",x /. replaceCustom]];*)
+
+    x /. replaceStandard];
 
 (* Return a CodeGen block which assigns dest by evaluating expr *)
 assignVariableFromExpression[dest_, expr_] := Module[{tSym, cleanExpr, code},
@@ -245,11 +259,11 @@ CreateCalculationFunction[calc_, debug_] :=
           syncGroups = lookupDefault[calc, SyncGroups, {}],
           parameters = lookupDefault[calc, Parameters, {}],
           functionName, dsUsed, 
-          groups = lookup[calc, Groups]},
+          groups = lookup[calc, Groups],
+          derivDiscs = lookupDefault[calc, DerivativeDiscretizations, {}]},
 
   gfs = allVariables[groups];
   functionName = ToString@lookup[calc, Name];
-
   dsUsed = derivativesUsed[eqs];
 
   Print["Creating Calculation Function: " <> functionName];
@@ -311,7 +325,7 @@ CreateCalculationFunction[calc_, debug_] :=
        (* Have removed ability to include external header files here.
           Can be put back when we need it. *)
 
-       Map[equationLoop[#, gfs, shorts, {}, groups, syncGroups] &, eqs]},
+       Map[equationLoop[#, gfs, shorts, {}, groups, syncGroups, derivDiscs] &, eqs]},
       {}]}]];
 
 allVariables[groups_] :=
@@ -330,8 +344,8 @@ syncGroup[name_] :=
   ];
 
 
-equationLoop[eqs_, gfs_, shorts_, incs_, groups_, syncGroups_] :=
-  Module[{rhss, lhss, gfsInRHS, gfsInLHS, localGFs, localMap},
+equationLoop[eqs_, gfs_, shorts_, incs_, groups_, syncGroups_, derivDiscs_] :=
+  Module[{rhss, lhss, gfsInRHS, gfsInLHS, localGFs, localMap, eqs2},
 
     rhss = Map[#[[2]] &, eqs];
     lhss = Map[#[[1]] &, eqs];
@@ -341,6 +355,8 @@ equationLoop[eqs_, gfs_, shorts_, incs_, groups_, syncGroups_] :=
 
     localGFs = Map[localName, gfs];
     localMap = Map[# -> localName[#] &, gfs];
+
+    eqs2 = eqs /. Flatten[derivDiscs,1];
 
   {GridLoop[
    {CommentedBlock["Assign local copies of grid functions",
@@ -356,9 +372,9 @@ equationLoop[eqs_, gfs_, shorts_, incs_, groups_, syncGroups_] :=
     CommentedBlock["Calculate temporaries and grid functions",
                    Map[{assignVariableFromExpression[#[[1]], #[[2]]], "\n"}  &,
                    replaceDerivatives[
-                     replaceWithDerivativesHidden[eqs, localMap]]]],
+                     replaceWithDerivativesHidden[eqs2, localMap],derivDiscs]]],
 
-    If[debugInLoop, Map[InfoVariable[#[[1]]] &, eqs /. localMap], ""], 
+    If[debugInLoop, Map[InfoVariable[#[[1]]] &, eqs2 /. localMap], ""], 
 
     CommentedBlock["Copy local copies back to grid functions",
                    Map[AssignVariable[GridName[#], localName[#]] &, 

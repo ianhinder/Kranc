@@ -34,6 +34,7 @@ BeginPackage["CalculationFunction`", {"CodeGen`", "sym`", "MapLookup`", "KrancGr
 
 (* This is the only externally callable function *)
 CreateCalculationFunction::usage = "";
+calculationUsedGroups::usage = "";
 
 Begin["`Private`"];
 
@@ -210,6 +211,11 @@ calculationUsedGFs[calc_] :=
     calcSymbols = calculationSymbols[calc];
     allGFs = allVariables[lookup[calc, Groups]];
     Intersection[calcSymbols, allGFs]];
+
+calculationUsedGroups[calc_] :=
+  Module[{gfs},
+    gfs = calculationUsedGFs[calc];
+    containingGroups[gfs, lookup[calc, Groups]]];
 
 (* Return the names of any gridfunctions used in the calculation *)
 calculationUsedShorthands[calc_] :=

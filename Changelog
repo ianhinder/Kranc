@@ -1,3 +1,48 @@
+- added the possibility to "USE" functions which are actually Fortran subroutines,
+  this is required by LegoExcsion
+
+- added a parameter 'excision' to MoL thorns to switch excision on or off
+  like all excision-dependent code this is only done if the CreateExcisionCode option
+  is set to True in the Create*Thorn functions.
+
+- properly use functions from LegoExcision thorn in MoL thorns
+
+- further cleanup of namespace, added variables to the lists
+  of local variables within Modules.
+
+- the constant value to be used by LegoExcision inside
+  the excision now re-uses the <gfname>_bound_limit parameter
+  to set a sensible value (e.g. we do not want the determinant of
+  the 3-metric become singular).
+
+- changed the way lower and upper bounds for loops are set
+  Previously this was based on cctk_nghostzones, which causes
+  problem in the case of real boundaries, where the stencil size needs to be
+  considered, e.g. the number of ghost zones may be larger than the stencil size.
+
+  new stencil parameters have been added to GenericFD, they are tested for 
+  consistency in a new function GenericFG_ParamCheck
+
+  There is also a new dependence on whether or not the equaions in the loop
+  take derivatives or not.  
+
+- Added support for language specifier "None" in schedule.ccl entries, to suppress
+  warning messages like:
+
+    CST warning:
+      -> Scheduling group "ApplyBCs" with LANG specifier in thorn "BSSNMoL"
+          HINT: Groups should not have a LANG specificier
+
+
+- Added support for a larger number of boundary conditions, parameters for steering
+  those are added to param.ccl of the corresponding evolution thorn and
+  templete parfile entries are appended in a comment block at the end of
+  the file *_Boundaries.c.
+
+- Added EvolutionTimeLevels optional argument to CreateBaseThorn to support Carpet
+  or other mesh refinement drivers, which need more than 2 Timelevels. Default value is
+  3 now.
+
 1.0.1-cvs
 =========
 

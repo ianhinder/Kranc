@@ -109,6 +109,14 @@ ReplaceDerivatives[derivOps_, expr_]
 Replace all the GridFunctionDerivatives in expr with their variable
 names.
 
+StandardCenteredDifferenceOperator[p_, m_, i_]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Return a difference operator approximating a derivative of order p
+using m grid points before and m grid points after the centre
+point. Should be checked by someone competent!
+
+
 *)
 
 BeginPackage["sym`"];
@@ -124,6 +132,7 @@ CreateDifferencingHeader::usage = "";
 PrecomputeDerivatives::usage = "";
 DeclareDerivatives::usage = "";
 ReplaceDerivatives::usage = "";
+StandardCenteredDifferenceOperator::usage = "";
 DPlus::usage = "";
 DMinus::usage = "";
 DZero::usage = "";
@@ -142,6 +151,7 @@ DZero[n_] := (DPlus[n] + DMinus[n])/2;
 
 CreateDifferencingHeader[derivOps_] :=
   Module[{componentDerivOps, dupsRemoved, expressions},
+    Map[DerivativeOperatorVerify, derivOps];
     componentDerivOps = Flatten[Map[DerivativeOperatorToComponents, derivOps]];
     dupsRemoved = RemoveDuplicateRules[componentDerivOps];
     expressions = Flatten[Map[ComponentDerivativeOperatorMacroDefinition, dupsRemoved]];
@@ -149,19 +159,20 @@ CreateDifferencingHeader[derivOps_] :=
 
 
 PrecomputeDerivatives[derivOps_, expr_] :=
-  Module[{componentDerivOps, gfds},
-    componentDerivOps = Flatten[Map[DerivativeOperatorToComponents, derivOps]];
+  Module[{componentDerivOps, gfds, dupsRemoved},
+    Map[DerivativeOperatorVerify, derivOps];
     gfds = GridFunctionDerivativesInExpression[derivOps, expr];
     Map[PrecomputeDerivative, gfds]];
 
 DeclareDerivatives[derivOps_, expr_] :=
-  Module[{componentDerivOps, gfds},
-    componentDerivOps = Flatten[Map[DerivativeOperatorToComponents, derivOps]];
+  Module[{componentDerivOps, gfds, dupsRemoved},
+    Map[DerivativeOperatorVerify, derivOps];
     gfds = GridFunctionDerivativesInExpression[derivOps, expr];
     Map[DeclareDerivative, gfds]];
 
 ReplaceDerivatives[derivOps_, expr_] :=
   Module[{componentDerivOps, gfds},
+    Map[DerivativeOperatorVerify, derivOps];
     componentDerivOps = Flatten[Map[DerivativeOperatorToComponents, derivOps]];
     gfds = GridFunctionDerivativesInExpression[derivOps, expr];
     rules = Map[# :> GridFunctionDerivativeName[#] &, gfds];
@@ -192,9 +203,10 @@ GridFunctionDerivativeName[pd_[gf_, inds___]] :=
 
 
 GridFunctionDerivativesInExpression[derivOps_, expr_] := 
-  Module[{componentDerivOps, derivs},
+  Module[{componentDerivOps, derivs, patterns, dupsRemoved},
     componentDerivOps = Flatten[Map[DerivativeOperatorToComponents, derivOps]];
-    derivs = Map[First, componentDerivOps];
+    dupsRemoved = RemoveDuplicateRules[componentDerivOps];
+    derivs = Map[First, dupsRemoved];
     patterns = Map[# /. x_[inds___] -> x[y_, inds] &, derivs];
     Flatten[Map[Union[Cases[{expr}, #, Infinity]] &, patterns]]];
 
@@ -249,11 +261,25 @@ DerivativeOperatorGFDs[gf_];
 DerivativeOperatorToComponents[name_[indPatterns___] -> expr_] :=
   Module[{ips, symbols, symbolRanges, symbolLHS, table},
     ips = {indPatterns};
+
+    If[! MatchQ[ips, List[ (_Pattern) ...]],
+      Throw["DerivativeOperatorToComponents: Expecting indices which are symbolic patterns"]];
+
     symbols = Map[First, ips];
     symbolRanges = Map[{#, 1, 3} &, Union[symbols]];
     symbolLHS = name[Apply[Sequence, symbols]];
     table = Apply[Table, Join[{symbolLHS -> expr}, symbolRanges]];
     Flatten[table]];
+
+DerivativeOperatorVerify[derivOp_] :=
+  If[!MatchQ[derivOp, pd_[_Pattern ...] -> expr_?DerivativeOperatorRHSVerify],
+     Throw["Derivative operator definition failed verification: ", ToString[derivOp]]];
+
+DerivativeOperatorRHSVerify[expr_] :=
+  Module[{allAtoms, symbols},
+    allAtoms = Union[Level[expr, {-1}]];
+    symbols = Cases[allAtoms, x_Symbol];
+    True];
 
 
 RemoveDuplicates[l_] :=
@@ -272,14 +298,12 @@ RemoveDuplicates[l_] :=
 RemoveDuplicateRules[l_] :=
   Module[{lhs,lhs2,rhs2,result},
 
-    Print["Removing duplicates in ", l];
-
     lhs = Map[First, l];
     lhs2 = RemoveDuplicates[lhs];
     rhs2 = lhs2 /. l;
 
     result = Thread[Rule[lhs2,rhs2]];
-    Print["Result is: ", result];
+
     result];
 
 
@@ -389,7 +413,7 @@ StandardCenteredDifferenceOperator[p_, m_, i_] :=
     {mat, vec} = LinearEquationsToMatrices[eqs, coeffs];
     result = Inverse[mat].vec;
     deriv = expansion /. Thread[coeffs -> result];
-    deriv /. {f[n_ h] -> shift[i]^n, f[h]->shift[i], h -> spacing[i]}];
+    deriv /. {f[n_ h] -> shift[i]^n, f[h]->shift[i], f[0] -> 1, h -> spacing[i]}];
 
 End[];
 

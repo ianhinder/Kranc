@@ -1,0 +1,32 @@
+# file produced by user shusa, 31/3/2004
+# Produced with Mathematica Version 5.0 for Linux (June 9, 2003)
+
+# Mathematica script written by Ian Hinder and Sascha Husa
+
+# $Id$
+
+private:
+BOOLEAN check_active "whether to check ceiling values"
+{
+} "false"
+
+REAL ceiling_value "what value we use for the ceiling"
+{
+*:* :: "with negative values no cutoff is set"
+} -1
+
+KEYWORD type "what type of checking to apply"
+{
+  "absolute" :: "check for absolute value of GF"
+  "differential" :: "check for difference between min & max"
+} "absolute"
+
+STRING vars "List of evolved grid functions that should have dissipation added" STEERABLE=always
+{
+  .* :: "must be a valid list of grid functions"
+} ""
+
+BOOLEAN verbose "produce log output" STEERABLE=always
+{
+} "no"
+

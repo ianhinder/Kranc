@@ -39,7 +39,9 @@ groupFromName::usage = "";
 groupName::usage = "";
 renameGroup::usage = "";
 qualifyGroupName::usage = "";
+qualifyGFName::usage = "";
 unqualifiedGroupName::usage = "";
+implementationFromGroupName::usage = "";
 qualifyGroups::usage = "";
 containingGroups::usage = "";
 
@@ -88,11 +90,16 @@ qualifyGroupName[name_, defaultImp_] :=
 
 
 unqualifiedGroupName[name_] :=
-  If[StringMatchQ[name, "*::*"],
+  If[StringQ@name && StringMatchQ[ToString@name, "*::*"],
      Module[{colon = First[First[StringPosition[name, ":", 1]]]},
        StringDrop[name, colon + 1]],
      name];
 
+implementationFromGroupName[name_] :=
+  If[StringQ@name && StringMatchQ[ToString@name, "*::*"],
+     Module[{colon = First[First[StringPosition[name, ":", 1]]]},
+       StringDrop[name, colon - 1 - StringLength@name]],
+     name];
 
 (* Given a list of group definitions, and a list of group names, and
    an implementation name, return a new list of group definitions
@@ -124,6 +131,12 @@ containingGroups[vars_, groups_] :=
 
     Union[Map[groupName, Select[groups, Intersection[variablesInGroup[#], vars] != {} &]]]];
 
+
+qualifyGFName[gfname_, allgroups_, defaultImp_] := 
+  If[StringQ@gfname && StringMatchQ[gfname, "*::*"],
+     gfname,
+     implementationFromGroupName@qualifyGroupName[First@containingGroups[{gfname}, allgroups], defaultImp] <> "::" <>ToString@gfname
+  ];
 
 
 End[];

@@ -387,7 +387,13 @@ interface =
 
 (* SCHEDULE *)
 
-rhsGroups = Map[addrhs, evolvedGroups];
+rhsGroups = Select[Flatten@groups, StringQ];
+rhsGroups = Select[rhsGroups, StringMatchQ[#, "*rhs"]& ];
+
+If [Length@rhsGroups == 0,
+  rhsGroups = Map[addrhs, evolvedGroups];,
+  Print["Taking RHS groups from argument list: ", rhsGroups];
+];
 
 evolvedGroupDefinitions = Map[groupFromName[#, groups] &, evolvedGroups];
 rhsGroupDefinitions = Map[evolvedGroupToRHSGroup[#, evolvedGroupDefinitions] &, evolvedGroups];
@@ -402,10 +408,12 @@ namedCalc = augmentCalculation[calc2, thornName <> "_CalcRHS",
 
 calcrhsName    = lookup[namedCalc, Name];
 
+(* in the following the Union takes care of the case when rhs groups have been explicitly
+   declared as primitive groups *)
 globalStorageGroups =
-  Join[Map[simpleGroupStruct[#,2]&, evolvedGroups],
-       Map[simpleGroupStruct[#,1]&, rhsGroups],
-       Map[simpleGroupStruct[#,1]&, primitiveGroups]];
+  Union@Join[Map[simpleGroupStruct[#,2]&, evolvedGroups],
+             Map[simpleGroupStruct[#,1]&, rhsGroups],
+             Map[simpleGroupStruct[#,1]&, primitiveGroups]];
 
 scheduledGroups     = {{Name          -> "ApplyBCs",
                         Language      -> "None", (* groups do not have a language *)
@@ -509,16 +517,16 @@ createBoundScalarParam[groupOrGF_] := {
 *)
 
 boundaryParam = Join[Map[createBoundTypeParam, evolvedGFs],
-                     Map[createBoundTypeParam, evolvedGroups],
+                     Map[createBoundTypeParam, Map[unqualifiedGroupName,evolvedGroups]],
 
                      Map[createBoundSpeedParam, evolvedGFs],
-                     Map[createBoundSpeedParam, evolvedGroups],
+                     Map[createBoundSpeedParam, Map[unqualifiedGroupName,evolvedGroups]], 
 
                      Map[createBoundLimitParam, evolvedGFs],
-                     Map[createBoundLimitParam, evolvedGroups],
+                     Map[createBoundLimitParam, Map[unqualifiedGroupName,evolvedGroups]],
 
                      Map[createBoundScalarParam, evolvedGFs],
-                     Map[createBoundScalarParam, evolvedGroups]
+                     Map[createBoundScalarParam, Map[unqualifiedGroupName,evolvedGroups]] 
 ];
  
 
@@ -597,7 +605,7 @@ molregister = CreateMoLRegistrationSource[molspec, debug];
 
 (* BOUNDARIES *)
 molspec = {Groups -> evolvedGroups, 
-           EvolvedGFs -> evolvedGFs,
+           EvolvedGFs -> Map[qualifyGFName[#, groups, baseImplementation]& , evolvedGFs],
            BaseImplementation -> baseImplementation, ThornName -> thornName,
            ThornImplementation -> implementation, ExcisionGFs -> evolvedGFs};
 

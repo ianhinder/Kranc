@@ -45,7 +45,7 @@ Textual, TriggerGroups};
 
 EndPackage[];
 
-BeginPackage["Thorn`", "CodeGen`", "CalculationFunction`", "MapLookup`"];
+BeginPackage["Thorn`", "CodeGen`", "CalculationFunction`", "MapLookup`", "KrancGroups`"];
 
 (* These functions are externally visible, and comprise the public
    interface to this package. *)
@@ -587,7 +587,7 @@ CreateMoLBoundariesSource[spec_] :=
   Module[{gfs, groups, tmp, lang},
 
   gfs = lookup[spec, EvolvedGFs];
-  groups = lookup[spec, Groups];
+  groups = Map[unqualifiedGroupName, lookup[spec, Groups]];
 
     listBCparfileEntry[gforgroup_] := Module[{prefix},
     (* include a comment block with template parameter file entries *)
@@ -602,8 +602,8 @@ CreateMoLBoundariesSource[spec_] :=
     trivialBCGroup[group_] := Module[{boundpar, fullgroupname},
     (* boundary conditions that do not have parameters besides their name *)
 
-    boundpar = group <> "_bound";
-    fullgroupname = lookup[spec, BaseImplementation] <> "::" <> ToString@group;
+    boundpar      = unqualifiedGroupName@group <> "_bound";
+    fullgroupname = qualifyGroupName[ToString@group, lookup[spec, BaseImplementation]];
 
     {"\n",
      "if (CCTK_EQUALS(" <> boundpar <> ", \"none\"  ) ||\n",
@@ -642,11 +642,12 @@ CreateMoLBoundariesSource[spec_] :=
 
      "}\n"}];
 
-    radiationBCGroup[group_] := Module[{boundpar, fullgroupnamei, myhandle},
+    radiationBCGroup[group_] := Module[{boundpar, fullgroupname, myhandle},
     (* a simple radiation boundary condition *)
 
-    boundpar = group <> "_bound";
-    fullgroupname = lookup[spec, BaseImplementation] <> "::" <> ToString@group;
+    boundpar      = unqualifiedGroupName@ToString@group <> "_bound";
+    fullgroupname = qualifyGroupName[ToString@group, lookup[spec, BaseImplementation]];
+
     myhandle = "handle_" <> boundpar;
 
     {"\n",
@@ -706,8 +707,8 @@ CreateMoLBoundariesSource[spec_] :=
     scalarBCGroup[group_] := Module[{boundpar, fullgroupnamei, myhandle},
     (* simple dirichlet boundary condition *)
 
-    boundpar = group <> "_bound";
-    fullgroupname = lookup[spec, BaseImplementation] <> "::" <> ToString@group;
+    boundpar      = unqualifiedGroupName@group <> "_bound";
+    fullgroupname = qualifyGroupName[ToString@group, lookup[spec, BaseImplementation]];
     myhandle = "handle_" <> boundpar;
 
     {"\n",

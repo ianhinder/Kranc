@@ -598,7 +598,8 @@ startup = CreateStartupFile[thornName, thornName];
 
 
 (* MOL REGISTER *)
-molspec = {EvolvedGFs -> evolvedGFs, PrimitiveGFs -> primitiveGFs,
+molspec = {EvolvedGFs   -> Map[qualifyGFName[#, groups, baseImplementation]& , evolvedGFs], 
+           PrimitiveGFs -> primitiveGFs,
            BaseImplementation -> baseImplementation, ThornName -> thornName};
 
 molregister = CreateMoLRegistrationSource[molspec, debug];

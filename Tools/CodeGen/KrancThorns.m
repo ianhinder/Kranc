@@ -212,6 +212,7 @@ Options[CreateMoLThorn] =
    IntParameters         -> {},
    SystemName            -> SystemNameDefault,
    CreateExcisionCode    -> False,
+   EvolutionTimeLevels  -> 3,
    DeBug                 -> False,
    SystemParentDirectory -> ".", 
    PrimitiveGroups       -> {}};
@@ -219,14 +220,16 @@ Options[CreateMoLThorn] =
 (* removed evolvedGroups *)
 
 CreateMoLThorn[calculation_, groups_, optArgs___] :=
-  Module[{baseParamsTrueQ, boundaryParam, calcrhsName, createExcisionCode, debug,
-          file, globalStorageGroups, implementation, intParameters, ListOfEvolvedGFs,
-          ListOfEvolvedGroups, ListOfPrimitiveGFs, ListOfPrimitiveGroups,
-          ListOfRHSGroups, molboundaries, molboundariesFileName, molexcision,
-          molexcisionName, molImplementation, MoLParameters, molregisterName, opts,
-          precompheaderName, primitiveGroups, realParameters, selectBoundaryGroup,
-          selectBoundaryVar, setterFileName, genericFDImplementation,
-          sourceFiles, sources, ThornList, thornName, whatitevolves, ext, useFuns},
+  Module[{baseParamsTrueQ, boundaryParam, calcrhsName, createExcisionCode,
+          debug, evTimeLevels, file, globalStorageGroups, implementation, 
+          intParameters, ListOfEvolvedGFs, ListOfEvolvedGroups, 
+          ListOfPrimitiveGFs, ListOfPrimitiveGroups, ListOfRHSGroups, 
+          molboundaries, molboundariesFileName, molexcision,
+          molexcisionName, molImplementation, MoLParameters, molregisterName, 
+          opts, precompheaderName, primitiveGroups, realParameters, 
+          selectBoundaryGroup, selectBoundaryVar, setterFileName, 
+          genericFDImplementation, sourceFiles, sources, ThornList, thornName,
+          whatitevolves, ext, useFuns},
 
 Print["\n*** CreateMoLThorn ***"];
 
@@ -254,6 +257,7 @@ thornName          = lookupDefault[opts, ThornName, systemName <> "Evolve"];
 implementation     = lookupDefault[opts, Implementation, thornName];
 
 createExcisionCode =  lookup[opts, CreateExcisionCode];
+evTimeLevels       =  lookup[opts, EvolutionTimeLevels];
 pddefs = lookupDefault[opts, PartialDerivatives, {}];
 
 (* Find the evolved groups from the calculation *)
@@ -319,6 +323,8 @@ setterFileName        = thornName <> "_CalcRHS";
 molregisterName       = thornName <> "_RegisterVars";
 molboundariesFileName = thornName <> "_Boundaries";
 molboundariesName     = thornName <> "_ApplyBoundConds";
+molfindboundaryName   = thornName <> "_FindBoundary";
+molfindnormalsName    = thornName <> "_FindNormals";
 molexcisionName       = thornName <> "_ApplyExcision";
 checkboundariesName   = thornName <> "_CheckBoundaries";
 precompheaderName     = "precomputations.h";
@@ -412,9 +418,9 @@ calcrhsName    = lookup[namedCalc, Name];
 (* in the following the Union takes care of the case when rhs groups have been explicitly
    declared as primitive groups *)
 globalStorageGroups =
-  Union@Join[Map[simpleGroupStruct[#,2]&, evolvedGroups],
-             Map[simpleGroupStruct[#,1]&, rhsGroups],
-             Map[simpleGroupStruct[#,1]&, primitiveGroups]];
+  Union@Join[Map[simpleGroupStruct[#,evTimeLevles]&, evolvedGroups],
+             Map[simpleGroupStruct[#,1           ]&, rhsGroups],
+             Map[simpleGroupStruct[#,1           ]&, primitiveGroups]];
 
 scheduledGroups     = {{Name          -> "ApplyBCs",
                         Language      -> "None", (* groups do not have a language *)
@@ -445,9 +451,24 @@ scheduledFunctions  = {{Name          -> molregisterName,
                         Comment       -> "check boundaries treatment"}
 };
 
-If[createExcisionCode, AppendTo[scheduledFunctions, 
-                   {Name               -> molexcisionName,
+If[createExcisionCode, 
+          AppendTo[scheduledFunctions, 
+                   {Name               -> molfindboundaryName,
                     SchedulePoint      -> "in MoL_PostStep",
+                    SynchronizedGroups -> {"spacemask::mask"},
+                    Language           -> "Fortran",
+                    Comment            -> "find excision boundary"}];
+
+          AppendTo[scheduledFunctions,
+                   {Name               -> molfindnormalsName,
+                    SchedulePoint      -> "in MoL_PostStep AFTER " <> molfindboundaryName,
+                    SynchronizedGroups -> {"excisionnormals"},
+                    Language           -> "Fortran",
+                    Comment            -> "find normals to excision boundary"}];
+
+          AppendTo[scheduledFunctions,
+                   {Name               -> molexcisionName,
+                    SchedulePoint      -> "in MoL_PostStep AFTER " <> molfindnormalsName,
                     SynchronizedGroups -> evolvedGroups,
                     Language           -> "Fortran",
                     Comment            -> "apply excision"}]
@@ -560,8 +581,24 @@ excisionParam =
    Description -> "whether to apply excision or not",
    Visibility -> "restricted"};
 
+findboundaryParam =
+  {Name -> "find_excision_boundary",
+   Type -> "BOOLEAN",
+   Default -> "\"true\"",
+   Description -> "whether to locate excision boundary",
+   Visibility -> "restricted"};
+
+findnormalsParam =
+  {Name -> "find_excision_normals",
+   Type -> "BOOLEAN",
+   Default -> "\"true\"",
+   Description -> "whether to compute normals to excision boundary",
+   Visibility -> "restricted"};
+
+
 If[createExcisionCode,
- newParams = Join[boundaryParam, {excisionParam}, {evolvedMoLParam, constrainedMoLParam}];,
+ newParams = Join[boundaryParam, {excisionParam, findboundaryParam, findnormalsParam},
+                                 {evolvedMoLParam, constrainedMoLParam}];,
  newParams = Join[boundaryParam, {evolvedMoLParam, constrainedMoLParam}];
 ];
 
@@ -586,6 +623,10 @@ baseImp =
 If[baseParamsTrueQ,
    implementations = {molImplementation, genericFDImplementation, baseImp},
    implementations = {molImplementation, genericFDImplementation}];
+
+Map[AppendTo[newParams, #]&,
+          Flatten[{Map[completeRealParamStruct, realParameters],
+                   Map[completeIntParamStruct,  intParameters]}, 1]];
 
 paramspec = {Implementations -> implementations,
              NewParameters -> newParams};

@@ -603,7 +603,7 @@ CreateMoLBoundariesSource[spec_] :=
      prefix <> unqualName <> "_bound       = \"skip\"\n",
      prefix <> unqualName <> "_bound_speed = 1.0\n",
      prefix <> unqualName <> "_bound_limit = 0.0\n",
-     prefix <> unqualName <> "_bound_value = 0.0\n\n"
+     prefix <> unqualName <> "_bound_scalar = 0.0\n\n"
     }];
 
     trivialBCGroup[group_] := Module[{boundpar, fullgroupname},
@@ -854,6 +854,52 @@ CreateMoLExcisionSource[spec_] :=
       "! to simplify scheduling and testing, the 3 steps  \n",
       "! are currently applied in separate functions      \n\n"},
 
+   cleanCPP@DefineCCTKSubroutine[lookup[spec,ThornName] <> "_FindBoundary",
+     {"#ifndef LEGOEXCISION_OFF\n",
+      "! APPLY EXCISION\n\n",
+      DefineVariable["ierr", "CCTK_INT :: ", "0"],
+      "",
+
+      "integer  :: nx, ny, nz\n\n",
+
+      "! grid parameters\n",
+
+      "nx = cctk_lsh(1)\n",
+      "ny = cctk_lsh(2)\n",
+      "nz = cctk_lsh(3)\n\n",
+
+      "if ( (excision).AND.(find_excision_boundary) ) then\n\n",
+
+      "  call excision_findboundary(ierr, emask, nx, ny, nz)\n",
+      "  if (ierr < 0) call CCTK_WARN(2, \"findboundary exited with an error\")\n\n",
+
+     "endif\n",
+      "#endif\n\n",
+      "return\n"}],
+
+   cleanCPP@DefineCCTKSubroutine[lookup[spec,ThornName] <> "_FindNormals",
+     {"#ifndef LEGOEXCISION_OFF\n",
+      "! APPLY EXCISION\n\n",
+      DefineVariable["ierr", "CCTK_INT :: ", "0"],
+      "",
+
+      "integer  :: nx, ny, nz\n\n",
+
+      "! grid parameters\n",
+
+      "nx = cctk_lsh(1)\n",
+      "ny = cctk_lsh(2)\n",
+      "nz = cctk_lsh(3)\n\n",
+
+      "if ( (excision).AND.(find_excision_normals) ) then\n\n",
+
+      "  call excision_findnormals(ierr, emask, exnormx, exnormy, exnormz, nx, ny, nz)\n",
+      "  if (ierr < 0) call CCTK_WARN(2, \"findnormals exited with an error\")\n\n",
+
+     "endif\n",
+      "#endif\n\n",
+      "return\n"}],
+
 
    cleanCPP@DefineCCTKSubroutine[lookup[spec,ThornName] <> "_ApplyExcision",
      {"#ifndef LEGOEXCISION_OFF\n",
@@ -861,7 +907,7 @@ CreateMoLExcisionSource[spec_] :=
       DefineVariable["ierr", "CCTK_INT :: ", "0"],
       "",
 
-      "integer   :: nx, ny, nz\n\n",
+      "integer  :: nx, ny, nz\n\n",
 
       "! grid parameters\n",
 
@@ -872,10 +918,6 @@ CreateMoLExcisionSource[spec_] :=
       "if (excision) then\n",
 
       "  call CCTK_INFO(\"Applying LegoExcision\")\n\n",
-
-      "  call excision_findboundary(ierr, emask, nx, ny, nz)\n",
-      "  call excision_findnormals (ierr, emask, exnormx, exnormy, exnormz, nx, ny, nz)",
-      "\n\n",
 
      Map[excisionExtrap, gfs],
      "endif\n",

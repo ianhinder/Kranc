@@ -298,7 +298,7 @@ ThornList = {{ThornName -> "GenericFD", ThornArrangement -> "KrancNumericalTools
               {ThornName -> "SpaceMask", ThornArrangement -> "CactusEinstein", ThornGroups -> {},
               ThornParameters -> {}, ThornType -> "External"},
 (* *)
-              {ThornName -> "MoL", ThornArrangement -> "AlphaThorns", ThornGroups -> {},
+              {ThornName -> "MoL", ThornArrangement -> "CactusBase", ThornGroups -> {},
               ThornParameters -> {}, ThornType -> "External"},
 (* *)
               {ThornName -> "NaNChecker", ThornArrangement -> "CactusUtils", ThornGroups -> {},

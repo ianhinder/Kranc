@@ -1,70 +1,287 @@
 
-(* 
+(*
 
-Differencing in Kranc
-=====================
+Second generation of custom differencing
+========================================
 
-The user works in terms of "partial derivatives".  For example,
-expressions of the form PD[phi,1,2] for the mixed partial derivative
-of the function phi in the 1 and 2 directions.
+The user supplies a list of "derivative operators".  These are
+expressions in shift operators shift[1], shift[2] and shift[3].  The
+derivative operators can take an arbitrary number of numeric
+arguments.  For example, the standard differencing would be performed
+by a list of operators of the form:
 
-Each of these partial derivatives (i.e. "PD") is defined in terms of
-an expression involving "difference operators", e.g. dzero[i_], where
-i is the direction.  So whenever the user enters PD[phi,1,2], what
-gets calculated is dzero[1] dzero[2] phi.
+ PD[i_] -> dzero[i],
+ PD[i_] -> dzero[i],
+ PD[i_, i_] -> dplus[i] dminus[i],
+ PD[i_, j_] -> dzero[i] dzero[j]
 
-These difference operators are defined in terms of the elementary
-"shift" operators: dplus[i_] := (shift[i] - 1)/spacing[i], and can be
-composed with each other as a result: dzero[i_] := (dplus[i] +
-dminus[i]) / 2.
+You can include derivative operators which have no arguments.  If you
+wanted the Laplacian, you would use
 
-The definition of a partial derivative in terms of difference
-operators is given in the form:
+ Lap[] -> Sum[dplus[i] dminus[i], {i,1,3}]
 
-partialDerivative = 
-{Name -> PD,
- Macro -> FD_C2,
- Rules ->
- {PD[i_] -> dzero[i],
-  PD[i_, i_] -> dplus[i] dminus[i],
-  PD[i_, j_] -> dzero[i] dzero[j]}};
+We would like these definitions to be optionally conditional on the
+definition of some preprocessor macro, so we can support the old
+behaviour by default. We can add this behaviour later.  This means we
+need to supply examples for the fourth order differencing operators
+for people to use easily.
 
-The source code generated contains the definitions of these difference
-operators as macros.  E.g. 
+In a calculation, the user uses expressions like PD[phi,1,2].  Kranc
+generates macro definitions for each derivative; i.e. in this case it
+would create a macro definition for PD12(u,i,j,k).  At the start of a
+calculation loop, variables are created to store the results of
+precomputing each of the derivatives needed in that loop.
+e.g. PD12phi = PD12(phi,i,j,k).  Kranc then replaces PD[phi,1,2] with
+PD12phi in the calculation.
 
-#define PD1(u,i,j,k) (u[i+1,j,k] - u[i-1,j,k]) hdxi
+*)
 
-Then, at the start of each loop, all necessary derivatives are
-precomputed:
+(*
 
-PD1phi = PD1(phi,i,j,k);
+Types and data structures
+=========================
 
-Then, in the calculation itself, the variable PD1phi is used.
+DerivativeOperator
+~~~~~~~~~~~~~~~~~~
+
+A DerivativeOperator (derivOp) is an expression of the form
+
+  name_[patterns__] -> expr_
+
+where expr is a sum of products of shift operators, spacings, and
+numerical factors.  It represents how an arbitrary grid function
+should be differenced as a result of this derivative operator.  Note
+that the grid function itself is omitted from the definition.  For
+example,
+
+  PD[i_] -> 1/2(shift[i_] + 1/shift[i])
+
+ComponentDerivativeOperator
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A DerivativeOperator (derivOp) is an expression of the form
+
+  name_[indices__] -> expr_
+
+which is the same as a DerivativeOperator but with the indices
+numerical.
+
+  PD[2] -> 1/2(shift[2] + 1/shift[2])
+
+GridFunctionDerivative
+~~~~~~~~~~~~~~~~~~~~~~
+
+A GridFunctionDerivative (GFD) is an expression of the form
+
+  name_[gf_,index___]
+
+for example
+
+  PD[phi,1,2]
+
+It is in the form of an expression the user would enter in a
+calculation.
+
+User API
+========
+
+ConstructDifferencingHeader[derivOps_]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Given a list of DerivativeOperators, return a CodeGen block consisting
+of the header file which needs to be included before any calculations.
+
+PrecomputeDerivatives[derivOps_, expr_]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Return a CodeGen block which precomputes all the derivatives needed in
+expr.
+
+DeclareDerivatives[derivOps_, expr_]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Return a CodeGen block which precomputes all the derivatives needed in
+expr.
+
+ReplaceDerivatives[derivOps_, expr_]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Replace all the GridFunctionDerivatives in expr with their variable
+names.
 
 *)
 
 BeginPackage["sym`"];
 
-{Name, Definitions, dxi, dyi, dzi, i, j, k, shift, spacing};
+{Name, Definitions, shift, spacing};
 
 EndPackage[];
 
 BeginPackage["Differencing`", {"CodeGen`", "sym`", "MapLookup`"}];
 
-ConvertPartialDerivativeToMacros::usage = "";
-GFDsInExpression::usage = "";
-DeclareDerivative::usage = "";
-AllGFDRules::usage = "";
-PrecomputeDerivative::usage = "";
+CreateDifferencingHeader::usage = "";
+PrecomputeDerivatives::usage = "";
+DeclareDerivatives::usage = "";
+ReplaceDerivatives::usage = "";
 DPlus::usage = "";
 DMinus::usage = "";
 DZero::usage = "";
+shift::usage = "";
+spacing::usage = "";
 
 Begin["`Private`"];
 
 DPlus[n_] := (shift[n] - 1)/spacing[n];
 DMinus[n_] := (1 - 1/shift[n])/spacing[n];
 DZero[n_] := (DPlus[n] + DMinus[n])/2;
+
+(*************************************************************)
+(* User API *)
+(*************************************************************)
+
+CreateDifferencingHeader[derivOps_] :=
+  Module[{componentDerivOps, dupsRemoved, expressions},
+    componentDerivOps = Flatten[Map[DerivativeOperatorToComponents, derivOps]];
+    dupsRemoved = RemoveDuplicateRules[componentDerivOps];
+    expressions = Flatten[Map[ComponentDerivativeOperatorMacroDefinition, dupsRemoved]];
+    Map[{#, "\n"} &, expressions]];
+
+
+PrecomputeDerivatives[derivOps_, expr_] :=
+  Module[{componentDerivOps, gfds},
+    componentDerivOps = Flatten[Map[DerivativeOperatorToComponents, derivOps]];
+    gfds = GridFunctionDerivativesInExpression[derivOps, expr];
+    Map[PrecomputeDerivative, gfds]];
+
+DeclareDerivatives[derivOps_, expr_] :=
+  Module[{componentDerivOps, gfds},
+    componentDerivOps = Flatten[Map[DerivativeOperatorToComponents, derivOps]];
+    gfds = GridFunctionDerivativesInExpression[derivOps, expr];
+    Map[DeclareDerivative, gfds]];
+
+ReplaceDerivatives[derivOps_, expr_] :=
+  Module[{componentDerivOps, gfds},
+    componentDerivOps = Flatten[Map[DerivativeOperatorToComponents, derivOps]];
+    gfds = GridFunctionDerivativesInExpression[derivOps, expr];
+    rules = Map[# :> GridFunctionDerivativeName[#] &, gfds];
+    expr /. rules];
+
+
+(*************************************************************)
+(* Misc *)
+(*************************************************************)
+
+PrecomputeDerivative[d:pd_[gf_, inds___]] :=
+  Module[{},
+    macroName = ComponentDerivativeOperatorMacroName[pd[inds] -> expr];
+    AssignVariable[GridFunctionDerivativeName[d], {macroName, "(", gf,", i, j, k)"}]];
+
+DeclareDerivative[d:pd_[gf_, inds___]] :=
+  DeclareVariable[GridFunctionDerivativeName[d], "CCTK_REAL"];
+
+
+(*************************************************************)
+(* GridFunctionDerivative *)
+(*************************************************************)
+
+GridFunctionDerivativeName[pd_[gf_, inds___]] :=
+  Module[{},
+    stringName = StringJoin[Map[ToString, Join[{pd}, {inds}, {gf}]]];
+    Symbol["Global`" <> stringName]];
+
+
+GridFunctionDerivativesInExpression[derivOps_, expr_] := 
+  Module[{componentDerivOps, derivs},
+    componentDerivOps = Flatten[Map[DerivativeOperatorToComponents, derivOps]];
+    derivs = Map[First, componentDerivOps];
+    patterns = Map[# /. x_[inds___] -> x[y_, inds] &, derivs];
+    Flatten[Map[Union[Cases[{expr}, #, Infinity]] &, patterns]]];
+
+
+(*************************************************************)
+(* DerivativeOperator *)
+(*************************************************************)
+
+
+ComponentDerivativeOperatorMacroDefinition[componentDerivOp:(name_[inds___] -> expr_)] :=
+  Module[{macroName, rhs, rhs2, i = "i", j = "j", k = "k", spacings},
+    macroName = ComponentDerivativeOperatorMacroName[componentDerivOp];
+    rhs = DifferenceGF[expr, i, j, k];
+    spacings = {spacing[1] -> 1/"dxi", spacing[2] -> 1/"dyi", spacing[3] -> 1/"dzi"};
+    rhs2 = CFormHideStrings[ReplacePowers[rhs /. spacings]];
+    FlattenBlock[{"#define ", macroName, "(u,i,j,k) ", rhs2}]];
+
+ComponentDerivativeOperatorMacroName[componentDerivOp:(name_[inds___] -> expr_)] :=
+  Module[{stringName},
+    stringName = StringJoin[Map[ToString, Join[{name}, {inds}]]];
+    stringName];
+
+(* Farm out each term of a difference operator *)
+DifferenceGF[op_, i_, j_, k_] :=
+  Module[{expanded},
+    expanded = Expand[op];
+
+    If[Head[expanded] === Plus,
+      Apply[Plus, Map[DifferenceGFTerm[#, i, j, k] &, expanded]],
+      DifferenceGFTerm[expanded, i, j, k]]];
+
+
+(* Return the fragment of a macro definition for defining a derivative
+   operator *)
+DifferenceGFTerm[op_, i_, j_, k_] :=
+  Module[{nx, ny, nz, remaining},
+    If[Head[op] != Times,
+      Throw["Expecting Times in " <> FullForm[op]]];
+
+    nx = Exponent[op, shift[1]];
+    ny = Exponent[op, shift[2]];
+    nz = Exponent[op, shift[3]];
+
+    remaining = op / (shift[1]^nx) / (shift[2]^ny) / (shift[3]^nz);
+
+    remaining "u[CCTK_GFINDEX3D(cctkGH," <> ToString[i+nx] <> "," <> 
+      ToString[j+ny] <> "," <> ToString[k+nz] <> ")]"];
+
+
+DerivativeOperatorGFDs[gf_];
+
+DerivativeOperatorToComponents[name_[indPatterns___] -> expr_] :=
+  Module[{ips, symbols, symbolRanges, symbolLHS, table},
+    ips = {indPatterns};
+    symbols = Map[First, ips];
+    symbolRanges = Map[{#, 1, 3} &, Union[symbols]];
+    symbolLHS = name[Apply[Sequence, symbols]];
+    table = Apply[Table, Join[{symbolLHS -> expr}, symbolRanges]];
+    Flatten[table]];
+
+
+RemoveDuplicates[l_] :=
+  Module[{this,next,rest,positions},
+    If[l === {},
+      Return[{}]];
+    this = First[l];
+    rest = Rest[l];
+    If[FreeQ[rest, this],
+       Prepend[RemoveDuplicates[rest],this],
+
+       positions = Position[rest, this];
+       next = Delete[rest, positions];
+       Prepend[RemoveDuplicates[next], this]]];
+
+RemoveDuplicateRules[l_] :=
+  Module[{lhs,lhs2,rhs2,result},
+
+    Print["Removing duplicates in ", l];
+
+    lhs = Map[First, l];
+    lhs2 = RemoveDuplicates[lhs];
+    rhs2 = lhs2 /. l;
+
+    result = Thread[Rule[lhs2,rhs2]];
+    Print["Result is: ", result];
+    result];
+
+
 
 (* Given a grid function derivative, return the C variable name that
    we will use to precompute its value. *)
@@ -153,34 +370,7 @@ ConstructDifferenceMacro[name_, op_] :=
     rhs2 = CFormHideStrings[ReplacePowers[rhs]];
     FlattenBlock[{"#define ", name, "(u,i,j,k) ", rhs2}]];
 
-(* Convert an expression to CForm, but remove the quotes from any
-   strings present *)
-CFormHideStrings[x_] := StringReplace[ToString[CForm[x]], "\"" -> ""];
 
-(* Farm out each term of a difference operator *)
-DifferenceGF[op_, i_, j_, k_] :=
-  Module[{expanded},
-    expanded = Expand[op];
-
-    If[Head[expanded] != Plus,
-    Throw["Expecting Plus as head of " <> op]];
-
-    Apply[Plus, Map[DifferenceGFTerm[#, i, j, k] &, expanded]]];
-
-(* Return the fragment of a macro definition for defining a derivative
-   operator *)
-DifferenceGFTerm[op_, i_, j_, k_] :=
-  Module[{nx, ny, nz, remaining},
-    If[Head[op] != Times,
-      Throw["Expecting Times in " <> FullForm[op]]];
-    nx = Exponent[op, shift[1]];
-    ny = Exponent[op, shift[2]];
-    nz = Exponent[op, shift[3]];
-
-    remaining = op / (shift[1]^nx) / (shift[2]^ny) / (shift[3]^nz);
-
-    remaining "u[CCTK_GFINDEX3D(cctkGH," <> ToString[i+nx] <> "," <> 
-      ToString[j+ny] <> "," <> ToString[k+nz] <> ")]"];
 
 End[];
 

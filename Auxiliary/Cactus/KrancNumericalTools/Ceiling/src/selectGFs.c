@@ -74,16 +74,19 @@ call_apply_check (int const varindex, char const * const optstring, void * const
   varptr = CCTK_VarDataPtrI (cctkGH, 0, varindex);
   assert (varptr);
 
-  if (type == "absolute")
+  if (CCTK_Equals (type, "absolute"))
   {
-  CCTK_FNAME(apply_check_abs)
-    (varptr, &cctk_lsh[0], &cctk_lsh[1], &cctk_lsh[2], &ceiling_value);
-  } else if (type == "differential")
+   CCTK_FNAME(apply_check_abs)
+      (varptr, &cctk_lsh[0], &cctk_lsh[1], &cctk_lsh[2], &ceiling_value);
+  }
+  else if (CCTK_Equals (type, "differential"))
   {
-  CCTK_FNAME(apply_check_diff)
-    (varptr, &cctk_lsh[0], &cctk_lsh[1], &cctk_lsh[2], &ceiling_value);
-  } else {
-  CCTK_INFO("keyword ceiling::type only allows values 'absolute' and 'differential'");
+   CCTK_FNAME(apply_check_diff)
+      (varptr, &cctk_lsh[0], &cctk_lsh[1], &cctk_lsh[2], &ceiling_value);
+  }
+  else
+  {
+   CCTK_INFO("keyword ceiling::type only allows values 'absolute' and 'differential'");
   }
 
   /* if (terminate > 0) {CCTK_TerminateNext (cctkGH);}  */

@@ -392,7 +392,7 @@ excisionFindBoundary =
    ArgString -> "CCTK_INT OUT ierr, CCTK_REAL INOUT ARRAY mask, CCTK_INT IN ni, CCTK_INT IN nj, CCTK_INT IN nk"};
 
 excisionExtrapolate =
-  {Name      -> "ExcisionExtrapolateBoundary",
+  {Name      -> "ExcisionExtrapolate",
    Type      -> "SUBROUTINE",
    ArgString -> "CCTK_INT OUT ierr, CCTK_REAL INOUT ARRAY var, CCTK_REAL IN ARRAY oldvar, CCTK_REAL IN ARRAY mask, CCTK_REAL IN ARRAY dirx, CCTK_REAL IN ARRAY diry, CCTK_REAL IN ARRAY dirz, CCTK_INT IN ni, CCTK_INT IN nj, CCTK_INT IN nk, CCTK_REAL IN var0"};
 
@@ -404,7 +404,7 @@ excisionFindNormals =
 If[createExcisionCode, 
 
  useFuns = {registerEvolved, registerConstrained, selectBoundaryGroup, selectBoundaryVar,
-                     excisionFindBoundary, excisionExtrapolate, excisionFindNormals},
+            excisionFindBoundary, excisionExtrapolate, excisionFindNormals},
  useFuns = {registerEvolved, registerConstrained, selectBoundaryGroup, selectBoundaryVar}
 ];
 

@@ -1382,7 +1382,7 @@ completeEvolvedGroupStruct[group_] :=
 
 completePrimitiveGroupStruct[group_] := 
   {Name -> First@group, VariableType -> "CCTK_REAL",
-   Timelevels -> 1,  GridType -> "GF",
+   Timelevels -> 1,  GridType -> "GF tags='Prolongation=None'",
    Comment -> First@group, Visibility -> "public", Variables -> Last@group};
 
 evolvedBlock = Map[completeEvolvedGroupStruct[groupFromName[#, allGroups]] &, evolvedGroupNames];

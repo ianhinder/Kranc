@@ -88,6 +88,7 @@ InitialiseFDVariables::usage = "";
 CommaNewlineSeparated::usage = ""; (* This shouldn't really be in CodeGen *)
 CommaSeparated::usage = "";
 ReplacePowers::usage = "";
+CFormHideStrings::usage = "";
 
 Begin["`Private`"];
 
@@ -428,8 +429,12 @@ ReplacePowers[x_] :=
     rhs
     ];
 
+(* Convert an expression to CForm, but remove the quotes from any
+   strings present *)
+CFormHideStrings[x_, opts___] := StringReplace[ToString[CForm[x,opts]], "\"" -> ""];
 
 End[];
+
 
 
 EndPackage[];

@@ -526,7 +526,7 @@ componentNameRule :=
    order of differencing by macros etc. *)
 
 derivativeNameRule := 
-  wibblePD[x_, y__] :> 
+  PD[x_, y__] :> 
     Symbol["D" <> StringJoin[Map[ToString[Abs[#]]&,{y}]]] [x];
 
 makeSuffix[is_List] := 

@@ -1586,11 +1586,6 @@ Map[pr,    thornspaths];
 
 
 
-CreateDifferencingHeader[pddefs_] :=
-  Module[{},
-    macros = Flatten[Map[ConvertPartialDerivativeToMacros, pddefs],1];
-    contents = FlattenBlock[Map[{#, "\n\n"} &, macros]]];
-
 
 End[];
 EndPackage[];

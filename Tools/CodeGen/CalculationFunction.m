@@ -295,36 +295,27 @@ CreateCalculationFunction[calc_, debug_] :=
 
   (* Check that there are no unknown symbols in the calculation *)
 
-  Print["10"];
 
   allSymbols = calculationSymbols[calc];
   knownSymbols = Join[gfs, shorts, parameters, {t, Pi, E}];
-  Print["11"];
 
   Print["allSymbols == ", allSymbols];
   Print["knownSymbols == ", knownSymbols];
 
   unknownSymbols = Complement[allSymbols, knownSymbols];
-  Print["12"];
 
   If[unknownSymbols != {},
      Module[{},
        Print["Unknown symbols in calculation: ", unknownSymbols];
        Print["Failed verification of calculation: ", calc];
        Throw["Unknown symbols in calculation"]]];
-  Print["13"];
-
-  allPDs = ListAllPDs[pddefs];
-  allGFDs = GFDsInExpression[eqs, pddefs];
-  Print["14"];
-
 
   DefineCCTKSubroutine[lookup[calc, Name],
   { DeclareGridLoopVariables[],
     DeclareFDVariables[],
     declareVariablesForCalculation[calc],
     declarePrecomputedDerivatives[dsUsed],
-    Map[DeclareDerivative, allGFDs],
+    DeclareDerivatives[pddefs, eqs],
 
     CommentedBlock["Include user-supplied include files",
       Map[IncludeFile, lookupDefault[calc, DeclarationIncludes, {}]]],
@@ -371,15 +362,7 @@ equationLoop[eqs_, gfs_, shorts_, incs_, groups_, syncGroups_, pddefs_] :=
 
     (* Replace the partial derivatives *)
 
-    Print["1"];
-
-    eqs2 = eqs /. AllGFDRules[pddefs];
-    Print["2"];
-  allPDs = ListAllPDs[pddefs];
-    Print["3"];
-  allGFDs = GFDsInExpression[eqs, pddefs];
-    Print["4"];
-
+    eqs2 = ReplaceDerivatives[pddefs, eqs];
 
   {GridLoop[
    {CommentedBlock["Assign local copies of grid functions",
@@ -390,7 +373,7 @@ equationLoop[eqs_, gfs_, shorts_, incs_, groups_, syncGroups_, pddefs_] :=
                    Map[IncludeFile, incs]],
 
     CommentedBlock["Precompute derivatives (new style)",
-                   Map[PrecomputeDerivative, allGFDs]],
+                   PrecomputeDerivatives[pddefs, eqs]],
 
     CommentedBlock["Precompute derivatives (old style)",
                    Map[precomputeDerivative, derivativesUsed[eqs]]],

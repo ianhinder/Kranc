@@ -42,7 +42,7 @@ PickMatch::usage         = "PickMatch[x, form] returns string x if it matches fo
 SafeStringReplace::usage = 
 "SafeStringReplace[x, string1, string2] replaces string1 in x by string2 if x is a string\
 and otherwise returns x.";
-StringSplit::usage = "StringSplit[string] splits a string into a list of characters.";
+String2Char::usage = "String2Char[string] splits a string into a list of characters.";
 SortString::usage =  "SortString[string] returns a string where the characters in the original string
 have been sorted lexicographically.";
 
@@ -79,9 +79,9 @@ SafeStringReplace[x_, string1_?StringQ, string2_?StringQ] :=
             If[StringQ@x, StringReplace[x, string1 -> string2], x];
 
 
-StringSplit[x_?StringQ] := Table[StringTake[x, {n}], {n, 1, StringLength@x}];
+String2Char[x_?StringQ] := Table[StringTake[x, {n}], {n, 1, StringLength@x}];
 
-SortString[x_?StringQ] := StringJoin@Sort@StringSplit@x;
+SortString[x_?StringQ] := StringJoin@Sort@String2Char@x;
 
 If[ValueQ@Global`tensorNames2componentNames[dummy_tensor],
 (* we assume DecomposeTools.m is loaded -- need to load DecomposeTools before Helpers.m ! *)

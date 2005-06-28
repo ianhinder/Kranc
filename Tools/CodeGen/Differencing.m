@@ -239,7 +239,7 @@ ComponentDerivativeOperatorMacroName[componentDerivOp:(name_[inds___] -> expr_)]
 DifferenceGF[op_, i_, j_, k_] :=
   Module[{expanded},
     expanded = Expand[op];
-
+    
     If[Head[expanded] === Plus,
       Apply[Plus, Map[DifferenceGFTerm[#, i, j, k] &, expanded]],
       DifferenceGFTerm[expanded, i, j, k]]];
@@ -262,8 +262,11 @@ DifferenceGFTerm[op_, i_, j_, k_] :=
 
     remaining = op / (shift[1]^nx) / (shift[2]^ny) / (shift[3]^nz);
     
-    remaining "u[CCTK_GFINDEX3D(cctkGH," <> ToString[i+nx] <> "," <> 
-      ToString[j+ny] <> "," <> ToString[k+nz] <> ")]"];
+    If[CodeGen`SOURCELANGUAGE == "C",
+    remaining "u[CCTK_GFINDEX3D(cctkGH," <> ToString[i+nx] <> "," <>
+      ToString[j+ny] <> "," <> ToString[k+nz] <> ")]",
+    remaining "u(" <> ToString[i+nx] <> "," <> 
+      ToString[j+ny] <> "," <> ToString[k+nz] <> ")"] ];
 
 
 DerivativeOperatorGFDs[gf_];

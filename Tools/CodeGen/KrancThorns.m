@@ -757,7 +757,7 @@ Module[{after, allowedSetTimes, baseImplementation, baseParamsTrueQ, before, cal
         file, GFs, globalStorageGroups, implementation, implementations, intParameters,
         namedCalc, precompheaderName, realParameters, RHSs, setgroups, setTime,
         ThornList, ext, include, genericFDImplementation, baseImp, numeq, grepSYNC, scheduledStartup,
-        sheduledINITIAL, scheduledPOSTSTEP},
+        sheduledINITIAL, scheduledPOSTSTEP, INIT},
 
     Print["\n*** CreateSetterThorn ***"];
 
@@ -794,14 +794,16 @@ If[debug,
   Print["Debugging switched off"]
  ];
 
-  allowedSetTimes = {"initial_only", "poststep_only", "initial_and_poststep"};
+  allowedSetTimes = {"initial_only", "postinitial_only", "poststep_only", "initial_and_poststep", "postinitial_and_poststep"};
 
   If[!MemberQ[allowedSetTimes, setTime],
      Module[{},
        Print["Unknown value for option SetTime: ", SetTime];
-       Throw["Allowed values for option SetTime are: \"initial_only\", \"poststep_only\" and \"initial_and_poststep\""]]];
+       Print["Allowed values for option SetTime are: ", allowedSetTimes];
+       Throw["Exit in CreateSetterThorn"]]];
 
-
+If[setTime == "initial_only"     || setTime == "initial_and_poststep",     INIT = "INITIAL" ];
+If[setTime == "postinitial_only" || setTime == "postinitial_and_poststep", INIT = "POSTINITIAL" ];
 
 baseParamsTrueQ = Length@realBaseParameters + Length@intBaseParameters > 0;
 
@@ -865,14 +867,13 @@ Map[AppendTo[newparams, #]&,
           Flatten[{Map[completeRealParamStruct, realParameters],
                    Map[completeIntParamStruct,  intParameters]}, 1]];
 
-If[(setTime == "initial_and_poststep"),
+If[(setTime == "initial_and_poststep") || (setTime == "postinitial_and_poststep"),
 
   AppendTo[newparams, {Name -> "set_initial_data", Type -> "BOOLEAN", Default -> "\"true\"",
   Description -> "whether to set initial data", Visibility -> "private"}];
 
   AppendTo[newparams, {Name -> "set_poststep", Type -> "BOOLEAN", Default -> "\"true\"",
   Description -> "whether to set data after intermediate MoL steps", Visibility -> "private"}]];
-
 
 genericFDImplementation =
 {Name -> "GenericFD",
@@ -930,10 +931,10 @@ scheduledStartup = {Name          -> thornName <> "_Startup",
 
 
 scheduledINITIAL  = {Name               -> calcrhsName,
-                     SchedulePoint      -> "AT POSTINITIAL" <> before <> after,
+                     SchedulePoint      -> "AT " <> INIT <> before <> after,
                      SynchronizedGroups -> grepSYNC,
                      Language           -> CodeGen`SOURCELANGUAGE, 
-                     Conditional        -> If[setTime == "initial_and_poststep", 
+                     Conditional        -> If[setTime == "initial_and_poststep" || setTime == "postinitial_and_poststep", 
                                                     {Textual -> "set_initial_data"}, 
                                                     {}
                                                  ],
@@ -943,13 +944,13 @@ scheduledPOSTSTEP  = {Name               -> calcrhsName,
                       SchedulePoint      -> "in MoL_PostStep" <> before <> after, 
                       SynchronizedGroups -> grepSYNC,
                       Language           -> CodeGen`SOURCELANGUAGE, 
-                      Conditional        -> If[setTime == "initial_and_poststep", 
+                      Conditional        -> If[setTime == "initial_and_poststep" || setTime == "postinitial_and_poststep", 
                                                  {Textual -> "set_poststep"}, 
                                                  {}
                                               ],
                       Comment            -> "set values"};
 
-If[(setTime == "initial_only"),
+If[(setTime == "initial_only") || (setTime == "postinitial_only") ,
    scheduledFunctions = {scheduledINITIAL};
 ];
  
@@ -957,7 +958,7 @@ If[(setTime == "poststep_only"),
    scheduledFunctions = {scheduledPOSTSTEP};
 ];
 
-If[(setTime == "initial_and_poststep"),
+If[(setTime == "initial_and_poststep") || (setTime == "postinitial_and_poststep"),
    scheduledFunctions = {scheduledINITIAL, scheduledPOSTSTEP};
 ];
 
@@ -984,7 +985,7 @@ thornspec = {Name      -> thornName,
                   {Filename -> StartupName       <> ".c", Contents -> startup},
                   {Filename -> calcrhsName       <> ext,  Contents -> setrhs}, 
                   {Filename -> precompheaderName,         Contents -> precompheader},
-                         {Filename -> "Differencing.h",    Contents -> diffHeader}
+                         {Filename -> "Differencing.h",   Contents -> diffHeader}
                           }
 };
 CreateThorn[thornspec];
@@ -1726,7 +1727,7 @@ after  = If[mapContains[translatorInCalculation, After],
 
 
 scheduledADMToEvolve  = {Name          -> lookup[namedTranslatorInCalculation, Name],
-                         SchedulePoint -> "at POSTINITIAL as ADMToEvolve"  <> before <> after,
+                         SchedulePoint -> "at INITIAL as ADMToEvolve"  <> before <> after,
                          Comment       -> "ADMBase -> Evolution vars translation",
                          StorageGroups -> storageGroups,
                          Language      -> CodeGen`SOURCELANGUAGE,

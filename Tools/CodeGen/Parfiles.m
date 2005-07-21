@@ -11,7 +11,7 @@ BeginPackage["sym`"];
  ioEvery, ioInfoGFs, io0dGFs, io1dGFs, io2dGFs,
  out1D nx, ny, nz, initialTime, itLast, Name, Directory}
 
-{hamGF, lapseGF, trKGF};
+{hamGF, lapseGF};
 
 {Amplitude, NoiseAmp, NoiseGroups};
 
@@ -543,7 +543,6 @@ Options[CreateGaugeWaveTest] = {Name                -> "MyFormulation",
                              NumDifferentiations    -> 2,
                              hamGF                  -> "ADMBase::ham",
                              lapseGF                -> "ADMBase::alp",
-                             trKGF                  -> "ADMBase::trK",
                              ioInfoGFs              -> {}, 
                              io0dGFs                -> {}, 
                              io1dGFs                -> {}, 
@@ -571,7 +570,6 @@ Options[CreateLinearWaveTest] = {Name                -> "MyFormulation",
                              NumDifferentiations    -> 2,
                              hamGF                  -> "ADMBase::ham",
                              lapseGF                -> "ADMBase::alp",
-                             trKGF                  -> "ADMBase::trK",
                              ioInfoGFs              -> {},
                              io0dGFs                -> {},
                              io1dGFs                -> {},
@@ -598,7 +596,6 @@ Options[CreatePolarizedGowdyTest] = {Name           -> "MyFormulation",
                              NumDifferentiations    -> 2,
                              hamGF                  -> "ADMBase::ham",
                              lapseGF                -> "ADMBase::alp",
-                             trKGF                  -> "ADMBase::trK",
                              ioInfoGFs              -> {}, 
                              io0dGFs                -> {}, 
                              io1dGFs                -> {}, 
@@ -799,7 +796,7 @@ CreateParfile[Name                   -> name,
 
 
 CreateGaugeWaveTest[optArgs___]:= Module[
-{opts, par, noiseBasic, crossingSteps, name, hamgf, lapsegf, trKgf},
+{opts, par, noiseBasic, crossingSteps, name, hamgf, lapsegf},
 
 opts = GetOptions[CreateGaugeWaveTest, {optArgs}];
 
@@ -823,7 +820,6 @@ name = lookup[opts, Name] <> lookup[opts, Type] <> "_rho" <>ToString[2^lookup[op
 
 hamgf   = ToString@lookup[opts, hamGF]; 
 lapsegf = ToString@lookup[opts, lapseGF]; 
-trKgf   = ToString@lookup[opts, trKGF]; 
 
 CreateParfile[Name                   -> name,
               Directory              -> lookup[opts, Directory],
@@ -843,12 +839,12 @@ CreateParfile[Name                   -> name,
               outFormat -> ".16e",
               ioEvery -> {100, 
                 crossingSteps, crossingSteps * 10, -1* (2 ^ lookup[opts, Resolution])},
-              ioInfoGFs -> Union@Flatten@{hamgf, lapsegf, trKgf, 
+              ioInfoGFs -> Union@Flatten@{hamgf, lapsegf, 
                                           lookup[opts, ioInfoGFs]}, 
-              io0dGFs   -> Union@Flatten@{hamgf, lapsegf, trKgf,
+              io0dGFs   -> Union@Flatten@{hamgf, lapsegf,
                                           lookup[opts, NoiseGroups],
                                           lookup[opts, io0dGFs]}, 
-              io1dGFs   -> Union@Flatten@{hamgf, lapsegf, trKgf, 
+              io1dGFs   -> Union@Flatten@{hamgf, lapsegf, 
                                           lookup[opts, io1dGFs]}, 
               io2dGFs   -> Union@Flatten@{lookup[opts, io2dGFs]},
 
@@ -858,7 +854,7 @@ CreateParfile[Name                   -> name,
 
 
 CreateLinearWaveTest[optArgs___]:= Module[
-{opts, par, noiseBasic, crossingSteps, name, hamgf, lapsegf, trKgf},
+{opts, par, noiseBasic, crossingSteps, name, hamgf, lapsegf},
 
 opts = GetOptions[CreateLinearWaveTest, {optArgs}];
 
@@ -882,7 +878,6 @@ name = lookup[opts, Name] <> lookup[opts, Type] <> "_rho" <>ToString[2^lookup[op
 
 hamgf   = ToString@lookup[opts, hamGF]; 
 lapsegf = ToString@lookup[opts, lapseGF]; 
-trKgf   = ToString@lookup[opts, trKGF]; 
 
 CreateParfile[Name                   -> name,
               Directory              -> lookup[opts, Directory],
@@ -902,12 +897,12 @@ CreateParfile[Name                   -> name,
               outFormat -> ".16e",
               ioEvery -> {100, 
                 crossingSteps, crossingSteps * 10, -1* (2 ^ lookup[opts, Resolution])},
-              ioInfoGFs -> Union@Flatten@{hamgf, lapsegf, trKgf, 
+              ioInfoGFs -> Union@Flatten@{hamgf, lapsegf, 
                                           lookup[opts, ioInfoGFs]}, 
-              io0dGFs   -> Union@Flatten@{hamgf, lapsegf, trKgf,
+              io0dGFs   -> Union@Flatten@{hamgf, lapsegf,
                                           lookup[opts, NoiseGroups],
                                           lookup[opts, io0dGFs]}, 
-              io1dGFs   -> Union@Flatten@{hamgf, lapsegf, trKgf, 
+              io1dGFs   -> Union@Flatten@{hamgf, lapsegf, 
                                           lookup[opts, io1dGFs]}, 
               io2dGFs   -> Union@Flatten@{lookup[opts, io2dGFs]},
 
@@ -917,7 +912,7 @@ CreateParfile[Name                   -> name,
 
 
 CreatePolarizedGowdyTest[optArgs___]:= Module[
-{opts, par, noiseBasic, crossingSteps, name, hamgf, lapsegf, trKgf},
+{opts, par, noiseBasic, crossingSteps, name, hamgf, lapsegf},
 
 opts = GetOptions[CreatePolarizedGowdyTest, {optArgs}];
 
@@ -941,7 +936,6 @@ name = lookup[opts, Name] <> lookup[opts, Type] <> "_rho" <>ToString[2^lookup[op
 
 hamgf   = ToString@lookup[opts, hamGF]; 
 lapsegf = ToString@lookup[opts, lapseGF]; 
-trKgf   = ToString@lookup[opts, trKGF]; 
 
 CreateParfile[Name                   -> name,
               Directory              -> lookup[opts, Directory],
@@ -960,12 +954,12 @@ CreateParfile[Name                   -> name,
               outFormat -> ".16e",
               ioEvery -> {100,
                 crossingSteps, crossingSteps * 10, -1* (2 ^ lookup[opts, Resolution])},
-              ioInfoGFs -> Union@Flatten@{hamgf, lapsegf, trKgf, 
+              ioInfoGFs -> Union@Flatten@{hamgf, lapsegf, 
                                           lookup[opts, ioInfoGFs]}, 
-              io0dGFs   -> Union@Flatten@{hamgf, lapsegf, trKgf,
+              io0dGFs   -> Union@Flatten@{hamgf, lapsegf,
                                           lookup[opts, NoiseGroups],
                                           lookup[opts, io0dGFs]}, 
-              io1dGFs   -> Union@Flatten@{hamgf, lapsegf, trKgf, 
+              io1dGFs   -> Union@Flatten@{hamgf, lapsegf, 
                                           lookup[opts, io1dGFs]}, 
               io2dGFs   -> Union@Flatten@{lookup[opts, io2dGFs]},
 

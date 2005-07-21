@@ -393,7 +393,7 @@ Module[{},
 "# Data Output\n",
 "ActiveThorns = \"IOUtil IOBasic IOASCII\"\n",
 
-"IO::out_dir = \"" <> ToString@lookup[ioSpec,outDir] <> "\"",
+"IO::out_dir = $parfile",
 "",
 
 "IOBasic::outScalar_reductions = \"minimum maximum norm1 norm2 norm_inf\"",

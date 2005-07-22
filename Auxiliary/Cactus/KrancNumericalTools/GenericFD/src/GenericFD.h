@@ -333,6 +333,86 @@
 
 /* second derivatives, centered, 4th order */
 
+#ifndef KRANC_C
+
+#define D11_c4(gf,i,j,k)                    \
+  ((-       gf(i+2,j,k)			      \
+	   + 16. * gf(i+1,j,k) \
+	   - 30. * gf(i,  j,k) \
+	   + 16. * gf(i-1,j,k) \
+	   -       gf(i-2,j,k)) * dxi * dxi / 12.)
+
+
+#define D22_c4(gf,i,j,k)                    \
+	 ((-       gf(i,j+2,k) \
+	   + 16. * gf(i,j+1,k) \
+	   - 30. * gf(i,j,  k) \
+	   + 16. * gf(i,j-1,k) \
+	   -       gf(i,j-2,k)) * dyi * dyi / 12.)
+
+
+#define D33_c4(gf,i,j,k)                              \
+	 ((-       gf(i,j,k+2) \
+	   + 16. * gf(i,j,k+1) \
+	   - 30. * gf(i,j,k  ) \
+	   + 16. * gf(i,j,k-1) \
+	   -       gf(i,j,k-2)) * dzi * dzi / 12.)
+
+#define D21_c4(gf,i,j,k)                                    \
+	     ((-       gf(i+2,j+2,k) \
+               +       gf(i+2,j-2,k) \
+	       +       gf(i-2,j+2,k) \
+               -       gf(i-2,j-2,k) \
+               + 16. * gf(i+1,j+1,k) \
+    	       - 16. * gf(i+1,j-1,k) \
+	       - 16. * gf(i-1,j+1,k) \
+	       + 16. * gf(i-1,j-1,k)) * dxi * dyi / 48.)
+
+#define D31_c4(gf,i,j,k)                                    \
+             ((-       gf(i+2,j,k+2) \
+               +       gf(i+2,j,k-2) \
+               +       gf(i-2,j,k+2) \
+               -       gf(i-2,j,k-2) \
+               + 16. * gf(i+1,j,k+1) \
+               - 16. * gf(i+1,j,k-1) \
+               - 16. * gf(i-1,j,k+1) \
+               + 16. * gf(i-1,j,k-1)) * dxi * dzi / 48.)
+
+	
+#define D32_c4(gf,i,j,k)                                    \
+             ((-       gf(i,j+2,k+2) \
+               +       gf(i,j+2,k-2) \
+               +       gf(i,j-2,k+2) \
+               -       gf(i,j-2,k-2) \
+               + 16. * gf(i,j+1,k+1) \
+               - 16. * gf(i,j+1,k-1) \
+               - 16. * gf(i,j-1,k+1) \
+               + 16. * gf(i,j-1,k-1)) * dzi * dyi / 48.)
+
+
+/* first derivatives, centered, 4th order */
+
+#define D1_c4(gf,i,j,k)                            \
+       ((-      gf(i+2,j,k) \
+         + 8. * gf(i+1,j,k) \
+         - 8. * gf(i-1,j,k) \
+	 +      gf(i-2,j,k)) * (dxi / 12.))
+
+#define D2_c4(gf,i,j,k)                            \
+       ((-      gf(i,j+2,k) \
+         + 8. * gf(i,j+1,k) \
+         - 8. * gf(i,j-1,k) \
+	 +      gf(i,j-2,k)) * (dyi / 12.))
+
+#define D3_c4(gf,i,j,k)                            \
+       ((-      gf(i,j,k+2) \
+         + 8. * gf(i,j,k+1) \
+         - 8. * gf(i,j,k-1) \
+	 +      gf(i,j,k-2)) * (dxi / 12.))
+
+
+#else
+
 #define D11_c4(gf,i,j,k)                    \
 	 ((-       gf[CCTK_GFINDEX3D(cctkGH,i+2,j,k)] \
 	   + 16. * gf[CCTK_GFINDEX3D(cctkGH,i+1,j,k)] \
@@ -408,6 +488,7 @@
          - 8. * gf[CCTK_GFINDEX3D(cctkGH,i,j,k-1)] \
 	 +      gf[CCTK_GFINDEX3D(cctkGH,i,j,k-2)]) * (dxi / 12.))
 
+#endif
 
 /*****************************************************/
 /*                                                    */

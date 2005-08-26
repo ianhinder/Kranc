@@ -30,7 +30,7 @@ LoopPreIncludes, GroupImplementations, PartialDerivatives, Dplus1, Dplus2, Dplus
 EndPackage[];
 
 BeginPackage["CalculationFunction`", {"CodeGen`", "sym`", "MapLookup`", "KrancGroups`", 
-  "Differencing`", "Helpers`"}];
+  "Differencing`", "Errors`", "Helpers`"}];
 
 (* This is the only externally callable function *)
 CreateCalculationFunction::usage = "";
@@ -172,6 +172,12 @@ debugInLoop = False;
 declareVariablesForCalculation[calc_] :=
   Module[{shorthands, localGFs},
 
+(* FIXME: Why do we need Sort after Union (Union performs a sort
+   anyway)?  Why are we flattening the result of
+   calculationUsedShorthands when it is a flat list anyway?
+   calculationUsedShorthands returns a sorted, unique list from the
+   start! *)
+
     shorthands = Sort@Union@Map[ToString, Union@Flatten@calculationUsedShorthands@calc];
     shorthands = PartitionVarList@shorthands;
 
@@ -186,7 +192,9 @@ declareVariablesForCalculation[calc_] :=
 
 (* Derivative precomputation *)
 
-derivativesUsed[x_] :=
+oldDerivativesUsed[x_] :=
+(*  Print["Possible derivatives (new): ", Map[PDsFromDefinition, pddefs]];*)
+
   Union[Cases[x, _ ? (MemberQ[derivativeHeads, #] &)[_],Infinity]];
 
 (* Expects a list of the form {D11[h22], ...} *)
@@ -264,6 +272,15 @@ calculationSymbolsRHS[calc_] :=
     allAtoms = Union[Level[allAtoms, {-1}]];
     Cases[allAtoms, x_Symbol]];
 
+(* Return all the functions used in a calculation *)
+functionsInCalculation[calc_] :=
+  Module[{eqs, x},
+    eqs = lookup[calc, Equations];
+    x = Cases[eqs, f_[x___] -> f, Infinity];
+    y = Union[Select[x, Context[#] === "Global`" &]];
+    y];
+
+
 
 simplifyEquationList[eqs_] :=
   Map[simplifyEquation, eqs];
@@ -324,7 +341,7 @@ syncGroup[name_] :=
 UncommentSourceSync[setRHS_]:= Module[{cleanRHS},
    cleanRHS = Map[SafeStringReplace[#, "/* sync via schedule instead of ", ""]&, setRHS, Infinity];
    cleanRHS = Map[SafeStringReplace[#, ") -cut- */", ")"]&,  cleanRHS, Infinity]; (* for Fortran *)
-   cleanRHS = Map[SafeStringReplace[#, "); -cut- */", ")"]&, cleanRHS, Infinity]; (* for C       *)
+   cleanRHS = Map[SafeStringReplace[#, "); -cut- */", ");"]&, cleanRHS, Infinity]; (* for C       *)
 
    cleanRHS
 ];
@@ -378,7 +395,7 @@ CreateCalculationFunction[calc_, debug_] :=
 
   gfs = allVariables[groups];
   functionName = ToString@lookup[cleancalc, Name];
-  dsUsed = derivativesUsed[eqs];
+  dsUsed = oldDerivativesUsed[eqs];
 
   Print["Creating Calculation Function: " <> functionName];
 
@@ -408,13 +425,27 @@ CreateCalculationFunction[calc_, debug_] :=
   Map[Map[printEq, #]&, eqs];
   Print[];
 
+  (* Check all the function names *)
+
+  functionsPresent = functionsInCalculation[cleancalc];
+(*  Print["Functions in calculation: ", functionsPresent];*)
+
+  allowedFunctions = Map[Head[First[#]] &, pddefs];
+(*  Print["allowedFunctions == ", allowedFunctions];*)
+
+  unknownFunctions = Complement[functionsPresent, allowedFunctions];
+
+  If[Length[unknownFunctions] != 0,
+     ThrowError["The following functions are used in the calculation but are not defined:", 
+                unknownFunctions, cleancalc]];
+
+  (* Check that there are no shorthands defined with the same name as a grid function *)
+  If[!(Intersection[shorts, gfs] === {}),
+    ThrowError["The following shorthands are already declared as grid functions:", Intersection[shorts, gfs]]];
+
   (* Check that there are no unknown symbols in the calculation *)
-
   allSymbols = calculationSymbols[cleancalc];
-  knownSymbols = Join[gfs, shorts, parameters, {t, Pi, E}];
-
-  (* Print["allSymbols == ", allSymbols];
-  Print["knownSymbols == ", knownSymbols]; *)
+  knownSymbols = Join[gfs, shorts, parameters, {t, Pi, E, Symbol["i"], Symbol["j"], Symbol["k"]}];
 
   unknownSymbols = Complement[allSymbols, knownSymbols];
 
@@ -452,7 +483,7 @@ CreateCalculationFunction[calc_, debug_] :=
 
        (* search for SYNCs *)
        If[numeq <= 1,
-         GrepSYNC = GrepSyncGroups[eqLoop]; ,
+         GrepSYNC = GrepSyncGroups[eqLoop],
          GrepSYNC = {};
          eqLoop = UncommentSourceSync[eqLoop];
          Print["> 1 loop in thorn -> scheduling in source code, incompatible with Multipatch!"];
@@ -473,6 +504,48 @@ variablesInGroup[g_] :=
 groupName[g_] :=
   g[[1]];
 
+(* Check that the given list of equations assigns things in the
+   correct order.  Specifically, shorthands must not be used before
+   they are assigned.  *)
+
+checkEquationAssignmentOrder[eqs_, shorthands_] :=
+  Map[checkShorthandAssignmentOrder[eqs,#] &, shorthands];
+
+equationUsesShorthand[eq_, shorthand_] :=
+  Length[Cases[{Last[eq]}, shorthand, Infinity]] != 0;
+
+checkShorthandAssignmentOrder[eqs_, shorthand_] :=
+  Module[{useBooleans, uses, firstUse, lhss, assignments},
+
+  (* Make a list of booleans describing, for each equation, whether it
+     uses the given shorthand *)
+  useBooleans = Map[equationUsesShorthand[#, shorthand] &, eqs];
+
+  uses = Position[useBooleans, True];
+
+  lhss = Map[First, eqs];
+
+  (* The equation numbers that define this shorthand *)
+  assignments = Position[lhss, shorthand];
+
+  If[Length[uses] == 0 && Length[assignments] >= 1, 
+    Print["WARNING: Shorthand ",shorthand," is defined but not used in this equation list."]];
+
+  If[Length[uses] == 0, Return[]];
+
+  (* The number of the first equation to use this shorthand *)
+  firstUse = First[uses];
+
+  If[Length[assignments] > 1,
+     Print["WARNING: Shorthand ", shorthand, " is defined more than once."]];
+
+  If[Length[assignments] == 0,
+    ThrowError["Shorthand", shorthand, "is not defined in this equation list", eqs]];
+
+  If[assignments[[1]] >= firstUse,
+    ThrowError["Shorthand", shorthand, "is used before it is defined in this equation list", eqs]]];
+
+
 
 equationLoop[eqs_, gfs_, shorts_, incs_, groups_, syncGroups_, pddefs_] :=
   Module[{rhss, lhss, gfsInRHS, gfsInLHS, localGFs, localMap, eqs2,
@@ -486,13 +559,15 @@ equationLoop[eqs_, gfs_, shorts_, incs_, groups_, syncGroups_, pddefs_] :=
 
     localGFs = Map[localName, gfs];
     localMap = Map[# -> localName[#] &, gfs];
-
-    derivSwitch = derivativesUsed[eqs] != {};
+    
+    derivSwitch = Join[oldDerivativesUsed[eqs], GridFunctionDerivativesInExpression[pddefs, eqs]] != {};
 
     (* Replace the partial derivatives *)
 
+    (* This is for the custom derivative operators pddefs *)
     eqs2 = ReplaceDerivatives[pddefs, eqs];
 
+    checkEquationAssignmentOrder[eqs2, shorts];
    code = {InitialiseGridLoopVariables[derivSwitch],
 
    GridLoop[
@@ -507,7 +582,7 @@ equationLoop[eqs_, gfs_, shorts_, incs_, groups_, syncGroups_, pddefs_] :=
                    PrecomputeDerivatives[pddefs, eqs]],
 
     CommentedBlock["Precompute derivatives (old style)",
-                   Map[precomputeDerivative, derivativesUsed[eqs]]],
+                   Map[precomputeDerivative, oldDerivativesUsed[eqs]]],
 
     CommentedBlock["Calculate temporaries and grid functions",
                    Map[{assignVariableFromExpression[#[[1]], #[[2]]], "\n"}  &,
@@ -526,7 +601,11 @@ equationLoop[eqs_, gfs_, shorts_, incs_, groups_, syncGroups_, pddefs_] :=
   lhsGroupNames    = containingGroups[gfsInLHS, groups];
   actualSyncGroups = Intersection[lhsGroupNames, syncGroups];
 
-  If[Not@derivSwitch, actualSyncGroups = {}]; (* only sync when derivs are taken *)
+    (* This is nonsense.  You need to synchronize only if the NEXT
+    loops contain derivatives.  This cannot be determined here, so I am
+    changing the code  so that synchronization is always performed *)
+
+(*  If[Not@derivSwitch, actualSyncGroups = {}];  only sync when derivs are taken *)
 
   If[Length@actualSyncGroups > 0,
     Print["Synchronizing groups: ", actualSyncGroups];

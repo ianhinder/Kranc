@@ -28,7 +28,7 @@
 BeginPackage["sym`"];
 
 {AllowedValues, BaseImplementation, BaseThornDefault, Calculation,
-CollectList, Comment, Conditional, Contents, CreateExcisionCode,
+CollectList, Comment, Conditional, Contents, CreateExcisionCode, CustomSchedules,
 DeBug, Default, Description,
 Directory, Equations, EvolutionTimeLevels,
 EvolvedGFs, Filename, GridFunctions, GridType, Group,
@@ -51,7 +51,7 @@ EndPackage[];
 
 
 BeginPackage["KrancThorns`", 
-             {"CodeGen`", "sym`", "Thorn`", "MapLookup`", "KrancGroups`", "Differencing`", "CalculationFunction`", "Helpers`"}];
+             {"CodeGen`", "sym`", "Thorn`", "MapLookup`", "KrancGroups`", "Differencing`", "CalculationFunction`", "Errors`", "Helpers`"}];
 
 CodeGen`SetSourceLanguage["C"];
 
@@ -316,8 +316,8 @@ ThornList = {{ThornName -> "GenericFD", ThornArrangement -> "KrancNumericalTools
               {ThornName -> "CartGrid3D", ThornArrangement -> "CactusBase", ThornGroups -> {},
               ThornParameters -> {}, ThornType -> "External"},
 (* *)
-              {ThornName -> "SpaceMask", ThornArrangement -> "CactusEinstein", ThornGroups -> {},
-              ThornParameters -> {}, ThornType -> "External"},
+(*              {ThornName -> "SpaceMask", ThornArrangement -> "CactusEinstein", ThornGroups -> {},
+              ThornParameters -> {}, ThornType -> "External"},*)
 (* *)
               {ThornName -> "MoL", ThornArrangement -> "CactusBase", ThornGroups -> {},
               ThornParameters -> {}, ThornType -> "External"},
@@ -374,7 +374,7 @@ precompheader = CreatePrecompMacros[namedCalc];
 
 (* INTERFACE *)
 
-inheritedImplementations = Join[{baseImplementation, "Grid", "Boundary", "SpaceMask",
+inheritedImplementations = Join[{baseImplementation, "Grid", "Boundary",
                             "GenericFD"}, lookupDefault[opts, InheritedImplementations, {}]];
 
 includeFiles             = {"Boundary.h", "Symmetry.h", "GenericFD.h"};
@@ -757,7 +757,7 @@ Module[{after, allowedSetTimes, baseImplementation, baseParamsTrueQ, before, cal
         file, GFs, globalStorageGroups, implementation, implementations, intParameters,
         namedCalc, precompheaderName, realParameters, RHSs, setgroups, setTime,
         ThornList, ext, include, genericFDImplementation, baseImp, numeq, grepSYNC, scheduledStartup,
-        sheduledINITIAL, scheduledPOSTSTEP, INIT},
+        sheduledINITIAL, scheduledPOSTSTEP, INIT, setrhs},
 
     Print["\n*** CreateSetterThorn ***"];
 
@@ -794,13 +794,12 @@ If[debug,
   Print["Debugging switched off"]
  ];
 
-  allowedSetTimes = {"initial_only", "postinitial_only", "poststep_only", "initial_and_poststep", "postinitial_and_poststep"};
+  allowedSetTimes = {"initial_only", "postinitial_only", "poststep_only", "initial_and_poststep", "postinitial_and_poststep", "custom"};
 
   If[!MemberQ[allowedSetTimes, setTime],
-     Module[{},
-       Print["Unknown value for option SetTime: ", SetTime];
-       Print["Allowed values for option SetTime are: ", allowedSetTimes];
-       Throw["Exit in CreateSetterThorn"]]];
+     ThrowError["CreateSetterThorn: Unknown value for option SetTime:", 
+                setTime,
+                "Allowed values are: ", allowedSetTimes]];
 
 If[setTime == "initial_only"     || setTime == "initial_and_poststep",     INIT = "INITIAL" ];
 If[setTime == "postinitial_only" || setTime == "postinitial_and_poststep", INIT = "POSTINITIAL" ];
@@ -847,6 +846,8 @@ before = If[mapContains[namedCalc, Before],
 after  = If[mapContains[namedCalc, After],
             " AFTER (" <> FlattenBlock@SpaceSeparated@lookup[namedCalc, After] <> ") ",
             "" ];
+
+customSchedules = lookupDefault[namedCalc,CustomSchedules, {}];
 
 
 (* INTERFACE *)
@@ -913,8 +914,9 @@ ext = CodeGen`SOURCESUFFIX;
 If[numeq <= 1, 
    grepSYNC = GrepSyncGroups[setrhs, calcrhsName]; ,
    grepSYNC = {};
-   setRHS = UncommentSourceSync[setrhs, calcrhsName];
-   Print["> 1 loop in thorn -> scheduling in source code, incompatible with Multipatch!"];
+(* This should have already been done in CreateCalculationFunction. *)
+ (*  setrhs = UncommentSourceSync[setrhs, calcrhsName];*)
+(*   Print["> 1 loop in thorn -> scheduling in source code, incompatible with Multipatch!"];*)
 ];
 
 
@@ -961,6 +963,24 @@ If[(setTime == "poststep_only"),
 If[(setTime == "initial_and_poststep") || (setTime == "postinitial_and_poststep"),
    scheduledFunctions = {scheduledINITIAL, scheduledPOSTSTEP};
 ];
+
+
+scheduleCustomFunction[name_, scheduleSpec_] :=
+{
+  Name -> name,
+  SchedulePoint      -> scheduleSpec,
+  SynchronizedGroups -> grepSYNC,
+  Language           -> CodeGen`SOURCELANGUAGE, 
+  Comment            -> "set values"
+};
+
+
+If[(setTime == "custom"),
+   scheduledFunctions = Map[scheduleCustomFunction[calcrhsName, #] &, customSchedules];
+];
+
+If[customSchedules != {} && setTime != "custom",
+  ThrowError["Specified custom schedules but SetTime != custom", customSchedules]];
 
 
 schedule = CreateSchedule[globalStorageGroups, {}, scheduledFunctions];
@@ -1286,6 +1306,20 @@ CreateBaseThorn[groups1_, evolvedGroupNames_, primitiveGroupNames_, optArgs___] 
           startup,make,evTimeLevels,thornSpec,thisThorn, groups, createExcisionCode},
 
   Print["\n*** CreateBaseThorn ***"];
+
+GroupNamePattern = _String;
+GroupPattern = {GroupNamePattern, {vars__}};
+
+If[! MatchQ[groups1, {GroupPattern___}],
+   ThrowError["CreateBaseThorn: groups1: Not a list of group definitions:", groups1]];
+
+If[! MatchQ[evolvedGroupNames, {GroupNamePattern___}],
+   ThrowError["CreateBaseThorn: evolvedGroupNames: Not a list of group names:", evolvedGroupNames]];
+
+If[! MatchQ[primitiveGroupNames, {GroupNamePattern___}],
+   ThrowError["CreateBaseThorn: primitiveGroupNames: Not a list of group names:", primitiveGroupNames]];
+
+
 
 (* We do not want the implementation names in these group names.  It
    may not have been supplied, but if it has been, we strip it. *)

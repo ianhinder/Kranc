@@ -24,7 +24,7 @@ BeginPackage["sym`"];
 
 EndPackage[];
 
-BeginPackage["CodeGen`", {"sym`"}];
+BeginPackage["CodeGen`", {"sym`", "Errors`"}];
 
 SOURCELANGUAGE::usage = "global variable == \"C\" or \"Fortran\" determines language
                         for code generation";
@@ -145,7 +145,10 @@ intersperse[l_, x_] :=
 CommaNewlineSeparated[l_] := intersperse[l, ",\n"];
 
 SpaceSeparated[l_] := 
-  intersperse[l, " "];
+  Module[{},
+  If[!ListQ[l],
+    ThrowError["SpaceSeparated: Expecting a list, but was given", l]];
+  intersperse[l, " "]];
 
 CommaSeparated[l_] := 
   intersperse[l, ", "];
@@ -154,7 +157,8 @@ NewlineSeparated[l_] :=
   intersperse[l, "\n"];
 
 CommaInitSeparated[l_] :=
-  intersperse[l, " = INITVALUE, "];
+  intersperse[Map[{#," = INITVALUE"} &, l], ", "];
+(*  intersperse[l, " = INITVALUE, "];*)
 
 
 

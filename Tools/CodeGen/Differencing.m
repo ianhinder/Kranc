@@ -103,6 +103,12 @@ DeclareDerivatives[derivOps_, expr_]
 Return a CodeGen block which precomputes all the derivatives needed in
 expr.
 
+GridFunctionDerivativesInExpression[derivOps_, expr_]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Return a list of GF derivatives that are used in expr.
+
+
 ReplaceDerivatives[derivOps_, expr_]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -133,6 +139,7 @@ PrecomputeDerivatives::usage = "";
 DeclareDerivatives::usage = "";
 ReplaceDerivatives::usage = "";
 StandardCenteredDifferenceOperator::usage = "";
+GridFunctionDerivativesInExpression::usage = "";
 DPlus::usage = "";
 DMinus::usage = "";
 DZero::usage = "";
@@ -318,72 +325,6 @@ RemoveDuplicateRules[l_] :=
     result = Thread[Rule[lhs2,rhs2]];
 
     result];
-
-
-
-(* Given a grid function derivative, return the C variable name that
-   we will use to precompute its value. *)
-GFDerivativeName[pd_[gf_, i_]] := 
-Symbol["Global`" <> ToString[pd] <> ToString[i] <> ToString[gf]];
-
-(* Given a grid function derivative, return the C variable name that
-   we will use to precompute its value. *)
-GFDerivativeName[pd_[gf_, i_, j_]] := 
-Symbol["Global`" <> ToString[pd] <> ToString[i] <> ToString[j] <> ToString[gf]];
-
-
-(* Given a derivative, return the macro name used for it *)
-DerivativeName[pd_[i_]] := Symbol["Global`" <> ToString[pd] <> ToString[i]];
-DerivativeName[pd_[i_, j_]] := Symbol["Global`" <> ToString[pd] <> ToString[i] <> ToString[j]];
-
-(* Return a codegen block to precompute the given grid function
-   derivative *)
-PrecomputeDerivative[d:pd_[gf_, inds__]] :=
-  AssignVariable[GFDerivativeName[d], {DerivativeName[pd[inds]], "(", gf,", i, j, k)"}];
-
-(* Return a codegen block to declare a grid function derivative
-   precompute variable *)
-DeclareDerivative[d:pd_[gf_, inds__]] :=
-  DeclareVariable[GFDerivativeName[d], "CCTK_REAL"];
-
-(* Given a derivative definition, return all the derivatives that
-   could be defined using the name of the definition *)
-PDsFromDefinition[def_] :=
-  AllDerivatives[lookup[def, Name]];
-
-(* Given a list of derivative definitions, return all the possible
-   derivatives that could be defined in it *)
-ListAllPDs[defs_] :=
-  Apply[Join, Map[PDsFromDefinition, defs]];
-
-(* List all the grid function derivatives in x that are defined in
-   pddefs *)
-GFDsInExpression[x_, pddefs_] :=
-  Module[{},
-    pds = Flatten[Map[PDsFromDefinition, pddefs],1];
-    gfds = Flatten[Map[GFDsInExpressionForPD[x,#] &, pds], 1];
-    gfds];
-
-(* List all the grid function derivatives in x that are generated from
-   pd *)
-GFDsInExpressionForPD[x_, pd_[inds__]] :=
-  Union[Cases[x, pd[gf_, inds], Infinity]];
-
-(* Given a derivative, return a rule that can be applied to an
-   expression to convert that derivative into its corresponding macro
-   call *)
-PDToReplacementRule[pd_[inds__]] :=
-  pd[x_, inds] :> GFDerivativeName[pd[x,inds]];
-
-(* Return all the rules for converting derivatives into macros that
-   are defined in pddefs *)
-AllGFDRules[pddefs_] :=
-  Map[PDToReplacementRule, ListAllPDs[pddefs]];
-
-
-(* List all the derivatives with a particular name  *)
-AllDerivatives[name_] :=
-  Join[Table[name[i],{i,1,3}], Flatten[Table[name[i,j], {i,1,3},{j,1,3}],1]];
 
 (* Return a difference operator approximating a derivative of order p
    using m grid points before and m grid points after the centre

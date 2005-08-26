@@ -23,7 +23,7 @@ BeginPackage["sym`"];
 {D1, D2, D3, D11, D22, D33, D21, D31, D32, D12, D13, D23, dot}
 EndPackage[];
 
-BeginPackage["TensorTools`"];
+BeginPackage["TensorTools`", {"Errors`"}];
 
 (* Cause the sym context to be added to the context of anyone loading
    this package *)
@@ -54,9 +54,9 @@ preferred.";
 PD::usage = "PD[x,i1, i2, ...] represents the partial derivative of x
 with respect to the indices i1, i2, ...";
 
-OD::usage = "OD[x,i1, i2, ...] represents the partial derivative of x
+(*OD::usage = "OD[x,i1, i2, ...] represents the partial derivative of x
 with respect to the indices i1, i2, ...  This syntax is accepted for
-compatibility with MathTensor.";
+compatibility with MathTensor.";*)
 
 Lie::usage = "Lie[x,V] is the Lie derivative of expression x with
 respect to the TensorTools vector V (specified without an index).";
@@ -106,6 +106,8 @@ dummy indices.";
 RemoveDuplicates::usage = "RemoveDuplicates[list] removes any
 duplicated elements from list.  Useful with MakeExplicit where some of
 the tensor symmetries cause duplicates to be created.";
+
+CheckTensors::usage;
 
 (* This is for compatibility with MathTensor notation *)
 (*OD = PD;*)
@@ -917,6 +919,94 @@ abstractToExplicitMap[m_] :=
 
 explicitVariableList[l_] :=
   RemoveDuplicates[Flatten[Map[MakeExplicit, l], 1]];
+
+(* -------------------------------------------------------------------------- 
+   Checking tensor expressions for consistency
+   -------------------------------------------------------------------------- *)
+
+(* These functions all throw an exception if an expression is invalid *)
+
+CheckTensors[l_List] :=
+  Map[CheckTensors, l];
+
+(*CheckTensors[x:Tensor[k_, is__] -> y_] :=
+  CheckTensors[x,y];*)
+
+CheckTensors[x_ -> y_] :=
+  Module[{},
+(*    Print["Checking rule ", x -> y];*)
+    CheckTensors[x];
+    CheckTensors[y];
+
+(*    Print["tensorialQ[x] == ", tensorialQ[x]];
+    Print["tensorialQ[y] == ", tensorialQ[y]];*)
+
+    If[tensorialQ[x] || tensorialQ[y],
+      CheckTensors[x,y]];
+    True];
+
+CheckTensors[f t:Tensor[k_,is__]] :=
+  CheckTensor[t];
+
+CheckTensors[a_ t:TensorProduct[x_,y_]] :=
+  CheckTensors[t];
+
+CheckTensors[x_ y_] :=
+  CheckTensors[TensorProduct[x,y]];
+
+CheckTensors[TensorProduct[x_,y_]] :=
+  Module[{xs,ys},
+    CheckTensors[x];
+    CheckTensors[y];
+    xs = freesIn[x];
+    ys = freesIn[y];
+
+    If[!(Intersection[xs,ys] === {}),
+       ThrowError["Tensor expressions have conflicting indices: ", x, y, xs, ys]];
+    True];
+
+CheckTensors[x_ + y_] :=
+  CheckTensors[x,y];
+
+CheckTensors[x_, y_] :=
+  Module[{xs,ys},
+    CheckTensors[x];
+    CheckTensors[y];
+    xs = freesIn[x];
+    ys = freesIn[y];
+
+(*    Print["CheckTensors[", x, ",", y,"]"];
+    Print["xs == ", xs];
+    Print["ys == ", ys];*)
+
+    If[ x === 0 || y === 0, Return[True]];
+
+    If[!(xs === ys),
+(*      Print["Throwing..."];*)
+      ThrowError["Tensor expressions have mismatched indices: ", x, y, xs, ys]];
+    True;
+      ];
+
+CheckTensors[t:Tensor[k_, is__]] :=
+  Module[{},
+    If[!(Union[{is}] === Sort[{is}]),
+       ThrowError["Tensor has repeated indices: ", t, {is}]];
+    True];
+
+CheckTensors[t:f_[TensorIndex[__]..]] :=
+  Module[{},
+    If[!(f === Tensor),
+       ThrowError["Tensor index in an object that is not a declared tensor.", t]];
+       ];
+
+
+CheckTensors[x_] := 
+  Module[{},
+(*    Print["Default tensor check: ", x];*)
+    True];
+
+
+  
 
 End[];
 

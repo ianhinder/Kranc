@@ -94,10 +94,22 @@ CreateGroupFromTensor[x_] :=
 CreateNamedGroupFromTensor[name_, x_] :=
     {name, {x}};
 
+CheckEquationTensors[eq_] :=
+  Module[{},
+    CheckTensors[eq]];
+
+CheckCalculationTensors[calc_] :=
+  Module[{eqs},
+    eqs = lookup[calc, Equations];
+    Map[CheckEquationTensors, eqs]];
+
+
+
 (* Wrappers for the KrancThorns functions *)
 
 CreateMoLThornTT[calc_, groups_, optArgs___] :=
   Module[{calc2, groups2},
+    CheckCalculationTensors[calc];
     calc2 = makeCalculationExplicit[calc];
     groups2 = Map[makeGroupExplicit, groups];
     CreateMoLThorn[calc2, groups2, optArgs]];
@@ -109,16 +121,19 @@ CreateBaseThornTT[groups_, evolvedGroupNames_, primitiveGroupNames_, optArgs___]
 
 CreateSetterThornTT[calc_, groups_, optArgs___] :=
   Module[{calc2, groups2},
+    CheckCalculationTensors[calc];
     calc2 = makeCalculationExplicit[calc];
     groups2 = Map[makeGroupExplicit, groups];
     CreateSetterThorn[calc2, groups2, optArgs]];
 
 CreateEvaluatorThornTT[unqualifiedEvaluationDefinitions_, unqualifiedGroups_, optArgs___] :=
   Module[{newDefs, groups2},
+    Map[CheckCalculationTensors[Last[#]] &, unqualifiedEvaluationDefinitions];
     groups2 = Map[makeGroupExplicit, unqualifiedGroups];
     newDefs = Map[makeGroupCalculationExplicit, unqualifiedEvaluationDefinitions];
     CreateEvaluatorThorn[newDefs, groups2, optArgs]];
 
+(* Obsolete; no tensor checking *)
 CreateTranslatorThornTT[groups_, optArgs___] :=
   Module[{optArgs2, groups2},
     groups2 = Map[makeGroupExplicit, groups];

@@ -28,7 +28,7 @@ BeginPackage["sym`"];
 EndPackage[];
 
 BeginPackage["KrancGroups`", 
-             {"sym`"}];
+             {"sym`", "Errors`"}];
 
 groupsFromGFs::usage = "";
 addrhs::usage = "";
@@ -74,8 +74,11 @@ variablesFromGroups[groupNames_, groups_] :=
 groupFromName[name_, groups_] :=
   Module[{gs},
     gs = Select[groups, First[#] === name &];
-    If[Length[gs] != 1,
-       Throw["Cannot find group " <> name <> " in " <> ToString[groups]]];
+    If[Length[gs] == 0,
+       ThrowError["Cannot find group ", name, "in", groups]];
+    If[Length[gs] > 1,
+       ThrowError["Group", name, "appears multiple times in", groups]];
+
     First[gs]];
 
 groupName[g_] := First[g];

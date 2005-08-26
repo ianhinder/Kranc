@@ -1,5 +1,5 @@
 
-BeginPackage["MapLookup`"];
+BeginPackage["MapLookup`", {"Errors`"}];
 
 lookup::usage = "";
 mapContains::usage = "";
@@ -19,11 +19,14 @@ Begin["`Private`"];
 
 lookup[map_, key_] :=
   Module[{values},
+    If[! ListQ[map],
+      ThrowError["lookup failure: map", map, " is not a list"]];
+
     values = Select[map, First[#] === key &];
     If[values == {},
-       Throw["lookup failure: key " <> ToString[key] <> " not found in map ", map]];
+       ThrowError["lookup failure: key " <> ToString[key] <> " not found in map " <> ToString[map]]];
     If[Length[values] > 1,
-       Throw["lookup failure: key " <> ToString[key] <> " found multiple times in map ", map]];
+       ThrowError["lookup failure: key ", key, " found multiple times in map", map]];
 
     First[values][[2]]];
 

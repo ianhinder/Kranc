@@ -77,7 +77,7 @@ endif
 
 
 if (stencil_width > maxval(cctk_nghostzones)) then
- call CCTK_WARN(0, "stencil_width is smaller than max(cctk_nghostzones)!")
+ call CCTK_WARN(0, "stencil_width is larger than max(cctk_nghostzones)!")
 endif
 
 if (stencil_width_x > cctk_nghostzones(1)) then

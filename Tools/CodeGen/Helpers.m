@@ -96,6 +96,9 @@ If[ValueQ@Global`tensorNames2componentNames[dummy_tensor],
   ComponentList[expr_,     T_?AtomQ[index__]] := expr /. Global`makeSplitRules[T[index]];
   TextComponentList[expr_, T_?AtomQ[index__]] := Global`tensorNames2componentNames@ComponentList[expr, T[index]];
 
+  ComponentList[TensorList_?ListQ] := Flatten@Map[ComponentList, TensorList];
+  TextComponentList[TensorList_?ListQ] := Global`tensorNames2componentNames@ComponentList[TensorList];
+
 (* GroupStruct produces a Kranc-style group structure for tensors or scalars*)
   GroupStruct[t_[i__]]  := {ToString@t, ComponentList@t[i]} // Global`tensorNames2componentNames;
   GroupStruct[S_?AtomQ] := {ToString@S,{S}};

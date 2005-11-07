@@ -377,6 +377,11 @@ precompheader = CreatePrecompMacros[namedCalc];
 inheritedImplementations = Join[{baseImplementation, "Grid", "Boundary",
                             "GenericFD"}, lookupDefault[opts, InheritedImplementations, {}]];
 
+If[createExcisionCode, 
+ inheritedImplementations = Flatten[{inheritedImplementations, "SpaceMask"}];
+];
+
+
 includeFiles             = {"Boundary.h", "Symmetry.h", "GenericFD.h"};
 
 registerEvolved = 

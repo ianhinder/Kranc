@@ -38,6 +38,8 @@ SeparatedBlock::usage = "SeparatedBlock[block] returns a version of 'block' with
   "a newline before it.";
 GenerateFile::usage = "GenerateFile[name, block] writes 'block' to a file of the " <>
   "specified 'name'.";
+AddToFile::usage = "AddToFile[name, block] appends 'block' to a file of the " <>
+    "specified 'name'.";
 IncludeFile::usage = "IncludeFile[name] returns a block of code" <>
   "that includes a header file (i.e '#include \"name\"').";
 DeclareVariable::usage = "DeclareVariable[name, type] returns a block of code " <>
@@ -134,6 +136,11 @@ GenerateFile[filename_, contents_] :=
   Module[{fp = OpenWrite[filename]},
     WriteString[fp, FlattenBlock[contents]];
     Close[fp]];
+
+AddToFile[filename_, contents_] :=
+  Module[{fp = OpenAppend[filename]},
+      WriteString[fp, FlattenBlock[contents]];
+          Close[fp]];
 
 intersperse[l_, x_] :=
   If[l == {},

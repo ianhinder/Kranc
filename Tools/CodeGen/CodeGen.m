@@ -45,8 +45,14 @@ IncludeFile::usage = "IncludeFile[name] returns a block of code" <>
 DeclareVariable::usage = "DeclareVariable[name, type] returns a block of code " <>
   "that declares a variable of given name and type.  'name' and 'type' should be " <>
   "strings.";
-DeclareVariables::usage = "DeclareVariable[names, type] returns a block of code " <>
+DeclareVariables::usage = "DeclareVariables[names, type] returns a block of code " <>
   "that declares a list of variables of given name and type.  'names' should be a list" <>
+  " of strings and 'type' should be a string string.";
+DeclarePointer::usage = "DeclarePointer[name, type] returns a block of code " <>
+  "that declares a pointer of given name and type.  'name' and 'type' should be " <>
+  "strings.";
+DeclarePointers::usage = "DeclarePointers[names, type] returns a block of code " <>
+  "that declares a list of pointers of given name and type.  'names' should be a list" <>
   " of strings and 'type' should be a string string.";
 DefineVariable::usage = "DefineVariable[name, type, value] returns a block of " <>
   "code that declares and initialised a variable 'name' of type 'type' to value 'value'.";
@@ -209,6 +215,18 @@ DeclareVariables[names_?ListQ, type_] :=
 If[SOURCELANGUAGE == "C",
    {type, " ",    CommaInitSeparated@names, EOL[]},
    {type, " :: ", CommaSeparated@names,     EOL[]} (* no value init avoids implicit SAVE attribute *)
+   ];
+
+DeclarePointer[name_, type_] :=
+If[SOURCELANGUAGE == "C",
+  {type, " *",    name, EOL[]},
+  {type, ", target :: ", name, EOL[]}
+  ];
+
+DeclarePointers[names_?ListQ, type_] :=
+If[SOURCELANGUAGE == "C",
+   {type, " *",           CommaInitSeparated@names, EOL[]},
+   {type, ", target :: ", CommaSeparated@names,     EOL[]} 
    ];
 
 DeclareArray[name_, dim_, type_] :=

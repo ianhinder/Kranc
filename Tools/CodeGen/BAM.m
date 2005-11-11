@@ -186,6 +186,16 @@ renderValue[type_, value_] :=
     Quote[value],
     value];
 
+
+GetFun[type_]:= Switch[type,
+                       "CCTK_INT",  "Geti",
+                       "CCTK_REAL", "Getd",
+                       "KEYWORD",   "Getval",
+                       "BOOLEAN",   "Geti",
+                       _, type <> "is not a valid type!"];
+
+GetValue[type_, name_]:=  GetFun[type] <> "(\"" <> name <> "\")";
+
 (* Return a block defining a parameter with the given
    parameterSpec (defined above).  This is used for defining new
    parameters, as well as extending existing ones. *)
@@ -194,7 +204,9 @@ parameterBlock[spec_] :=
      lookup[spec, Name],           ", ",
      Quote@lookup[spec, Default],  ", ",
      Quote@lookup[spec, Description],
-     ");\n"};
+     ");\n",
+     "  ", DefineVariable[lookup[spec, Name], lookup[spec, Type], 
+                    GetValue[lookup[spec, Type], lookup[spec, Name]]], "\n"};
 
 (* Given a parameterFileSpec structure, return a CodeGen block file *)
 CreateParam[spec_] :=
@@ -281,19 +293,48 @@ CreateInterface[implementation_, inheritedImplementations_, includeFiles_,
 
 (* Given a function scheduling specification as defined above, return
    a CodeGen block to schedule the function for the schedule.ccl file *)
-scheduleUnconditionalFunction[spec_] :=
-  {"  AddFun(" <> lookup[spec,SchedulePoint] <> ", " <> lookup[spec, Name] <> ", " <> Quote[lookup[spec, Comment]], ");\n\n"};
+scheduleUnconditionalFunction[spec_] := 
+  Module[{bin, name, comment, scheduleThis, entry},
+
+bin     = lookup[spec,SchedulePoint];
+name    = lookup[spec, Name];
+comment = lookup[spec, Comment];
+
+bin = StringReplace[bin, "at BASEGRID"     -> "PRE_INITIALDATA", IgnoreCase -> True];
+bin = StringReplace[bin, "at INITIAL"      -> "INITIALDATA",     IgnoreCase -> True];
+bin = StringReplace[bin, "in MoL_CalcRHS"  -> "\"???\"",         IgnoreCase -> True];
+bin = StringReplace[bin, "in MoL_PostStep" -> "\"???\"",         IgnoreCase -> True];
+
+
+scheduleThis = True;
+
+If[StringMatchQ[name, "*Startup"],            scheduleThis = False];
+If[StringMatchQ[name, "*CheckBoundaries"],    scheduleThis = False];
+If[StringMatchQ[name, "*ApplyBoundConds"],    scheduleThis = False];
+If[StringMatchQ[name, "*RegisterSymmetries"], scheduleThis = False];
+If[StringMatchQ[bin,  "*Mol_Register"],       scheduleThis = False];
+
+
+If[scheduleThis,
+   entry = {"  AddFun(" <> bin <> ", " <> name <> ", " <> Quote[comment], ");\n\n"};,
+   entry = {"/* " <> name <> " IS ONLY SCHEDULED FOR CACTUS, NOT FOR BAM */\n"};
+];
+
+entry
+	];
 
 (* Handle the aspect of scheduling the function conditionally *)
 scheduleFunction[spec_] :=
-  Module[{condition, parameter, value, u},
+  Module[{bamspec, condition, parameter, value, u},
 
-    u = scheduleUnconditionalFunction[spec];
+    bamspec = spec;
+
+    u = scheduleUnconditionalFunction[bamspec];
 
        If[mapContains[spec, Conditional],
 
        (* Output the conditional structure *)
-       condition = lookup[spec, Conditional];
+       condition = lookup[bamspec, Conditional];
 
        If[mapContains[condition, Textual],
 
@@ -313,6 +354,7 @@ scheduleFunction[spec_] :=
 (* Taking a list of group storage specifications for global storage,
    and lists of scheduled function and scheduled group structures,
    return a CodeGen block representing a schdule.ccl file. *)
+
 CreateSchedule[globalStorageGroups_, scheduledGroups_, scheduledFunctions_] :=
   {Map[SeparatedBlock[scheduleFunction[#]] &, scheduledFunctions]  };
 
@@ -351,17 +393,14 @@ CreateSetterSource[calcs_, debug_, opts___] :=
   If[!MatchQ[include, _List],
     Throw["CreateSetterSource: Include should be a list but is in fact " <> ToString[include]]];
 
-  {whoWhen[CodeGen`SOURCELANGUAGE],
-
-   "#define KRANC_" <> ToUpperCase[CodeGen`SOURCELANGUAGE] <> "\n\n",
+  {"#define KRANC_" <> ToUpperCase[CodeGen`SOURCELANGUAGE] <> "\n\n",
 
    If[CodeGen`SOURCELANGUAGE == "C",
          IncludeFile["math.h"],
          "\n"
       ],
 
-   Map[IncludeFile, Join[{"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h",
-                     "precomputations.h", "GenericFD.h", "Differencing.h"}, include]],
+   Map[IncludeFile,  include],
    calculationMacros[],
 
    (* For each function structure passed, create the function and
@@ -372,87 +411,25 @@ CreateSetterSource[calcs_, debug_, opts___] :=
 
 
 (* ------------------------------------------------------------------------ 
-   Symmetries Registration
+   Symmetries Registration is not necessary in BAM
    ------------------------------------------------------------------------ *)
 
-(* Symmetries registration spec = {{FullName -> "impl::GFname", 
-                                    Sym      -> {symX, symY, symZ}}, ...} *)
-
-SymmetriesBlock[spec_] :=
-
-  Module[{i, KrancDim},
-
-  KrancDim = 3;
-
-  sym = lookup[spec, Sym];
-
-  {Table["sym[" <> ToString[i - 1]   <> "] = " <> 
-                   ToString@sym[[i]] <> ";\n", {i, 1, KrancDim}],
-
-  "SetCartSymVN(cctkGH, sym, \"" <> lookup[spec, FullName] <> "\");\n\n"
-}
-];
-
-
-calcSymmetry[gf_] := Module[{sym, q, string},
-
-sym = {1, 1, 1};  (* default *)
-
-string = ToString@gf;
-
-While[IntegerQ[q = ToExpression@StringTake[string, -1]], 
-
-Module[{},
-    sym[[q]] = -sym[[q]];
-    string   = StringDrop[string, -1]
-    ]
-];
-sym
-];
-
-
-(* Given a symmetries registration structure as defined above, return a
-   C CodeGen structure of a source file which will register the symmetries. *)
-CreateSymmetriesRegistrationSource[thornName_, implementationName_, GFs_, debug_] :=
-
-  Module[{spec, j, lang, tmp},
-
-  If[debug,
-      Print["Registering Symmetries for: ", GFs];
-    ];
-
-  lang = CodeGen`SOURCELANGUAGE;
-  CodeGen`SOURCELANGUAGE = "C";
-
-  spec = Table[{FullName -> implementationName <> "::" <> ToString@GFs[[j]],
-                Sym      -> calcSymmetry[GFs[[j]] ]
-               }, {j, 1, Length@GFs}];
-
-  tmp = {whoWhen["C"],
-
-   Map[IncludeFile, 
-        {"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h", "Symmetry.h"}],
-
-   DefineCCTKFunction[ thornName <> "_RegisterSymmetries", "void", 
-     {CommentedBlock["array holding symmetry definitions",
-
-      "CCTK_INT sym[3];\n\n"],
-
-      CommentedBlock["Register symmetries of grid functions",
-
-      Map[SymmetriesBlock, spec]]}
-]
-  };
-
-  CodeGen`SOURCELANGUAGE = lang;
-
-tmp
-];
-
+CreateSymmetriesRegistrationSource[thornName_, 
+                         implementationName_, GFs_, debug_] := {};
 
 (* ------------------------------------------------------------------------ 
    MoL Registration
    ------------------------------------------------------------------------ *)
+(* 
+  HOW TO DO THIS: consistently extract BAM-style names from GF-names with BreakComponentNames
+
+CHECK WHETHER BOUNDARY INFO CAN BE SET BY GROUP!
+
+MOVE ALL THE BOUNDARY STUFF INTO MOL REGISTRATION
+
+WHEN CONVERTING TO BAM BINS: use this info to not register functions with AddFun that we do not need,
+like startup etc.
+*)
 
 (* MoL registration = {EvolvedGFs -> {h11, ...}, PrimitiveGFs -> {trK, ...}, 
                        BaseImplementation -> "ADMBase", ThornName -> "ADMMoL"} *)
@@ -474,25 +451,24 @@ CreateMoLRegistrationSource[spec_, debug_] :=
     lang = CodeGen`SOURCELANGUAGE;
     CodeGen`SOURCELANGUAGE= "C";
 
-    tmp = {whoWhen["C"],
+    registerEntry[x_]:= "vlpush(varlist, Ind(\"" <> unqualifiedGroupName[x] <> "\"));\n";
 
-    Map[IncludeFile, 
-        {"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h"}],
+    tmp = {
+    DefineFunction[lookup[spec,ThornName] <> "_RegisterVars", "CCTK_INT",
+                   "ARGS",
+      {DeclarePointer["varlist", "tVarList"],
 
-    DefineCCTKFunction[lookup[spec,ThornName] <> "_RegisterVars", "CCTK_INT", 
-      {DefineVariable["ierr", "CCTK_INT", "0"],
+        CommentedBlock["Register all the evolved grid functions",
+	 {"varlist = vlalloc(level);\n\n",
 
-      CommentedBlock["Register all the evolved grid functions with MoL",
+          Map[registerEntry, lookup[spec, EvolvedGFs]],
+          "\n",
+          "evolve_vlregister(varlist);\n"}],
 
-      Map[{"ierr += MoLRegisterEvolved(CCTK_VarIndex(\"", #, "\"),  CCTK_VarIndex(\"",
-           lookup[spec,BaseImplementation], "::", unqualifiedGroupName[#], "rhs\"));\n"} &,
-          lookup[spec, EvolvedGFs]]],
+       CommentedBlock["register evolution routine",
+	{"evolve_rhsregister(wave_evolve);\n"}],
 
-      CommentedBlock["Register all the primitive grid functions with MoL",
-      Map[{"ierr += MoLRegisterConstrained(CCTK_VarIndex(\"", 
-           lookup[spec,BaseImplementation], "::", #, "\"));\n"} &,
-          lookup[spec, PrimitiveGFs]]],
-	"return ierr;\n"}]};
+       "return 0;\n"}]};
 
       CodeGen`SOURCELANGUAGE = lang;
 
@@ -506,16 +482,6 @@ tmp
 (* boundaries spec = {Groups -> {trK, h11, ...},
                        BaseImplementation -> "ADMBase", ThornName -> "ADMMoL"} *)
 
-(* the boundary treatment is split into 3 steps:
-  1. excision                                      
-  2. symmetries                                    
-  3. "other" boundary conditions, e.g. flat, radiative   
-
-To simplify scheduling, testing, etc. the 3 steps are currently applied in separate functions!*)
-
-(* boundary conditions may have to be applied per GF or goup ; per group
-should be more efficient, but sometimes there will be a GF-dependent parameter,
-e.g. for radiation BCs *)
 
 cleanCPP[x_] := Map[StringReplace[FlattenBlock[#],  "  #" -> "#"]&, x];
 
@@ -523,228 +489,55 @@ cleanCPP[x_] := Map[StringReplace[FlattenBlock[#],  "  #" -> "#"]&, x];
    CodeGen structure of a source file which does nothing yet! *)
 CreateMoLBoundariesSource[spec_] :=
 
-  Module[{gfs, groups, tmp, lang},
+  Module[{gfs, tmp, lang},
 
   gfs = lookup[spec, EvolvedGFs];
-  groups = Map[unqualifiedGroupName, lookup[spec, Groups]];
+  gfs = Map[unqualifiedGroupName, gfs];
 
-    listBCparfileEntry[gforgroup_] := Module[{prefix, unqualName},
-    (* include a comment block with template parameter file entries *)
-    prefix =  "#$bound$#" <> lookup[spec, ThornImplementation] <> "::";
-    unqualName = unqualifiedGroupName@ToString@gforgroup;
+  registerBoundaryEntry[gf_] := Module[{name},
+
+     name = ToString@gf;
+
+     ",\n"                                                   <>
+     "                        " <> name <> "_bound_limit,  \n" <> 
+     "                        " <> name <> "_bound_falloff,\n" <> 
+     "                        " <> name <> "_bound_speed"
+  ];
+
+  listBCparfileEntry[gf_] := Module[{prefix, unqualName},
+    prefix = "#$bound$#";
+    unqualName = unqualifiedGroupName@ToString@gf;
 
     {
-     prefix <> unqualName <> "_bound       = \"skip\"\n",
-     prefix <> unqualName <> "_bound_speed = 1.0\n",
-     prefix <> unqualName <> "_bound_limit = 0.0\n",
-     prefix <> unqualName <> "_bound_scalar = 0.0\n\n"
-    }];
+     prefix <> unqualName <> "_bound_limit   = 1.0\n",
+     prefix <> unqualName <> "_bound_falloff = 0.0\n",
+     prefix <> unqualName <> "_bound_speed   = 0.0\n\n"
+  }];
 
-    trivialBCGroup[group_] := Module[{boundpar, fullgroupname},
-    (* boundary conditions that do not have parameters besides their name *)
+    radiationBCGF[gf_] := Module[{boundpar},
+       (* a simple radiation boundary condition *)
 
-    boundpar      = unqualifiedGroupName@group <> "_bound";
-    fullgroupname = qualifyGroupName[ToString@group, lookup[spec, BaseImplementation]];
+        boundpar = unqualifiedGroupName@ToString@gf <> "_bound";
 
-    {"\n",
-     "if (CCTK_EQUALS(" <> boundpar <> ", \"none\"  ) ||\n",
-     "    CCTK_EQUALS(" <> boundpar <> ", \"static\") ||\n",
-     "    CCTK_EQUALS(" <> boundpar <> ", \"flat\"  ) ||\n",
-     "    CCTK_EQUALS(" <> boundpar <> ", \"zero\"  ) ) \n",
-     "{\n",
-
-     "  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, 1, -1, \n",
-     "                    \"" <> fullgroupname <> "\", " <> boundpar <> ");\n",
-
-     "  if (ierr < 0)\n",
-     "     CCTK_WARN(-1, \"Failed to register "<>boundpar<>" BC for "<>fullgroupname<>"!\");\n",
-
-     "}\n"}];
-
-
-    trivialBCGF[gf_] := Module[{boundpar, fullgfname},
-    (* boundary conditions that do not have parameters besides their name *)
-
-    boundpar   = unqualifiedGroupName@ToString@gf <> "_bound";
-    fullgfname = ToString@gf;
-
-    {"\n",
-     "if (CCTK_EQUALS(" <> boundpar <> ", \"none\"  ) ||\n",
-     "    CCTK_EQUALS(" <> boundpar <> ", \"static\") ||\n",
-     "    CCTK_EQUALS(" <> boundpar <> ", \"flat\"  ) ||\n",
-     "    CCTK_EQUALS(" <> boundpar <> ", \"zero\"  ) ) \n",
-     "{\n",
-
-     "  ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1, \n",
-     "                    \"" <> fullgfname <> "\", " <> boundpar <> ");\n",
-
-     "  if (ierr < 0)\n",
-     "     CCTK_WARN(-1, \"Failed to register "<>boundpar<>" BC for "<>fullgfname<>"!\");\n",
-
-     "}\n"}];
-
-    radiationBCGroup[group_] := Module[{boundpar, fullgroupname, myhandle},
-    (* a simple radiation boundary condition *)
-
-    boundpar      = unqualifiedGroupName@ToString@group <> "_bound";
-    fullgroupname = qualifyGroupName[ToString@group, lookup[spec, BaseImplementation]];
-
-    myhandle = "handle_" <> boundpar;
-
-    {"\n",
-     "if (CCTK_EQUALS(" <> boundpar <> ", \"radiative\"))\n",
-     "{\n /* apply radiation boundary condition */\n  ",
-
-      DefineVariable[myhandle, "CCTK_INT", "Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE)"],
-
-      "  if ("<>myhandle<>" < 0) CCTK_WARN(-1, \"could not create table!\");\n",
-
-      "  if (Util_TableSetReal("<>myhandle<>" , "<> boundpar <>"_limit, \"LIMIT\") < 0)\n",
-      "     CCTK_WARN(-1, \"could not set LIMIT value in table!\");\n",
-
-      "  if (Util_TableSetReal("<>myhandle<>" ," <> boundpar <> "_speed, \"SPEED\") < 0)\n",
-      "     CCTK_WARN(-1, \"could not set SPEED value in table!\");\n",
-
-      "\n",
-      "  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, 1, "<>myhandle<>", \n",
-      "                    \"" <> fullgroupname <> "\", \"Radiation\");\n\n",
-
-      "  if (ierr < 0)\n",
-      "     CCTK_WARN(-1, \"Failed to register Radiation BC for "<>fullgroupname<>"!\");\n",
-
-      "\n}\n"}];
-
-
-    radiationBCGF[gf_] := Module[{boundpar, fullgfname, myhandle},
-    (* a simple radiation boundary condition *)
-
-    boundpar   = unqualifiedGroupName@ToString@gf <> "_bound";
-    fullgfname = ToString@gf;
-
-    myhandle = "handle_" <> boundpar;
-
-    {"\n",
-     "if (CCTK_EQUALS(" <> boundpar <> ", \"radiative\"))\n",
-     "{\n /* apply radiation boundary condition */\n  ",
-
-      DefineVariable[myhandle, "CCTK_INT", "Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE)"],
-
-      "  if ("<>myhandle<>" < 0) CCTK_WARN(-1, \"could not create table!\");\n",
-
-      "  if (Util_TableSetReal("<>myhandle<>" , "<> boundpar <>"_limit, \"LIMIT\") < 0)\n",
-      "     CCTK_WARN(-1, \"could not set LIMIT value in table!\");\n",
-
-      "  if (Util_TableSetReal("<>myhandle<>" ," <> boundpar <> "_speed, \"SPEED\") < 0)\n",
-      "      CCTK_WARN(-1, \"could not set SPEED value in table!\");\n",
-
-      "\n",
-      "  ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, "<>myhandle<>", \n",
-      "                    \"" <> fullgfname <> "\", \"Radiation\");\n\n",
-
-      "  if (ierr < 0)\n",
-      "     CCTK_WARN(-1, \"Failed to register Radiation BC for "<>fullgfname<>"!\");\n",
-
-     "\n}\n"}];
-
-    scalarBCGroup[group_] := Module[{boundpar, fullgroupnamei, myhandle},
-    (* simple dirichlet boundary condition *)
-
-    boundpar      = unqualifiedGroupName@group <> "_bound";
-    fullgroupname = qualifyGroupName[ToString@group, lookup[spec, BaseImplementation]];
-    myhandle = "handle_" <> boundpar;
-
-    {"\n",
-     "if (CCTK_EQUALS(" <> boundpar <> ", \"scalar\"))\n",
-     "{\n /* apply scalar boundary condition */\n  ",
-
-      DefineVariable[myhandle, "CCTK_INT", "Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE)"],
-
-      "  if ("<>myhandle<>" < 0) CCTK_WARN(-1, \"could not create table!\");\n",
-
-      "  if (Util_TableSetReal("<>myhandle<>" ," <> boundpar <> "_scalar, \"SCALAR\") < 0)\n",
-      "      CCTK_WARN(-1, \"could not set SCALAR value in table!\");\n",
-
-      "\n",
-      "  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, 1, "<>myhandle<>", \n",
-      "                    \"" <> fullgroupname <> "\", \"scalar\");\n\n",
-
-      "  if (ierr < 0)\n",
-      "     CCTK_WARN(-1, \"Failed to register Scalar BC for "<>fullgroupname<>"!\");\n",
-
-      "\n}\n"}];
-
-
-    scalarBCGF[gf_] := Module[{boundpar, fullgfname, myhandle},
-    (* simple dirichlet boundary condition *)
-
-    boundpar   = unqualifiedGroupName@ToString@gf <> "_bound";
-    fullgfname = ToString@gf;
-    myhandle = "handle_" <> boundpar;
-
-    {"\n",
-     "if (CCTK_EQUALS(" <> boundpar <> ", \"scalar\"))\n",
-     "{\n /* apply scalar boundary condition */\n  ",
-
-      DefineVariable[myhandle, "CCTK_INT", "Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE)"],
-
-      "  if ("<>myhandle<>" < 0) CCTK_WARN(-1, \"could not create table!\");\n",
-
-      "  if (Util_TableSetReal("<>myhandle<>" ," <> boundpar <> "_scalar, \"SCALAR\") < 0)\n",
-      "    CCTK_WARN(-1, \"could not set SCALAR value in table!\");\n",
-
-      "\n",
-      "  ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, "<>myhandle<>", \n",
-      "                    \"" <> fullgfname <> "\", \"scalar\");\n\n",
-
-      "  if (ierr < 0)\n",
-      "     CCTK_WARN(-1, \"Error in registering Scalar BC for "<>fullgfname<>"!\");\n",
-
-     "\n}\n"}];
-
+        {"VarNameSetBoundaryInfo(" <> ToString@gf <> registerBoundaryEntry[gf]
+          <> ");\n\n"}];
 
    lang = CodeGen`SOURCELANGUAGE;
    CodeGen`SOURCELANGUAGE = "C";
 
-  tmp = {whoWhen["C"],
-
-
-   Map[IncludeFile,
-        {"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h", 
-         "cctk_Faces.h", "util_Table.h"}],
-
-   {"\n\n",
-      "/* the boundary treatment is split into 3 steps:    */\n",
-      "/* 1. excision                                      */\n",
-      "/* 2. symmetries                                    */\n",
-      "/* 3. \"other\" boundary conditions, e.g. radiative */\n\n",
-      "/* to simplify scheduling and testing, the 3 steps  */\n",
-      "/* are currently applied in separate functions      */\n\n"},
-
-
-   cleanCPP@DefineCCTKFunction[lookup[spec,ThornName] <> "_CheckBoundaries",
-   "CCTK_INT",
-     {"return 0;\n"}],
-
+   tmp = {"\n\n",
 
    cleanCPP@DefineCCTKFunction[lookup[spec,ThornName] <> "_ApplyBoundConds", 
    "CCTK_INT",
      {DefineVariable["ierr",   "CCTK_INT", "0"],
 
-       Map[trivialBCGroup,   groups],
-       Map[trivialBCGF,      gfs],
-
-       Map[radiationBCGroup, groups],
-       Map[radiationBCGF,    gfs],
-
-       Map[scalarBCGroup,    groups],
-       Map[scalarBCGF,       gfs],
+       Map[radiationBCGF, gfs],
 
       "return ierr;\n"
      }],
 
      "\n\n\n",
      "/* template for entries in parameter file:\n",
-      Map[listBCparfileEntry, groups],
       Map[listBCparfileEntry, gfs],
      "*/\n\n"
      };
@@ -753,351 +546,9 @@ CreateMoLBoundariesSource[spec_] :=
 tmp
 ];
 
-CreateMoLExcisionSource[spec_] :=
+CreateMoLExcisionSource[spec_] := {};
 
-  Module[{gfs, currentlang, body, excisionExtrap},
-
-  gfs = lookup[spec, ExcisionGFs];
- 
-  Print["Applying excision to GFs: ", gfs];
- 
-  currentlang = CodeGen`SOURCELANGUAGE;
-  CodeGen`SOURCELANGUAGE = "Fortran";
-
-  excisionExtrap[gf_] :=  "  call ExcisionExtrapolate(ierr, "
-    <> ToString@gf <> ", " <> ToString@gf
-    <> "_p, emask, exnormx, exnormy, exnormz, nx, ny, nz, "<> ToString@gf  <> "_bound_limit)\n";
-
-  body = {whoWhen["Fortran"],
-
-   Map[IncludeFile,
-        {"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h"}],
-
-   {"\n\n",
-      "! the boundary treatment is split into 3 steps:    \n",
-      "! 1. excision                                      \n",
-      "! 2. symmetries                                    \n",
-      "! 3. \"other\" boundary conditions, e.g. radiative \n\n",
-      "! to simplify scheduling and testing, the 3 steps  \n",
-      "! are currently applied in separate functions      \n\n"},
-
-   cleanCPP@DefineCCTKSubroutine[lookup[spec,ThornName] <> "_FindBoundary",
-     {"! APPLY EXCISION\n\n",
-      DefineVariable["ierr", "CCTK_INT :: ", "0"],
-      "",
-
-      "integer  :: nx, ny, nz\n\n",
-
-      "! grid parameters\n",
-
-      "nx = cctk_lsh(1)\n",
-      "ny = cctk_lsh(2)\n",
-      "nz = cctk_lsh(3)\n\n",
-
-      "if ( (excision .ne. 0).AND.(find_excision_boundary .ne. 0) ) then\n\n",
-
-      "  call ExcisionFindBoundary(ierr, emask, nx, ny, nz)\n",
-      "  if (ierr < 0) call CCTK_WARN(2, \"findboundary exited with an error\")\n\n",
-
-     "endif\n\n",
-     "return\n"}],
-
-   cleanCPP@DefineCCTKSubroutine[lookup[spec,ThornName] <> "_FindNormals",
-     {"! APPLY EXCISION\n\n",
-      DefineVariable["ierr", "CCTK_INT :: ", "0"],
-      "",
-
-      "integer  :: nx, ny, nz\n\n",
-
-      "! grid parameters\n",
-
-      "nx = cctk_lsh(1)\n",
-      "ny = cctk_lsh(2)\n",
-      "nz = cctk_lsh(3)\n\n",
-
-      "if ( (excision .ne. 0).AND.(find_excision_normals .ne. 0) ) then\n\n",
-
-      "  call ExcisionFindNormals(ierr, emask, exnormx, exnormy, exnormz, nx, ny, nz)\n",
-      "  if (ierr < 0) call CCTK_WARN(2, \"findnormals exited with an error\")\n\n",
-
-     "endif\n\n",
-     "return\n"}],
-
-
-   cleanCPP@DefineCCTKSubroutine[lookup[spec,ThornName] <> "_ApplyExcision",
-     {"! APPLY EXCISION\n\n",
-      DefineVariable["ierr", "CCTK_INT :: ", "0"],
-      "",
-
-      "integer  :: nx, ny, nz\n\n",
-
-      "! grid parameters\n",
-
-      "nx = cctk_lsh(1)\n", 
-      "ny = cctk_lsh(2)\n", 
-      "nz = cctk_lsh(3)\n\n", 
-
-      "if (excision .ne. 0) then\n",
-
-      "  call CCTK_INFO(\"Applying LegoExcision\")\n\n",
-
-     Map[excisionExtrap, gfs],
-     "endif\n\n",
-     "return\n"}]
-};
-
-CodeGen`SOURCELANGUAGE = currentlang;
-
-body
-];
-
-
-
-(* ------------------------------------------------------------------------ *)
-(*   set Characteristic Info for MultiPatch                                 *)
-(* ------------------------------------------------------------------------ *)
-
-(* boundaries spec = {TO BE DEFINED} *)
-
-charInfoFunction[type_, spec_, debug_]:= Module[{funcName, argString, headerComment1, headerComment2,
-                                                 thornName, gfs, rhs, groups, tmp, lang, numvars, tab},
-
-  gfs = Map[ToString, lookup[spec, EvolvedGFs]];
-  rhs = Map[AddSuffix[#, "rhs"]&, gfs];
-
-  Print["createCharInfoFunction with type:\n", type];
-
-  thornName = lookup[spec, Name];
- 
-  numvars = Length@gfs;
-
-  groups = Map[unqualifiedGroupName, lookup[spec, Groups]];
-
-  tab = "\t\t\t";
-
-If[type == "P2C", 
-
-   funcName = lookup[spec,Name] <> "_MultiPatch_Prim2Char";
-   argString =  "CCTK_POINTER_TO_CONST const cctkGH_,\n"       <>
-        tab <>  "CCTK_INT const dir,\n"                        <>
-        tab <>  "CCTK_INT const face,\n"                       <>
-        tab <>  "CCTK_REAL const * restrict const base,\n"     <>
-        tab <>  "CCTK_INT const * restrict const off,\n"       <>
-        tab <>  "CCTK_INT const * restrict const len,\n"       <>
-        tab <>  "CCTK_INT const rhs_flag,\n"                   <>
-        tab <>  "CCTK_INT const num_modes,\n"                  <>
-        tab <>  "CCTK_POINTER const * restrict const modes,\n" <>
-        tab <>  "CCTK_POINTER const * restrict const speeds";
-
-   headerComment1 = "/* translate from primary to characteristic variables           */\n";
-   headerComment2 = "/* Output:                                                      */\n" <>
-                    "/*       CCTK_POINTER ARRAY IN modes  ... array if char. vars   */\n" <>    
-                    "/*       CCTK_POINTER ARRAY IN speeds ... array of char. speeds */\n\n";
-];
-
-
-If[type == "C2P", 
-
-   funcName = lookup[spec,Name] <> "_MultiPatch_Char2Prim";
-   argString =  "CCTK_POINTER_TO_CONST const cctkGH_,\n"       <>
-        tab <>  "CCTK_INT const dir,\n"                        <>
-        tab <>  "CCTK_INT const face,\n"                       <>
-        tab <>  "CCTK_REAL const * restrict const base,\n"     <>
-        tab <>  "CCTK_INT const * restrict const off,\n"       <>
-        tab <>  "CCTK_INT const * restrict const len,\n"       <>
-        tab <>  "CCTK_INT const rhs_flag,\n"                   <>
-        tab <>  "CCTK_INT const num_modes,\n"                  <>
-        tab <>  "CCTK_POINTER_TO_CONST const * restrict const modes";
-
-   headerComment1 = "/* translate from characteristic to primary variables          */\n";
-   headerComment2 = "/* Output:                                                     */\n" <>  
-                    "/*       CCTK_POINTER ARRAY IN modes   ... array of char. vars */\n\n";
-];
-
-
-
-
-code = {
-
-DefineFunction[funcName, "CCTK_INT", argString,
-
-{headerComment1,
-"/* Input:                                                         */\n",
-"/*       CCTK_POINTER_TO_CONST cctkGH   ... CCTK grid hierarchy   */\n",
-"/*       CCTK_INT              dir      ...              */\n",
-"/*       CCTK_INT              face     ...              */\n",
-"/*       CCTK_REAL ARRAY       base     ...              */\n",
-"/*       CCTK_INT ARRAY        lbnd     ...              */\n",
-"/*       CCTK_INT ARRAY        lsh      ...              */\n",
-"/*       CCTK_INT              rhs_flag ...              */\n",
-"/*       CCTK_INT              num_modes...              */\n",
-headerComment2,
-"{\n",
-"  cGH const * restrict const cctkGH = cctkGH_;\n",
-"  DECLARE_CCTK_ARGUMENTS;\n",
-"  DECLARE_CCTK_PARAMETERS;\n\n",
-
-"  CCTK_REAL const * restrict prims["   <> ToString@numvars <> "];\n",
-"  CCTK_REAL       * restrict chars["   <> ToString@numvars <> "];\n",
-"  CCTK_REAL       * restrict cspeeds[" <> ToString@numvars <> "];\n",
-
-"  CCTK_REAL normal[3], normal_base[3];\n",
-"  CCTK_REAL tangent[2][3];\n",
-
- (* "  CCTK_REAL gama[3][3], gamau[3][3], beta[3], alfa;\n", *)
-"  CCTK_REAL lambda[" <> ToString@numvars <> "];\n",
-
-"  CCTK_REAL xform[" <> ToString@numvars <> "][" <> ToString@numvars <> "];\n",
-"  CCTK_REAL norm_normal;\n",
-"  CCTK_REAL norm_tangent[2];\n",
-
-"  int n, m;                     /* mode               */\n",
-"  int i, j, k;                  /* grid point indices */\n",
-"  int d, e;                     /* dimension          */\n\n",
-
-"  /* Check arguments */\n",
-"  assert (cctkGH);\n",
-"  assert (cctk_dim == 3);\n",
-"  assert (dir  >= 0 && dir  < cctk_dim);\n",
-"  assert (face >= 0 && face < 2);\n",
-"  assert (base);\n",
-"  assert (off);\n",
-"  assert (len);\n\n",
-
-"  for (d = 0; d < 3; ++d) {\n",
-"    assert (off[d] >= 0 && len[d] >= 0 && off[d] + len[d] <= cctk_lsh[d]);\n",
-"  }\n\n",
-
-"  assert (modes);\n",
-"  assert (speeds);\n",
-
-"  for (d = 0; d < 3; ++d) {\n",
-"    normal_base[d] = base[d];\n",
-"    tangent[ 0][d] = base[  cctk_dim+d];\n",
-"    tangent[ 1][d] = base[2*cctk_dim+d];\n",
-"  }\n\n",
-
-"  {\n",
-"    CCTK_REAL normal_length = 0;\n",
-"    for (d = 0; d < 3; ++d) {\n",
-"      normal_length += fabs(normal_base[d]);\n",
-"    }\n",
-"    assert (normal_length > 0);\n",
-"  }\n\n",
-
-"  assert (num_modes == " <> ToString@numvars <> ");\n",
-
-"  for (n = 0; n < num_modes; ++n) {\n",
-"    assert (modes[n]);\n",
-"  }\n\n",
-
-"  /* Get variable pointers */\n",
-"  if (rhs_flag) {\n",
-Table["    rhs[" <> ToString[i-1] <> "] = CCTK_VarIndex(\"" <> ToString@rhs[[i]] <> "\");\n", 
-      {i, 1, numvars}],
-"  } else {\n",
-Table["    prim[" <> ToString[i-1] <> "] = CCTK_VarIndex(\"" <> gfs[[i]] <> "\");\n", 
-      {i, 1, numvars}],
-"  }\n\n",
-"    for (n = 0; n < num_vars ; ++n) {\n",
-"      chars[  n] = modes[ n];\n",
-"      cspeeds[n] = speeds[n];\n",
-"    }\n\n",
-"/* compute characteristic variables and speeds */\n",
-
-
-
-
-
-"  /* Return 0 for Success! */\n",
-"  return 0;\n"}]
-(* this was it, let`s go for a beer *)
-};
-
-code];
-
-CreateMPCharSource[spec_, debug_] :=
-
-  Module[{thornName, gfs, rhs, groups, tmp, lang, numvars},
-
-  gfs = Map[ToString, lookup[spec, EvolvedGFs]];
-  rhs = Map[AddSuffix[#, "rhs"]&, gfs];
-
-  Print["CreateMPCharSource uses RHS GFs:\n", rhs];
-
-  thornName = lookup[spec, Name];
- 
-  numvars = Length@gfs;
-
-  groups = Map[unqualifiedGroupName, lookup[spec, Groups]];
-
-  lang = CodeGen`SOURCELANGUAGE;
-  CodeGen`SOURCELANGUAGE = "C";
-
-  tmp = {whoWhen["C"],
-
-
-   Map[IncludeFile,
-        {"assert.h", "math.h", "cctk.h", "cctk_Arguments.h", "cctk_Parameters.h"}],
-
-(* declare lapack function DGESV: compute solution to system of linear equations  E * X = B *)
-{"\n/* declare lapack function DGESV for solving linear systems */\n",
-"void CCTK_FCALL\n",
-"CCTK_FNAME(dgesv) (int    const * n,\n",
-"                   int    const * nrhs,\n",
-"                   double       * a,\n",
-"                   int    const * lda,\n",
-"                   int          * ipiv,\n",
-"                   double       * b,\n",
-"                   int    const * ldb,\n",
-"                   int          * info);\n\n\n"},
-
-DefineFunction[lookup[spec,Name] <> "_MultiPatch_SystemDescription", "CCTK_INT", 
-   "CCTK_POINTER_TO_CONST const cctkGH_, CCTK_INT const nvars,\n"     <>
-   "    CCTK_INT * restrict const prim, CCTK_INT * restrict const rhs,\n" <>
-   "    CCTK_REAL * restrict const sigma", 
-
-{
-"/* this function is called twice:                                            */\n",
-"/* first to set the number of modes, then to set the rest of the information */\n",
-"  cGH const * restrict const cctkGH = cctkGH_;\n",
-"  DECLARE_CCTK_PARAMETERS;\n\n",
-"  int n;\n\n",
-"  /* Check arguments */\n",
-"  assert (cctkGH);\n",
-"  assert (nvars >= 0);\n\n",
-"  /* Fill in return values on second call */\n",
-"  if (nvars == " <> ToString@numvars <> ") {\n",
-"    assert (prim);\n\n",
-Table["    prim[" <> ToString[i-1] <> "] = CCTK_VarIndex(\"" <> gfs[[i]] <> "\");\n", {i,1,numvars}],
-"\n",
-"    for (n = 0; n < " <> ToString@numvars <> "; ++n) {\n",
-"      assert (prim[n] >= 0);\n",
-"    }\n\n",
-"    assert (rhs);\n\n",
-Table["    rhs[" <> ToString[i-1] <> "] = CCTK_VarIndex(\"" <> ToString@rhs[[i]] <> "\");\n", {i,1,numvars}],
-"\n",
-"    for (n = 0; n < " <> ToString@numvars <> "; ++n) {\n",
-"      assert (rhs[n] >= 0);\n",
-"    }\n\n",
-"  }\n\n",
-"  /* Coefficient for the scalar product via SummationByParts Thorn */\n",
-"  *sigma = GetScalProdCoeff();\n\n",
-"  /* Return the number of modes -- needed at first call! */\n",
-"  return " <> ToString@numvars <> ";\n"}],
-
-(*  *)
-charInfoFunction["P2C", spec, debug],      "\n\n",
-charInfoFunction["C2P", spec, debug],      "\n\n",
-charInfoFunction["WHATEVER", spec, debug]
-};
-
-CodeGen`SOURCELANGUAGE = lang;
-tmp
-];
-
-
-(* -------------------------------------------------------------------------- 
+ (* -------------------------------------------------------------------------- 
    Precompmacros
    -------------------------------------------------------------------------- *)
 
@@ -1116,42 +567,26 @@ CreatePrecompMacros[functions_] :=
    Startup file
    ------------------------------------------------------------------------ *)
 
-CreateStartupFile[thornName_, bannerText_] :=
-  Module[{tmp, lang},
-  
-  lang = CodeGen`SOURCELANGUAGE;
-  CodeGen`SOURCELANGUAGE = "C";
-
-  tmp = {whoWhen["C"],
-
-   IncludeFile["cctk.h"],
-   DefineFunction[thornName <> "_Startup", "int", "void",
-     {DefineVariable["banner", "const char *", Quote[bannerText]],
-      "CCTK_RegisterBanner(banner);\n",
-      "return 0;\n"}]};
-
-  CodeGen`SOURCELANGUAGE = lang;
-
-  tmp
-   ];
+CreateStartupFile[thornName_, bannerText_] := {};
 
 (* ------------------------------------------------------------------------ *)
-   BAM 'Thorn' creation
+(*              BAM 'Thorn' creation                                        *)
 (* ------------------------------------------------------------------------ *)
 
 (* source = {Filename -> "MoLRegister.c", Contents -> "#include ..."} *)
 
 (* thorn = {Name -> "ClassicADMMolEvolve", Directory -> "ClassicADM",
             Interface -> i, Schedule -> s, Param -> p, Makefile -> m, 
-            Sources -> {s1, s2, ...} *)
+     Sources -> {s1, s2, ...}} *)
 
 (* Given a thorn specification structure as defined above, create a
    thorn.  Note that if you specify a path to the thorn, then you are
    responsible for making sure that the parent directory exists; this
    function does not automatically create any parent directories. *)
-CreateThorn[thorn_] :=
-  Module[{thornName, project, directory, bamC, bamH},
 
+CreateThorn[thorn_] :=
+  Module[{thornName, project, directory, bamC, projH, 
+          allSources, thisFileContent, i, includeBlock, funcDeclarations},
 
     lastDir[dir_] := StringDrop[dir, Last@Last@StringPosition[dir, "/"] ];
 
@@ -1170,24 +605,41 @@ CreateThorn[thorn_] :=
 	    lookup[thorn, Schedule]};
    
 
-    isFunEntry[x_]:= StringMatchQ[ToString@x, "*AddFun(*)*"];
+    isFunEntry[x_]:= StringMatchQ[ToString@x, "*AddFun*"];
 
-    bamH = {"\n/* here we declare functions we have added with AddFun */\n"};
-   
-    AppendTo[bamH, Select[Flatten@bamC, isFunEntry]];
+    headerFunEntry[x_]:= "int " <> 
+       StringReplace[
+           StringReplace[x, ShortestMatch["AddFun(" ~~ __ ~~ ","]  -> ""], 
+                         "," ~~ __ -> ""] <> "(tL *level);\n\n"; (* " *) 
+
+    projH = {"\n/* declare functions we have added with AddFun for " <> thornName <> " */\n"};
+  
+    funcDeclarations = Union@Map[headerFunEntry, Select[Flatten@bamC, isFunEntry]];
+
+    AppendTo[projH, funcDeclarations];
 
     AddToFile[directory <> "/bam_" <> project <> ".c", bamC];
-    AddToFile[directory <> "/bam_" <> project <> ".h", bamH];
-    
-    Map[GenerateFile[directory <> "/" <> lookup[#, Filename], 
-                                         lookup[#, Contents]] &,
-                                         lookup[thorn, Sources]];
+    AddToFile[directory <> "/"     <> project <> ".h", projH];
+  
+    allSources = lookup[thorn, Sources]; 
+
+    thisFileContent = Flatten@Table[ lookup[allSources[[i]], Contents], 
+                        {i, 1, Length@allSources}];
+
+     
+    includeBlock = Map[IncludeFile, {"bam.h", "precomputations.h", 
+                                     "GenericFD.h", "Differencing.h"}];
+
+
+    thisFileContent = Flatten@{whoWhen["C"], includeBlock, thisFileContent};
+ 
+    GenerateFile[directory <> "/" <> thornName <> ".c", thisFileContent];
 
     AddToFile[directory <> "/Makefile", lookup[thorn, Makefile]]];
 
 
 StartBAMProject[project_, directory_] :=
-  Module[{bamC, bamH, bamM, cname, hname, mname, projectRootFunction},
+  Module[{bamC, bamH, bamM, projH, cname, hname, mname, pname, projectRootFunction},
 
       lastDir[dir_] := StringDrop[dir, Last@Last@StringPosition[dir, "/"] ];
 
@@ -1195,9 +647,10 @@ StartBAMProject[project_, directory_] :=
 
       EnsureDirectory[directory];
 
-      cname =  "bam_" <> project <> ".c";
-      hname =  "bam_" <> project <> ".h";
+      cname = "bam_" <> project <> ".c";
+      hname = "bam_" <> project <> ".h";
       mname = "Makefile";
+      pname = project <> ".h";
       
       projectRootFunction = "bam_" <> project;
       
@@ -1214,7 +667,10 @@ StartBAMProject[project_, directory_] :=
               whoWhen["C"], 
 	      "void " <> projectRootFunction <> "();\n\n"};
      
-     bamM = {"# " <> project <> "Makefile\n",
+      projH = {"/* " <> project <> ".h */\n",
+              whoWhen["C"]};
+
+      bamM = {"# " <> project <> "Makefile\n",
              whoWhen["SH"],
              "\n", 
              "NAME := " <> project,
@@ -1227,6 +683,8 @@ StartBAMProject[project_, directory_] :=
       GenerateFile[directory <> "/" <> cname, bamC];
       GenerateFile[directory <> "/" <> hname, bamH];
       GenerateFile[directory <> "/" <> mname, bamM];
+
+      GenerateFile[directory <> "/" <> pname, projH];
     ];
 
 

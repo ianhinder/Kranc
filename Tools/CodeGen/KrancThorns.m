@@ -918,10 +918,10 @@ ext = CodeGen`SOURCESUFFIX;
 (* search for SYNCs *)
 If[numeq <= 1, 
    grepSYNC = GrepSyncGroups[setrhs, calcrhsName]; ,
-   grepSYNC = {};
+   grepSYNC = {}; 
 (* This should have already been done in CreateCalculationFunction. *)
- (*  setrhs = UncommentSourceSync[setrhs, calcrhsName];*)
-(*   Print["> 1 loop in thorn -> scheduling in source code, incompatible with Multipatch!"];*)
+(* setrhs = UncommentSourceSync[setrhs, calcrhsName]; *)
+   Print["> 1 loop in thorn -> scheduling in source code, incompatible with Multipatch!"];
 ];
 
 

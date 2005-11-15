@@ -503,13 +503,14 @@ insertFile[name_] :=
 macros SQR, CUB, QAD *)
 ReplacePowers[x_] :=
   Module[{rhs},
-    rhs = x   /. Power[xx_, 2] -> SQR[xx];
-    rhs = rhs /. Power[xx_, 3] -> CUB[xx];
-    rhs = rhs /. Power[xx_, 4] -> QAD[xx];
-    rhs = rhs /. Power[xx_, -1] -> INV[xx];
+    rhs = x /. Power[xx_, -1] -> INV[xx];
 
     If[SOURCELANGUAGE == "C",
            Module[{},
+	     rhs = rhs /. Power[xx_, 2] -> SQR[xx];
+	     rhs = rhs /. Power[xx_, 3] -> CUB[xx];
+	     rhs = rhs /. Power[xx_, 4] -> QAD[xx];
+
              rhs = rhs /. Power[E, power_] -> exp[power];
              rhs = rhs /. Power[xx_, 0.5] -> sqrt[xx];
 

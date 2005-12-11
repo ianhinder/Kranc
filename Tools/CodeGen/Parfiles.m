@@ -264,7 +264,7 @@ Module[{ActiveThorns},
 stringValue[key_] := ToString@lookup[gridSpec, key];
 value[key_]       := lookup[gridSpec, key];
 
-ActiveThorns = "SymBase Boundary CoordBase CartGrid3D Time PUGH PUGHReduce PUGHSlab NaNChecker";
+ActiveThorns = "SymBase Boundary CoordBase CartGrid3D Time LocalReduce PUGH PUGHReduce PUGHSlab NaNChecker";
 
 {
 "# Grid\n",

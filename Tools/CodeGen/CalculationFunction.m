@@ -430,15 +430,18 @@ CreateCalculationFunction[calc_, debug_] :=
   functionsPresent = functionsInCalculation[cleancalc];
 (*  Print["Functions in calculation: ", functionsPresent];*)
 
-  allowedFunctions = Map[Head[First[#]] &, pddefs];
+(* FIXME: Sascha does not understand the next lines and commented
+  it out in order to avod problems with using the exp function in BSSN  *)
+(*   allowedFunctions = Map[Head[First[#]] &, pddefs]; *)
 (*  Print["allowedFunctions == ", allowedFunctions];*)
 
-  unknownFunctions = Complement[functionsPresent, allowedFunctions];
+(*  unknownFunctions = Complement[functionsPresent, allowedFunctions];
 
   If[Length[unknownFunctions] != 0,
      ThrowError["The following functions are used in the calculation but are not defined:", 
                 unknownFunctions, cleancalc]];
 
+*)
   (* Check that there are no shorthands defined with the same name as a grid function *)
   If[!(Intersection[shorts, gfs] === {}),
     ThrowError["The following shorthands are already declared as grid functions:", Intersection[shorts, gfs]]];

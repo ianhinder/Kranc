@@ -40,12 +40,12 @@ ExactTypes = {"GaugeWave", "GaugeWave2D",
 
 
 xbaseRes["robust"] := 50;
-ybaseRes["robust"] := 3;
-zbaseRes["robust"] := 3;
+ybaseRes["robust"] := 4;
+zbaseRes["robust"] := 4;
 
 xbaseRes["robust2D"] := 50;
 ybaseRes["robust2D"] := 50;
-zbaseRes["robust2D"] := 3;
+zbaseRes["robust2D"] := 4;
 
 xbaseRes["GaugeWave"] := 50;
 ybaseRes["GaugeWave"] := 1;
@@ -396,7 +396,7 @@ Module[{},
 "IO::out_dir = $parfile",
 "",
 
-"IOBasic::outScalar_reductions = \"minimum maximum norm1 norm2 norm_inf\"",
+"IOBasic::outScalar_reductions = \"minimum maximum norm2 norm_inf\"",
 
 "IOBasic::outInfo_every   = "   <> ToString[lookup[ioSpec, ioEvery][[1]]],
 "IOBasic::outInfo_vars    = \"" <> spacePad[lookup[ioSpec, ioInfoGFs]] <> "\"",

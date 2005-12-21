@@ -106,7 +106,6 @@ ExactEntry["LinearWave", amp_] :=
 
 ExactEntry["LinearWave2D", amp_] :=
 {
-"ActiveThorns = \"IDLinearWaves\"\n\n"            <>
 "admbase::initial_data  = \"sine_planewaves\"\n"  <>
 "admbase::initial_lapse = \"one\"\n"              <>
 "admbase::initial_shift = \"none\"\n\n"           <>
@@ -363,10 +362,13 @@ If[MemberQ[ExactTypes, Type],
 Print["Exact type:", Type];
 {
 "# data from exact solution \n",
-"ActiveThorns = \"exact coordgauge staticconformal\"\n",
+If[MemberQ[{"LinearWave","LinearWave2D"}, Type],
+{"ActiveThorns = \"Exact CoordGauge IDLinearWaves StaticConformal\"\n"},
+
+{"ActiveThorns = \"exact coordgauge staticconformal\"\n",
 
 "admbase::initial_data             = \"exact\"",
-"admbase::initial_lapse            = \"exact\"",
+"admbase::initial_lapse            = \"exact\""}],
 
 ExactEntry[Type, amp]
 },

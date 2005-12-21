@@ -86,8 +86,10 @@ dtFactor["PolarizedGowdyCollapse"] := -0.25;
 dtFactor[type_]    := 0.25;
 
 
-XTimes["robust"] := 1000;
-XTimes["robust2D"] := 1000;
+XTimes["robust"] := 100;
+XTimes["robust2D"] := 100;
+XTimes["GaugeWave2D"] := 100;
+XTimes["LinearWave2D"] := 100;
 XTimes[type_]    := 1000;
 
 

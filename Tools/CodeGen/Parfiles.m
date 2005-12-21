@@ -106,11 +106,10 @@ ExactEntry["LinearWave", amp_] :=
 
 ExactEntry["LinearWave2D", amp_] :=
 {
-"admbase::metric_type = \"physical\"\n"           <>
+"ActiveThorns = \"IDLinearWaves\"\n\n"            <>
 "admbase::initial_data  = \"sine_planewaves\"\n"  <>
 "admbase::initial_lapse = \"one\"\n"              <>
 "admbase::initial_shift = \"none\"\n\n"           <>
-"ActiveThorns = \"IDLinearWaves\"\n\n"            <>
 "IDLinearWaves::amplitude  = 1e-08\n"             <>
 "IDLinearWaves::wavetheta  = 90\n"                <>
 "IDLinearWaves::wavephi    = 45\n"                <>

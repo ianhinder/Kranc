@@ -107,9 +107,14 @@ ExactEntry["LinearWave", amp_] :=
 ExactEntry["LinearWave2D", amp_] :=
 
 {
- "ActiveThorns = \"MexicoLinearWave\"\n",
- "MexicoLinearWave::wave_A                = " <> ToString@CForm@amp,
- "# MexicoLinearWave::wave_d                = <currently fixed to default>"
+"admbase::metric_type = \"physical\"\n"           <>
+"admbase::initial_data  = \"sine_planewaves\"\n"  <>
+"admbase::initial_lapse = \"one\"\n"              <>
+"admbase::initial_shift = \"none\"\n\n"           <>
+"IDLinearWaves::amplitude  = 1e-08\n"             <>
+"IDLinearWaves::wavetheta  = 90\n"                <>
+"IDLinearWaves::wavephi    = 45\n"                <>
+"IDLinearWaves::wavelength = 0.70710678118654752440"
 }
 
 

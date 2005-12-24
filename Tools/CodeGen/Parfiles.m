@@ -329,7 +329,7 @@ Module[{},
 
 {
 "# Coupling to ADMBase\n",
-"ActiveThorns         = \"SpaceMask ADMBase ADMCoupling\"",
+"ActiveThorns         = \"SpaceMask ADMBase ADMCoupling ADMMacros StaticConformal\"",
 "admbase::metric_type = \"physical\"",
 "\n"
 } 
@@ -365,7 +365,7 @@ Print["Exact type:", Type];
 {
 "# data from exact solution \n",
 If[MemberQ[{"LinearWave","LinearWave2D"}, Type],
-{"ActiveThorns = \"Exact CoordGauge IDLinearWaves StaticConformal\"\n"},
+{"ActiveThorns = \"Exact CoordGauge IDLinearWaves\"\n"},
 
 {"ActiveThorns = \"exact coordgauge staticconformal\"\n",
 
@@ -534,7 +534,7 @@ Options[CreateRobust2DTest] = {Name                   -> "MyFormulation",
 Options[CreateGaugeWaveTest] = {Name                -> "MyFormulation",
                              Directory              -> "par",
                              Type                   -> "GaugeWave",
-                             Amplitude              -> 0.01,
+                             Amplitude              -> 0.1,
                              NoiseAmp               -> 0.0 * 10^(-10),
                              NoiseGroups            -> {},
                              Resolution             -> 1,

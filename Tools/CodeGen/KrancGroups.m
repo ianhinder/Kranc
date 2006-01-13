@@ -44,6 +44,7 @@ unqualifiedGroupName::usage = "";
 implementationFromGroupName::usage = "";
 qualifyGroups::usage = "";
 containingGroups::usage = "";
+groupVariables::usage = "";
 
 Begin["`Private`"];
 
@@ -63,6 +64,9 @@ addrhs[x_] := ToString[x] <> "rhs";
 
 variablesInGroup[name_, groups_] :=
   Last[groupFromName[name, groups]];
+
+groupVariables[group_] :=
+  Last[group];
 
 evolvedGroupToRHSGroup[name_, groups_] := 
   Module[{group = First[Select[groups, groupName[#] === name &]]},

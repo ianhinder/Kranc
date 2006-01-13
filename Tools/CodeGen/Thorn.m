@@ -437,11 +437,12 @@ CreateSetterSource[calcs_, debug_, opts___] :=
       ],
 
    Map[IncludeFile, Join[{"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h",
-                     "precomputations.h", "GenericFD.h", "Differencing.h"}, include]],
+                     (*"precomputations.h",*) "GenericFD.h", "Differencing.h"}, include]],
    calculationMacros[],
 
    (* For each function structure passed, create the function and
       insert it *)
+
    Map[CreateCalculationFunction[# , debug]& , 
        calcs]}];
 
@@ -560,13 +561,15 @@ CreateMoLRegistrationSource[spec_, debug_] :=
 
       CommentedBlock["Register all the evolved grid functions with MoL",
 
+(* FIXME: We should clarify exactly what should happen with the implementation names here *)
+
       Map[{"ierr += MoLRegisterEvolved(CCTK_VarIndex(\"", #, "\"),  CCTK_VarIndex(\"",
            lookup[spec,BaseImplementation], "::", unqualifiedGroupName[#], "rhs\"));\n"} &,
           lookup[spec, EvolvedGFs]]],
 
       CommentedBlock["Register all the primitive grid functions with MoL",
       Map[{"ierr += MoLRegisterConstrained(CCTK_VarIndex(\"", 
-           lookup[spec,BaseImplementation], "::", #, "\"));\n"} &,
+           lookup[spec,BaseImplementation], "::", unqualifiedGroupName[#], "\"));\n"} &,
           lookup[spec, PrimitiveGFs]]],
 	"return ierr;\n"}]};
 

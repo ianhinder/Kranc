@@ -40,6 +40,9 @@ UncommentSourceSync::usage = "UncommentSourceSync[source_struct] uncomments call
 GrepSyncGroups::usage = "GrepSyncGroups[source_struct] 'greps' a list of groups to be SYNC'ed from" <>
                         "code produced by CreateCalculationFunction."
 
+VerifyCalculation::usage = "";
+allVariables::usage = "";
+
 Begin["`Private`"];
 
 (* -------------------------------------------------------------------------- 
@@ -249,7 +252,7 @@ calculationUsedGroups[calc_] :=
     gfs = calculationUsedGFs[calc];
     containingGroups[gfs, lookup[calc, Groups]]];
 
-(* Return the names of any gridfunctions used in the RHSs of calculation *)
+(* Return the names of any shorthands used in the RHSs of calculation *)
 calculationUsedShorthands[calc_] :=
   Module[{calcSymbols, allShorthands},
     calcSymbols = calculationSymbolsRHS[calc];
@@ -291,21 +294,30 @@ simplifyEquation[lhs_ -> rhs_] :=
 VerifyListContent[l_, type_] :=
   Module[{types},
     If[!(Head[l] === List),
-      Throw["Expecting a list of " <> ToString[type] <> " objects, but found " <> ToString[l]]];
+      ThrowError["Expecting a list of ", type, " objects, but found ", l]];
     types = Union[Map[Head, l]];
     If [!(types === {type}) && !(types === {}),
-      Throw["Expecting a list of " <> ToString[type] <> " objects, but found " <> ToString[l]]]];
+      ThrowError["Expecting a list of ", type , " objects, but found ", l]]];
 
 VerifyCalculation[calc_] :=
   Module[{},
     If[Head[calc] != List,
-      Throw["Invalid Calculation structure: " <> ToString[calc]]];
+      ThrowError["Invalid Calculation structure: " <> ToString[calc]]];
 
     VerifyListContent[calc, Rule];
 
     If[mapContains[calc, Shorthands],
-      VerifyListContent[lookup[calc, Shorthands], Symbol]]];
+      VerifyListContent[lookup[calc, Shorthands], Symbol]];
 
+    If[mapContains[calc, Equations],
+      VerifyListContent[First[lookup[calc, Equations]], Rule],
+      ThrowError["Invalid Calculation structure. Must contain Equations element: " <> ToString[calc]]];
+  ];
+
+(* Remove declarations of shorthands that are never used, and
+   assignments to shorthands that are not used. Note that the routine
+   is not intelligent, and once an assignment is removed, there may be
+   unnecessary shorthands in the list.  *)
 
 cleanCalculation[calc_] := Module[
   {cleancalc, shorthands, assignedGFs, neededSymbols, eqs},

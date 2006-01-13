@@ -3,6 +3,7 @@ BeginPackage["Errors`"];
 
 PrintError::usage = "";
 ThrowError::usage = "";
+KrancError::usage = "";
 
 Begin["`Private`"];
 
@@ -36,8 +37,9 @@ PrintError[err_] :=
           stack = err[[2]];
 
           Map[PrintStructure, objs];
-          Print["Error stack:"];
-          PrintStructure[stack]],
+(*          Print["Error stack:"];
+          PrintStructure[stack]*)
+],
         err]];
 
 
@@ -45,7 +47,7 @@ ThrowError[objects__] :=
   Module[{s = Stack[_], s2},
     
     s2 = removeBits[s];
-    Throw[KrancError[{objects}, s2]]];
+    Throw[KrancError[{objects}, s2], KrancError]];
 
 End[];
 

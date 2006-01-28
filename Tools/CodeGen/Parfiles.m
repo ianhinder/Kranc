@@ -419,9 +419,12 @@ Module[{},
 "IOASCII::out1D_x         = "   <> lookup[ioSpec, out1D][[1]],
 "IOASCII::out1D_y         = "   <> lookup[ioSpec, out1D][[2]],
 "IOASCII::out1D_z         = "   <> lookup[ioSpec, out1D][[3]],
+"IOASCII::out1D_d         = \"no\"",
 
 "IOASCII::out1D_vars      = \"" <> spacePad[lookup[ioSpec, io1dGFs]] <> "\"",
 "",
+
+"IOASCII::out2D_every     = "   <> ToString[lookup[ioSpec, ioEvery][[4]]],
 "IOASCII::out2D_vars      = \"" <> spacePad[lookup[ioSpec, io2dGFs]] <> "\"",
 "",
 

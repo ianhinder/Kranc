@@ -422,6 +422,9 @@ Module[{},
 
 "IOASCII::out1D_vars      = \"" <> spacePad[lookup[ioSpec, io1dGFs]] <> "\"",
 "",
+"IOASCII::out2D_vars      = \"" <> spacePad[lookup[ioSpec, io2dGFs]] <> "\"",
+"",
+
 
 "IOASCII::out_format      = " <> lookup[ioSpec, outFormat],
 "",
@@ -453,7 +456,7 @@ Module[{},
 
 
 
-Options[CreateParfile] = {Name                    -> "MyTest",
+Options[CreateParfile] = {Name                    -> "",
                           Directory               -> "par",
                           Type                    -> "robust",
                           Amplitude               -> 0.0,
@@ -482,7 +485,7 @@ Options[CreateParfile] = {Name                    -> "MyTest",
 };
 
 
-Options[CreateRobustTest] = {Name                   -> "MyFormulation",
+Options[CreateRobustTest] = {Name                   -> "",
                              Directory              -> "par",
                              NoiseAmp               -> 1.0 * 10^(-10),
                              NoiseGroups            -> {},
@@ -506,7 +509,7 @@ Options[CreateRobustTest] = {Name                   -> "MyFormulation",
                              io2dGFs                -> {}
 };
 
-Options[CreateRobust2DTest] = {Name                   -> "MyFormulation",
+Options[CreateRobust2DTest] = {Name                   -> "",
                              Directory              -> "par",
                              NoiseAmp               -> 1.0 * 10^(-10),
                              NoiseGroups            -> {},
@@ -531,7 +534,7 @@ Options[CreateRobust2DTest] = {Name                   -> "MyFormulation",
 };
 
 
-Options[CreateGaugeWaveTest] = {Name                -> "MyFormulation",
+Options[CreateGaugeWaveTest] = {Name                -> "",
                              Directory              -> "par",
                              Type                   -> "GaugeWave",
                              Amplitude              -> 0.1,
@@ -558,7 +561,7 @@ Options[CreateGaugeWaveTest] = {Name                -> "MyFormulation",
 };
 
 
-Options[CreateLinearWaveTest] = {Name                -> "MyFormulation",
+Options[CreateLinearWaveTest] = {Name               -> "",
                              Directory              -> "par",
                              Type                   -> "LinearWave",
                              Amplitude              -> 10^(-8),
@@ -585,7 +588,7 @@ Options[CreateLinearWaveTest] = {Name                -> "MyFormulation",
 };
 
 
-Options[CreatePolarizedGowdyTest] = {Name           -> "MyFormulation",
+Options[CreatePolarizedGowdyTest] = {Name           -> "",
                              Directory               -> "par",
                              Type                   -> "PolarizedGowdyCollapse",
                              NoiseAmp               -> 0.0 * 10^(-10),
@@ -716,7 +719,7 @@ Print["time steps for one crossing time: ", crossingSteps];
 
 Print["Creating parameter file for robust stability test."];
 
-name = lookup[opts, Name] <> "Robust"  <> "_rho" <>ToString[2^lookup[opts, Resolution]];
+name = lookup[opts, Name] <> "rho" <>ToString[2^lookup[opts, Resolution]];
 
 
 
@@ -767,7 +770,7 @@ Print["time steps for one crossing time: ", crossingSteps];
 
 Print["Creating parameter file for robust 2D stability test."];
 
-name = lookup[opts, Name] <> "Robust2D"  <> "_rho" <>ToString[2^lookup[opts, Resolution]];
+name = lookup[opts, Name] <> "rho" <>ToString[2^lookup[opts, Resolution]];
 
 
 
@@ -823,7 +826,7 @@ crossingSteps =
 
 Print["time steps for one crossing time: ", crossingSteps];
 
-name = lookup[opts, Name] <> lookup[opts, Type] <> "_rho" <>ToString[2^lookup[opts, Resolution]];
+name = lookup[opts, Name] <> "rho" <>ToString[2^lookup[opts, Resolution]];
 
 
 hamgf   = ToString@lookup[opts, hamGF]; 
@@ -881,7 +884,7 @@ crossingSteps =
 
 Print["time steps for one crossing time: ", crossingSteps];
 
-name = lookup[opts, Name] <> lookup[opts, Type] <> "_rho" <>ToString[2^lookup[opts, Resolution]];
+name = lookup[opts, Name] <> "rho" <>ToString[2^lookup[opts, Resolution]];
 
 
 hamgf   = ToString@lookup[opts, hamGF]; 
@@ -939,7 +942,7 @@ crossingSteps =
 
 Print["time steps for one crossing time: ", crossingSteps];
 
-name = lookup[opts, Name] <> lookup[opts, Type] <> "_rho" <>ToString[2^lookup[opts, Resolution]];
+name = lookup[opts, Name] <> "rho" <>ToString[2^lookup[opts, Resolution]];
 
 
 hamgf   = ToString@lookup[opts, hamGF]; 

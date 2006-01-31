@@ -30,16 +30,16 @@ BeginPackage["sym`"];
    need to make sure the sym` context is on your ContextPath to use
    the symbols without the sym` prefix. *)
 
-{AccumulatorBase, Name, Type, Extend, Default, Comment, Range, Implementation, Group,
-SchedulePoint, Language, SynchronizedGroups, StorageGroups,
-Timelevels, VariableType, GridType, Visibility, Variables,
-Implementations, Value, AllowedValues, UsedParameters, Description,
-ExtendedParameters, NewParameters, Directory, Interface, Param,
-Schedule, Sources, Makefile, Filename, Contents, ThornName,
-BaseImplementation, EvolvedGFs, PrimitiveGFs, Groups, Calculation,
-GridFunctions, Shorthands, Equations, Parameter, Value, UsesFunctions,
-ArgString, Conditional, D1, D2, D3, D11, D22, D33, D21, D31, D32,
-Textual, TriggerGroups, Include, RHSGroups};
+{AccumulatorBase, ThornImplementation, Name, Type, Extend, Default,
+Comment, Range, Implementation, Group, SchedulePoint, Language,
+SynchronizedGroups, StorageGroups, Timelevels, VariableType, GridType,
+Visibility, Variables, Implementations, Value, AllowedValues,
+UsedParameters, Description, ExtendedParameters, NewParameters,
+Directory, Interface, Param, Schedule, Sources, Makefile, Filename,
+Contents, ThornName, BaseImplementation, EvolvedGFs, PrimitiveGFs,
+Groups, Calculation, GridFunctions, Shorthands, Equations, Parameter,
+Value, UsesFunctions, ArgString, Conditional, D1, D2, D3, D11, D22,
+D33, D21, D31, D32, Textual, TriggerGroups, Include, RHSGroups};
 
 {ExcisionGFs};
 

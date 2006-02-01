@@ -28,6 +28,7 @@
 #define Cosh(x)       (cosh((x)))
 #define Tanh(x)       (tanh((x)))
 
+#define Sign(x)       (sgn((x)))
 
 #define E               2.71828182845904523536029
 #define Pi              3.14159265358979323846264

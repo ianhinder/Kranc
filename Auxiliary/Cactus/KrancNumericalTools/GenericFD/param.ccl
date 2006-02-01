@@ -34,4 +34,8 @@ CCTK_INT  stencil_width_z "stencil width used near boundary"
   -1:* :: "outgoing characteristic speed > 0, default of -1 is intentionally invalid"
 } -1
 
+CCTK_INT  boundary_width "width of boundary (fix later to use Cactus boundary calls)"
+{
+  -1:* :: "Any integer"
+} 1
 

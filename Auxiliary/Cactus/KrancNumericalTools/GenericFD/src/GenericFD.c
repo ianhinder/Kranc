@@ -33,9 +33,21 @@
 #include "cctk_Parameters.h"                  
                                                 
 #include "Symmetry.h"                         
+
+#define KRANC_C
                                                 
 #include "GenericFD.h"
 
 
 /* TODO: provide functions for differencing, use FD macros to
    evaluate == use macros to evaluate corresponding functions */
+
+CCTK_INT sgn(CCTK_REAL x)
+{
+  if (x < 0)
+    return -1;
+  else if (x > 0)
+    return 1;
+  else 
+    return 0;
+}

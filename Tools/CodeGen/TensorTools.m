@@ -980,6 +980,7 @@ CheckTensors[x_, y_] :=
     Print["ys == ", ys];*)
 
     If[ x === 0 || y === 0, Return[True]];
+    If[ Length[ys] == 0, Return[True]];
 
     If[!(xs === ys),
 (*      Print["Throwing..."];*)

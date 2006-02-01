@@ -23,7 +23,8 @@
 BeginPackage["sym`"];
 
 {GridFunctions, Shorthands, Equations, t, DeclarationIncludes,
-LoopPreIncludes, GroupImplementations, PartialDerivatives, Dplus1, Dplus2, Dplus3}
+LoopPreIncludes, GroupImplementations, PartialDerivatives, Dplus1,
+Dplus2, Dplus3, Boundary, Interior, Where}
 
 {INV, SQR, CUB, QAD, dot, pow, exp} 
 
@@ -385,7 +386,7 @@ GrepSyncGroups[x_, func_] := Module[{pick},
 CreateCalculationFunction[calc_, debug_] :=
   Module[{gfs, allSymbols, knownSymbols,
           shorts, eqs, syncGroups, parameters,
-          functionName, dsUsed, groups, pddefs, cleancalc, numeq, eqLoop, GrepSYNC},
+          functionName, dsUsed, groups, pddefs, cleancalc, numeq, eqLoop, GrepSYNC, where},
 
    cleancalc = cleanCalculation[calc];
    cleancalc = cleanCalculation[cleancalc];
@@ -400,7 +401,7 @@ CreateCalculationFunction[calc_, debug_] :=
           parameters = lookupDefault[cleancalc, Parameters, {}];
           groups = lookup[cleancalc, Groups];
           pddefs = lookupDefault[cleancalc, PartialDerivatives, {}];
-
+          where = lookupDefault[cleancalc, Where, Everywhere];
   Print["number of equations in calculation: ", numeq = Length@eqs];
 
   VerifyCalculation[cleancalc];
@@ -494,7 +495,7 @@ CreateCalculationFunction[calc_, debug_] :=
        (* Have removed ability to include external header files here.
           Can be put back when we need it. *)
 
-	eqLoop = Map[equationLoop[#, gfs, shorts, {}, groups, syncGroups, pddefs] &, eqs]};
+	eqLoop = Map[equationLoop[#, gfs, shorts, {}, groups, syncGroups, pddefs, where] &, eqs]};
 
        (* search for SYNCs *)
        If[numeq <= 1,
@@ -562,9 +563,9 @@ checkShorthandAssignmentOrder[eqs_, shorthand_] :=
 
 
 
-equationLoop[eqs_, gfs_, shorts_, incs_, groups_, syncGroups_, pddefs_] :=
+equationLoop[eqs_, gfs_, shorts_, incs_, groups_, syncGroups_, pddefs_, where_] :=
   Module[{rhss, lhss, gfsInRHS, gfsInLHS, localGFs, localMap, eqs2,
-          derivSwitch, actualSyncGroups, code, syncCode},
+          derivSwitch, actualSyncGroups, code, syncCode, loopFunction},
 
     rhss = Map[#[[2]] &, eqs];
     lhss = Map[#[[1]] &, eqs];
@@ -585,7 +586,11 @@ equationLoop[eqs_, gfs_, shorts_, incs_, groups_, syncGroups_, pddefs_] :=
     checkEquationAssignmentOrder[eqs2, shorts];
    code = {InitialiseGridLoopVariables[derivSwitch],
 
-   GridLoop[
+   loopFunction = Switch[where,
+    Boundary, BoundaryLoop,
+    _, GridLoop];
+
+   loopFunction[
    {CommentedBlock["Assign local copies of grid functions",
                    Map[AssignVariable[localName[#], GridName[#]] &, 
                        gfsInRHS]],

@@ -100,7 +100,7 @@ CommaNewlineSeparated::usage = ""; (* This should not really be in CodeGen *)
 CommaSeparated::usage = "";
 ReplacePowers::usage = "";
 CFormHideStrings::usage = "";
-
+BoundaryLoop::usage = "";
 
 NameRoot::usage = "";
 PartitionVarList::usage = "";
@@ -385,7 +385,7 @@ DeclareGridLoopVariables[] :=
      Map[DeclareVariables[#, "CCTK_INT"] &, 
          {{"i", "j", "k"}, {"istart", "jstart", "kstart"}, 
           {"iend", "jend", "kend"},
-          {"index_offset_x", "index_offset_y", "index_offset_z"}}],
+          {"index_offset_x", "index_offset_y", "index_offset_z", "dir", "face"}}],
 
      If[SOURCELANGUAGE == "C", DeclareVariable["index", "CCTK_INT"], "\n"]
   }];
@@ -466,6 +466,51 @@ GridLoop[block_] :=
 	 block
        }
         ]]]];
+
+switchOptions[{value_, block_}] :=
+{
+  "case ", value, ":\n", block, "break;\n"
+}
+
+SwitchStatement[var_, pairs__] :=
+{
+  "switch(", var, ")\n",
+  CBlock[{Map[switchOptions, {pairs}]}]
+}
+
+
+
+BoundaryLoop[block_] :=
+  CommentedBlock["Loop over all faces",
+   loopOverInteger["dir", "0", "3",
+     loopOverInteger["face", "0", "2",
+     {
+       DeclareArray["bmin", 3, "int"],
+       DeclareArray["bmax", 3, "int"],
+
+       AssignVariable[arrayElement["bmin", 0], 1],
+       AssignVariable[arrayElement["bmin", 1], 1],
+       AssignVariable[arrayElement["bmin", 2], 1],
+       AssignVariable[arrayElement["bmax", 0], arrayElement["cctk_lsh", 0]],
+       AssignVariable[arrayElement["bmax", 1], arrayElement["cctk_lsh", 1]],
+       AssignVariable[arrayElement["bmax", 2], arrayElement["cctk_lsh", 2]],
+       SwitchStatement["face", 
+        {0,  AssignVariable[arrayElement["bmax", "dir"], "boundary_width"]},
+        {1,  AssignVariable[arrayElement["bmin", "dir"], {arrayElement["cctk_lsh", "dir"], 
+                                                          " - boundary_width" }]}],
+
+       loopOverInteger["k", arrayElement["bmin",2], arrayElement["bmax",2],
+         loopOverInteger["j", arrayElement["bmin",1], arrayElement["bmax",1],
+           loopOverInteger["i", arrayElement["bmin",0], arrayElement["bmax",0],
+
+       { If[SOURCELANGUAGE == "C",  
+            AssignVariable["index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"],
+            ""],
+	 block
+       }
+      
+      ]]]
+     }]]];
 
 conditional[condition_, block_] :=
  {"if (", condition, ")\n",

@@ -549,3 +549,8 @@
 #define Dplus3x(gf,i,j,k)  ( ( gf(i,   j,     k + 1) - gf(i,j,k) ) * dxi )
 
 #endif
+
+
+#ifdef KRANC_C
+CCTK_INT sgn(CCTK_REAL x);
+#endif

@@ -429,6 +429,12 @@ MOVE ALL THE BOUNDARY STUFF INTO MOL REGISTRATION
 
 WHEN CONVERTING TO BAM BINS: use this info to not register functions with AddFun that we do not need,
 like startup etc.
+
+DEFINE GLOBAL SWITCH: INDEX_ORDER = KEEPSIGN
+                                    FORGETSIGN (= Cactus, BAM!)
+
+OR: im makeSplitRules first generate two lists: one in the old
+    format, and one in the new format, and parse this at list in groupStruct 
 *)
 
 (* MoL registration = {EvolvedGFs -> {h11, ...}, PrimitiveGFs -> {trK, ...}, 

@@ -157,9 +157,27 @@ If[(lang == "shell"),
 
 (* Return a CodeGen block representing a makefile which refers to the
    list of filenames sourceFiles *)
-CreateMakefile[sourceFiles_] :=
+CreateMakefile[sourceFiles_] := Module[{srcFiles, objFiles},
+
+c2o[name_] := StringDrop[name, -1] <> "o";
+
+srcFiles = DeleteCases[sourceFiles, "Startup.c"]; (* BAM does not use Startup files *)
+srcFiles = DeleteCases[srcFiles, "RegisterSymmetries.c"]; (* skip as well *)
+(* srcFiles = DeleteCases[srcFiles, "*_CalcRHS.c"];  *)         (* all in one now *)
+srcFiles = DeleteCases[srcFiles, "*_Boundaries.c"];       (* all in one now *)
+srcFiles = DeleteCases[srcFiles, "*_RegisterVars.c"];     (* all in one now *)
+
+srcFiles = Map[StringReplace[# , "_CalcRHS" -> ""]&, srcFiles];
+srcFiles = Map[StringReplace[# , "_Boundaries" -> ""]&, srcFiles];
+srcFiles = Map[StringReplace[# , "_RegisterVars" -> ""]&, srcFiles];
+
+objFiles = Map[c2o, srcFiles];
+objFiles = Union@objFiles; (* repetition makes no sense here *) 
+
   {whoWhenSeparator["shell"],
-   "SRCS = ", Map[{#, " "} &, sourceFiles]};
+   "#SRCS += ", Map[{#, " "} &, srcFiles], "\n",
+   "OBJS  += ", Map[{#, " "} &, objFiles]}
+];
 
 (* ------------------------------------------------------------------------ 
    Parameter file
@@ -190,7 +208,7 @@ renderValue[type_, value_] :=
 GetFun[type_]:= Switch[type,
                        "CCTK_INT",  "Geti",
                        "CCTK_REAL", "Getd",
-                       "KEYWORD",   "Getval",
+                       "KEYWORD",   "Getv",
                        "BOOLEAN",   "Geti",
                        _, type <> "is not a valid type!"];
 
@@ -199,14 +217,17 @@ GetValue[type_, name_]:=  GetFun[type] <> "(\"" <> name <> "\")";
 (* Return a block defining a parameter with the given
    parameterSpec (defined above).  This is used for defining new
    parameters, as well as extending existing ones. *)
-parameterBlock[spec_] :=
+parameterBlock[spec_] := 
+If[StringMatchQ[lookup[spec, Name], "*_bound"],
+  {"/* " <> lookup[spec, Name] <> " boundary type not assigned for BAM */\n"},
   {"  AddPar(",
-     lookup[spec, Name],           ", ",
-     Quote@lookup[spec, Default],  ", ",
+     Quote@lookup[spec, Name],     ", ",
+     Quote@ToExpression@lookup[spec, Default],  ", ",
      Quote@lookup[spec, Description],
      ");\n",
      "  ", DefineVariable[lookup[spec, Name], lookup[spec, Type], 
-                    GetValue[lookup[spec, Type], lookup[spec, Name]]], "\n"};
+                    GetValue[lookup[spec, Type], lookup[spec, Name]]], "\n"}
+];
 
 (* Given a parameterFileSpec structure, return a CodeGen block file *)
 CreateParam[spec_] :=
@@ -252,7 +273,7 @@ bamTensorType[group_] := Module[{comps, indices, type},
 (* Given the specification of a group structure, return a CodeGen
    block for the interface.ccl file to define that group *)
 interfaceGroupBlock[spec_] :=
-  {"  AddVar(", lookup[spec, Name],              ", ",
+  {"  AddVar(", Quote@lookup[spec, Name],        ", ",
    Quote@bamTensorType@lookup[spec, Variables],  ", ",
    Quote@lookup[spec, Comment], ");\n"};
 
@@ -302,8 +323,8 @@ comment = lookup[spec, Comment];
 
 bin = StringReplace[bin, "at BASEGRID"     -> "PRE_INITIALDATA", IgnoreCase -> True];
 bin = StringReplace[bin, "at INITIAL"      -> "INITIALDATA",     IgnoreCase -> True];
-bin = StringReplace[bin, "in MoL_CalcRHS"  -> "\"???\"",         IgnoreCase -> True];
-bin = StringReplace[bin, "in MoL_PostStep" -> "\"???\"",         IgnoreCase -> True];
+bin = StringReplace[bin, "in MoL_PostStep" -> "POST_EVOLVE",     IgnoreCase -> True];
+bin = StringReplace[bin, "in MoL_Register" -> "POST_INITIALDATA",IgnoreCase -> True];
 
 
 scheduleThis = True;
@@ -312,12 +333,12 @@ If[StringMatchQ[name, "*Startup"],            scheduleThis = False];
 If[StringMatchQ[name, "*CheckBoundaries"],    scheduleThis = False];
 If[StringMatchQ[name, "*ApplyBoundConds"],    scheduleThis = False];
 If[StringMatchQ[name, "*RegisterSymmetries"], scheduleThis = False];
-If[StringMatchQ[bin,  "*Mol_Register"],       scheduleThis = False];
+If[StringMatchQ[name, "*_CalcRHS"],           scheduleThis = False];
 
 
 If[scheduleThis,
-   entry = {"  AddFun(" <> bin <> ", " <> name <> ", " <> Quote[comment], ");\n\n"};,
-   entry = {"/* " <> name <> " IS ONLY SCHEDULED FOR CACTUS, NOT FOR BAM */\n"};
+ entry = {"  AddFun(" <> bin <> ", " <> Quote@name <> ", " <> Quote[comment], ");\n\n"};,
+ entry = {"/* " <> name <> " IS ONLY SCHEDULED FOR CACTUS, NOT FOR BAM */\n"};
 ];
 
 entry
@@ -387,21 +408,39 @@ calculationMacros[] :=
    each Calculation. *)
 
 CreateSetterSource[calcs_, debug_, opts___] :=
-  Module[{include},
+  Module[{include, rhsname},
   include = lookupDefault[{opts}, Include, {}];
 
   If[!MatchQ[include, _List],
     Throw["CreateSetterSource: Include should be a list but is in fact " <> ToString[include]]];
 
-  {"#define KRANC_" <> ToUpperCase[CodeGen`SOURCELANGUAGE] <> "\n\n",
+  {"\n",
+   "#define KRANC_" <> ToUpperCase[CodeGen`SOURCELANGUAGE] <> "\n\n",
 
    If[CodeGen`SOURCELANGUAGE == "C",
          IncludeFile["math.h"],
          "\n"
       ],
 
+   "\n",
+   "#define CCTK_INT int\n",
+   "#define CCTK_REAL double\n",
+   
+   "\n",
+   "#define index ccc\n"
+
+   If[StringMatchQ[rhsname = lookup[First@calcs, Name], "*_CalcRHS"],
+     Print["Coding MoL RHS function: ", rhsname];
+     Print["FIXME: this hack only works if this thorn contains only MoL RHSs!"];
+     "#define BAM_ARGUMENTS tVarList *unew, tVarList *upre, double c, tVarList *ucur\n",
+     "#define BAM_ARGUMENTS tL *level\n"
+   ],
+
    Map[IncludeFile,  include],
    calculationMacros[],
+
+
+   
 
    (* For each function structure passed, create the function and
       insert it *)
@@ -460,8 +499,11 @@ CreateMoLRegistrationSource[spec_, debug_] :=
     registerEntry[x_]:= "vlpush(varlist, Ind(\"" <> unqualifiedGroupName[x] <> "\"));\n";
 
     tmp = {
+    "#define CCTK_INT int\n",
+    "#define CCTK_REAL double\n\n",
+
     DefineFunction[lookup[spec,ThornName] <> "_RegisterVars", "CCTK_INT",
-                   "ARGS",
+                   "tL *level",
       {DeclarePointer["varlist", "tVarList"],
 
         CommentedBlock["Register all the evolved grid functions",
@@ -472,7 +514,7 @@ CreateMoLRegistrationSource[spec_, debug_] :=
           "evolve_vlregister(varlist);\n"}],
 
        CommentedBlock["register evolution routine",
-	{"evolve_rhsregister(wave_evolve);\n"}],
+	{"evolve_rhsregister(" <> lookup[spec,ThornName] <>  "_CalcRHS);\n"}],
 
        "return 0;\n"}]};
 
@@ -533,7 +575,7 @@ CreateMoLBoundariesSource[spec_] :=
 
    tmp = {"\n\n",
 
-   cleanCPP@DefineCCTKFunction[lookup[spec,ThornName] <> "_ApplyBoundConds", 
+   cleanCPP@DefineBAMFunction[lookup[spec,ThornName] <> "_ApplyBoundConds", 
    "CCTK_INT",
      {DefineVariable["ierr",   "CCTK_INT", "0"],
 
@@ -633,8 +675,7 @@ CreateThorn[thorn_] :=
                         {i, 1, Length@allSources}];
 
      
-    includeBlock = Map[IncludeFile, {"bam.h", "precomputations.h", 
-                                     "GenericFD.h", "Differencing.h"}];
+    includeBlock = Map[IncludeFile, {"bam.h", "GenericFD_BAM.h", ToString@project <> ".h"}];
 
 
     thisFileContent = Flatten@{whoWhen["C"], includeBlock, thisFileContent};
@@ -664,7 +705,11 @@ StartBAMProject[project_, directory_] :=
               whoWhen["C"], 
 	      "#include \"bam.h\"\n", 
 	      "#include \"" <> hname <> "\"\n\n\n",
-               "void " <> projectRootFunction <> "();\n{\n",
+              "#define BOOLEAN   int\n",
+              "#define CCTK_INT  int\n",
+              "#define CCTK_REAL double\n\n",
+
+               "void " <> projectRootFunction <> "()\n{\n",
 	       "   if (!Getv(\"physics\", \"" <> project <> "\")) return;\n",
 	       "       printf(\"Adding " <> project <> "\");\n"
 	       };
@@ -677,13 +722,13 @@ StartBAMProject[project_, directory_] :=
               whoWhen["C"]};
 
       bamM = {"# " <> project <> "Makefile\n",
-             whoWhen["SH"],
+             whoWhen["shell"],
              "\n", 
              "NAME := " <> project,
              "\n", 
              "OBJS := bam_$(NAME).o", 
              "\n",
-             "include $(TOP)/Makefile.subdirs"
+             "include $(TOP)/Makefile.subdirs "
              };
 
       GenerateFile[directory <> "/" <> cname, bamC];

@@ -8,3 +8,17 @@ implements: GenericFD
 
 INCLUDE HEADER: GenericFD.h in GenericFD.h
 
+#USES INCLUDE: Boundary.h
+#USES INCLUDE: Symmetry.h
+
+CCTK_INT FUNCTION \
+    GetBoundarySpecification (CCTK_INT IN size,                  \
+                              CCTK_INT OUT ARRAY nboundaryzones, \
+                              CCTK_INT OUT ARRAY is_internal,    \
+                              CCTK_INT OUT ARRAY is_staggered,   \
+                              CCTK_INT OUT ARRAY shiftout)
+REQUIRES FUNCTION GetBoundarySpecification
+
+CCTK_INT FUNCTION \
+    SymmetryTableHandleForGrid (CCTK_POINTER_TO_CONST IN cctkGH)
+REQUIRES FUNCTION SymmetryTableHandleForGrid

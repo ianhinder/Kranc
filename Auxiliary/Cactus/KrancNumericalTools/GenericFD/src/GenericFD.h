@@ -550,7 +550,23 @@
 
 #endif
 
-
 #ifdef KRANC_C
 CCTK_INT sgn(CCTK_REAL x);
+
+#define Dupwind1(gf,dir,i,j,k) ((dir * gf[CCTK_GFINDEX3D(cctkGH,i+dir,j,k)] \
+	 - dir * gf[CCTK_GFINDEX3D(cctkGH,i,j,k)]) * dxi)
+#define Dupwind2(gf,dir,i,j,k) ((dir * gf[CCTK_GFINDEX3D(cctkGH,i,j+dir,k)] \
+	 - dir * gf[CCTK_GFINDEX3D(cctkGH,i,j,k)]) * dxi)
+#define Dupwind3(gf,dir,i,j,k) ((dir * gf[CCTK_GFINDEX3D(cctkGH,i,j,k+dir)] \
+	 - dir * gf[CCTK_GFINDEX3D(cctkGH,i,j,k)]) * dxi)
+
+void GenericFD_GetBoundaryInfo(cGH *cctkGH, CCTK_INT *cctk_lsh, CCTK_INT *cctk_bbox,
+			       CCTK_INT *cctk_nghostzones, CCTK_INT *imin, 
+			       CCTK_INT *imax, CCTK_INT *is_symbnd, 
+			       CCTK_INT *is_physbnd, CCTK_INT *is_ipbound);
+
 #endif
+
+
+
+

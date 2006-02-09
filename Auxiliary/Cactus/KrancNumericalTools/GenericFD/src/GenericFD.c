@@ -101,7 +101,7 @@ void GenericFD_GetBoundaryInfo(cGH *cctkGH, CCTK_INT *cctk_lsh, CCTK_INT *cctk_b
   {
     is_symbnd[dir] = (symbnd[dir] >= 0);
     is_ipbnd[dir] = (cctk_bbox[dir] == 0);
-    is_physbnd[dir] = (!is_ipbnd[dir] && !is_symbnd[dir])
+    is_physbnd[dir] = (!is_ipbnd[dir] && !is_symbnd[dir]);
   }
 
   for (dir = 0; dir < 3; dir++)

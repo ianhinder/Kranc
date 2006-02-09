@@ -54,8 +54,17 @@ CCTK_INT sgn(CCTK_REAL x)
     return 0;
 }
 
-/* Return the array indices in imin and imax of each boundary. The
-   indexing is C-style. Also return whether the boundary is a symmetry */
+/* Return the array indices in imin and imax for looping over the
+   interior of the grid. imin is the index of the first grid point.
+   imax is the index of the last grid point plus 1.  So a loop over
+   the interior of the grid would be 
+
+   for (i = imin; i < imax; i++)
+
+   The indexing is C-style. Also return whether the boundary is a
+   symmetry, physical or interprocessor boundary.  Carpet refinement
+   boundaries are treated as interprocessor boundaries.
+*/
 void GenericFD_GetBoundaryInfo(cGH *cctkGH, CCTK_INT *cctk_lsh, CCTK_INT *cctk_bbox,
 			       CCTK_INT *cctk_nghostzones, CCTK_INT *imin, 
 			       CCTK_INT *imax, CCTK_INT *is_symbnd, 
@@ -90,36 +99,9 @@ void GenericFD_GetBoundaryInfo(cGH *cctkGH, CCTK_INT *cctk_lsh, CCTK_INT *cctk_b
 
   for (dir = 0; dir < 6; dir++)
   {
-    is_symbnd[dir] = 0;
-    is_physbnd[dir] = 0;
-    is_ipbnd[dir] = 0;
-
-    if (symbnd[dir] >= 0)
-    {
-      is_symbnd[dir] = 1;
-    }
-    else
-    {
-      is_symbnd[dir] = 0;
-    }
-
-    if (cctk_bbox[dir] == 0)
-    {
-      is_ipbnd[dir] = 1;
-    }
-    else
-    {
-      is_ipbnd[dir] = 0;
-    }
-    
-    if (!is_ipbnd[dir] && !is_symbnd[dir])
-    {
-      is_physbnd[dir] = 1;
-    }
-    else
-    {
-      is_physbnd[dir] = 0;
-    }
+    is_symbnd[dir] = (symbnd[dir] >= 0);
+    is_ipbnd[dir] = (cctk_bbox[dir] == 0);
+    is_physbnd[dir] = (!is_ipbnd[dir] && !is_symbnd[dir])
   }
 
   for (dir = 0; dir < 3; dir++)
@@ -151,10 +133,10 @@ void GenericFD_GetBoundaryInfo(cGH *cctkGH, CCTK_INT *cctk_lsh, CCTK_INT *cctk_b
       switch(face)
       {
       case 0: /* Lower boundary */
-	imin[dir] = npoints - 1;
+	imin[dir] = npoints;
 	break;
       case 1: /* Upper boundary */
-	imax[dir] = cctk_lsh[dir]  - npoints;
+	imax[dir] = cctk_lsh[dir] - npoints;
 	break;
       default:
 	CCTK_WARN(0, "internal error");

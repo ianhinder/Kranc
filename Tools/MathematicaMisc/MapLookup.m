@@ -17,10 +17,19 @@ Begin["`Private`"];
    Map lookup
    -------------------------------------------------------------------------- *)
 
+VerifyRule[r_] :=
+  If[! Head[r] === Rule,
+    ThrowError["Expecting a rule, but found", r]];
+
+VerifyMap[m_] :=
+  Module[{},
+    If[!ListQ[m],
+      ThrowError["Expecting a map (list of rules) but found", m]];
+    Map[VerifyRule, m]];
+
 lookup[map_, key_] :=
   Module[{values},
-    If[! ListQ[map],
-      ThrowError["lookup failure: map", map, " is not a list"]];
+    VerifyMap[map];
 
     values = Select[map, First[#] === key &];
     If[values == {},
@@ -31,23 +40,33 @@ lookup[map_, key_] :=
     First[values][[2]]];
 
 mapContains[map_, key_] :=
-  Length[Select[map, First[#] === key &]] >= 1;
+  Module[{},
+    VerifyMap[map];
+    Length[Select[map, First[#] === key &]] >= 1];
 
 lookupDefault[map_, key_, default_] :=
-  If[mapContains[map, key],
-    lookup[map, key],
-    default];
+  Module[{},
+  VerifyMap[map];
+    If[mapContains[map, key],
+      lookup[map, key],
+      default]];
 
 mapReplace[map_, key_, value_] :=
-  Map[If[First[#] === key, key -> value, #] &, map];
+  Module[{},
+    VerifyMap[map];
+    Map[If[First[#] === key, key -> value, #] &, map]];
 
 mapAdd[map_, key_, value_] :=
-  Join[map, {key -> value}];
+  Module[{},
+    VerifyMap[map];
+    Join[map, {key -> value}]];
 
 mapEnsureKey[map_, key_, defaultValue_] :=
+  Module[{},
+    VerifyMap[map];
   If[mapContains[map, key],
      map,
-     mapAdd[map, key, defaultValue]];
+     mapAdd[map, key, defaultValue]]];
 
 mapValueMap[map_, key_, f_] :=
   If[mapContains[map, key],

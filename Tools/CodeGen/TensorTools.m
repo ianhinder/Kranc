@@ -20,10 +20,10 @@
 
 (* Place these symbols in the sym context *)
 BeginPackage["sym`"];
-{D1, D2, D3, D11, D22, D33, D21, D31, D32, D12, D13, D23, dot}
+{D1, D2, D3, D11, D22, D33, D21, D31, D32, D12, D13, D23, dot, Eps}
 EndPackage[];
 
-BeginPackage["TensorTools`", {"Errors`"}];
+BeginPackage["TensorTools`", {"Errors`", "MapLookup`"}];
 
 (* Cause the sym context to be added to the context of anyone loading
    this package *)
@@ -107,18 +107,49 @@ RemoveDuplicates::usage = "RemoveDuplicates[list] removes any
 duplicated elements from list.  Useful with MakeExplicit where some of
 the tensor symmetries cause duplicates to be created.";
 
-CheckTensors::usage;
+IndexIsLower;
+IndexIsUpper;
+
+CheckTensors::usage = "";
+
+SwapIndices::usage = "";
+Symmetrize::usage = "";
+AntiSymmetrize::usage = "";
+calcSymmetryOfComponent;
+ReflectionSymmetriesOfTensor;
+HasTensorAttribute;
+GetTensorAttribute;
+SetTensorAttribute;
+Symmetries;
+TensorWeight;
+TensorSpecial;
+IsTensor;
 
 (* This is for compatibility with MathTensor notation *)
 (*OD = PD;*)
 
 Begin["`Private`"];
+
 listOfTensors = {};
 listOfLowerIndices = {};
 TensorTools`null=TensorTools`\[Null];
 upper = "u";
 lower = "l";
 delta = \[Delta]
+
+SwapIndices[x_, i1_, i2_] := 
+  Module[{temp, unique},
+    u = Unique[];
+    temp = x /. i1 -> u;
+    temp2 = temp /. i2 -> i1;
+    temp3 = temp2 /. u -> i2;
+    temp3];
+
+Symmetrize[x_, i1_, i2_] := 
+  1/2(x + SwapIndices[x, i1, i2]);
+
+AntiSymmetrize[x_, i1_, i2_] := 
+  1/2(x - SwapIndices[x, i1, i2]);
 
 (* -------------------------------------------------------------------------- 
    Utility functions
@@ -157,6 +188,13 @@ listUpperIndices[] =
 
 listLowerIndices[] =
   Map[indexSymbol[lower, #] &, listIndexLabels[]];
+
+IndexIsUpper[TensorIndex[_, "u"]] := True;
+IndexIsUpper[TensorIndex[_, "l"]] := False;
+
+IndexIsLower[TensorIndex[_, "l"]] := True;
+IndexIsLower[TensorIndex[_, "u"]] := False;
+
 
 (* -------------------------------------------------------------------------- 
    TensorIndex
@@ -210,7 +248,8 @@ DefineTensor[T_] :=
 (*    Format[Tensor[T, is:((TensorIndex[_,_] | _Integer) ..) ], InputForm] := 
       HoldForm[T[is]];*)
 
-    T[is:((TensorIndex[_,_] | _Integer) ...)] := Tensor[T, is];
+    T[is:((TensorIndex[_,_] | _Integer) ..)] := Tensor[T, is];
+    TensorAttributes[T] = {TensorWeight -> 1, Symmetries -> {}};
     T];
 
 (* -------------------------------------------------------------------------- 
@@ -412,7 +451,7 @@ MakeExplicit[x_] :=
        /. derivativeNameRule) /. TensorProduct -> Times;
 
 MakeExplicit[l:List[Rule[_, _] ..]] :=
-  abstractToExplicitMap[l];
+  Flatten[Map[removeDuplicatesFromMap, Map[MakeExplicit, l]],1];
 
 MakeExplicit[l:List[(Tensor[__] | _ ? AtomQ | dot[_]) ..]] :=
   explicitVariableList[l];
@@ -576,13 +615,25 @@ AssertSymmetricIncreasing[Tensor[K_, inds__], i1_, i2_] :=
 AssertSymmetricDecreasing[Tensor[K_, inds__], i1_, i2_] :=
   assertSymmetric[Tensor[K, inds], i1, i2, False];
 
+interchangeNumbers[perm_, i_, j_] :=
+  ((perm /. i -> X) /. j -> i) /. X -> j;
+
 assertSymmetric[Tensor[K_, inds__], i1_, i2_, increasing_] :=
   Module[
     {pos1 = positionOfIndex[Tensor[K, inds], i1],
-     pos2 = positionOfIndex[Tensor[K, inds], i2]},
-    Map[makePreferenceEquation[#, pos1, pos2] &,
-        Select[makeSplit[Tensor[K, inds]],
-               needToSwap[#, pos1, pos2, increasing] &]]];
+     pos2 = positionOfIndex[Tensor[K, inds], i2],
+     oldSymmetries, newPerm, newSymmetries},
+
+     oldSymmetries = GetTensorAttribute[K, Symmetries];
+     newPerm = interchangeNumbers[Table[i, {i, 1, Length[{inds}]}], pos1-1, pos2-1];
+     newSymmetries = Join[oldSymmetries, {newPerm, 1}];
+
+     SetTensorAttribute[K, Symmetries, newSymmetries];
+     InfoMessage[Info, "Setting symmetries of " <> ToString[K] <> " to be " <> ToString[newSymmetries]];
+
+     Map[makePreferenceEquation[#, pos1, pos2] &,
+         Select[makeSplit[Tensor[K, inds]],
+                needToSwap[#, pos1, pos2, increasing] &]]];
 
 (* -------------------------------------------------------------------------- 
    Miscellaneous code
@@ -911,6 +962,10 @@ RemoveDuplicates[l_] :=
 extractMapDomain[m_] :=
   RemoveDuplicates[Map[#[[1]] &, m]];
 
+removeDuplicatesFromMap[m_] :=
+  Map[# -> (# /. m) &, extractMapDomain[m]];
+
+
 abstractToExplicitMap[m_] :=
   Module[{explicitMap1, domain},
     explicitMap1 = Flatten[Map[MakeExplicit, m], 1];
@@ -996,7 +1051,7 @@ CheckTensors[t:Tensor[k_, is__]] :=
 
 CheckTensors[t:f_[TensorIndex[__]..]] :=
   Module[{},
-    If[!(f === Tensor),
+    If[!(f === Tensor || f === Eps),
        ThrowError["Tensor index in an object that is not a declared tensor.", t]];
        ];
 
@@ -1006,8 +1061,88 @@ CheckTensors[x_] :=
 (*    Print["Default tensor check: ", x];*)
     True];
 
+(* Reflection symmetries *)
 
+calcSymmetryOfComponent[comp_, inds_] := 
+  Module[{sym, q, string},
+    sym = {1, 1, 1};  (* default *)
+    string = ToString[comp];
+
+    If[inds > StringLength[string],
+      ThrowError["calcSymmetryOfComponent: Component " 
+      <> ToString[comp] <> " has been described as having " 
+      <> ToString[inds] <> " indices, but it does not have enough characters."]];
+
+    Do[
+      (* Get the index at the ith position as a number *)
+      q = ToExpression[StringTake[string, {i}]];
+      If[!IntegerQ[q], ThrowError["calcSymmetryOfComponent: Expecting a numeric index at position " 
+        <> ToString[i] <> " in \"" <> string <> "\"."]];
+
+      sym[[q]] = -sym[[q]],
+      
+      {i, StringLength[string] - inds + 1, StringLength[string]}];
+      
+      sym];
+
+
+ReflectionSymmetriesOfTensor[Tensor[k_, inds__]] :=
+  Module[{is = {inds},
+         sym = {1,1,1}},
+
+    indexCount = Length[is];
+    components = MakeExplicit[k[inds]];
   
+    Map[# -> calcSymmetryOfComponent[#, indexCount] &, components]
+  ];
+
+ReflectionSymmetriesOfTensor[f_] :=
+  f -> {1,1,1};
+  
+(* -------------------------------------------------------------------------- 
+   TensorAttributes
+   -------------------------------------------------------------------------- *)
+
+
+SetTensorAttribute[k_, attr_, value_] :=
+  Module[{oldmap, newmap},
+    oldMap = TensorAttributes[k];
+    If[!ListQ[oldMap],
+      ThrowError["SetTensorAttribute: " <> ToString[k] <> " has not been defined as a tensor"]];
+
+    If[mapContains[oldMap, attr],
+      newMap = mapReplace[oldMap, attr, value],
+      newMap = mapAdd[oldMap, attr, value]];
+    TensorAttributes[k] = newMap;
+    ];
+
+GetTensorAttribute[k_, attr_] :=
+  Module[{oldMap},
+    oldMap = TensorAttributes[k];
+    If[!ListQ[oldMap],
+      ThrowError["SetTensorAttribute: " <> ToString[k] <> " has not been defined as a tensor"]];
+    If[mapContains[oldMap, attr],
+      Return[lookup[oldMap, attr]],
+      ThrowError["Tensor " <> ToString[k] <> " does not have a " <> ToString[attr] <> " attribute."]]
+  ];
+
+HasTensorAttribute[k_, attr_] :=
+  Module[{oldMap},
+    oldMap = TensorAttributes[k];
+    If[!ListQ[oldMap],
+      ThrowError["SetTensorAttribute: " <> ToString[k] <> " has not been defined as a tensor"]];
+    mapContains[oldMap, attr]];
+
+
+
+
+IsTensor[k_] :=
+  ListQ[TensorAttributes[k]];
+
+
+
+
+
 
 End[];
 

@@ -4,8 +4,20 @@ BeginPackage["Errors`"];
 PrintError::usage = "";
 ThrowError::usage = "";
 KrancError::usage = "";
+VerifyString;
+VerifyStringList;
+VerifyList;
+InfoMessage;
+
+Quiet = 0;
+Warnings = 1
+Terse = 2;
+Info = 3;
+Full = 4;
 
 Begin["`Private`"];
+
+debugLevel = Terse;
 
 removeBits[l_] := 
   Module[{s, t},
@@ -22,9 +34,12 @@ PrintStructure[x_]:=
 
 PrintStructure[l_List, prefix_, suffix_] :=
   Module[{},
-    Print[prefix, "{"];
-    Map[PrintStructure[#, "  " <> prefix, ","] &, l];
-    Print[prefix, "}"]];
+    If[StringLength[ToString[l] <> prefix] > 50,
+      Print[prefix, "{"];
+      Map[PrintStructure[#, "  " <> prefix, ","] &, l];
+      Print[prefix, "}"],
+
+      Print[prefix, ToString[l,OutputForm]]]];
 
 PrintStructure[s_, prefix_, suffix_] :=
   Print[prefix, s, suffix];
@@ -48,6 +63,30 @@ ThrowError[objects__] :=
     
     s2 = removeBits[s];
     Throw[KrancError[{objects}, s2], KrancError]];
+
+
+VerifyString[s_] := 
+  If[! StringQ[s],
+   ThrowError["Not a string:", s]];
+
+VerifyStringList[l_] := 
+  If[! MatchQ[l, {___String}],
+   ThrowError["Not a list of strings:", l]];
+
+
+VerifyList[l_] := 
+  If[!Head[l] === List,
+   ThrowError["Not a list:", l]];
+
+
+InfoMessage[level_, message__] :=
+  Module[{args = {message}},
+    If[level <= debugLevel,
+      Map[PrintStructure, args]];
+  ];
+
+SetDebugLevel[level_] :=
+  debugLevel = level;
 
 End[];
 

@@ -28,8 +28,9 @@ BeginPackage["sym`"];
 EndPackage[];
 
 BeginPackage["KrancGroups`", 
-             {"sym`", "Errors`"}];
+             {"sym`", "Errors`", "MapLookup`"}];
 
+CreateGroup;
 groupsFromGFs::usage = "";
 addrhs::usage = "";
 variablesInGroup::usage = "";
@@ -45,14 +46,84 @@ implementationFromGroupName::usage = "";
 qualifyGroups::usage = "";
 containingGroups::usage = "";
 groupVariables::usage = "";
+GroupTags::usage = "";
+SetGroupVariables;
+VerifyGroup;
+VerifyGroupName;
+SetGroupName;
 
 Begin["`Private`"];
+
+(* The Group structure is of the following form, but the user should
+not assume this. All interaction with Group structures should be
+through this file.  This way, we can modify the underlying
+representation without other code having to be rewritten.
+
+{name, {vars}, extras...}
+
+The extras can be any of the following:
+
+Tags -> {tag1, tag2, ...}
+
+
+
+  *)
+
+(*********************************************************************)
+(* The following functions know about the internal form of a Group
+   structure*)
+(*********************************************************************)
+
+CreateGroup[name_, vars_, extras_] :=
+  Module[{g},
+    VerifyGroupName[name];
+    VerifyList[vars];
+    VerifyList[extras];
+    g = Join[{name, vars}, extras];
+    InfoMessage[Full, "Created group: ", g];
+    Return[g]];
+
+
+VerifyGroup[group_] :=
+  Module[{},
+    If[!ListQ[group] || Length[group] < 2 || !StringQ[group[[1]]] || ! ListQ[group[[2]]],
+      ThrowError["Not a group definition:", group],
+      True]];
+
+VerifyGroupName[groupName_] :=
+  If[!StringQ[groupName],
+    ThrowError["Not a group name:", groupName],
+    True];
+
+
+groupName[g_] := First[g];
+
+groupVariables[group_] :=
+  group[[2]];
+
+GroupTags[g_] :=
+  Module[{extras},
+    extras = Drop[g, 2];
+    lookupDefault[extras, Tags, {}]];
+
+SetGroupName[g_, n_] :=
+  Join[{n}, Drop[g, 1]];
+
+SetGroupVariables[g_, vars_] :=
+  Module[{},
+    Join[{groupName[g], vars}, Drop[g, 2]]];
+
+(*********************************************************************)
+(* The following functions DO NOT KNOW about the internal form of a Group
+   structure*)
+(*********************************************************************)
+
 
 (* Return those group structures which contain any variables in GFs *)
 groupsFromGFs[groups_, GFs_] := Module[{inter, check},
   (* Given a group structure, return those variables from it that are in
      GFs *)
-  inter[y_] :=  Intersection[Last@y, Flatten@GFs];
+  inter[y_] :=  Intersection[groupVariables[y], GFs]; (* The last arg was flattened; why? *)
 
   (* Check whether the group structure y contains any variables in GFs *)
   check[y_] := TrueQ[Length@inter[y] > 0];
@@ -60,35 +131,41 @@ groupsFromGFs[groups_, GFs_] := Module[{inter, check},
   Select[groups, check]
 ];
 
+renameGroup[g_, newName_] :=
+  SetGroupName[g, newName];
+
 addrhs[x_] := ToString[x] <> "rhs";
 
 variablesInGroup[name_, groups_] :=
-  Last[groupFromName[name, groups]];
+  groupVariables[groupFromName[name, groups]];
 
-groupVariables[group_] :=
-  Last[group];
 
 evolvedGroupToRHSGroup[name_, groups_] := 
-  Module[{group = First[Select[groups, groupName[#] === name &]]},
-    {addrhs[name], Map[Symbol[addrhs[ToString[#]]] &, Last[group]]}];
+  Module[{names, group},
+    names = Map[groupName, groups];
+    If[!MemberQ[names, name], ThrowError["evolvedGroupToRHSGroup: Group \"" <> groupName <> "\" not found in groups structure:", groups]];
+
+    group = First[Select[groups, groupName[#] === name &]];
+
+    oldVars = groupVariables[group];
+    newVars = Map[Symbol[addrhs[ToString[#]]] &, oldVars];
+
+    group = SetGroupName[group, addrhs[name]];
+    group = SetGroupVariables[group, newVars];
+    Return[group]];
 
 variablesFromGroups[groupNames_, groups_] := 
   Flatten[Map[variablesInGroup[#, groups] &, groupNames], 1];
 
 groupFromName[name_, groups_] :=
   Module[{gs},
-    gs = Select[groups, First[#] === name &];
+    gs = Select[groups, groupName[#] === name &];
     If[Length[gs] == 0,
        ThrowError["Cannot find group ", name, "in", groups]];
     If[Length[gs] > 1,
        ThrowError["Group", name, "appears multiple times in", groups]];
 
     First[gs]];
-
-groupName[g_] := First[g];
-
-renameGroup[{name_, vars_}, newName_] :=
-  {newName, vars};
 
 qualifyGroupName[name_, defaultImp_] :=
   If[StringMatchQ[name, "*::*"],
@@ -132,9 +209,9 @@ containingGroups[vars_, groups_] :=
   Module[{allVars},
     allVars = Apply[Join, Map[variablesInGroup, groups]];
     Map[If[!MemberQ[allVars, #],
-           Throw[ToString[#] <> 
-                 " is not a member of any of the following groups: " <> 
-                 ToString[groups]]] &, vars];
+           ThrowError[ToString[#] <> 
+                 " is not a member of any of the following groups: ",
+                 groups]] &, vars];
 
     Union[Map[groupName, Select[groups, Intersection[variablesInGroup[#], vars] != {} &]]]];
 

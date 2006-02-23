@@ -122,11 +122,11 @@ SetSourceLanguage[lang_] :=
 If[ (lang == "C" || lang == "Fortran"),
   SOURCELANGUAGE = lang;
   setSourceSuffix[lang];
-  Print["User set source language to ", lang];,
+  InfoMessage[Terse, "User set source language to " <> lang],
 
   SOURCELANGUAGE = "C";
   setSourceSuffix[".c"];
-  Print["<<<< Setting Source Language to C! >>>>"];
+  InfoMessage[Terse, "Setting Source Language to C"];
 ];
 
 (* Code generation utilities; not specific to any language *)
@@ -386,6 +386,8 @@ DeclareGridLoopVariables[] :=
          {{"i", "j", "k"}, {"istart", "jstart", "kstart"}, 
           {"iend", "jend", "kend"},
           {"index_offset_x", "index_offset_y", "index_offset_z", "dir", "face"}}],
+     Map[DeclareArray[#, 6, "CCTK_INT"] &, {"imin", "imax", "is_symbnd", "is_physbnd", "is_ipbnd"}],
+     Map[DeclareArray[#, 3, "CCTK_INT"] &, {"bmin", "bmax"}],
 
      If[SOURCELANGUAGE == "C", DeclareVariable["index", "CCTK_INT"], "\n"]
   }];
@@ -407,14 +409,14 @@ arrayIndex[i_] :=
 
 max[]:= If[SOURCELANGUAGE == "C", "IMAX", "max"];
 
-InitialiseGridLoopVariables[derivativesUsedSwitch_] :=
+InitialiseGridLoopVariables[derivativesUsedSwitch_, addToStencilWidth_] :=
   CommentedBlock["Set up variables used in the grid loop for the physical grid points",
 
   If[ (derivativesUsedSwitch),
   {
-  AssignVariable["index_offset_x", max[] <>"(stencil_width, stencil_width_x)"],
-  AssignVariable["index_offset_y", max[] <>"(stencil_width, stencil_width_y)"],
-  AssignVariable["index_offset_z", max[] <>"(stencil_width, stencil_width_z)"],
+  AssignVariable["index_offset_x", max[] <>"(stencil_width, stencil_width_x) + " <> ToString[addToStencilWidth]],
+  AssignVariable["index_offset_y", max[] <>"(stencil_width, stencil_width_y) + " <> ToString[addToStencilWidth]],
+  AssignVariable["index_offset_z", max[] <>"(stencil_width, stencil_width_z) + " <> ToString[addToStencilWidth]],
 
   "\n",
   AssignVariable["istart", arrayIndex["index_offset_x"]],
@@ -481,36 +483,36 @@ SwitchStatement[var_, pairs__] :=
 
 
 BoundaryLoop[block_] :=
+{
+  "\nGenericFD_GetBoundaryInfo(cctkGH, cctk_lsh, cctk_bbox, cctk_nghostzones, imin, imax, is_symbnd, is_physbnd, is_ipbnd);\n",
+
   CommentedBlock["Loop over all faces",
    loopOverInteger["dir", "0", "3",
      loopOverInteger["face", "0", "2",
      {
-       DeclareArray["bmin", 3, "int"],
-       DeclareArray["bmax", 3, "int"],
-
-       AssignVariable[arrayElement["bmin", 0], 1],
-       AssignVariable[arrayElement["bmin", 1], 1],
-       AssignVariable[arrayElement["bmin", 2], 1],
+       AssignVariable[arrayElement["bmin", 0], 0],
+       AssignVariable[arrayElement["bmin", 1], 0],
+       AssignVariable[arrayElement["bmin", 2], 0],
        AssignVariable[arrayElement["bmax", 0], arrayElement["cctk_lsh", 0]],
        AssignVariable[arrayElement["bmax", 1], arrayElement["cctk_lsh", 1]],
-       AssignVariable[arrayElement["bmax", 2], arrayElement["cctk_lsh", 2]],
+       AssignVariable[arrayElement["bmax", 2], arrayElement["cctk_lsh", 2]], 
        SwitchStatement["face", 
-        {0,  AssignVariable[arrayElement["bmax", "dir"], "boundary_width"]},
-        {1,  AssignVariable[arrayElement["bmin", "dir"], {arrayElement["cctk_lsh", "dir"], 
-                                                          " - boundary_width" }]}],
+        {0,  AssignVariable[arrayElement["bmax", "dir"], {arrayElement["imin", "dir"], ""}]},
+        {1,  AssignVariable[arrayElement["bmin", "dir"], {arrayElement["imax", "dir"], "" }]}],
+       conditional[arrayElement["is_physbnd", "dir * 2 + face"],
+         loopOverInteger["k", arrayElement["bmin",2], arrayElement["bmax",2],
+           loopOverInteger["j", arrayElement["bmin",1], arrayElement["bmax",1],
+             loopOverInteger["i", arrayElement["bmin",0], arrayElement["bmax",0],
 
-       loopOverInteger["k", arrayElement["bmin",2], arrayElement["bmax",2],
-         loopOverInteger["j", arrayElement["bmin",1], arrayElement["bmax",1],
-           loopOverInteger["i", arrayElement["bmin",0], arrayElement["bmax",0],
-
-       { If[SOURCELANGUAGE == "C",  
-            AssignVariable["index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"],
-            ""],
-	 block
-       }
+         { If[SOURCELANGUAGE == "C",  
+              AssignVariable["index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"],
+              ""],
+	   block
+         }
       
       ]]]
-     }]]];
+      ]}
+     ]]]};
 
 conditional[condition_, block_] :=
  {"if (", condition, ")\n",

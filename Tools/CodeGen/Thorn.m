@@ -39,7 +39,7 @@ Directory, Interface, Param, Schedule, Sources, Makefile, Filename,
 Contents, ThornName, BaseImplementation, EvolvedGFs, PrimitiveGFs,
 Groups, Calculation, GridFunctions, Shorthands, Equations, Parameter,
 Value, UsesFunctions, ArgString, Conditional, D1, D2, D3, D11, D22,
-D33, D21, D31, D32, Textual, TriggerGroups, Include, RHSGroups};
+D33, D21, D31, D32, Textual, TriggerGroups, Include, RHSGroups, Tags};
 
 {ExcisionGFs};
 
@@ -223,8 +223,13 @@ CreateParam[spec_] :=
   group:
 
   {Name -> "", VariableType -> "", Timelevels -> 2, GridType -> "GF",
-   Comment -> "", Visibility -> "public"
-   Variables -> {phi, h11, ...}} *)
+   Comment -> "", Visibility -> "public", Tags -> {tag1, tag2, ...},
+   Variables -> {phi, h11, ...}}
+
+A 'tag' is of the form {"tensortypealias" -> "Scalar"}
+
+
+ *)
 
 (* Given the specification of a group structure, return a CodeGen
    block for the interface.ccl file to define that group *)
@@ -232,9 +237,24 @@ interfaceGroupBlock[spec_] :=
   {lookup[spec, Visibility], ":\n",
    lookup[spec, VariableType], " ", lookup[spec, Name], 
      " type=", lookup[spec,GridType], " ",
-     "timelevels=", lookup[spec, Timelevels], "\n",
+     "timelevels=", lookup[spec, Timelevels], 
+     If[mapContains[spec,Tags], {" tags='", interfaceTags[lookupDefault[spec,Tags, {}]], "'"}, ""], 
+     "\n",
    SuffixedCBlock[{CommaNewlineSeparated[lookup[spec, Variables]],"\n"}, 
                   "\"" <> lookup[spec, Comment] <> "\""]};
+
+interfaceTag[tagName_String -> tagValue_String] :=
+  tagName <> "=" <> "\"" <> tagValue <> "\"";
+
+interfaceTag[tagName_String -> tagValue_?NumberQ] :=
+  tagName <> "=" <> ToString[N[tagValue, 20]];
+
+interfaceTags[tags_] :=
+  SpaceSeparated[Map[interfaceTag, tags]];
+
+
+
+
 
 (* Function aliasing *)
 
@@ -470,7 +490,12 @@ SymmetriesBlock[spec_] :=
 }
 ];
 
+(* syms is a list of rules mapping gridfunctions to their symmetry structures *)
+calcSymmetry[gf_, syms_] := 
+  gf /. syms;
 
+(* This function guesses the symmetries based on component names as we
+   have not been given them *)
 calcSymmetry[gf_] := Module[{sym, q, string},
 
 sym = {1, 1, 1};  (* default *)
@@ -487,11 +512,16 @@ Module[{},
 sym
 ];
 
+(* Compatibility function to be called by KrancThorns because it
+   doesn't understand reflection symmetries *)
+CreateSymmetriesRegistrationSource[thornName_, implementationName_, GFs_, debug_] :=
+  CreateSymmetriesRegistrationSource[thornName, implementationName, GFs, False, debug];
+
+
 
 (* Given a symmetries registration structure as defined above, return a
    C CodeGen structure of a source file which will register the symmetries. *)
-CreateSymmetriesRegistrationSource[thornName_, implementationName_, GFs_, debug_] :=
-
+CreateSymmetriesRegistrationSource[thornName_, implementationName_, GFs_, reflectionSymmetries_, debug_] :=
   Module[{spec, j, lang, tmp},
 
   If[debug,
@@ -500,10 +530,11 @@ CreateSymmetriesRegistrationSource[thornName_, implementationName_, GFs_, debug_
 
   lang = CodeGen`SOURCELANGUAGE;
   CodeGen`SOURCELANGUAGE = "C";
-
+  Print["reflectionSymmetries == ", reflectionSymmetries];
   spec = Table[{FullName -> implementationName <> "::" <> ToString@GFs[[j]],
-                Sym      -> calcSymmetry[GFs[[j]] ]
-               }, {j, 1, Length@GFs}];
+                Sym      -> If[reflectionSymmetries === False,
+                              calcSymmetry[GFs[[j]]],
+                              calcSymmetry[GFs[[j]], reflectionSymmetries]]}, {j, 1, Length@GFs}];
 
   tmp = {whoWhen["C"],
 

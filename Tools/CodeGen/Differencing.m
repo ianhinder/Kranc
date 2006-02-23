@@ -183,12 +183,15 @@ DeclareDerivatives[derivOps_, expr_] :=
     gfds = GridFunctionDerivativesInExpression[derivOps, expr];
     Map[DeclareDerivative, gfds]];
 
-ReplaceDerivatives[derivOps_, expr_] :=
+ReplaceDerivatives[derivOps_, expr_, precompute_] :=
   Module[{componentDerivOps, gfds},
     Map[DerivativeOperatorVerify, derivOps];
     componentDerivOps = Flatten[Map[DerivativeOperatorToComponents, derivOps]];
     gfds = GridFunctionDerivativesInExpression[derivOps, expr];
-    rules = Map[# :> GridFunctionDerivativeName[#] &, gfds];
+
+    If[precompute,
+      rules = Map[# :> GridFunctionDerivativeName[#] &, gfds],
+      rules = Map[# :> evaluateDerivative[#] &, gfds]];
     expr /. rules];
 
 
@@ -198,8 +201,12 @@ ReplaceDerivatives[derivOps_, expr_] :=
 
 PrecomputeDerivative[d:pd_[gf_, inds___]] :=
   Module[{},
+    AssignVariable[GridFunctionDerivativeName[d], evaluateDerivative[d]]];
+
+evaluateDerivative[d:pd_[gf_, inds___]] :=
+  Module[{macroname},
     macroName = ComponentDerivativeOperatorMacroName[pd[inds] -> expr];
-    AssignVariable[GridFunctionDerivativeName[d], {macroName, "(", gf,", i, j, k)"}]];
+    Return[ToString[macroName] <> "(" <> ToString[gf] <> ", i, j, k)"]];
 
 DeclareDerivative[d:pd_[gf_, inds___]] :=
   DeclareVariable[GridFunctionDerivativeName[d], "CCTK_REAL"];
@@ -260,7 +267,7 @@ DifferenceGFTerm[op_, i_, j_, k_] :=
     If[op === 0,
       Return[0]];
 
-    If[!(Head[op] === Times) && !(Head[op] === Power),
+    If[!(Head[op] === Times) && !(Head[op] === Power) && !AtomQ[op],
       Throw["Expecting Times in " <> ToString[FullForm[op]]]];
 
     nx = Exponent[op, shift[1]];
@@ -270,10 +277,10 @@ DifferenceGFTerm[op_, i_, j_, k_] :=
     remaining = op / (shift[1]^nx) / (shift[2]^ny) / (shift[3]^nz);
     
     If[CodeGen`SOURCELANGUAGE == "C",
-    remaining "u[CCTK_GFINDEX3D(cctkGH," <> ToString[i+nx] <> "," <>
-      ToString[j+ny] <> "," <> ToString[k+nz] <> ")]",
-    remaining "u(" <> ToString[i+nx] <> "," <> 
-      ToString[j+ny] <> "," <> ToString[k+nz] <> ")"] ];
+    remaining "u[CCTK_GFINDEX3D(cctkGH," <> ToString[CFormHideStrings[i+nx]] <> "," <>
+      ToString[CFormHideStrings[j+ny]] <> "," <> ToString[CFormHideStrings[k+nz]] <> ")]",
+    remaining "u(" <> ToString[FortranForm[i+nx]] <> "," <> 
+      ToString[FortranForm[j+ny]] <> "," <> ToString[FortranForm[k+nz]] <> ")"] ];
 
 
 DerivativeOperatorGFDs[gf_];
@@ -282,17 +289,24 @@ DerivativeOperatorToComponents[name_[indPatterns___] -> expr_] :=
   Module[{ips, symbols, symbolRanges, symbolLHS, table},
     ips = {indPatterns};
 
-    If[! MatchQ[ips, List[ (_Pattern) ...]],
-      Throw["DerivativeOperatorToComponents: Expecting indices which are symbolic patterns"]];
+    If[MatchQ[ips, List[ (_Pattern) ...]],
 
-    symbols = Map[First, ips];
-    symbolRanges = Map[{#, 1, 3} &, Union[symbols]];
-    symbolLHS = name[Apply[Sequence, symbols]];
-    table = Apply[Table, Join[{symbolLHS -> expr}, symbolRanges]];
-    Flatten[table]];
+      symbols = Map[First, ips];
+      symbolRanges = Map[{#, 1, 3} &, Union[symbols]];
+      symbolLHS = name[Apply[Sequence, symbols]];
+      table = Apply[Table, Join[{symbolLHS -> expr}, symbolRanges]];
+      Return[Flatten[table]]];
+
+
+    If[MatchQ[ips, List[ (_ ? NumberQ) ...]],
+      Return[{name[indPatterns] -> expr}]];
+
+    Throw["DerivativeOperatorToComponents: Expecting indices which are symbolic patterns or numbers"];
+];
 
 DerivativeOperatorVerify[derivOp_] :=
-  If[!MatchQ[derivOp, pd_[_Pattern ...] -> expr_?DerivativeOperatorRHSVerify],
+  If[!MatchQ[derivOp, pd_[_Pattern ...] -> expr_?DerivativeOperatorRHSVerify] && 
+     !MatchQ[derivOp, pd_[_ ? NumberQ ...] -> expr_?DerivativeOperatorRHSVerify],
      Throw["Derivative operator definition failed verification: ", ToString[derivOp]]];
 
 DerivativeOperatorRHSVerify[expr_] :=

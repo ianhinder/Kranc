@@ -650,6 +650,20 @@ CreateMoLBoundariesSource[spec_] :=
      prefix <> unqualName <> "_bound_scalar = 0.0\n\n"
     }];
 
+
+    symmetryBCGroup[group_] := Module[{boundpar, fullgroupname},
+    (* symmetry boundary conditions *)
+
+    fullgroupname = qualifyGroupName[ToString@group, lookup[spec, BaseImplementation]];
+
+    {"\n",
+
+     "  ierr = CartSymGN(cctkGH, \"" <> fullgroupname <> "\");\n",
+
+     "  if (ierr < 0)\n",
+     "     CCTK_WARN(-1, \"Failed to apply symmetry BC for " <> fullgroupname <> "!\");\n"}
+     ];
+
     trivialBCGroup[group_] := Module[{boundpar, fullgroupname},
     (* boundary conditions that do not have parameters besides their name *)
 
@@ -839,6 +853,8 @@ CreateMoLBoundariesSource[spec_] :=
    cleanCPP@DefineCCTKFunction[lookup[spec,ThornName] <> "_ApplyBoundConds", 
    "CCTK_INT",
      {DefineVariable["ierr",   "CCTK_INT", "0"],
+
+       Map[symmetryBCGroup,  groups],
 
        Map[trivialBCGroup,   groups],
        Map[trivialBCGF,      gfs],

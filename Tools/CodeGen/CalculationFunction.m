@@ -163,14 +163,7 @@ debugInLoop = False;
 
 declareVariablesForCalculation[calc_] :=
   Module[{shorthands, localGFs},
-
-(* FIXME: Why do we need Sort after Union (Union performs a sort
-   anyway)?  Why are we flattening the result of
-   calculationUsedShorthands when it is a flat list anyway?
-   calculationUsedShorthands returns a sorted, unique list from the
-   start! *)
-
-    shorthands = Sort@Union@Map[ToString, Union@Flatten@calculationUsedShorthands@calc];
+    shorthands = Sort@Union@Map[ToString, Union@Flatten@calculationAllUsedShorthands@calc];
     shorthands = PartitionVarList@shorthands;
 
     localGFs = Map[localName, Sort@Union@Map[ToString, Union@Flatten@calculationUsedGFs@calc]];
@@ -240,15 +233,29 @@ calculationUsedGroups[calc_] :=
     containingGroups[gfs, lookup[calc, Groups]]];
 
 (* Return the names of any shorthands used in the RHSs of calculation *)
-calculationUsedShorthands[calc_] :=
+calculationRHSUsedShorthands[calc_] :=
   Module[{calcSymbols, allShorthands},
     calcSymbols = calculationSymbolsRHS[calc];
     allShorthands = lookupDefault[calc, Shorthands, {}];
     Intersection[calcSymbols, allShorthands]];
 
+(* Return the names of any shorthands used in the LHSs of calculation *)
+calculationLHSUsedShorthands[calc_] :=
+  Module[{calcSymbols, allShorthands},
+    calcSymbols = calculationSymbolsLHS[calc];
+    allShorthands = lookupDefault[calc, Shorthands, {}];
+    Intersection[calcSymbols, allShorthands]];
+
+(* Return the names of any shorthands used anywhere in a calculation *)
+calculationAllUsedShorthands[calc_] :=
+  Module[{calcSymbols, allShorthands},
+    calcSymbols = calculationSymbols[calc];
+    allShorthands = lookupDefault[calc, Shorthands, {}];
+    Intersection[calcSymbols, allShorthands]];
+
 calculationSymbols[calc_] :=
   Module[{allAtoms},
-    allAtoms = Union[Level[lookup[calc, Equations], {-1}]];
+    allAtoms = Union[Level[lookup[calc, Equations], {-1}],  Level[Map[Last, lookup[calc,PartialDerivatives]], {-1}]];
     Cases[allAtoms, x_Symbol]];
 
 calculationSymbolsLHS[calc_] :=
@@ -301,34 +308,34 @@ VerifyCalculation[calc_] :=
       ThrowError["Invalid Calculation structure. Must contain Equations element: " <> ToString[calc]]];
   ];
 
-(* Remove declarations of shorthands that are never used, and
-   assignments to shorthands that are not used. Note that the routine
-   is not intelligent, and once an assignment is removed, there may be
-   unnecessary shorthands in the list.  *)
 
-cleanCalculation[calc_] := Module[
-  {cleancalc, shorthands, assignedGFs, neededSymbols, eqs},
+(* Remove equations in the calculation which assign to shorthands
+   which are never used. Do not modify the Shorthands entry. This
+   routine has two shortcomings.  First, it does not get rid of as
+   many shorthand assignments as it could in the case where there is
+   more than one list of equations in Equations.  I do not intend to
+   fix this as I consider the feature of having more than one list of
+   equations to be obsolete.  The second shortcoming is that an unused
+   shorthand might be missed if the order of assignments is
+   pathalogical enough (e.g. {s1 -> s2, s2 -> s1} would not be
+   removed). *)
 
-    shorthands = calculationUsedShorthands[calc];
+removeUnusedShorthands[calc_] :=
+  Module[{rhsShorthands, lhsShorthands, unusedButAssignedShorthands, removeShorts, eqs, neweqs, newCalc},
+    rhsShorthands = calculationRHSUsedShorthands[calc];
+    lhsShorthands = calculationLHSUsedShorthands[calc];
+    unusedButAssignedShorthands = Complement[lhsShorthands, rhsShorthands];
 
-    InfoMessage[Info, "Deleted unused shorthands: ",
-      Complement[lookupDefault[calc, Shorthands, {}], shorthands]];
+    eqs = lookup[calc, Equations];
+    removeShorts[eqlist_] :=
+      Select[eqlist, (!MemberQ[unusedButAssignedShorthands, First[#]]) &];
 
-    assignedGFs = calculationUsedGFsLHS[calc];
-    neededSymbols = Union[shorthands, assignedGFs];
+    neweqs = Map[removeShorts, eqs];
+    newCalc = mapReplace[calc, Equations, neweqs];
 
-    testShort[x_] := Not@MemberQ[neededSymbols, x];
-
-    cleancalc = mapReplace[calc, Shorthands, shorthands];
-
-    eqs = lookupDefault[calc, Equations, {{}}];
-
-    eqs = DeleteCases[eqs, a_?testShort -> x_, 2];
-
-    cleancalc = mapReplace[cleancalc, Equations, eqs];
-
-cleancalc
-];
+    If[!(eqs === neweqs),
+      removeUnusedShorthands[newCalc],
+      newCalc]];
 
 syncGroup[name_] :=
  If[SOURCELANGUAGE == "C",
@@ -374,13 +381,7 @@ CreateCalculationFunction[calc_, debug_] :=
           shorts, eqs, syncGroups, parameters,
           functionName, dsUsed, groups, pddefs, cleancalc, numeq, eqLoop, GrepSYNC, where, addToStencilWidth},
 
-(*   cleancalc = cleanCalculation[calc];
-   cleancalc = cleanCalculation[cleancalc];
-   cleancalc = cleanCalculation[cleancalc];
-   cleancalc = cleanCalculation[cleancalc];
-   cleancalc = cleanCalculation[cleancalc]; *)
-
-  cleancalc = calc;
+  cleancalc = removeUnusedShorthands[calc];
   shorts = lookupDefault[cleancalc, Shorthands, {}];
   eqs    = lookup[cleancalc, Equations];
   syncGroups = lookupDefault[cleancalc, SyncGroups, {}];
@@ -506,10 +507,11 @@ groupName[g_] :=
    they are assigned.  *)
 
 checkEquationAssignmentOrder[eqs_, shorthands_] :=
-  Map[checkShorthandAssignmentOrder[eqs,#] &, shorthands];
+  Module[{},
+    Map[checkShorthandAssignmentOrder[eqs,#] &, shorthands]];
 
 equationUsesShorthand[eq_, shorthand_] :=
-  Length[Cases[{Last[eq]}, shorthand, Infinity]] != 0;
+    Length[Cases[{Last[eq]}, shorthand, Infinity]] != 0;
 
 checkShorthandAssignmentOrder[eqs_, shorthand_] :=
   Module[{useBooleans, uses, firstUse, lhss, assignments},

@@ -770,7 +770,7 @@ CreateMoLBoundariesSource[spec_] :=
 
      "\n}\n"}];
 
-    scalarBCGroup[group_] := Module[{boundpar, fullgroupnamei, myhandle},
+    scalarBCGroup[group_] := Module[{boundpar, fullgroupname, myhandle},
     (* simple dirichlet boundary condition *)
 
     boundpar      = unqualifiedGroupName@group <> "_bound";

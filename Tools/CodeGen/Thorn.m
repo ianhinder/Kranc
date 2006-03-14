@@ -633,11 +633,12 @@ cleanCPP[x_] := Map[StringReplace[FlattenBlock[#],  "  #" -> "#"]&, x];
    CodeGen structure of a source file which does nothing yet! *)
 CreateMoLBoundariesSource[spec_] :=
 
-  Module[{gfs, groups, tmp, lang},
+  Module[{gfs, groups, unqualifiedGroups, tmp, lang},
 
   gfs = lookup[spec, EvolvedGFs];
-  groups = Map[unqualifiedGroupName, lookup[spec, Groups]];
-
+  groups =  lookup[spec, Groups];  
+  unqualifiedGroups = Map[unqualifiedGroupName, lookup[spec, Groups]];
+  
     listBCparfileEntry[gforgroup_] := Module[{prefix, unqualName},
     (* include a comment block with template parameter file entries *)
     prefix =  "#$bound$#" <> lookup[spec, ThornImplementation] <> "::";
@@ -870,7 +871,7 @@ CreateMoLBoundariesSource[spec_] :=
 
      "\n\n\n",
      "/* template for entries in parameter file:\n",
-      Map[listBCparfileEntry, groups],
+      Map[listBCparfileEntry, unqualifiedGroups],
       Map[listBCparfileEntry, gfs],
      "*/\n\n"
      };

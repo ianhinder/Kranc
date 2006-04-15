@@ -408,7 +408,7 @@
        ((-      gf(i,j,k+2) \
          + 8. * gf(i,j,k+1) \
          - 8. * gf(i,j,k-1) \
-	 +      gf(i,j,k-2)) * (dxi / 12.))
+	 +      gf(i,j,k-2)) * (dzi / 12.))
 
 
 #else
@@ -486,7 +486,7 @@
        ((-      gf[CCTK_GFINDEX3D(cctkGH,i,j,k+2)] \
          + 8. * gf[CCTK_GFINDEX3D(cctkGH,i,j,k+1)] \
          - 8. * gf[CCTK_GFINDEX3D(cctkGH,i,j,k-1)] \
-	 +      gf[CCTK_GFINDEX3D(cctkGH,i,j,k-2)]) * (dxi / 12.))
+	 +      gf[CCTK_GFINDEX3D(cctkGH,i,j,k-2)]) * (dzi / 12.))
 
 #endif
 

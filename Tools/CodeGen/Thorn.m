@@ -530,7 +530,7 @@ CreateSymmetriesRegistrationSource[thornName_, implementationName_, GFs_, reflec
 
   lang = CodeGen`SOURCELANGUAGE;
   CodeGen`SOURCELANGUAGE = "C";
-  Print["reflectionSymmetries == ", reflectionSymmetries];
+
   spec = Table[{FullName -> implementationName <> "::" <> ToString@GFs[[j]],
                 Sym      -> If[reflectionSymmetries === False,
                               calcSymmetry[GFs[[j]]],
@@ -587,20 +587,22 @@ CreateMoLRegistrationSource[spec_, debug_] :=
     Map[IncludeFile, 
         {"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h"}],
 
-    DefineCCTKFunction[lookup[spec,ThornName] <> "_RegisterVars", "CCTK_INT", 
+    DefineCCTKFunction[lookup[spec,ThornName] <> "_RegisterVars", "void", 
       {DefineVariable["ierr", "CCTK_INT", "0"],
 
       CommentedBlock["Register all the evolved grid functions with MoL",
 
 (* FIXME: We should clarify exactly what should happen with the implementation names here *)
 
+(* OK. I think that the group name should be passed in qualified, as that is all that we can do. *)
+
       Map[{"ierr += MoLRegisterEvolved(CCTK_VarIndex(\"", #, "\"),  CCTK_VarIndex(\"",
-           lookup[spec,BaseImplementation], "::", unqualifiedGroupName[#], "rhs\"));\n"} &,
+            #, "rhs\"));\n"} &,
           lookup[spec, EvolvedGFs]]],
 
       CommentedBlock["Register all the primitive grid functions with MoL",
       Map[{"ierr += MoLRegisterConstrained(CCTK_VarIndex(\"", 
-           lookup[spec,BaseImplementation], "::", unqualifiedGroupName[#], "\"));\n"} &,
+           #, "\"));\n"} &,
           lookup[spec, PrimitiveGFs]]],
 	"return ierr;\n"}]};
 
@@ -847,12 +849,12 @@ CreateMoLBoundariesSource[spec_] :=
 
 
    cleanCPP@DefineCCTKFunction[lookup[spec,ThornName] <> "_CheckBoundaries",
-   "CCTK_INT",
+   "void",
      {"return 0;\n"}],
 
 
    cleanCPP@DefineCCTKFunction[lookup[spec,ThornName] <> "_ApplyBoundConds", 
-   "CCTK_INT",
+   "void",
      {DefineVariable["ierr",   "CCTK_INT", "0"],
 
        Map[symmetryBCGroup,  groups],

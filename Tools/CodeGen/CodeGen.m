@@ -386,8 +386,8 @@ DeclareGridLoopVariables[] :=
          {{"i", "j", "k"}, {"istart", "jstart", "kstart"}, 
           {"iend", "jend", "kend"},
           {"index_offset_x", "index_offset_y", "index_offset_z", "dir", "face"}}],
-     Map[DeclareArray[#, 6, "CCTK_INT"] &, {"imin", "imax", "is_symbnd", "is_physbnd", "is_ipbnd"}],
-     Map[DeclareArray[#, 3, "CCTK_INT"] &, {"bmin", "bmax"}],
+     Map[DeclareArray[#, 6, "CCTK_INT"] &, {"is_symbnd", "is_physbnd", "is_ipbnd"}],
+     Map[DeclareArray[#, 3, "CCTK_INT"] &, {"imin", "imax", "bmin", "bmax"}],
 
      If[SOURCELANGUAGE == "C", DeclareVariable["index", "CCTK_INT"], "\n"]
   }];
@@ -486,19 +486,24 @@ BoundaryLoop[block_] :=
 {
   "\nGenericFD_GetBoundaryInfo(cctkGH, cctk_lsh, cctk_bbox, cctk_nghostzones, imin, imax, is_symbnd, is_physbnd, is_ipbnd);\n",
 
+  CommentedBlock["Start by looping over the whole grid, minus the NON-PHYSICAL boundary points, which are set by synchronization.  ", {
+  AssignVariable[arrayElement["bmin", 0], "is_physbnd[0*2+0] ? 0 : imin[0]"],
+  AssignVariable[arrayElement["bmin", 1], "is_physbnd[1*2+0] ? 0 : imin[1]"],
+  AssignVariable[arrayElement["bmin", 2], "is_physbnd[2*2+0] ? 0 : imin[2]"],
+  AssignVariable[arrayElement["bmax", 0], "is_physbnd[0*2+1] ? cctk_lsh[0] : imax[0]"],
+  AssignVariable[arrayElement["bmax", 1], "is_physbnd[1*2+1] ? cctk_lsh[1] : imax[1]"],
+  AssignVariable[arrayElement["bmax", 2], "is_physbnd[2*2+1] ? cctk_lsh[2] : imax[2]"]}], 
+
   CommentedBlock["Loop over all faces",
    loopOverInteger["dir", "0", "3",
      loopOverInteger["face", "0", "2",
      {
-       AssignVariable[arrayElement["bmin", 0], 0],
-       AssignVariable[arrayElement["bmin", 1], 0],
-       AssignVariable[arrayElement["bmin", 2], 0],
-       AssignVariable[arrayElement["bmax", 0], arrayElement["cctk_lsh", 0]],
-       AssignVariable[arrayElement["bmax", 1], arrayElement["cctk_lsh", 1]],
-       AssignVariable[arrayElement["bmax", 2], arrayElement["cctk_lsh", 2]], 
+      CommentedBlock["Now restrict to only the boundary points on the current face",
        SwitchStatement["face", 
-        {0,  AssignVariable[arrayElement["bmax", "dir"], {arrayElement["imin", "dir"], ""}]},
-        {1,  AssignVariable[arrayElement["bmin", "dir"], {arrayElement["imax", "dir"], "" }]}],
+        {0,  {AssignVariable[arrayElement["bmax", "dir"], {arrayElement["imin", "dir"], ""}], 
+              AssignVariable[arrayElement["bmin", "dir"], {0, ""}]}},
+        {1,  {AssignVariable[arrayElement["bmin", "dir"], {arrayElement["imax", "dir"], "" }],
+              AssignVariable[arrayElement["bmax", "dir"], {"cctk_lsh[dir]", ""}]}}]],
        conditional[arrayElement["is_physbnd", "dir * 2 + face"],
          loopOverInteger["k", arrayElement["bmin",2], arrayElement["bmax",2],
            loopOverInteger["j", arrayElement["bmin",1], arrayElement["bmax",1],

@@ -8,12 +8,13 @@ VerifyString;
 VerifyStringList;
 VerifyList;
 InfoMessage;
+SetDebugLevel;
 
 Quiet = 0;
 Warnings = 1
 Terse = 2;
 Info = 3;
-Full = 4;
+InfoFull = 4;
 
 Begin["`Private`"];
 

@@ -132,7 +132,7 @@ BeginPackage["sym`"];
 EndPackage[];
 
 BeginPackage["Differencing`", {"CodeGen`", "sym`", "MapLookup`", 
-             "LinearAlgebra`MatrixManipulation`"}];
+             "LinearAlgebra`MatrixManipulation`", "Errors`"}];
 
 CreateDifferencingHeader::usage = "";
 PrecomputeDerivatives::usage = "";
@@ -230,7 +230,6 @@ GridFunctionDerivativesInExpression[derivOps_, expr_] :=
     patterns = Map[# /. x_[inds___] -> x[y_, inds] &, derivs];
     Flatten[Map[Union[Cases[{expr}, #, Infinity]] &, patterns]]];
 
-
 (*************************************************************)
 (* DerivativeOperator *)
 (*************************************************************)
@@ -267,14 +266,17 @@ DifferenceGFTerm[op_, i_, j_, k_] :=
     If[op === 0,
       Return[0]];
 
-    If[!(Head[op] === Times) && !(Head[op] === Power) && !AtomQ[op],
-      Throw["Expecting Times in " <> ToString[FullForm[op]]]];
+(*    If[!(Head[op] === Times) && !(Head[op] === Power) && !AtomQ[op],
+      ThrowError["Finite difference operator not recognized: ", op, "Full form is: ", FullForm[op]]];*)
 
     nx = Exponent[op, shift[1]];
     ny = Exponent[op, shift[2]];
     nz = Exponent[op, shift[3]];
 
     remaining = op / (shift[1]^nx) / (shift[2]^ny) / (shift[3]^nz);
+
+    If[Cases[{remaining}, shift[_], Infinity] != {},
+      ThrowError["Could not parse difference operator:", op]];
     
     If[CodeGen`SOURCELANGUAGE == "C",
     remaining "u[CCTK_GFINDEX3D(cctkGH," <> ToString[CFormHideStrings[i+nx]] <> "," <>

@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# A shell script to run Kranc on a mathematica input file
+
+INFILE=$1
+
+if ! which math >/dev/null
+then
+    echo "Cannot find math executable.  Is Mathematica on your path?"
+fi
+
+LOCALKRANCPATH="Kranc/Tools/CodeGen:Kranc/Tools/MathematicaMisc:Kranc/Tools/External"
+
+if [ -z "$MATHPATH" ]
+then
+    MATHPATH=$LOCALKRANCPATH
+else
+    MATHPATH=$LOCALKRANCPATH:$MATHPATH
+fi
+
+export MATHPATH
+
+math <<EOF
+
+Module[{mp, newPath},
+  mp = StringToStream[Environment["MATHPATH"]];
+  newPath = Map[ToString, ReadList[mp, Word, WordSeparators->{":"}]];
+  \$Path = Join[newPath, \$Path]];
+Needs["Errors\`"];
+exception = Catch[Get["$INFILE"], KrancError];
+PrintError[exception];
+EOF

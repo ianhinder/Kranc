@@ -62,20 +62,20 @@ removeRHS[x_] := Module[{string = ToString[x]},
 (* collect and simplify terms *)
 simpCollect[collectList_, eqrhs_, localvar_, debug_] :=
   Module[{rhs, collectCoeff, all, localCollectList},
-      InfoMessage[Full, localvar];
+      InfoMessage[InfoFull, localvar];
 
       rhs = eqrhs;
 
       rhs = rhs /. Abs[MathTensor`Detg] -> MathTensor`Detg;
-      InfoMessage[Full, "ByteCount[rhs]: ", ByteCount@rhs];
+      InfoMessage[InfoFull, "ByteCount[rhs]: ", ByteCount@rhs];
 
       localCollectList = collectList /. VAR :> removeRHS@localvar;
 
       collectCoeff = Collect[rhs, localCollectList];
-      InfoMessage[Full, "ByteCount[terms collected]: ", ByteCount@collectCoeff];
+      InfoMessage[InfoFull, "ByteCount[terms collected]: ", ByteCount@collectCoeff];
 
       all = Collect[rhs, localCollectList, Simplify];
-      InfoMessage[Full, "ByteCount[simplified rhs]: ", ByteCount@all];
+      InfoMessage[InfoFull, "ByteCount[simplified rhs]: ", ByteCount@all];
 
       all
       ];
@@ -204,7 +204,7 @@ printEq[eq_] :=
 
     rhsString = ToString@CForm[rhsSplit[[1]]] <> rhsSplit[[2]];
 
-    InfoMessage[Full, " " <> ToString@lhs <> " -> " <> rhsString]];
+    InfoMessage[InfoFull, " " <> ToString@lhs <> " -> " <> rhsString]];
 
 (* Return the names of any gridfunctions used in the calculation *)
 calculationUsedGFs[calc_] :=
@@ -255,7 +255,8 @@ calculationAllUsedShorthands[calc_] :=
 
 calculationSymbols[calc_] :=
   Module[{allAtoms},
-    allAtoms = Union[Level[lookup[calc, Equations], {-1}],  Level[Map[Last, lookup[calc,PartialDerivatives]], {-1}]];
+    allAtoms = Union[Level[lookup[calc, Equations], {-1}] (*,  
+                     Level[Map[Last, lookup[calc,PartialDerivatives]], {-1}] *) ];
     Cases[allAtoms, x_Symbol]];
 
 calculationSymbolsLHS[calc_] :=
@@ -393,7 +394,7 @@ CreateCalculationFunction[calc_, debug_] :=
 
   numeq = Length@eqs;
 
-  InfoMessage[Full, "number of equations in calculation: ", numeq];
+  InfoMessage[InfoFull, "number of equations in calculation: ", numeq];
 
   VerifyCalculation[cleancalc];
 
@@ -403,13 +404,13 @@ CreateCalculationFunction[calc_, debug_] :=
 
   InfoMessage[Terse, "Creating calculation function: " <> functionName];
 
-  InfoMessage[Full, " ", Length@shorts, " shorthands"];
-  InfoMessage[Full, " ", Length@gfs, " grid functions"];
-  InfoMessage[Full, " ", Length@groups, " groups"];
+  InfoMessage[InfoFull, " ", Length@shorts, " shorthands"];
+  InfoMessage[InfoFull, " ", Length@gfs, " grid functions"];
+  InfoMessage[InfoFull, " ", Length@groups, " groups"];
 
-  InfoMessage[Full, "Shorthands: ", shorts];
-  InfoMessage[Full, "Grid functions: ", gfs];
-  InfoMessage[Full, "Groups: ", Map[groupName, groups]];
+  InfoMessage[InfoFull, "Shorthands: ", shorts];
+  InfoMessage[InfoFull, "Grid functions: ", gfs];
+  InfoMessage[InfoFull, "Groups: ", Map[groupName, groups]];
 
    If[Length@lookupDefault[cleancalc, CollectList, {}] > 0,
 
@@ -419,7 +420,7 @@ CreateCalculationFunction[calc_, debug_] :=
                  eqs[[i]] ], {i, 1, Length@eqs}]
    ];
 
-  InfoMessage[Full, "Equations:"];
+  InfoMessage[InfoFull, "Equations:"];
 
   Map[Map[printEq, #]&, eqs];
 
@@ -487,7 +488,7 @@ CreateCalculationFunction[calc_, debug_] :=
          InfoMessage[Warning, "> 1 loop in thorn -> scheduling in source code, incompatible with Multipatch!"];
        ];
 
-       InfoMessage[Full, "grepSync from eqLoop: ",GrepSyncGroups[eqLoop]];
+       InfoMessage[InfoFull, "grepSync from eqLoop: ",GrepSyncGroups[eqLoop]];
 
        InsertSyncFuncName[eqLoop, lookup[cleancalc, Name]],
       {}]}]];
@@ -633,7 +634,7 @@ equationLoop[eqs_, gfs_, shorts_, incs_, groups_, syncGroups_, pddefs_, where_, 
 (*  If[Not@derivSwitch, actualSyncGroups = {}];  only sync when derivs are taken *)
 
   If[Length@actualSyncGroups > 0,
-    InfoMessage[Full, "Synchronizing groups: ", actualSyncGroups];
+    InfoMessage[InfoFull, "Synchronizing groups: ", actualSyncGroups];
      syncCode = Map[syncGroup, actualSyncGroups];
 
     AppendTo[code, CommentedBlock["Synchronize the groups that have just been set", syncCode]];

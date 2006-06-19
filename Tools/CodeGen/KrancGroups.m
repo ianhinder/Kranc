@@ -25,6 +25,7 @@
 (****************************************************************************)
 
 BeginPackage["sym`"];
+{Timelevels}
 EndPackage[];
 
 BeginPackage["KrancGroups`", 
@@ -51,6 +52,8 @@ SetGroupVariables;
 VerifyGroup;
 VerifyGroupName;
 SetGroupName;
+AddGroupExtra;
+GroupTimelevels;
 
 Begin["`Private`"];
 
@@ -64,7 +67,7 @@ representation without other code having to be rewritten.
 The extras can be any of the following:
 
 Tags -> {tag1, tag2, ...}
-
+Timelevels -> x
 
 
   *)
@@ -80,8 +83,11 @@ CreateGroup[name_, vars_, extras_] :=
     VerifyList[vars];
     VerifyList[extras];
     g = Join[{name, vars}, extras];
-    InfoMessage[Full, "Created group: ", g];
+    InfoMessage[InfoFull, "Created group: ", g];
     Return[g]];
+
+AddGroupExtra[group_, extra_] :=
+  Append[group, extra];
 
 
 VerifyGroup[group_] :=
@@ -94,6 +100,12 @@ VerifyGroupName[groupName_] :=
   If[!StringQ[groupName],
     ThrowError["Not a group name:", groupName],
     True];
+
+GroupTimelevels[g_] :=
+  Module[{extras},
+    extras = Drop[g, 2];
+    lookupDefault[extras, Timelevels, False]];
+
 
 
 groupName[g_] := First[g];
@@ -219,7 +231,13 @@ containingGroups[vars_, groups_] :=
 qualifyGFName[gfname_, allgroups_, defaultImp_] := 
   If[StringQ@gfname && StringMatchQ[gfname, "*::*"],
      gfname,
-     implementationFromGroupName@qualifyGroupName[First@containingGroups[{gfname}, allgroups], defaultImp] <> "::" <>ToString@gfname
+     
+     Module[{groupName, imp, newGFname},
+       groupName = First[containingGroups[{gfname}, allgroups]];
+       imp = implementationFromGroupName[qualifyGroupName[groupName, defaultImp]];
+       newGFname = imp <> "::" <> ToString[gfname];
+       newGFname
+]
   ];
 
 

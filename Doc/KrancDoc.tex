@@ -2,6 +2,7 @@
 
 \usepackage{tabularx}
 \usepackage{graphicx}
+\usepackage{alltt}
 
 \addtolength{\oddsidemargin}{-0.25in}
 \addtolength{\textwidth}{1in}
@@ -54,9 +55,10 @@ to produce efficient parallelized production codes.  Our work is
 motivated by the field of numerical relativity, where Kranc is used as
 a research tool by the authors.  The initial version of Kranc was
 described in \cite{KrancPaper}, and subsequent enhancements in
-\cite{IHPhDThesis}.  The material in this document is drawn from these
-two sources, and has been updated to be consistent with the current
-version of Kranc.
+\cite{IHPhDThesis}.  The user-visible portion of Kranc has
+subsequently been redesigned.  The material in this document is drawn
+from these two sources, and has been updated to be consistent with the
+current version of Kranc.
 
 \section{Cactus}
 
@@ -96,59 +98,39 @@ format.
 These tasks are completely divorced from the physics and numerical
 analysis side of the problem, but are necessary in most numerical
 codes.  
+
 \section{Overview of the Kranc system}
 
-There are five types of Kranc thorn:
+Kranc provides a Mathematica function called {\em CreateThorn}.  The
+user must construct arguments and data structures for this function
+describing the thorn they wish to create.  A Kranc thorn can:
+
 \begin{itemize}
-\item A {\em base thorn} defines the grid functions which the
-simulation will use.  
-\item A {\em MoL thorn} computes the right hand sides of the evolution
-equations so that the time integrator can compute the evolved
-variables at the next time step.  This is the most important type of
-thorn as it determines the system of partial differential equations
-being solved.  The time integration methods in Cactus require that
-those grid functions containing evolved variables must be registered
-as such, and the MoL thorn performs this registration.
-\item A {\em setter thorn} performs a user-specified calculation at
-each point of the grid.  This will typically set certain grid
-variables as functions of others, and can be used for various purposes
-including making a change of variables or computing intermediate
-quantities from evolved variables.
-\item A {\em translator thorn} is a special case of a setter thorn
-which converts between the evolved variables and some other set of
-variables (for example, the ADMBase variables used by initial data and
-analysis thorns in the context of numerical relativity)
-\item An {\em evaluator thorn} computes quantities such as norms and
-constraints that are used in the analysis of the constructed solution.
-The calculations are invoked only when the quantities concerned are
-output to permanent storage, which improves efficiency when output is
-not required at each time step.
+\item Define the grid functions which the simulation will use.
+\item Compute the right hand sides of evolution equations so that the
+time integrator can compute the evolved variables at the next time
+step.  The time integration methods in Cactus require that those grid
+functions containing evolved variables must be registered as such, and
+the MoL thorn performs this registration.
+\item Performs a user-specified calculation at each point of the grid.
+This will typically set certain grid variables as functions of others,
+and can be used for various purposes including making a change of
+variables or computing intermediate or analysis quantities from
+evolved variables.
 \end{itemize}
-These five thorn types allow complete codes to be assembled.
 
-Common to many of these thorn types is the idea of assigning new
-values to grid functions in a loop over grid points based upon
-evaluating expressions involving other grid functions. To encapsulate
-this, we define a Kranc structure called a {\em
-calculation}. Calculations contain lists of assignment statements for
-different grid functions, and these are evaluated at each point on the
-grid.  Calculations can also contain temporary variables called {\em
-shorthands} into which are placed intermediate expressions which are
-used later in the calculation.  Many of the thorn types are based
-around calculation structures.
-
+The most important data structure in Kranc is a {\em Calculation}
+structure. It encapsulates the idea of assigning new values to grid
+functions in a loop over grid points based upon evaluating expressions
+involving other grid functions. Calculations contain lists of
+assignment statements for different grid functions, and these are
+evaluated at each point on the grid.  Calculations can also contain
+temporary variables called {\em shorthands} into which are placed
+intermediate expressions which are used later in the
+calculation. Calculations also contain additional information needed
+by the Kranc system, such as a name for the calculation.
 
 \chapter{Using Kranc}
-
-The user only needs to be concerned with calling functions from the
-KrancThorns package.  This package contains functions for creating the
-different types of Kranc thorn.
-
-The different types of Cactus thorn used in a Kranc arrangement are
-the MoL, setter, base, translator and evaluator thorns. The
-KrancThorns package provides functions to create thorns of these types
-given high level descriptions.  These functions are the ones directly
-called by users.
 
 \section{Types of arguments}
 
@@ -160,30 +142,33 @@ a suitable default will be chosen.  Positional arguments are useful
 when there are few arguments to a function, and their meaning is clear
 in the calling context.  Named arguments are preferred when there are
 many arguments, as the argument names are given explicitly in the
-calling context.
+calling context. Named arguments are given after the positional
+arguments in the form \verb|ArgumentName -> argumentvalue|.  For
+example:
 
-For each type of Kranc thorn, there is a function to create it ({\tt
-Create*Thorn}).  There is a certain set of named arguments (``Common
-named arguments'') which can be passed to any of these functions
-(e.g.~the name of the Thorn to create, where to create it, etc).
-Then, for each type of thorn, there is a specific set of named
-arguments specifically for that thorn type.  All of the functions
-accept some positional arguments as well.
-%
+\begin{center}
+\begin{minipage}{0.8 \textwidth}
+\begin{verbatim}
+f[x, y, Sum -> True, Verbose -> True]
+\end{verbatim}
+\end{minipage}
+\end{center}
+Here the x and y are positional arguments, and Sum and Verbose are
+named arguments.
 
-\section{Common data structures}
+\section{Data structures}
 
-Kranc consists of several packages which need to pass data between
-themselves in a structured way.  Mathematica does not have the concept
-of a C++ class or a C structure, in which collections of named objects
-are grouped together for ease of manipulation.  Instead, we have
-defined a {\em Kranc structure} as a list of rules of the form {\tt
-{\it key} -> {\it value}}.  We have chosen to use the Mathematica rule
-symbol ``{\tt ->}'' for syntactic convenience.
-%
+The user needs to pass information to Kranc in a structured way.
+Mathematica does not have the concept of a C++ class or a C structure,
+in which collections of named objects are grouped together for ease of
+manipulation.  Instead, we have defined a {\em Kranc structure} as a
+list of rules of the form {\tt {\it key} -> {\it value}}.  We have
+chosen to use the Mathematica rule symbol ``{\tt ->}'' for syntactic
+convenience.
+
 For example, one might describe a person using a ``Person'' structure
 as follows:
-%
+
 \begin{center}
 \begin{minipage}{0.8 \textwidth}
 \begin{verbatim}
@@ -194,16 +179,130 @@ alice = {Name -> "Alice",
 \end{minipage}
 \end{center}
 
-Once a structure has been built up, it can be parsed with the {\tt
-lookup} function in the MapLookup package.  {\tt lookup[structure,
-key]} returns the value in {\tt structure} corresponding to {\tt key}.
-For example, {\tt lookup[alice, Age]} would return the number 20.
-This usage mirrors what is known as an association list (or alist) in
-LISP style languages.
-%
 Based on this concept a number of data structures have been defined
-which will be used to describe the thorns to construct.  Each of these
+which will be used to describe the thorn to construct.  Each of these
 data structures is introduced below.
+
+
+\subsection{Data structure: Calculation}
+
+Calculation structures are the core of the Kranc system. A Calculation
+structure has the following form:
+
+\begin{center}
+\begin{minipage}{0.8 \textwidth}
+\begin{verbatim}
+{
+  Name -> name,
+  Schedule -> schedulestring,
+  Shorthands -> shorthandlist,
+  CollectList -> collectlist,
+  Equations -> equationlist
+}
+\end{verbatim}
+\end{minipage}
+\end{center}
+
+The {\it Shorthands} and {\it CollectList} entries are optional.
+
+{\it name} is a string which will be used as the function name in
+Cactus, as well as the base of the filename of the source file
+implementing the calculation in the generated thorn. For example, 
+
+\begin{center}
+\begin{minipage}{0.8 \textwidth}
+\begin{verbatim}
+Name -> "wave_calc_rhs"
+\end{verbatim}
+\end{minipage}
+\end{center}
+
+{\it schedulestring} is a Cactus schedule specification describing
+when in the simulation the calculation will be performed.  At its
+simplest, it can be given as one of the following:
+\begin{itemize}
+\item {\tt "at INITIAL"}
+\item {\tt "in MoL\_CalcRHS"}
+\item {\tt "at ANALYSIS"}
+\end{itemize}
+so that the calculation is performed in either the initial data time
+bin, the schedule group for calculating right hand sides of evolution
+equations, or the analysis time bin.
+
+{\it shorthandlist} is a list of variables which are to be considered as
+shorthands for the purposes of this calculation.  These are variables
+which are defined locally in the loop and are not grid functions
+defined over the whole grid.  They are used as temporary intermediate
+variables when setting more complicated grid functions. For example,
+\begin{center}
+\begin{minipage}{0.8 \textwidth}
+\begin{verbatim}
+Shorthands -> {a,b}
+\end{verbatim}
+\end{minipage}
+\end{center}
+would define two shorthands called $a$ and $b$ which can be assigned
+to and used in the equations.
+
+{\it equationlist} is a list of assignments to perform in the
+calculation loop. Each equation is of the form
+\begin{center}
+\begin{minipage}{0.8 \textwidth}
+\begin{verbatim}
+variable -> expression
+\end{verbatim}
+\end{minipage}
+\end{center}
+When the calculation is performed, for each point in the grid, {\it
+expression} is evaluated and placed into the grid function {\it
+variable}.  Here {\it expression} may contain partial derivatives of
+grid functions which have been defined in a PartialDerivatives
+structure. {\it variable} may be either a grid function or a
+shorthand.  Using the notation {\tt dot[{\it gf}]} for {\it variable}
+represents a time derivative of the grid function {\it gf}; this
+should be used when the calculation is scheduled in {\tt MoL\_CalcRHS}
+for calculating the right hand sides of the evolution equations.
+
+The arrangement of the terms in the equations can have a marked effect
+on both compile time and run time.  It is often helpful to tell
+Mathematica to collect the coefficients of certain types of term,
+rather than expanding out entire expressions.  To this end, the user
+can include a {\em CollectList} entry in a calculation; this is a list
+of variables whose coefficients should be collected during
+simplification.
+
+Note that the system is not designed to allow the same grid function
+to be set more than once in a single loop of a calculation. This
+limitation may be removed in the future.
+
+The following example is taken from the Kranc implementation of the
+NOR formulation of Einstein's equations.  It is a calculation which
+describes the time evolution equation for the lapse function $\alpha$
+in {\em harmonic slicing}. It uses the TensorTools package to
+represent tensorial quantities.
+
+\begin{center}
+\begin{minipage}{0.8 \textwidth}
+\begin{verbatim}
+lapseEvolveCalc = 
+{
+  Name -> "nor_harmonic_slicing",
+  Schedule -> {"in MoL_CalcRHS"},
+  Shorthands -> {trK, hInv[ua,ub]},
+  Equations -> 
+  {
+     hInv[ua,ub] -> MatrixInverse[h[ua,ub]],
+     trK -> K[la,lb] hInv[ua,ub],
+     dot[alpha] -> alpha^2 trK
+  }
+};
+\end{verbatim}
+\end{minipage}
+\end{center}
+(The {\it MatricInverse} function is provided by TensorTools to
+generate an expression for the inverse matrix.)
+
+
 
 \subsection{Data structure: PartialDerivatives}
 
@@ -347,78 +446,32 @@ generation functions.
 
 A {\tt GroupDefinition} structure lists the grid functions that are
 members of a specific Cactus group.  A list of such structures should
-be supplied to all the KrancThorns functions so that Kranc can
-determine which group each grid function belongs to.
+be supplied to CreateThorn function so that Kranc can determine which
+group each grid function belongs to.
 
-\subsection{Data structure: Calculation}
-
-Calculation structures are the core of the Kranc system. The user
-provides a list of equations of the form
-
+The form of a GroupDefinition structure is
 \begin{center}
 \begin{minipage}{0.8 \textwidth}
 \begin{tt}
-{\it variable} -> {\it expression}
+\{{\it groupname}, \{{\it variable1, variable2, \ldots}\}\}
 \end{tt}
 \end{minipage}
 \end{center}
-
-When the calculation is performed, for each point in the grid, {\it
-expression} is evaluated and placed into the grid function {\it
-variable}.  Here {\it expression} may contain partial derivatives of
-grid functions which have been defined in a PartialDerivatives
-structure.
-
-The user may specify intermediate (non-grid) variables called {\em
-shorthands} which can be used as {\em variable} for precomputing
-quantities which will be used later in the calculation.  To identify
-these variables as shorthands, they must be listed in a {\em
-Shorthands} entry of the Calculation.
-
-The arrangement of the terms in the equations can have a marked effect
-on both compile time and run time.  It is often helpful to tell
-Mathematica to collect the coefficients of certain types of term,
-rather than expanding out entire expressions.  To this end, the user
-can include a {\em CollectList} entry in a calculation; this is a list
-of variables whose coefficients should be collected during
-simplification.
-
-There is the facility for performing multiple loops in a single
-calculation structure; this can be used to set a grid function in one
-loop, then evaluate derivatives of it in a later loop.  For this
-reason, the equations are given as a list of lists of equations.
-
-Note that the system is not designed to allow the same grid function
-to be set more than once in a single loop of a calculation.
-
-The following example is taken from the Kranc implementation of the
-NOR formulation.  It is a calculation which describes the time
-evolution equation for the lapse $\alpha$ in harmonic slicing. It uses
-the TensorTools package to represent tensorial quantities.
-
+{\it groupname} is a string, and the {\it variables} are symbols.  For
+example,
 \begin{center}
 \begin{minipage}{0.8 \textwidth}
-\begin{verbatim}
-lapseEvolveCalc = {
-  Shorthands -> {trK, hInv[ua,ub]},
-  Equations -> 
-    {{
-       hInv[ua,ub] -> MatrixInverse[h[ua,ub]],
-       trK -> K[la,lb] hInv[ua,ub],
-       dot[alpha] -> alpha^2 trK
-    }}
-};
-\end{verbatim}
+\begin{tt}
+\{"sol", \{phi, pi\}\}
+\end{tt}
 \end{minipage}
 \end{center}
+would represent a group called {\tt sol} with variables {\tt phi} and
+{\tt pi}.
 
-\subsection{Data structure: GroupCalculation}
-
-A {\tt GroupCalculation} structure associates a group name with a {\tt
-Calculation} which is used to update the grid functions in that
-group. This is used when creating evaluator thorns, where the
-calculations are triggered by requests for output for specific groups.
-
+The group name can be prefixed with the name of the Cactus
+implementation that provides the group followed by two colons
+(e.g.~``ADMBase::metric'').  
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -429,17 +482,23 @@ though it is in no way tied to it.  It is necessary to perform certain
 operations on tensorial quantities, and there was no free software
 available which met the requirements.
 
-TensorTools has the following features:
-\begin{itemize}
-\item{It expands covariant derivatives in terms of partial derivatives
-and Christoffel symbols (more than one covariant derivative can be
-defined)}
-\item{It expands Lie derivatives in terms of partial derivatives}
-\item{Dummy indices can be automatically relabelled to avoid
-conflicts}
-\item{Abstract tensor expressions can be converted into component
-expressions}
-\end{itemize}
+%% TensorTools has the following features:
+%% \begin{itemize}
+%% \item{It expands covariant derivatives in terms of partial derivatives
+%% and Christoffel symbols (more than one covariant derivative can be
+%% defined)}
+%% \item{It expands Lie derivatives in terms of partial derivatives}
+%% \item{Dummy indices can be automatically relabelled to avoid
+%% conflicts}
+%% \item{Abstract tensor expressions can be converted into component
+%% expressions}
+%% \end{itemize}
+
+%% {\bf Note: I no longer use any of the above features apart from
+%% expansion into components.  I prefer to do these type of calculation
+%% by hand.  The reason is that the way the BSSN Gammas appear from the
+%% Christoffel symbols is important, and they are not visible if you use
+%% these techniques.}
 
 \subsection{Representation of tensor quantities}
 
@@ -495,445 +554,142 @@ indices in the component form.  TensorTools was written mainly for
 automated code generation rather than symbolic manipulation; different
 kernels should be used for the different forms if this is a problem.
 
-\subsection{Covariant derivatives}
-
-TensorTools allows the user to define more than one covariant
-derivative.  The following defines a covariant derivative operator
-{\tt CD} with Christoffel symbol {\tt H}:
-%
-\mathinput{DefineConnection[CD,H]}
-%
-The function {\tt CDtoPD} is used to replace covariant derivatives
-with partial derivatives in any expression:
-%
-\mathdialogue
-{
-  CDtoPD[CD[V[ua],lb]]
-}
-{
-  $V^a,\,_b + H^a_{\phantom{a}bc} V^c$
-}
-%
-The function {\tt MakeExplicit} will automatically do this before
-converting expressions into components.  In order to convert an
-expression containing a covariant derivative into components,
-TensorTools first simplifies the expression.  In the following, $x$
-and $y$ represent expressions which may contain tensorial indices. The
-following steps are performed to simplify the expression:
-\begin{itemize}
-\item{Replace any high order covariant derivatives with repeated
-application of a first order covariant derivative.  This ensures that
-we only need to know how to evaluate a first derivative.
-$$\nabla_d \nabla_a V^b \to \nabla_d ( \nabla_a V^b)$$}
-\item{Replace the covariant derivative of a product using the Leibniz
-rule: $$ \nabla_a (x y) \to (\nabla_a x) y + x (\nabla_a y) $$}
-\item{Replace the covariant derivative of a sum using the linearity
-property: $$ \nabla_a (x + y) \to \nabla_a x + \nabla_a y $$}
-\item{Replace the covariant derivative of an arbitrary expression
-containing tensorial indices with its expansion in terms of a
-partial derivative and Christoffel symbols, one for each
-index in the expression:  e.g.~$$\nabla_a V^b \to \partial_a V^b +
-\Gamma^{b}_{\phantom{b}ac} V^c$$ }
-\end{itemize}
-
-
-\subsection{Lie derivatives}
-
-The Lie derivative of an expression $x$ with respect to a vector $V$ is
-written
-\mathinput{Lie[x,V]}
-where $V$ has been registered using {\tt DefineTensor} and is written {\em without}
-indices.  The function {\tt LieToPD} is used to replace Lie derivatives
-with partial derivatives:
-\mathdialogue
-{
-  LieToPD[Lie[T[ua,lb], V]]
-}
-{
-  $\Tud T a {b,c} V^c + \Tud T a c \Tud V c {,b} - \Tud T c b V^a_{,c}$
-}
-%
-Lie derivatives of products and sums are supported.
-%
-The function {\tt MakeExplicit} will automatically perform this replacement
-before converting expressions into components.
-
-
-\subsection{Automatic dummy index manipulation}
-
-When two expressions both containing a dummy index $b$ are multiplied
-together, one dummy index is relabelled so as not to conflict with any
-other index in the resulting expression:
-
-\mathdialogue
-{(T[la, lb]g[ub, uc])v[ub, ld, lb]}
-{$T_{ab} g^{bc} V^e_{\phantom{e}de}$}
-%
-This requires that every multiplication be checked for tensorial
-operands.  This can be a performance problem, so the feature can be
-enabled and disabled with {\tt SetEnhancedTimes[True]} and {\tt
-SetEnhancedTimes[False]}.  It is enabled by default.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-\
-
-
-
-\chapter{API reference}
-
-\section{Data structure specifications}
-\label{app:data_structures}
-
-Here we describe in detail the data structures which are used when
-calling the KrancThorns functions.
-
-\subsection{Calculation}
-\label{app:Calculation}
-
-\begin{center}
-%\begin{table}
-\begin{tabularx}{\tablewidth}{|l|l|X|}
-  \hline
-  \bf Key & \bf Type & \bf Description \\
-  \hline
-  Equations       & list of lists    & {\tt \{loop1, loop2\}} -- Each loop is a list
-                                       of rules of the form {\tt {\it variable} -> 
-                                       {\it expression}} where
-                              {\tt \it variable} is to be set from {\tt \it expression} \\
-  Shorthands (optional)  & list of symbols    & Variables which are to be considered
-                              as `shorthands' for the purposes of this calculation \\
-  Name (optional) & string  & A name for the calculation \\
-  Before (optional) & list of strings  & Function names before which the
-                              calculation should be scheduled. \\
-  After (optional)  & list of strings &  Function names after which the
-                              calculation should be scheduled. \\
-  \hline
-\end{tabularx}
-%\end{table}
-\end{center}
-
-\subsection{GroupCalculation}
-\label{app:GroupCalculation}
-
-A GroupCalculation structure is a list of two elements; the first is
-the name (a string) of a Cactus group and the second is the
-Calculation to update the variables in that group.
-
-\subsection{GroupDefinition}
-\label{GroupDefinition}
-
-A GroupDefinition structure is a list of two elements.  The first is
-the name (string) of a Cactus group and the second is the list of
-variables (symbols) belonging to that group. The group name can be
-prefixed with the name of the Cactus implementation that provides the
-group followed by two colons (e.g.~``ADMBase::metric'').  If this is
-not done, then the KrancThorns functions will attempt to guess the
-implementation name, usually using the name of the thorn being
-created.
-
-\section{KrancThorns function reference}
-\label{app:function_reference}
-
-Here we document the arguments which can be specified for the
-functions CreateBaseThorn, CreateMoLThorn, CreateSetterThorn,
-CreateTranslatorThorn and CreateEvaluatorThorn.
-
-Note that we use Mathematica syntax for function-specific section headers.
-Underscores denote function arguments, and OptArguments stands for optional
-arguments, also referred to as named arguments below.  These
-are given in the form {\tt myFunction[..., argumentName -> argumentValue]}.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\subsection{Common Named Arguments}
-\label{app:common_arguments}
-
-The following named arguments can be used in any of the Create...Thorn
-functions:
-\begin{center}
-%\begin{table}
-\begin{tabularx}{\tablewidth}{|X|l|X|X|}
-  \hline
-  \bf Argument & \bf Type & \bf Description & \bf Default\\
-  \hline
-  SystemName & string & A name for the evolution system implemented by this arrangement.
-                        This will be used for the name of the arrangement directory
-                          & ``MyPDESystem''\\
-  SystemParentDirectory & string & The directory in which to create the arrangement directory & ``.''\\
-  ThornName & string & The name to give this thorn & SystemName + thorn type\\
-  Implementation & string & The name of the Cactus implementation that this thorn defines & ThornName\\
-  SystemDescription & string & A short description of the system implemented by this arrangement & SystemName \\
-  Inherited\-Implementations & list of strings & A list of implementations to inherit from & \{\} \\
-  DeBug & Boolean & Whether or not to print debugging information during thorn generation& False\\
-  \hline
-\end{tabularx}
-%\end{table}
-\end{center}
-%\tableskip
-
-\subsection{Arguments relating to parameters}
-\label{app:parameter_arguments}
-
-The following table describes named arguments that can be specified
-for any of the thorns except CreateBaseThorn.  CreateBaseThorn is
-special because it can be used to define parameters which are
-inherited by each thorn in the arrangement, so the arguments it can be
-given are slightly different.
-
-%\tableskip
-\begin{center}
-%\begin{table}
-\begin{tabularx}{\tablewidth}{|l|l|X|l|}
-  \hline
-  \bf Argument & \bf Type & \bf Description & \bf Default\\
-  \hline
-  RealBaseParameters & list of strings & Real parameters used in this thorn but 
-                                         defined in the base thorn & \{\}\\
-  IntBaseParameters & list of strings & Integer parameters used in this thorn 
-                                        but defined in the base thorn & \{\}\\
-  RealParameters & list of strings & Real parameters defined in this thorn & \{\}\\
-  IntParameters & list of strings & Integer parameters defined in this thorn & \{\}\\
-  \hline
-\end{tabularx}
-%\end{table}
-\end{center}
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\subsection{CreateBaseThorn}
-\label{app:CreateBaseThorn}
-
-Prototype: CreateBaseThorn[groups, evolvedGroupNames, primitiveGroupNames, 
-OptArguments
-
-\subsubsection{Positional arguments}
-
-\begin{center}
-%\begin{table}
-\begin{tabularx}{\tablewidth}{|l|l|X|}
-  \hline
-  \bf Argument & \bf Type & \bf Description \\
-  \hline
-  groups              & list of GroupDefinition structures &
-
-  Definitions of any groups referred to in the other arguments.  Can
-  supply extra definitions for other groups which will be safely
-  ignored.  \\
-
-  evolvedGroupNames & list of strings &
-  
-  Names of groups containing grid functions which will be evolved by
-  MoL in any of the thorns in the arrangement. \\
-
-  primitiveGroupNames & list of strings &
-
-  Names of groups containing grid functions which will be referred to
-  during calculation of the MoL right hand sides in any of the thorns
-  in the arrangement. \\
-
-  \hline
-\end{tabularx}
-%\end{table}
-\end{center}
-
-\subsubsection{Named arguments}
-
-\begin{center}
-%\begin{table}
-\begin{tabularx}{\tablewidth}{|l|l|X|l|}
-  \hline
-  \bf Argument & \bf Type & \bf Description & \bf Default\\
-  \hline
-  RealBaseParameters & list of strings & Real parameters defined in this thorn 
-and inherited by all the thorns in the arrangement & \{\}\\
-  IntBaseParameters & list of strings & Integer parameters defined in this thorn 
-and inherited by all the thorns in the arrangement& \{\}\\
-  \hline
-\end{tabularx}
-%\end{table}
-\end{center}
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\subsection{CreateEvaluatorThorn}
-\label{app:CreateEvaluatorThorn}
-
-Prototype:CreateEvaluatorThorn[groupCalculations, groups, OptArguments]
-
-\subsubsection{Positional arguments}
-
-\begin{center}
-%\begin{table}
-\begin{tabularx}{\tablewidth}{|l|l|X|}
-  \hline
-  \bf Argument & \bf Type & \bf Description \\
-  \hline
-  groupCalculations
-  & list of GroupCalculation structures 
-  & The GroupCalculations to evaluate in order to
-    set the variables in each group
-  \\
-  groups 
-  & list of GroupDefinition structures 
-  & Definitions for each of the groups referred to in this thorn. Can
-  supply extra definitions for other groups which will be safely
-  ignored. \\
-
-  \hline
-\end{tabularx}
-%\end{table}
-\end{center}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-\subsection{CreateMoLThorn}
-\label{app:CreateMoLThorn}
-
-Prototype: CreateMoLThorn[calculation, groups, OptArguments]
+%% \subsection{Covariant derivatives}
+
+%% TensorTools allows the user to define more than one covariant
+%% derivative.  The following defines a covariant derivative operator
+%% {\tt CD} with Christoffel symbol {\tt H}:
+%% %
+%% \mathinput{DefineConnection[CD,H]}
+%% %
+%% The function {\tt CDtoPD} is used to replace covariant derivatives
+%% with partial derivatives in any expression:
+%% %
+%% \mathdialogue
+%% {
+%%   CDtoPD[CD[V[ua],lb]]
+%% }
+%% {
+%%   $V^a,\,_b + H^a_{\phantom{a}bc} V^c$
+%% }
+%% %
+%% The function {\tt MakeExplicit} will automatically do this before
+%% converting expressions into components.  In order to convert an
+%% expression containing a covariant derivative into components,
+%% TensorTools first simplifies the expression.  In the following, $x$
+%% and $y$ represent expressions which may contain tensorial indices. The
+%% following steps are performed to simplify the expression:
+%% \begin{itemize}
+%% \item{Replace any high order covariant derivatives with repeated
+%% application of a first order covariant derivative.  This ensures that
+%% we only need to know how to evaluate a first derivative.
+%% $$\nabla_d \nabla_a V^b \to \nabla_d ( \nabla_a V^b)$$}
+%% \item{Replace the covariant derivative of a product using the Leibniz
+%% rule: $$ \nabla_a (x y) \to (\nabla_a x) y + x (\nabla_a y) $$}
+%% \item{Replace the covariant derivative of a sum using the linearity
+%% property: $$ \nabla_a (x + y) \to \nabla_a x + \nabla_a y $$}
+%% \item{Replace the covariant derivative of an arbitrary expression
+%% containing tensorial indices with its expansion in terms of a
+%% partial derivative and Christoffel symbols, one for each
+%% index in the expression:  e.g.~$$\nabla_a V^b \to \partial_a V^b +
+%% \Gamma^{b}_{\phantom{b}ac} V^c$$ }
+%% \end{itemize}
+
+
+%% \subsection{Lie derivatives}
+
+%% The Lie derivative of an expression $x$ with respect to a vector $V$ is
+%% written
+%% \mathinput{Lie[x,V]}
+%% where $V$ has been registered using {\tt DefineTensor} and is written {\em without}
+%% indices.  The function {\tt LieToPD} is used to replace Lie derivatives
+%% with partial derivatives:
+%% \mathdialogue
+%% {
+%%   LieToPD[Lie[T[ua,lb], V]]
+%% }
+%% {
+%%   $\Tud T a {b,c} V^c + \Tud T a c \Tud V c {,b} - \Tud T c b V^a_{,c}$
+%% }
+%% %
+%% Lie derivatives of products and sums are supported.
+%% %
+%% The function {\tt MakeExplicit} will automatically perform this replacement
+%% before converting expressions into components.
+
+
+%% \subsection{Automatic dummy index manipulation}
+
+%% When two expressions both containing a dummy index $b$ are multiplied
+%% together, one dummy index is relabelled so as not to conflict with any
+%% other index in the resulting expression:
+
+%% \mathdialogue
+%% {(T[la, lb]g[ub, uc])v[ub, ld, lb]}
+%% {$T_{ab} g^{bc} V^e_{\phantom{e}de}$}
+%% %
+%% This requires that every multiplication be checked for tensorial
+%% operands.  This can be a performance problem, so the feature can be
+%% enabled and disabled with {\tt SetEnhancedTimes[True]} and {\tt
+%% SetEnhancedTimes[False]}.  It is enabled by default.
+
+
+\section{Creating a Kranc thorn}
+
+Prototype: CreateThorn[groups, directory, thornName, namedArgs]\\
+
+Note that if you want to use TensorTools tensors in calculations, you
+must call the CreateThornTT function instead of this one. It takes the
+same arguments, but they can be tensorial in nature.
 
 \subsubsection{Positional Arguments}
 
 \begin{center}
-%\begin{table}
 \begin{tabularx}{\tablewidth}{|l|l|X|}
   \hline
   \bf Argument & \bf Type & \bf Description \\
   \hline
-  calculation & Calculation & The calculation for setting the right hand side variables
-                              for MoL.  The equations should be of the form
-                              {\tt dot[{\it gf}] -> {\it expression}} for evolution equations, and
-                              {\tt {\it shorthand} -> {\it expression}} for shorthand definitions, which can
-                              be freely mixed in to the list.\\
-  groups & list of GroupDefinition structures 
-
-& Definitions for each of the groups referred to in this thorn. Can
-  supply extra definitions for other groups which will be safely
-  ignored. \\
+  groups & list of GroupDefinition structures & These define what groups each grid function is a member of. \\
+  directory & string & What directory to create the thorn in.  Usually ".". \\ 
+  thornName & string & The name to give the thorn. \\
+  namedArgs & Rule & The named arguments (see below) \\
   \hline
 \end{tabularx}
-%\end{table}
 \end{center}
 
 \subsubsection{Named Arguments}
 
 \begin{center}
-%\begin{table}
-\begin{tabularx}{\tablewidth}{|l|l|X|l|}
+\begin{tabularx}{\tablewidth}{|l|X|X|l|}
   \hline
   \bf Argument & \bf Type & \bf Description & \bf Default\\
   \hline
-  PrimitiveGroups & list of strings & These are the groups containing the grid functions which are
-                                      referred to but not evolved by this evolution thorn & \{\}  \\
+  Calculations & list of Calculation structures & The calculations to perform & \{\} \\
+
+  DeclaredGroups & list of strings & The names of groups present in the {\tt groups} argument 
+                                     which are to be created as new groups by this thorn. & \{\} \\
+
+  PartialDerivatives & a PartialDerivatives structure & The partial derivative definitions that
+                                                        are used in this thorn (optional). & \{\} \\
+
+  RealParameters & list of strings & A list of real-valued parameters that this thorn will
+                                     define and use.  They will all default to zero. (optional) & \{\} \\
+
+  IntParameters & list of strings & A list of integer-valued parameters that this thorn will
+                                     define and use.  They will all default to zero. (optional) & \{\} \\
+
+  KeywordParameters & list of KeywordParameterDefinition structures & A list of parameter definition structures for all the keyword parameters which this thorn will define and use.  (optional) & \{\} \\
+
+  InheritedImplementations & list of strings & A list of all the implementations which this thorn
+                                               will inherit from.  This is necessary to use grid functions
+                                               provided by these implementations. (optional) & \{\} \\
   \hline
 \end{tabularx}
-%\end{table}
 \end{center}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{CreateSetterThorn}
-\label{app:CreateSetterThorn}
-
-Prototype: CreateSetterThorn[calculation, OptArguments]
-
-\subsubsection{Positional Arguments}
-
-\begin{center}
-%\begin{table}
-\begin{tabularx}{\tablewidth}{|l|l|X|}
-  \hline
-  \bf Argument & \bf Type & \bf Description \\
-  \hline
-  calculation & Calculation & The calculation to be performed \\
-
-  groups & list of GroupDefinition structures 
-
-& Definitions for each of the groups referred to in this thorn. Can
-  supply extra definitions for other groups which will be safely
-  ignored. \\
-
-  \hline
-\end{tabularx}
-%\end{table}
-\end{center}
-
-\subsubsection{Named Arguments}
-
-\begin{center}
-%\begin{table}
-\begin{tabularx}{\tablewidth}{|l|l|X|l|}
-  \hline
-  \bf Argument & \bf Type & \bf Description & \bf Default\\
-  \hline
-  SetTime (optional) & string & ``initial\_and\_poststep'', 
-                     ``initial\_only''
-                     or ``poststep\_only'' & ``initial\_and\_poststep'' \\
-  \hline
-\end{tabularx}
-%\end{table}
-\end{center}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-\subsection{CreateTranslatorThorn}
-\label{app:CreateTranslatorThorn}
-
-Prototype:CreateTranslatorThorn[groups, OptArguments]
-
-\subsubsection{Positional Arguments}
-
-\begin{center}
-%\begin{table}
-\begin{tabularx}{\tablewidth}{|l|l|X|}
-  \hline
-  \bf Argument & \bf Type & \bf Description \\
-  \hline
-
-  groups & list of GroupDefinition structures 
-
-& Definitions for each of the groups referred to in this thorn. Can
-  supply extra definitions for other groups which will be safely
-  ignored. \\
-  \hline
-\end{tabularx}
-%\end{table}
-\end{center}
-
-\subsubsection{Named Arguments}
-
-\begin{center}
-%\begin{table}
-\begin{tabularx}{\tablewidth}{|l|l|X|}
-  \hline
-  \bf Argument & \bf Type & \bf Description\\
-  \hline
-  TranslatorInCalculation & Calculation & The calculation to set the evolved 
-                                          variables from some other source  \\
-  TranslatorOutCalculation & Calculation & The calculation to convert the evolved
-                                           variables back into some other set of 
-                                           variables  \\
-  \hline
-\end{tabularx}
-%\end{table}
-\end{center}
 
 
 

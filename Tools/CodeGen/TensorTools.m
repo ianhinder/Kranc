@@ -120,9 +120,11 @@ ReflectionSymmetriesOfTensor;
 HasTensorAttribute;
 GetTensorAttribute;
 SetTensorAttribute;
+TensorAttributes;
 Symmetries;
 TensorWeight;
 TensorSpecial;
+TensorManualCartesianParities;
 IsTensor;
 
 (* This is for compatibility with MathTensor notation *)
@@ -597,11 +599,15 @@ swapComponents[T:Tensor[K_, inds__], pos1_, pos2_] :=
     S];
 
 makePreferenceEquation[Tensor[K_, inds__], pos1_, pos2_] :=
-  Module[{eq, eqE},
+  Module[{eq (*, eqE*)},
     eq = Tensor[K, inds] -> swapComponents[Tensor[K, inds], pos1, pos2];
-    eqE = eq /. componentNameRule;
+(*    eqE = eq /. componentNameRule;*)
     Evaluate[eq[[1]]] = eq[[2]];
-    Evaluate[eqE[[1]]] = eqE[[2]]];
+
+(* This should not be necessary if the above has worked.  Right? *)
+(*    Evaluate[eqE[[1]]] = eqE[[2]] *)
+
+];
 
 AssertSymmetricIncreasing[Tensor[K_, a_, b_]] :=
   AssertSymmetricIncreasing[Tensor[K, a ,b], a, b];
@@ -1035,6 +1041,12 @@ CheckTensors[x_, y_] :=
     Print["ys == ", ys];*)
 
     If[ x === 0 || y === 0, Return[True]];
+
+    (* Allow scalar functions to be added to tensorial expressions *)
+    If[ Length[xs] === 0 || Length[ys] === 0, Return[True]];
+
+
+
     If[ Length[ys] == 0, Return[True]];
 
     If[!(xs === ys),
@@ -1051,7 +1063,7 @@ CheckTensors[t:Tensor[k_, is__]] :=
 
 CheckTensors[t:f_[TensorIndex[__]..]] :=
   Module[{},
-    If[!(f === Tensor || f === Eps),
+    If[!(f === Tensor || f === Eps || f == KroneckerDelta),
        ThrowError["Tensor index in an object that is not a declared tensor.", t]];
        ];
 

@@ -154,7 +154,9 @@ Quote[x_] := {"\"", x, "\""};
 renderValue[type_, value_] :=
   If[type == "KEYWORD",
     Quote[value],
-    value];
+    If[type == "CCTK_REAL",
+      ToString[CForm[value]],
+    value]];
 
 (* Return a block defining a parameter with the given
    parameterSpec (defined above).  This is used for defining new

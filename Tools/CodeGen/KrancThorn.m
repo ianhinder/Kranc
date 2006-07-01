@@ -592,7 +592,7 @@ createKrancScheduleFile[calcs_, groups_, evolvedGroups_, nonevolvedGroups_, thor
       Comment       -> "register symmetries"
     };
 
-    globalStorageGroups = Join[Map[simpleGroupStruct[#, 1] &, nonevolvedGroups], 
+    globalStorageGroups = Join[Map[simpleGroupStruct[#, nonevolvedTimelevels[groupFromName[#, groups]]] &, nonevolvedGroups], 
                                Map[simpleGroupStruct[#, evolutionTimelevels] &, evolvedGroups]];
 
     scheduledFunctions = 

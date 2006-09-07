@@ -565,8 +565,63 @@ void GenericFD_GetBoundaryInfo(cGH *cctkGH, CCTK_INT *cctk_lsh, CCTK_INT *cctk_b
 			       CCTK_INT *imax, CCTK_INT *is_symbnd, 
 			       CCTK_INT *is_physbnd, CCTK_INT *is_ipbound);
 
+/* Summation by parts */
+
+static inline CCTK_REAL sbp_deriv_x(int i, int j, int k, 
+                                    CCTK_INT min[], CCTK_INT max[], 
+                                    CCTK_REAL d,
+                                    CCTK_REAL *var, CCTK_REAL *q, cGH *cctkGH)
+{
+  CCTK_REAL dvarl = 0;
+  int ni = cctkGH->cctk_lsh[0];
+  for (int ii=min[i]-1; ii<=max[i]-1; ++ii) {
+    dvarl += q[ii+ni*i]*var[CCTK_GFINDEX3D (cctkGH, ii, j, k)];
+  }
+  dvarl /= d;
+  return dvarl;
+}
+
+static inline CCTK_REAL sbp_deriv_y(int i, int j, int k, 
+                                    CCTK_INT min[], CCTK_INT max[], 
+                                    CCTK_REAL d,
+                                    CCTK_REAL *var, CCTK_REAL *q, cGH *cctkGH)
+{
+  CCTK_REAL dvarl = 0;
+  int nj = cctkGH->cctk_lsh[1];
+  for (int jj=min[j]-1; jj<=max[j]-1; ++jj) {
+    dvarl += q[jj+nj*j]*var[CCTK_GFINDEX3D (cctkGH, i, jj, k)];
+  }
+  dvarl /= d;
+  return dvarl;
+}
+
+static inline CCTK_REAL sbp_deriv_z(int i, int j, int k, 
+                                    CCTK_INT min[], CCTK_INT max[], 
+                                    CCTK_REAL d,
+                                    CCTK_REAL *var, CCTK_REAL *q, cGH *cctkGH)
+{
+  CCTK_REAL dvarl = 0;
+  int nk = cctkGH->cctk_lsh[2];
+  for (int kk=min[k]-1; kk<=max[k]-1; ++kk) {
+    dvarl += q[kk+nk*k]*var[CCTK_GFINDEX3D (cctkGH, i, j, kk)];
+  }
+  dvarl /= d;
+  return dvarl;
+}
+
+/* New calculation format */
+
+typedef void(*Kranc_Calculation)(cGH *cctkGH, CCTK_INT dir, CCTK_INT   face,
+                                 CCTK_REAL  normal[3],
+                                 CCTK_REAL  tangent1[3],
+                                 CCTK_REAL  tangent2[3],
+                                 CCTK_INT   min[3],
+                                 CCTK_INT   max[3], 
+                                 CCTK_INT   n_subblock_gfs, 
+                                 CCTK_REAL *subblock_gfs[]);
+
+void GenericFD_LoopOverEverything(cGH *cctkGH, Kranc_Calculation calc);
+void GenericFD_LoopOverBoundary(cGH *cctkGH, Kranc_Calculation calc);
+void GenericFD_LoopOverInterior(cGH *cctkGH, Kranc_Calculation calc);
+
 #endif
-
-
-
-

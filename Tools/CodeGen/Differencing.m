@@ -127,7 +127,7 @@ point. Should be checked by someone competent!
 
 BeginPackage["sym`"];
 
-{Name, Definitions, shift, spacing};
+{Name, Definitions, shift, spacing, SBPDerivative};
 
 EndPackage[];
 
@@ -145,6 +145,7 @@ DMinus::usage = "";
 DZero::usage = "";
 shift::usage = "";
 spacing::usage = "";
+ComponentDerivativeOperatorStencilWidth::usage = "";
 
 Begin["`Private`"];
 
@@ -234,10 +235,26 @@ GridFunctionDerivativesInExpression[derivOps_, expr_] :=
 (* DerivativeOperator *)
 (*************************************************************)
 
+sbpMacroDefinition[macroName_, d_] :=
+  Module[{ds = Switch[d, 1, "x", 2, "y", 3, "z"],
+          l = Switch[d, 1, "i", 2, "j", 3, "k"]},
+    FlattenBlock[{"#define ", macroName, "(u,i,j,k) (sbp_deriv_" <> ds
+    <> "(i,j,k,sbp_" <> l <> "min,sbp_" <> l <> "max,d" <> ds <> ",u,q" <> ds <> ",cctkGH))"}]    ];
 
 ComponentDerivativeOperatorMacroDefinition[componentDerivOp:(name_[inds___] -> expr_)] :=
   Module[{macroName, rhs, rhs2, i = "i", j = "j", k = "k", spacings},
+  
     macroName = ComponentDerivativeOperatorMacroName[componentDerivOp];
+
+    If[expr === SBPDerivative[1],
+      Return[sbpMacroDefinition[macroName, 1]]];
+
+    If[expr === SBPDerivative[2],
+      Return[sbpMacroDefinition[macroName, 2]]];
+
+    If[expr === SBPDerivative[3],
+      Return[sbpMacroDefinition[macroName, 3]]];
+
     rhs = DifferenceGF[expr, i, j, k];
     spacings = {spacing[1] -> 1/"dxi", spacing[2] -> 1/"dyi", spacing[3] -> 1/"dzi"};
     rhs2 = CFormHideStrings[ReplacePowers[rhs /. spacings]];
@@ -247,6 +264,23 @@ ComponentDerivativeOperatorMacroName[componentDerivOp:(name_[inds___] -> expr_)]
   Module[{stringName},
     stringName = StringJoin[Map[ToString, Join[{name}, {inds}]]];
     stringName];
+
+
+
+
+ComponentDerivativeOperatorStencilWidth[componentDerivOp:(name_[inds___] -> expr_)] :=
+  Module[{cases, nx, ny, nz},
+    cases = Union[Flatten[Cases[{expr}, shift[_] | Power[shift[_],_], Infinity]]];
+    Print[cases];
+
+    nx = Exponent[op, shift[1]];
+    ny = Exponent[op, shift[2]];
+    nz = Exponent[op, shift[3]];
+
+  ];
+
+
+
 
 (* Farm out each term of a difference operator *)
 DifferenceGF[op_, i_, j_, k_] :=

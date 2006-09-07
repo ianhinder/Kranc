@@ -127,7 +127,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts___] :=
 
     coordGroup = {"grid::coordinates", {sym`x,sym`y,sym`z,sym`r}};
     groups = Join[groupsOrig, {coordGroup}];
-    includeFiles = Join[includeFiles, {"GenericFD.h"}];
+    includeFiles = Join[includeFiles, {"GenericFD.h", "Symmetry.h", "sbp_calc_coeffs.h"}];
 
     inheritedImplementations = Join[inheritedImplementations, {"Grid",
      "GenericFD"}, CactusBoundary`GetInheritedImplementations[]];
@@ -332,6 +332,14 @@ createKrancInterface[nonevolvedGroups_, evolvedGroups_, groups_,
       ArgString -> "CCTK_INT IN ConstrainedIndex"
     };
 
+    diffCoeff = 
+    {
+      Name -> "Diff_coeff",
+      Type -> "SUBROUTINE",
+      ArgString -> "CCTK_POINTER_TO_CONST IN cctkGH, CCTK_INT IN dir, CCTK_INT IN nsize, CCTK_INT OUT ARRAY imin, CCTK_INT OUT ARRAY imax, CCTK_REAL OUT ARRAY q, CCTK_INT IN table_handle"
+    };
+
+
     (* For each group declared in this thorn, we need an entry in the
         interface file.  Each evolved group needs an associated rhs
         group, but these are constructed at a higher level and are
@@ -351,7 +359,7 @@ createKrancInterface[nonevolvedGroups_, evolvedGroups_, groups_,
     interface = CreateInterface[implementation, inheritedImplementations, 
       Join[includeFiles, CactusBoundary`GetIncludeFiles[]], groupStructures,
       UsesFunctions ->
-        Join[{registerEvolved, registerConstrained }, 
+        Join[{registerEvolved, registerConstrained,diffCoeff}, 
              CactusBoundary`GetUsedFunctions[]]];
     Return[interface];
   ];
@@ -425,7 +433,8 @@ createKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_,
   Module[{nEvolved, nPrimitive, evolvedMoLParam, evolvedGFs,
     constrainedMoLParam, genericfdStruct, realStructs, intStructs,
     allInherited, implementationNames, molImplementation,
-    userImplementations, implementations, params, paramspec, param},
+    userImplementations, implementations, params, paramspec, param,
+    verboseStruct},
 
 (*    Map[VerifyStringList, {reals, ints, inheritedReals, inheritedInts}];*)
 
@@ -476,6 +485,8 @@ createKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_,
     realStructs = Map[krancParamStruct[#, "CCTK_REAL", False] &, reals];
 (*    Print["realStructs == ", realStructs];*)
 
+    verboseStruct = krancParamStruct[{Name -> "verbose", Default -> 0}, "CCTK_REAL", False];
+
     intStructs = Map[krancParamStruct[#, "CCTK_INT", False] &, ints];
     
     keywordStructs = Map[krancKeywordParamStruct, keywords];
@@ -502,7 +513,7 @@ createKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_,
 (*    Print["userImplementations == ",   userImplementations]; *)
 
     implementations = Join[userImplementations, {genericfdStruct, molImplementation}];
-    params = Join[realStructs, intStructs, keywordStructs, {evolvedMoLParam, constrainedMoLParam}, 
+    params = Join[{verboseStruct}, realStructs, intStructs, keywordStructs, {evolvedMoLParam, constrainedMoLParam}, 
       CactusBoundary`GetParameters[evolvedGFs, evolvedGroups]];
 
     paramspec = {Implementations -> implementations,

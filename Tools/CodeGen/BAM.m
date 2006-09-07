@@ -418,7 +418,7 @@ CreateSetterSource[calcs_, debug_, opts___] :=
    "#define KRANC_" <> ToUpperCase[CodeGen`SOURCELANGUAGE] <> "\n\n",
 
    If[CodeGen`SOURCELANGUAGE == "C",
-         IncludeFile["math.h"],
+         IncludeSystemFile["math.h"],
          "\n"
       ],
 

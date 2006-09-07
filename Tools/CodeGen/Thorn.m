@@ -454,7 +454,7 @@ CreateSetterSource[calcs_, debug_, opts___] :=
    "#define KRANC_" <> ToUpperCase[CodeGen`SOURCELANGUAGE] <> "\n\n",
 
    If[CodeGen`SOURCELANGUAGE == "C",
-         IncludeFile["math.h"],
+         IncludeSystemFile["math.h"],
          "\n"
       ],
 
@@ -602,11 +602,16 @@ CreateMoLRegistrationSource[spec_, debug_] :=
             #, "rhs\"));\n"} &,
           lookup[spec, EvolvedGFs]]],
 
-      CommentedBlock["Register all the primitive grid functions with MoL",
+      (* Registering all the remaining variables as constrained is
+      just plain wrong.  Read the MoL documentation.  It is also not
+      harmless, I think. *)
+
+      (*CommentedBlock["Register all the primitive grid functions with MoL",
+      (* We should check ierr *)
       Map[{"ierr += MoLRegisterConstrained(CCTK_VarIndex(\"", 
            #, "\"));\n"} &,
-          lookup[spec, PrimitiveGFs]]],
-	"return ierr;\n"}]};
+          lookup[spec, PrimitiveGFs]]],  *)
+	"return;\n"}]};
 
       CodeGen`SOURCELANGUAGE = lang;
 
@@ -839,7 +844,7 @@ CreateMoLBoundariesSource[spec_] :=
 
    Map[IncludeFile,
         {"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h", 
-         "cctk_Faces.h", "util_Table.h"}],
+         "cctk_Faces.h", "util_Table.h", "Symmetry.h"}],
 
    {"\n\n",
       "/* the boundary treatment is split into 3 steps:    */\n",
@@ -852,7 +857,7 @@ CreateMoLBoundariesSource[spec_] :=
 
    cleanCPP@DefineCCTKFunction[lookup[spec,ThornName] <> "_CheckBoundaries",
    "void",
-     {"return 0;\n"}],
+     {"return;\n"}],
 
 
    cleanCPP@DefineCCTKFunction[lookup[spec,ThornName] <> "_ApplyBoundConds", 
@@ -870,7 +875,7 @@ CreateMoLBoundariesSource[spec_] :=
        Map[scalarBCGroup,    groups],
        Map[scalarBCGF,       gfs],
 
-      "return ierr;\n"
+      "return;\n"
      }],
 
      "\n\n\n",
@@ -1169,7 +1174,9 @@ CreateMPCharSource[spec_, debug_] :=
 
 
    Map[IncludeFile,
-        {"assert.h", "math.h", "cctk.h", "cctk_Arguments.h", "cctk_Parameters.h"}],
+        {"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h"}],
+   Map[IncludeSystemFile,
+        {"assert.h", "math.h"}],
 
 (* declare lapack function DGESV: compute solution to system of linear equations  E * X = B *)
 {"\n/* declare lapack function DGESV for solving linear systems */\n",

@@ -24,7 +24,7 @@ BeginPackage["sym`"];
 
 {GridFunctions, Shorthands, Equations, t, DeclarationIncludes,
 LoopPreIncludes, GroupImplementations, PartialDerivatives, Dplus1,
-Dplus2, Dplus3, Boundary, Interior, Where, AddToStencilWidth}
+Dplus2, Dplus3, Boundary, Interior, Where, AddToStencilWidth, Everywhere}
 
 {INV, SQR, CUB, QAD, dot, pow, exp} 
 
@@ -375,12 +375,19 @@ GrepSyncGroups[x_, func_] := Module[{pick},
     pick = Map[StringReplace[#,  func <> "//" -> ""] &, pick]
     ]
 
+declareSubblockGFs[sbgfs_, counter_] :=
+  If[Length[sbgfs] == 0,
+    {},
+    Join[{DefineVariable[sbgfs[[1]], "CCTK_REAL", "*subblock_gfs[" <> ToString[counter] <> "]"]},
+         declareSubblockGFs[Rest[sbgfs], counter + 1]]];
+
 (* Calculation function generation *)
 
 CreateCalculationFunction[calc_, debug_] :=
   Module[{gfs, allSymbols, knownSymbols,
           shorts, eqs, syncGroups, parameters,
-          functionName, dsUsed, groups, pddefs, cleancalc, numeq, eqLoop, GrepSYNC, where, addToStencilWidth},
+          functionName, dsUsed, groups, pddefs, cleancalc, numeq, eqLoop, GrepSYNC, where, 
+          addToStencilWidth},
 
   cleancalc = removeUnusedShorthands[calc];
   shorts = lookupDefault[cleancalc, Shorthands, {}];
@@ -391,6 +398,7 @@ CreateCalculationFunction[calc_, debug_] :=
   pddefs = lookupDefault[cleancalc, PartialDerivatives, {}];
   where = lookupDefault[cleancalc, Where, Everywhere];
   addToStencilWidth = lookupDefault[cleancalc, AddToStencilWidth, 0];
+  subblockGFs = lookupDefault[cleancalc, SubblockGridFunctions, {}];
 
   numeq = Length@eqs;
 
@@ -400,6 +408,7 @@ CreateCalculationFunction[calc_, debug_] :=
 
   gfs = allVariables[groups];
   functionName = ToString@lookup[cleancalc, Name];
+  bodyFunctionName = functionName <> "_Body";
   dsUsed = oldDerivativesUsed[eqs];
 
   InfoMessage[Terse, "Creating calculation function: " <> functionName];
@@ -454,17 +463,32 @@ CreateCalculationFunction[calc_, debug_] :=
      Module[{},
        ThrowError["Unknown symbols in calculation.  Symbols are:", unknownSymbols, "Calculation is:", cleancalc]]];
 
-  DefineCCTKSubroutine[lookup[cleancalc, Name],
-  { DeclareGridLoopVariables[],
+  {
+  DefineFunction[bodyFunctionName, "void", "cGH *cctkGH, CCTK_INT dir, CCTK_INT face, CCTK_REAL normal[3], CCTK_REAL tangent1[3], CCTK_REAL tangent2[3], CCTK_INT min[3], CCTK_INT max[3], CCTK_INT n_subblock_gfs, CCTK_REAL *subblock_gfs[]", 
+  { 
+    "DECLARE_CCTK_ARGUMENTS\n",
+    "DECLARE_CCTK_PARAMETERS\n\n",
+    DeclareGridLoopVariables[],
     DeclareFDVariables[],
     declareVariablesForCalculation[cleancalc],
     declarePrecomputedDerivatives[dsUsed],
     DeclareDerivatives[pddefs, eqs],
+    declareSubblockGFs[subblockGFs, 0],
+
+    ConditionalOnParameterTextual["verbose > 1",
+      "CCTK_VInfo(CCTK_THORNSTRING,\"Entering " <> bodyFunctionName <> "\");\n"],
 
     CommentedBlock["Include user-supplied include files",
       Map[IncludeFile, lookupDefault[cleancalc, DeclarationIncludes, {}]]],
 
     InitialiseFDVariables[],
+
+    (* This is a very coarse test *)
+
+    If[Cases[{pddefs}, SBPDerivative[_], Infinity] != {},
+      CommentedBlock["Compute Summation By Parts derivatives",
+        IncludeFile["sbp_calc_coeffs.h"]],
+      {}],
 
     If[gfs != {},
       {
@@ -478,7 +502,7 @@ CreateCalculationFunction[calc_, debug_] :=
        (* Have removed ability to include external header files here.
           Can be put back when we need it. *)
 
-	eqLoop = Map[equationLoop[#, gfs, shorts, {}, groups, syncGroups, pddefs, where, addToStencilWidth] &, eqs]};
+	eqLoop = Map[equationLoop[#, gfs, shorts, subblockGFs, {}, groups, syncGroups, pddefs, where, addToStencilWidth] &, eqs]},
 
        (* search for SYNCs *)
        If[numeq <= 1,
@@ -490,8 +514,24 @@ CreateCalculationFunction[calc_, debug_] :=
 
        InfoMessage[InfoFull, "grepSync from eqLoop: ",GrepSyncGroups[eqLoop]];
 
-       InsertSyncFuncName[eqLoop, lookup[cleancalc, Name]],
-      {}]}]];
+       InsertSyncFuncName[eqLoop, lookup[cleancalc, Name]];
+       ConditionalOnParameterTextual["verbose > 1",
+         "CCTK_VInfo(CCTK_THORNSTRING,\"Leaving " <> bodyFunctionName <> "\");\n"],
+      {}]
+    }],
+  Switch[where, 
+    Everywhere, DefineCCTKSubroutine[functionName, "GenericFD_LoopOverEverything(cctkGH, &" <> bodyFunctionName <> ");\n"],
+    Interior, DefineCCTKSubroutine[functionName, "GenericFD_LoopOverInterior(cctkGH, &" <> bodyFunctionName <> ");\n"],
+    Boundary, DefineCCTKSubroutine[functionName, "GenericFD_LoopOverBoundary(cctkGH, &" <> bodyFunctionName <> ");\n"],
+    PenaltyPrim2Char, DefineFunction[functionName, "CCTK_INT", 
+               "CCTK_POINTER_TO_CONST const cctkGH_, CCTK_INT const dir, CCTK_INT const face, CCTK_REAL const * restrict const base_, CCTK_INT const * restrict const lbnd, CCTK_INT const * restrict const lsh, CCTK_INT const rhs_flag, CCTK_INT const num_modes, CCTK_POINTER const * restrict const modes, CCTK_POINTER const * restrict const speeds", 
+                  "GenericFD_PenaltyPrim2Char(cctkGH, &" <> bodyFunctionName <> ");\n"],
+      _, ThrowError["Unknown 'Where' entry in calculation " <> functionName <> ": " <> ToString[where]]
+     ]
+  }];
+
+
+
 
 
 allVariables[groups_] :=
@@ -565,7 +605,8 @@ splitPDDefsWithShorthands[pddefs_, shorthands_] :=
 
 
 
-equationLoop[eqs_, gfs_, shorts_, incs_, groups_, syncGroups_, pddefs_, where_, addToStencilWidth_] :=
+equationLoop[eqs_, gfs_, shorts_, subblockGFs_, incs_, groups_, syncGroups_, 
+             pddefs_, where_, addToStencilWidth_] :=
   Module[{rhss, lhss, gfsInRHS, gfsInLHS, localGFs, localMap, eqs2,
           derivSwitch, actualSyncGroups, code, syncCode, loopFunction},
 
@@ -584,22 +625,23 @@ equationLoop[eqs_, gfs_, shorts_, incs_, groups_, syncGroups_, pddefs_, where_, 
 
     {defsWithoutShorts, defsWithShorts} = splitPDDefsWithShorthands[pddefs, shorts];
 
+(*    Map[ComponentDerivativeOperatorStencilWidth, pddefs];*)
 
     (* This is for the custom derivative operators pddefs *)
     eqs2 = ReplaceDerivatives[defsWithoutShorts, eqs, True];
     eqs2 = ReplaceDerivatives[defsWithShorts, eqs2, False];
 
     checkEquationAssignmentOrder[eqs2, shorts];
-   code = {InitialiseGridLoopVariables[derivSwitch, addToStencilWidth],
+   code = {(*InitialiseGridLoopVariables[derivSwitch, addToStencilWidth], *)
 
-   loopFunction = Switch[where,
-    Boundary, BoundaryLoop,
-    _, GridLoop];
-
-   loopFunction[
+   GenericGridLoop[
    {CommentedBlock["Assign local copies of grid functions",
                    Map[AssignVariable[localName[#], GridName[#]] &, 
                        gfsInRHS]],
+
+    CommentedBlock["Assign local copies of subblock grid functions",
+                   Map[AssignVariable[localName[#], SubblockGridName[#]] &, 
+                       subblockGFs]],
 
     CommentedBlock["Include user supplied include files",
                    Map[IncludeFile, incs]],
@@ -620,6 +662,10 @@ equationLoop[eqs_, gfs_, shorts_, incs_, groups_, syncGroups_, pddefs_, where_, 
     CommentedBlock["Copy local copies back to grid functions",
                    Map[AssignVariable[GridName[#], localName[#]] &, 
                        gfsInLHS]],
+
+    CommentedBlock["Copy local copies back to subblock grid functions",
+                   Map[AssignVariable[SubblockGridName[#], localName[#]] &, 
+                       subblockGFs]],
 
     If[debugInLoop, Map[InfoVariable[GridName[#]] &, gfsInLHS], ""]}]
    };

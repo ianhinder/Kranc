@@ -7,9 +7,10 @@
 implements: GenericFD
 
 INCLUDE HEADER: GenericFD.h in GenericFD.h
+INCLUDE HEADER: sbp_calc_coeffs.h in sbp_calc_coeffs.h
 
-#USES INCLUDE: Boundary.h
-#USES INCLUDE: Symmetry.h
+USES INCLUDE: Boundary.h
+USES INCLUDE: Symmetry.h
 
 CCTK_INT FUNCTION \
     GetBoundarySpecification (CCTK_INT IN size,                  \

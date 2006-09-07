@@ -42,6 +42,8 @@ AddToFile::usage = "AddToFile[name, block] appends 'block' to a file of the " <>
     "specified 'name'.";
 IncludeFile::usage = "IncludeFile[name] returns a block of code" <>
   "that includes a header file (i.e '#include \"name\"').";
+IncludeSystemFile::usage = "IncludeFile[name] returns a block of code" <>
+  "that includes a system header file (i.e '#include <name>').";
 DeclareVariable::usage = "DeclareVariable[name, type] returns a block of code " <>
   "that declares a variable of given name and type.  'name' and 'type' should be " <>
   "strings.";
@@ -79,6 +81,7 @@ ConditionalOnParameter::usage = "ConditionalOnParameter[name, value, block] retu
 GridLoop::usage = "GridLoop[block] returns a block that is looped over for every " <>
   "grid point.  Must have previously set up the grid loop variables (see " <>
   "DeclareGridLoopVariables and InitialiseGridLoopVariables.";
+SubblockGridName::usage = ""
 
 DeclareArray::usage = "";
 
@@ -101,6 +104,7 @@ CommaSeparated::usage = "";
 ReplacePowers::usage = "";
 CFormHideStrings::usage = "";
 BoundaryLoop::usage = "";
+GenericGridLoop::usage = "";
 
 NameRoot::usage = "";
 PartitionVarList::usage = "";
@@ -203,6 +207,9 @@ EOL[dummy___] := If[SOURCELANGUAGE == "C" || SOURCELANGUAGE == "C++", ";\n", "\n
 
 IncludeFile[filename_] :=
   {"#include \"", filename, "\"\n"};
+
+IncludeSystemFile[filename_] :=
+  {"#include <", filename, ">\n"};
 
 DeclareVariable[name_, type_] :=
 If[SOURCELANGUAGE == "C",
@@ -379,17 +386,23 @@ GridName[x_] := If[SOURCELANGUAGE == "C",
                    ToString[x] <> "(i,j,k)"
                 ];
 
+SubblockGridName[x_] := If[SOURCELANGUAGE == "C",
+                   ToExpression[ToString[x] <> "[subblock_index]"],
+                   ToString[x] <> "(i,j,k)"
+                ];
+
 DeclareGridLoopVariables[] :=
   SeparatedBlock[
     {insertComment["Declare the variables used for looping over grid points"],
      Map[DeclareVariables[#, "CCTK_INT"] &, 
-         {{"i", "j", "k"}, {"istart", "jstart", "kstart"}, 
+         {{"i", "j", "k"}(*, {"istart", "jstart", "kstart"}, 
           {"iend", "jend", "kend"},
-          {"index_offset_x", "index_offset_y", "index_offset_z", "dir", "face"}}],
+          {"index_offset_x", "index_offset_y", "index_offset_z", "dir", "face"} *)}] (*,
      Map[DeclareArray[#, 6, "CCTK_INT"] &, {"is_symbnd", "is_physbnd", "is_ipbnd"}],
-     Map[DeclareArray[#, 3, "CCTK_INT"] &, {"imin", "imax", "bmin", "bmax"}],
+     Map[DeclareArray[#, 3, "CCTK_INT"] &, {"imin", "imax", "bmin", "bmax"}] *), 
 
-     If[SOURCELANGUAGE == "C", DeclareVariable["index", "CCTK_INT"], "\n"]
+     If[SOURCELANGUAGE == "C", DeclareVariable["index", "CCTK_INT"], "\n"],
+     If[SOURCELANGUAGE == "C", DeclareVariable["subblock_index", "CCTK_INT"], "\n"]
   }];
 
 (* Access an element of an array; syntax is different between C and
@@ -464,6 +477,22 @@ GridLoop[block_] :=
 
        { If[SOURCELANGUAGE == "C",  
             AssignVariable["index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"],
+            ""],
+	 block
+       }
+        ]]]];
+
+GenericGridLoop[block_] :=
+  CommentedBlock["Loop over the grid points",
+   loopOverInteger["k", "min[2]", "max[2]",
+     loopOverInteger["j", "min[1]", "max[1]",
+       loopOverInteger["i", "min[0]", "max[0]",
+
+       { If[SOURCELANGUAGE == "C",  
+            {
+              AssignVariable["index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"],
+              AssignVariable["subblock_index", "i - min[0] + (max[0] - min[0]) * (j - min[1] + (max[1]-min[1]) * (k - min[2]))"]
+            }
             ""],
 	 block
        }

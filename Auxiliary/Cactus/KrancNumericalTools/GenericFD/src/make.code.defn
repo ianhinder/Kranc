@@ -2,7 +2,8 @@
 # $Header$
 
 # Source files in this directory
-SRCS = Startup.c GenericFD.c ParamCheck.F90
+SRCS = Startup.c GenericFD.c 
+#ParamCheck.F90
 
 # Subdirectories containing source files
 SUBDIRS =

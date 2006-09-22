@@ -29,7 +29,7 @@ BeginPackage["sym`"];
 
 {Calculations, DeclaredGroups, RealParameters, IntParameters, KeywordParameters,
   InheritedRealParameters,InheritedIntParameters, Parameters,
-  PartialDerivatives, InheritedImplementations, ConditionalOnKeyword, ReflectionSymmetries, ZeroDimensions};
+  PartialDerivatives, InheritedImplementations, ConditionalOnKeyword, ReflectionSymmetries, ZeroDimensions, CollectList, Interior, Boundary, Where};
 
 EndPackage[];
 
@@ -174,7 +174,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts___] :=
     (* Construct the param file *)
     InfoMessage[Terse, "Creating param file"];
     param = createKrancParam[evolvedGroups, nonevolvedGroups, groups, thornName, realParamDefs, 
-      intParamDefs, keywordParams, inheritedRealParams, inheritedIntParams];
+      intParamDefs, keywordParams, inheritedRealParams, inheritedIntParams, calcs];
 
     (* Construct the schedule file *)
     InfoMessage[Terse, "Creating schedule file"];
@@ -428,13 +428,13 @@ inheritParameters[imp_, reals_, ints_] :=
   ];
 
 createKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_, 
-  reals_, ints_, keywords_, inheritedReals_, inheritedInts_] :=
+  reals_, ints_, keywords_, inheritedReals_, inheritedInts_, calcs_] :=
 
   Module[{nEvolved, nPrimitive, evolvedMoLParam, evolvedGFs,
     constrainedMoLParam, genericfdStruct, realStructs, intStructs,
     allInherited, implementationNames, molImplementation,
     userImplementations, implementations, params, paramspec, param,
-    verboseStruct},
+    verboseStruct, calcOffsetStructs, calcEveryStructs},
 
 (*    Map[VerifyStringList, {reals, ints, inheritedReals, inheritedInts}];*)
 
@@ -488,7 +488,10 @@ createKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_,
     verboseStruct = krancParamStruct[{Name -> "verbose", Default -> 0}, "CCTK_REAL", False];
 
     intStructs = Map[krancParamStruct[#, "CCTK_INT", False] &, ints];
-    
+
+    calcEveryStructs = Map[krancParamStruct[{Name -> lookup[#, Name] <> "_calc_every", Default -> 1}, "CCTK_INT", False] &, calcs];
+    calcOffsetStructs = Map[krancParamStruct[{Name -> lookup[#, Name] <> "_calc_offset", Default -> 0}, "CCTK_INT", False] &, calcs];
+
     keywordStructs = Map[krancKeywordParamStruct, keywords];
 
     allInherited = Join[inheritedReals, inheritedInts];
@@ -513,7 +516,7 @@ createKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_,
 (*    Print["userImplementations == ",   userImplementations]; *)
 
     implementations = Join[userImplementations, {genericfdStruct, molImplementation}];
-    params = Join[{verboseStruct}, realStructs, intStructs, keywordStructs, {evolvedMoLParam, constrainedMoLParam}, 
+    params = Join[{verboseStruct}, realStructs, intStructs, keywordStructs, {evolvedMoLParam, constrainedMoLParam},  calcEveryStructs, calcOffsetStructs,
       CactusBoundary`GetParameters[evolvedGFs, evolvedGroups]];
 
     paramspec = {Implementations -> implementations,
@@ -544,7 +547,7 @@ groupsSetInCalc[calc_, groups_] :=
    function returns a LIST of schedule structures for each calculation
    *)
 scheduleCalc[calc_, groups_] :=
-  Module[{points, conditional, keyword, value},
+  Module[{points, conditional, keyword, value, groupsToSync},
     conditional = mapContains[calc, ConditionalOnKeyword];
     If[conditional,
       keywordConditional = lookup[calc, ConditionalOnKeyword];
@@ -554,14 +557,20 @@ scheduleCalc[calc_, groups_] :=
       keyword = keywordConditional[[1]];
       value = keywordConditional[[2]];
       ];
-    
+
+    groupsToSync = If[lookupDefault[calc, Where, Everywhere] === Interior || 
+                      lookupDefault[calc, Where, Everywhere] === Boundary,
+                      groupsSetInCalc[calc, groups],
+                      {}];
+
     Map[
       Join[
       {
         Name               -> lookup[calc, Name],
         SchedulePoint      -> #,
-       
-        SynchronizedGroups -> groupsSetInCalc[calc, groups],
+        SynchronizedGroups -> If[StringMatchQ[#, RegularExpression[".*in +MoL_CalcRHS.*"], IgnoreCase -> True] || StringMatchQ[#, RegularExpression[".*in +MoL_RHSBoundaries.*"], IgnoreCase -> True],
+                                 {},
+                                 groupsToSync],
         Language           -> CodeGen`SOURCELANGUAGE, 
         Comment            -> lookup[calc, Name]
       },
@@ -700,7 +709,7 @@ computeReflectionSymmetries[declaredGroups_, groups_] :=
 makeCalculationExplicit[calc_] :=
   mapValueMapMultiple[calc, 
     {Shorthands -> MakeExplicit, 
-(*     CollectList -> makeExplicit, *)
+     CollectList -> MakeExplicit, 
      Equations -> MakeExplicit}];
 
 makeGroupExplicit[g_] :=

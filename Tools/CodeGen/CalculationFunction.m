@@ -426,7 +426,9 @@ CreateCalculationFunction[calc_, debug_] :=
      eqs = Table[Map[First[#] -> simpCollect[lookup[cleancalc, CollectList], 
                                              Last[ #], 
                                              First[#], debug]&, 
-                 eqs[[i]] ], {i, 1, Length@eqs}]
+                 eqs[[i]] ], {i, 1, Length@eqs}],
+
+     eqs = Simplify[eqs]
    ];
 
   InfoMessage[InfoFull, "Equations:"];
@@ -477,6 +479,9 @@ CreateCalculationFunction[calc_, debug_] :=
 
     ConditionalOnParameterTextual["verbose > 1",
       "CCTK_VInfo(CCTK_THORNSTRING,\"Entering " <> bodyFunctionName <> "\");\n"],
+
+    ConditionalOnParameterTextual["cctk_iteration % " <> functionName <> "_calc_every != " <> functionName <> "_calc_offset",
+      "return;\n"],
 
     CommentedBlock["Include user-supplied include files",
       Map[IncludeFile, lookupDefault[cleancalc, DeclarationIncludes, {}]]],

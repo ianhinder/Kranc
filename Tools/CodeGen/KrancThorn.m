@@ -29,7 +29,7 @@ BeginPackage["sym`"];
 
 {Calculations, DeclaredGroups, RealParameters, IntParameters, KeywordParameters,
   InheritedRealParameters,InheritedIntParameters, Parameters,
-  PartialDerivatives, InheritedImplementations, ConditionalOnKeyword, ReflectionSymmetries, ZeroDimensions, CollectList, Interior, Boundary, Where};
+  PartialDerivatives, InheritedImplementations, ConditionalOnKeyword, ReflectionSymmetries, ZeroDimensions, CollectList, Interior, Boundary, Where, PreDefinitions};
 
 EndPackage[];
 
@@ -96,7 +96,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts___] :=
   realParams, intParams, inheritedRealParams, inheritedIntParams,
   partialDerivs, coordGroup, evolvedGroups, nonevolvedGroups,
   interface, evolvedGroupDefinitions, rhsGroupDefinitions, thornspec,
-  allParams, boundarySources, reflectionSymmetries, realParamDefs, intParamDefs},
+  allParams, boundarySources, reflectionSymmetries, realParamDefs, 
+  intParamDefs, pDefs},
 
 (*  Return[];*)
 
@@ -198,7 +199,10 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts___] :=
 
     (* Write the differencing header file *)
     InfoMessage[Terse, "Creating differencing header file"];
-    diffHeader = CreateDifferencingHeader[partialDerivs, lookupDefault[{opts}, ZeroDimensions, {}]];
+    {pDefs, diffHeader} = CreateDifferencingHeader[partialDerivs, lookupDefault[{opts}, ZeroDimensions, {}]];
+
+    (* Add the predefinitions into the calcs *)
+    calcs = Map[Join[#, {PreDefinitions -> pDefs}] &, calcs];
 
     ext = CodeGen`SOURCESUFFIX;
 
@@ -568,7 +572,7 @@ scheduleCalc[calc_, groups_] :=
       {
         Name               -> lookup[calc, Name],
         SchedulePoint      -> #,
-        SynchronizedGroups -> If[StringMatchQ[#, RegularExpression[".*in +MoL_CalcRHS.*"], IgnoreCase -> True] || StringMatchQ[#, RegularExpression[".*in +MoL_RHSBoundaries.*"], IgnoreCase -> True],
+        SynchronizedGroups -> If[StringMatchQ[#, "*MoL_CalcRHS*", IgnoreCase -> True] || StringMatchQ[#, "*MoL_RHSBoundaries*", IgnoreCase -> True],
                                  {},
                                  groupsToSync],
         Language           -> CodeGen`SOURCELANGUAGE, 

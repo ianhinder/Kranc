@@ -26,7 +26,7 @@ BeginPackage["sym`"];
 LoopPreIncludes, GroupImplementations, PartialDerivatives, Dplus1,
 Dplus2, Dplus3, Boundary, Interior, Where, AddToStencilWidth, Everywhere}
 
-{INV, SQR, CUB, QAD, dot, pow, exp} 
+{INV, SQR, CUB, QAD, dot, pow, exp,dx,dy,dz, idx, idy, idz} 
 
 EndPackage[];
 
@@ -381,13 +381,23 @@ declareSubblockGFs[sbgfs_, counter_] :=
     Join[{DefineVariable[sbgfs[[1]], "CCTK_REAL", "*subblock_gfs[" <> ToString[counter] <> "]"]},
          declareSubblockGFs[Rest[sbgfs], counter + 1]]];
 
+
+declarePreDefinitions[pDefs_] :=
+  CommentedBlock["Declare predefined quantities",
+    Map[DeclareVariable[#, "CCTK_REAL"] &, Map[First, pDefs]]];
+
+definePreDefinitions[pDefs_] :=
+  CommentedBlock["Initialize predefined quantities",
+    Map[AssignVariable[#[[1]], #[[2]]] &, pDefs]];
+
+
 (* Calculation function generation *)
 
 CreateCalculationFunction[calc_, debug_] :=
   Module[{gfs, allSymbols, knownSymbols,
           shorts, eqs, syncGroups, parameters,
           functionName, dsUsed, groups, pddefs, cleancalc, numeq, eqLoop, GrepSYNC, where, 
-          addToStencilWidth},
+          addToStencilWidth, pDefs},
 
   cleancalc = removeUnusedShorthands[calc];
   shorts = lookupDefault[cleancalc, Shorthands, {}];
@@ -399,6 +409,7 @@ CreateCalculationFunction[calc_, debug_] :=
   where = lookupDefault[cleancalc, Where, Everywhere];
   addToStencilWidth = lookupDefault[cleancalc, AddToStencilWidth, 0];
   subblockGFs = lookupDefault[cleancalc, SubblockGridFunctions, {}];
+  pDefs = lookup[cleancalc, PreDefinitions];
 
   numeq = Length@eqs;
 
@@ -457,7 +468,7 @@ CreateCalculationFunction[calc_, debug_] :=
 
   (* Check that there are no unknown symbols in the calculation *)
   allSymbols = calculationSymbols[cleancalc];
-  knownSymbols = Join[gfs, shorts, parameters, {t, Pi, E, Symbol["i"], Symbol["j"], Symbol["k"]}];
+  knownSymbols = Join[gfs, shorts, parameters, {dx,dy,dz,idx,idy,idz,t, Pi, E, Symbol["i"], Symbol["j"], Symbol["k"]}];
 
   unknownSymbols = Complement[allSymbols, knownSymbols];
 
@@ -477,6 +488,8 @@ CreateCalculationFunction[calc_, debug_] :=
     DeclareDerivatives[pddefs, eqs],
     declareSubblockGFs[subblockGFs, 0],
 
+    declarePreDefinitions[pDefs],
+
     ConditionalOnParameterTextual["verbose > 1",
       "CCTK_VInfo(CCTK_THORNSTRING,\"Entering " <> bodyFunctionName <> "\");\n"],
 
@@ -487,6 +500,7 @@ CreateCalculationFunction[calc_, debug_] :=
       Map[IncludeFile, lookupDefault[cleancalc, DeclarationIncludes, {}]]],
 
     InitialiseFDVariables[],
+    definePreDefinitions[pDefs],
 
     (* This is a very coarse test *)
 
@@ -607,8 +621,14 @@ splitPDDefsWithShorthands[pddefs_, shorthands_] :=
     Return[{defsWithoutShorts, defsWithShorts}]];
 
 
-
-
+pdCanonicalOrdering[name_[inds___] -> x_] :=
+  Module[{is},
+    is = {inds};
+    If[Length[is] == 2,
+      Return[{name[f_,2,1] -> name[f,1,2],
+              name[f_,3,1] -> name[f,1,3],
+              name[f_,3,2] -> name[f,2,3]}],
+      {}]];
 
 equationLoop[eqs_, gfs_, shorts_, subblockGFs_, incs_, groups_, syncGroups_, 
              pddefs_, where_, addToStencilWidth_] :=
@@ -618,13 +638,20 @@ equationLoop[eqs_, gfs_, shorts_, subblockGFs_, incs_, groups_, syncGroups_,
     rhss = Map[#[[2]] &, eqs];
     lhss = Map[#[[1]] &, eqs];
 
+    orderings = Flatten[Map[pdCanonicalOrdering, pddefs], 1];
+(*    Print["Canonical orderings: ", orderings];
+
+    Print["Applying orderings to:", eqs];*)
+
+    eqsOrdered = (eqs //. orderings);
+
     gfsInRHS = Union[Cases[rhss, _ ? (MemberQ[gfs,#] &), Infinity]];
     gfsInLHS = Union[Cases[lhss, _ ? (MemberQ[gfs,#] &), Infinity]];
 
     localGFs = Map[localName, gfs];
     localMap = Map[# -> localName[#] &, gfs];
     
-    derivSwitch = Join[oldDerivativesUsed[eqs], GridFunctionDerivativesInExpression[pddefs, eqs]] != {};
+    derivSwitch = Join[oldDerivativesUsed[eqsOrdered], GridFunctionDerivativesInExpression[pddefs, eqsOrdered]] != {};
 
     (* Replace the partial derivatives *)
 
@@ -633,7 +660,7 @@ equationLoop[eqs_, gfs_, shorts_, subblockGFs_, incs_, groups_, syncGroups_,
 (*    Map[ComponentDerivativeOperatorStencilWidth, pddefs];*)
 
     (* This is for the custom derivative operators pddefs *)
-    eqs2 = ReplaceDerivatives[defsWithoutShorts, eqs, True];
+    eqs2 = ReplaceDerivatives[defsWithoutShorts, eqsOrdered, True];
     eqs2 = ReplaceDerivatives[defsWithShorts, eqs2, False];
 
     checkEquationAssignmentOrder[eqs2, shorts];
@@ -652,7 +679,7 @@ equationLoop[eqs_, gfs_, shorts_, subblockGFs_, incs_, groups_, syncGroups_,
                    Map[IncludeFile, incs]],
 
     CommentedBlock["Precompute derivatives (new style)",
-                   PrecomputeDerivatives[defsWithoutShorts, eqs]],
+                   PrecomputeDerivatives[defsWithoutShorts, eqsOrdered]],
 
     CommentedBlock["Precompute derivatives (old style)",
                    Map[precomputeDerivative, oldDerivativesUsed[eqs]]],

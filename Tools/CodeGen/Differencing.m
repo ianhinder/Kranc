@@ -158,7 +158,7 @@ DZero[n_] := (DPlus[n] + DMinus[n])/2;
 (*************************************************************)
 
 CreateDifferencingHeader[derivOps_, zeroDims_] :=
-  Module[{componentDerivOps, dupsRemoved, expressions, componentDerivOps2, zeroDimRules, derivOps2},
+  Module[{componentDerivOps, dupsRemoved, expressions, componentDerivOps2, zeroDimRules, derivOps2, pDefs},
     Map[DerivativeOperatorVerify, derivOps];
 
     zeroDimRules = Map[shift[#] -> 1 &, zeroDims];
@@ -168,21 +168,32 @@ CreateDifferencingHeader[derivOps_, zeroDims_] :=
     componentDerivOps2 = componentDerivOps /. zeroDimRules;
 
     dupsRemoved = RemoveDuplicateRules[componentDerivOps2];
-    expressions = Flatten[Map[ComponentDerivativeOperatorMacroDefinition, dupsRemoved]];
-    Map[{#, "\n"} &, expressions]];
 
+    mDefPairs = Map[ComponentDerivativeOperatorMacroDefinition, dupsRemoved];
+
+    pDefs = Union[Flatten[Map[First, mDefPairs]]];
+    expressions = Flatten[Map[#[[2]]&, mDefPairs]];
+
+(*    expressions = Flatten[Map[ComponentDerivativeOperatorInlineDefinition, dupsRemoved]];*)
+
+    {pDefs,Map[{#, "\n"} &, expressions]}];
+
+ordergfds[_[v1_,___], _[v2_,___]] := 
+  Order[v1,v2] != -1;
 
 PrecomputeDerivatives[derivOps_, expr_] :=
-  Module[{componentDerivOps, gfds, dupsRemoved},
+  Module[{componentDerivOps, gfds, dupsRemoved,sortedgfds},
     Map[DerivativeOperatorVerify, derivOps];
     gfds = GridFunctionDerivativesInExpression[derivOps, expr];
-    Map[PrecomputeDerivative, gfds]];
+    sortedgfds = Sort[gfds, ordergfds];
+    Map[PrecomputeDerivative, sortedgfds]];
 
 DeclareDerivatives[derivOps_, expr_] :=
-  Module[{componentDerivOps, gfds, dupsRemoved},
+  Module[{componentDerivOps, gfds, dupsRemoved,sortedgfds},
     Map[DerivativeOperatorVerify, derivOps];
     gfds = GridFunctionDerivativesInExpression[derivOps, expr];
-    Map[DeclareDerivative, gfds]];
+    sortedgfds = Sort[gfds, ordergfds];
+    Map[DeclareDerivative, sortedgfds]];
 
 ReplaceDerivatives[derivOps_, expr_, precompute_] :=
   Module[{componentDerivOps, gfds},
@@ -242,7 +253,7 @@ sbpMacroDefinition[macroName_, d_] :=
     <> "(i,j,k,sbp_" <> l <> "min,sbp_" <> l <> "max,d" <> ds <> ",u,q" <> ds <> ",cctkGH))"}]    ];
 
 ComponentDerivativeOperatorMacroDefinition[componentDerivOp:(name_[inds___] -> expr_)] :=
-  Module[{macroName, rhs, rhs2, i = "i", j = "j", k = "k", spacings},
+  Module[{macroName, rhs, rhs2, i = "i", j = "j", k = "k", spacings, spacings2, pat, ss, num, den, newnum, signModifier, quotient, liName, rhs3, rhs4},
   
     macroName = ComponentDerivativeOperatorMacroName[componentDerivOp];
 
@@ -257,8 +268,79 @@ ComponentDerivativeOperatorMacroDefinition[componentDerivOp:(name_[inds___] -> e
 
     rhs = DifferenceGF[expr, i, j, k];
     spacings = {spacing[1] -> 1/"dxi", spacing[2] -> 1/"dyi", spacing[3] -> 1/"dzi"};
-    rhs2 = CFormHideStrings[ReplacePowers[rhs /. spacings]];
-    FlattenBlock[{"#define ", macroName, "(u,i,j,k) ", "(", rhs2, ")"}]];
+    spacings2 = {spacing[1] -> "dx", spacing[2] -> "dy", spacing[3] -> "dz"};
+
+    rhs2 = FullSimplify[rhs];
+
+(*    Print["rhs2 == ", FullForm[rhs2]];*)
+
+    pat = Times[spInExpr:(Power[spacing[_],_]..), (Rational[x_,y_])..., rest__];
+(*    Print["pat == ", pat//FullForm];*)
+
+    If[MatchQ[rhs2, pat],
+(*       Print["matches!"];*)
+       ss = Times[rhs2 /. pat -> spInExpr];
+(*       Print["ss == ", ss];*)
+       num = rhs2 /. pat -> x;
+       den = rhs2 /. pat -> y;
+       If[num < 0,
+          newnum = - num;
+          signModifier = "m",
+          newnum = num;
+          signModifier = ""];
+
+       quotient = 
+         If[newnum/den == 1,
+            "1o",
+            ToString[newnum] <> "o" <> ToString[den]];
+          
+(*
+       Print["num == ", num];
+       Print["den == ", den];
+       Print["quotient == ", quotient];
+       Print["signModifier == ", signModifier];
+       Print["spacings2 == ", spacings2];
+       Print["ss == ", ss//FullForm];
+       Print["Inverse spacings: ", Simplify[1/(ss /. spacings2)]];
+*)
+       liName = "p" <> signModifier <> quotient <> ToString[Apply[SequenceForm,Simplify[1/(ss /. spacings2)]]];
+(*       Print["liName == ", liName];*)
+
+       rhs3 = rhs2 /. pat -> Times[liName, rest],
+(*       Print["!!!!!!!!DOES NOT MATCH!!!!!!!!!"];*)
+       rhs3 = rhs2];
+
+(*    Print["rhs3 == ", rhs3];*)
+
+    pDefs = {{liName -> CFormHideStrings[ReplacePowers[num / den ss /. spacings2]]}};
+
+(*    rhs4 = Factor[rhs3];*)
+
+    rhs4 = rhs3 //. (x_ a_ + x_ b_) -> x(a+b);
+    rhs5 = rhs4 //. (x_ a_ - y_ b_) -> x(a-b);
+    
+(*    Print[componentDerivOp, ": "];
+    Print[FullForm[rhs5]];
+    Print[""];*)
+
+(*    rhs4 = rhs4 //. (x_ a_ - x_ b_) -> x(a-b);*)
+
+    rhs6 = CFormHideStrings[ReplacePowers[rhs5 /. spacings]];
+    {pDefs, FlattenBlock[{"#define ", macroName, "(u,i,j,k) ", "(", rhs6, ")"}]}];
+
+ComponentDerivativeOperatorInlineDefinition[componentDerivOp:(name_[inds___] -> expr_)] :=
+  Module[{inlineName, rhs, rhs2, i = "i", j = "j", k = "k", spacings},
+  
+    inlineName = ComponentDerivativeOperatorMacroName[componentDerivOp];
+
+    rhs = DifferenceGF[expr, i, j, k];
+(*    rhs = DifferenceGFInline[expr, i, j, k];*)
+    spacings = {spacing[1] -> 1/"dxi", spacing[2] -> 1/"dyi", spacing[3] -> 1/"dzi"};
+    rhs2 = CFormHideStrings[FullSimplify[ReplacePowers[rhs /. spacings]]];
+
+    DefineFunction[inlineName, "static inline CCTK_REAL", 
+      "CCTK_REAL *u, int i, int j, int k",
+      {"return ", rhs2, ";\n"}]];
 
 ComponentDerivativeOperatorMacroName[componentDerivOp:(name_[inds___] -> expr_)] :=
   Module[{stringName},
@@ -291,6 +373,14 @@ DifferenceGF[op_, i_, j_, k_] :=
       Apply[Plus, Map[DifferenceGFTerm[#, i, j, k] &, expanded]],
       DifferenceGFTerm[expanded, i, j, k]]];
 
+DifferenceGFInline[op_, i_, j_, k_] :=
+  Module[{expanded},
+    expanded = Expand[op];
+    
+    If[Head[expanded] === Plus,
+      Apply[Plus, Map[DifferenceGFTermInline[#, i, j, k] &, expanded]],
+      DifferenceGFTerm[expanded, i, j, k]]];
+
 
 (* Return the fragment of a macro definition for defining a derivative
    operator *)
@@ -317,6 +407,27 @@ DifferenceGFTerm[op_, i_, j_, k_] :=
       ToString[CFormHideStrings[j+ny]] <> "," <> ToString[CFormHideStrings[k+nz]] <> ")]",
     remaining "u(" <> ToString[FortranForm[i+nx]] <> "," <> 
       ToString[FortranForm[j+ny]] <> "," <> ToString[FortranForm[k+nz]] <> ")"] ];
+
+(* Return the fragment of a function definition for defining a derivative
+   operator *)
+DifferenceGFTermInline[op_, i_, j_, k_] :=
+  Module[{nx, ny, nz, remaining},
+
+    If[op === 0,
+      Return[0]];
+
+    nx = Exponent[op, shift[1]];
+    ny = Exponent[op, shift[2]];
+    nz = Exponent[op, shift[3]];
+
+    remaining = op / (shift[1]^nx) / (shift[2]^ny) / (shift[3]^nz);
+
+    If[Cases[{remaining}, shift[_], Infinity] != {},
+      ThrowError["Could not parse difference operator:", op]];
+    
+    remaining "u[CCTK_GFINDEX3D(cctkGH," <> ToString[CFormHideStrings[i+nx]] <> "," <>
+      ToString[CFormHideStrings[j+ny]] <> "," <> ToString[CFormHideStrings[k+nz]] <> ")]"
+     ];
 
 
 DerivativeOperatorGFDs[gf_];

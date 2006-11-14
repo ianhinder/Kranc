@@ -20,7 +20,7 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 BeginPackage["sym`"];
-{INV, SQR, CUB, QAD, exp, pow, fmax, fmin};
+{INV, SQR, CUB, QAD, exp, pow, fmax, fmin, dx, dy, dz, khalf, kthird, ktwothird, kfourthird, keightthird};
 
 EndPackage[];
 
@@ -353,6 +353,7 @@ DeclareFDVariables[] :=
   CommentedBlock["Declare finite differencing variables",
     Map[DeclareVariables[#, "CCTK_REAL"] &, {{"dx", "dy", "dz"}, 
                                              {"dxi", "dyi", "dzi"},
+                                             {khalf,kthird,ktwothird,kfourthird,keightthird},
                                              {"hdxi", "hdyi", "hdzi"}}]];
 
 InitialiseFDSpacingVariablesC[] := 
@@ -360,7 +361,7 @@ InitialiseFDSpacingVariablesC[] :=
     AssignVariable["dx", "CCTK_DELTA_SPACE(0)"],
     AssignVariable["dy", "CCTK_DELTA_SPACE(1)"],
     AssignVariable["dz", "CCTK_DELTA_SPACE(2)"]
-  }
+  };
 
 InitialiseFDSpacingVariablesFortran[] := 
   {
@@ -369,14 +370,21 @@ InitialiseFDSpacingVariablesFortran[] :=
     AssignVariable["dz", "CCTK_DELTA_SPACE(3)"]
   }
 
+
 InitialiseFDVariables[] :=
   CommentedBlock["Initialise finite differencing variables",
   { If[SOURCELANGUAGE == "Fortran",
        InitialiseFDSpacingVariablesFortran[],
        InitialiseFDSpacingVariablesC[]],
+    
     AssignVariable["dxi", "1.0 / dx"],
     AssignVariable["dyi", "1.0 / dy"],
     AssignVariable["dzi", "1.0 / dz"],
+    AssignVariable["khalf", "0.5"],
+    AssignVariable["kthird", "1/3.0"],
+    AssignVariable["ktwothird", "2.0/3.0"],
+    AssignVariable["kfourthird", "4.0/3.0"],
+    AssignVariable["keightthird", "8.0/3.0"],
     AssignVariable["hdxi", "0.5 * dxi"],
     AssignVariable["hdyi", "0.5 * dyi"],
     AssignVariable["hdzi", "0.5 * dzi"]}];
@@ -588,23 +596,41 @@ ReplacePowers[x_] :=
 
     If[SOURCELANGUAGE == "C",
            Module[{},
-	     rhs = rhs /. Power[xx_, 2] -> SQR[xx];
-	     rhs = rhs /. Power[xx_, 3] -> CUB[xx];
-	     rhs = rhs /. Power[xx_, 4] -> QAD[xx];
+	     rhs = rhs //. Power[xx_, 2] -> SQR[xx];
+	     rhs = rhs //. Power[xx_, 3] -> CUB[xx];
+	     rhs = rhs //. Power[xx_, 4] -> QAD[xx];
 
-             rhs = rhs /. Power[E, power_] -> exp[power];
-             rhs = rhs /. Power[xx_, 0.5] -> sqrt[xx];
+	     rhs = rhs //. xx_/2 -> khalf xx;
+	     rhs = rhs //. (-1/2) -> -khalf;
+
+	     rhs = rhs //. xx_/3 -> kthird xx;
+	     rhs = rhs //. (-1/3) -> -kthird;
+
+	     rhs = rhs //. 2/3 -> ktwothird;
+	     rhs = rhs //. (-2/3) -> -ktwothird;
+
+	     rhs = rhs //. 4/3 -> kfourthird;
+	     rhs = rhs //. (-4/3) -> -kfourthird;
+
+	     rhs = rhs //. 8/3 -> keightthird;
+	     rhs = rhs //. (-8/3) -> -keightthird;
+
+	     rhs = rhs //. xx_ y_ + xx_ z_ -> xx(y+z); 
+
+             rhs = rhs //. Power[E, power_] -> exp[power];
+             rhs = rhs //. Power[xx_, 0.5] -> sqrt[xx];
 
              (* there have been some problems doing the Max/Min
                 replacement via the preprocessor for C, so we do it
                 here *)
-             rhs = rhs /. Max[xx_, yy_] -> fmax[xx, yy];
-             rhs = rhs /. Min[xx_, yy_] -> fmin[xx, yy];
+             rhs = rhs //. Max[xx_, yy_] -> fmax[xx, yy];
+             rhs = rhs //. Min[xx_, yy_] -> fmin[xx, yy];
 
-             rhs = rhs /. Power[xx_, power_] -> pow[xx, power]],
+             rhs = rhs //. Power[xx_, power_] -> pow[xx, power]],
 
-           rhs = rhs /. Power[xx_, power_] -> xx^power
+           rhs = rhs //. Power[xx_, power_] -> xx^power
        ];
+(*       Print[rhs//FullForm];*)
     rhs
     ];
 

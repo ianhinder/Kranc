@@ -59,17 +59,19 @@ VerifyGroupNames[gns_] :=
 
 
 VerifyNewCalculation[calc_] :=
-  Module[{},
+  Module[{calcName},
     If[Head[calc] != List,
       ThrowError["Invalid Calculation structure: " <> ToString[calc]]];
 
-    VerifyListContent[calc, Rule];
+    calcName = lookupDefault[calc, Name, "<unknown>"];
+
+    VerifyListContent[calc, Rule, " while checking the calculation called " <> ToString[calcName]];
 
     If[mapContains[calc, Shorthands],
-      VerifyListContent[lookup[calc, Shorthands], Symbol]];
+      VerifyListContent[lookup[calc, Shorthands], Symbol," while checking the calculation called " <> ToString[calcName] ]];
 
     If[mapContains[calc, Equations],
-      VerifyListContent[lookup[calc, Equations], Rule],
+      VerifyListContent[lookup[calc, Equations], Rule," while checking the calculation called " <> ToString[calcName]],
       ThrowError["Invalid Calculation structure. Must contain Equations element: " <> ToString[calc]]];
   ];
 
@@ -804,8 +806,12 @@ CheckEquationTensors[eq_] :=
 
 CheckCalculationTensors[calc_] :=
   Module[{eqs},
-    eqs = lookup[calc, Equations];
-    Map[CheckEquationTensors, eqs]];
+
+  If[mapContains[calc, Shorthands],
+  CheckTensors[lookup[calc, Shorthands]]];
+
+  eqs = lookup[calc, Equations];
+  Map[CheckEquationTensors, eqs]];
 
 
 End[];

@@ -286,27 +286,32 @@ simplifyEquationList[eqs_] :=
 simplifyEquation[lhs_ -> rhs_] :=
   lhs -> Simplify[rhs];
   
-VerifyListContent[l_, type_] :=
+VerifyListContent[l_, type_, while_] :=
   Module[{types},
     If[!(Head[l] === List),
-      ThrowError["Expecting a list of ", type, " objects, but found ", l]];
+      ThrowError["Expecting a list of ", type, " objects, but found the following, which is not a List object: ", l, while]];
     types = Union[Map[Head, l]];
     If [!(types === {type}) && !(types === {}),
-      ThrowError["Expecting a list of ", type , " objects, but found ", l]]];
+      ThrowError["Expecting a list of ", type , " objects, but found the following types of object: ", ToString[types], " in ", l, while]]];
 
 VerifyCalculation[calc_] :=
-  Module[{},
+  Module[{calcName},
+
+    calcName = lookupDefault[calc, Name, "<unknown>"];
+    
     If[Head[calc] != List,
       ThrowError["Invalid Calculation structure: " <> ToString[calc]]];
 
-    VerifyListContent[calc, Rule];
+    VerifyListContent[calc, Rule, 
+      " while checking the calculation with name " <> ToString[calcName]];
 
     If[mapContains[calc, Shorthands],
-      VerifyListContent[lookup[calc, Shorthands], Symbol]];
+      VerifyListContent[lookup[calc, Shorthands], Symbol,
+        " while checking the Shorthands member of the calculation called " <> ToString[calcName]]];
 
     If[mapContains[calc, Equations],
-      VerifyListContent[First[lookup[calc, Equations]], Rule],
-      ThrowError["Invalid Calculation structure. Must contain Equations element: " <> ToString[calc]]];
+      VerifyListContent[First[lookup[calc, Equations]], Rule, " while checking the equation" <> ToString[calcName]],
+      ThrowError["Invalid Calculation structure. Must contain Equations element: ", ToString[calc], " while checking the calculation called ", ToString[calcName]]];
   ];
 
 
@@ -373,7 +378,7 @@ GrepSyncGroups[x_, func_] := Module[{pick},
     pick = Select[pick, IsNotEmptyString];
     
     pick = Map[StringReplace[#,  func <> "//" -> ""] &, pick]
-    ]
+    ];
 
 declareSubblockGFs[sbgfs_, counter_] :=
   If[Length[sbgfs] == 0,
@@ -401,6 +406,7 @@ CreateCalculationFunction[calc_, debug_] :=
 
   cleancalc = removeUnusedShorthands[calc];
   shorts = lookupDefault[cleancalc, Shorthands, {}];
+
   eqs    = lookup[cleancalc, Equations];
   syncGroups = lookupDefault[cleancalc, SyncGroups, {}];
   parameters = lookupDefault[cleancalc, Parameters, {}];

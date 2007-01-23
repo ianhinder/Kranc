@@ -988,7 +988,9 @@ explicitVariableList[l_] :=
 (* These functions all throw an exception if an expression is invalid *)
 
 CheckTensors[l_List] :=
-  Map[CheckTensors, l];
+  Module[{},
+(*    Print["CheckTensors: list: ", l];*)
+    Map[CheckTensors, l]];
 
 (*CheckTensors[x:Tensor[k_, is__] -> y_] :=
   CheckTensors[x,y];*)
@@ -1007,16 +1009,23 @@ CheckTensors[x_ -> y_] :=
     True];
 
 CheckTensors[f t:Tensor[k_,is__]] :=
-  CheckTensor[t];
+  Module[{},
+(*  Print["CheckTensors: f t:"];*)
+  CheckTensor[t]];
 
 CheckTensors[a_ t:TensorProduct[x_,y_]] :=
-  CheckTensors[t];
+  Module[{},
+(*  Print["CheckTensors: a tp:"];*)
+  CheckTensors[t]];
 
 CheckTensors[x_ y_] :=
-  CheckTensors[TensorProduct[x,y]];
+  Module[{},
+(*  Print["CheckTensors: x y:"];*)
+  CheckTensors[TensorProduct[x,y]]];
 
 CheckTensors[TensorProduct[x_,y_]] :=
   Module[{xs,ys},
+(*  Print["CheckTensors: TenPr:"];*)
     CheckTensors[x];
     CheckTensors[y];
     xs = freesIn[x];
@@ -1027,10 +1036,13 @@ CheckTensors[TensorProduct[x_,y_]] :=
     True];
 
 CheckTensors[x_ + y_] :=
-  CheckTensors[x,y];
+  Module[{},
+(*  Print["CheckTensors: x + y:"];*)
+  CheckTensors[x,y]];
 
 CheckTensors[x_, y_] :=
   Module[{xs,ys},
+(*  Print["CheckTensors: x,y:"];*)
     CheckTensors[x];
     CheckTensors[y];
     xs = freesIn[x];
@@ -1057,16 +1069,17 @@ CheckTensors[x_, y_] :=
 
 CheckTensors[t:Tensor[k_, is__]] :=
   Module[{},
+(*    Print["CheckTensors: Tensor: ", t];*)
     If[!(Union[{is}] === Sort[{is}]),
        ThrowError["Tensor has repeated indices: ", t, {is}]];
     True];
 
 CheckTensors[t:f_[TensorIndex[__]..]] :=
   Module[{},
-    If[!(f === Tensor || f === Eps || f == KroneckerDelta),
+(*    Print["CheckTensors: Head is ", f];*)
+    If[!(f === Tensor || f === Eps || f === KroneckerDelta),
        ThrowError["Tensor index in an object that is not a declared tensor.", t]];
        ];
-
 
 CheckTensors[x_] := 
   Module[{},

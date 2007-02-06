@@ -474,7 +474,7 @@ CreateCalculationFunction[calc_, debug_] :=
 
   (* Check that there are no unknown symbols in the calculation *)
   allSymbols = calculationSymbols[cleancalc];
-  knownSymbols = Join[gfs, shorts, parameters, {dx,dy,dz,idx,idy,idz,t, Pi, E, Symbol["i"], Symbol["j"], Symbol["k"]}];
+  knownSymbols = Join[lookupDefault[cleancalc, AllowedSymbols, {}], gfs, shorts, parameters, {dx,dy,dz,idx,idy,idz,t, Pi, E, Symbol["i"], Symbol["j"], Symbol["k"]}];
 
   unknownSymbols = Complement[allSymbols, knownSymbols];
 

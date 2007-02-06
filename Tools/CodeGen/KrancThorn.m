@@ -29,7 +29,7 @@ BeginPackage["sym`"];
 
 {Calculations, DeclaredGroups, RealParameters, IntParameters, KeywordParameters,
   InheritedRealParameters,InheritedIntParameters, Parameters,
-  PartialDerivatives, InheritedImplementations, ConditionalOnKeyword, ReflectionSymmetries, ZeroDimensions, CollectList, Interior, Boundary, Where, PreDefinitions};
+  PartialDerivatives, InheritedImplementations, ConditionalOnKeyword, ReflectionSymmetries, ZeroDimensions, CollectList, Interior, Boundary, Where, PreDefinitions, AllowedSymbols};
 
 EndPackage[];
 

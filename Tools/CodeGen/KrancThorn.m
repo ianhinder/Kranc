@@ -28,7 +28,7 @@
 BeginPackage["sym`"];
 
 {Calculations, DeclaredGroups, RealParameters, IntParameters, KeywordParameters,
-  InheritedRealParameters,InheritedIntParameters, Parameters,
+  InheritedRealParameters,InheritedIntParameters,InheritedKeywordParameters, Parameters,
   PartialDerivatives, InheritedImplementations, ConditionalOnKeyword, ReflectionSymmetries, ZeroDimensions, CollectList, Interior, Boundary, Where, PreDefinitions, AllowedSymbols};
 
 EndPackage[];
@@ -80,7 +80,7 @@ cktCheckNamedArgs[l_] :=
 Module[{allowed = {Calculations,
   DeclaredGroups, Implementation, InheritedImplementations,
   EvolutionTimelevels, RealParameters, IntParameters, KeywordParameters,
-  InheritedRealParameters,InheritedIntParameters, PartialDerivatives, ReflectionSymmetries, ZeroDimensions}, used, unrecognized},
+  InheritedRealParameters,InheritedIntParameters,InheritedKeywordParameters, PartialDerivatives, ReflectionSymmetries, ZeroDimensions}, used, unrecognized},
 
     used = Map[First, l];
     unrecognized = Complement[used, allowed];
@@ -96,6 +96,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts___] :=
   Module[{calcs, declaredGroups, implementation,
   inheritedImplementations, includeFiles, evolutionTimelevels,
   realParams, intParams, inheritedRealParams, inheritedIntParams,
+  inheritedKeywordParams,
   partialDerivs, coordGroup, evolvedGroups, nonevolvedGroups,
   interface, evolvedGroupDefinitions, rhsGroupDefinitions, thornspec,
   allParams, boundarySources, reflectionSymmetries, realParamDefs, 
@@ -123,6 +124,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts___] :=
     keywordParams = lookupDefault[{opts}, KeywordParameters, {}];
     inheritedRealParams = lookupDefault[{opts}, InheritedRealParameters, {}];
     inheritedIntParams = lookupDefault[{opts}, InheritedIntParameters, {}];
+    inheritedKeywordParams = lookupDefault[{opts}, InheritedKeywordParameters, {}];
     partialDerivs = lookupDefault[{opts}, PartialDerivatives, {}];
     reflectionSymmetries = lookupDefault[{opts}, ReflectionSymmetries, {}];
 
@@ -177,7 +179,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts___] :=
     (* Construct the param file *)
     InfoMessage[Terse, "Creating param file"];
     param = createKrancParam[evolvedGroups, nonevolvedGroups, groups, thornName, realParamDefs, 
-      intParamDefs, keywordParams, inheritedRealParams, inheritedIntParams, calcs];
+      intParamDefs, keywordParams, inheritedRealParams, inheritedIntParams,
+      inheritedKeywordParams, calcs];
 
     (* Construct the schedule file *)
     InfoMessage[Terse, "Creating schedule file"];
@@ -209,9 +212,11 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts___] :=
     ext = CodeGen`SOURCESUFFIX;
 
     (* Construct a source file for each calculation *)
-    allParams = Join[Map[paramName, realParamDefs], Map[paramName, intParamDefs],
-      Map[unqualifiedName, inheritedRealParams], 
-                     Map[unqualifiedName, inheritedIntParams]];
+    allParams = Join[Map[paramName, realParamDefs],
+                     Map[paramName, intParamDefs],
+                     Map[unqualifiedName, inheritedRealParams], 
+                     Map[unqualifiedName, inheritedIntParams], 
+                     Map[unqualifiedName, inheritedKeywordParams]];
     InfoMessage[Terse, "Creating calculation source files"];
     calcSources = Map[CreateSetterSourceWrapper[#, allParams, partialDerivs] &, calcs];
     calcFilenames = Map[lookup[#, Name] <> ext &, calcs];
@@ -420,21 +425,25 @@ paramName[paramDef_] :=
   lookup[paramDef, Name];
 
 
-inheritParameters[imp_, reals_, ints_] :=
-  Module[{theseReals, theseInts, realStructs, intStructs},
+inheritParameters[imp_, reals_, ints_, keywords_] :=
+  Module[{theseReals, theseInts, theseKeywords, realStructs, intStructs, keywordStructs},
     theseReals = Select[reals, implementationFromQualifiedName[#] == imp &];
     theseInts = Select[ints, implementationFromQualifiedName[#] == imp &];
+    theseKeywords = Select[keywords, implementationFromQualifiedName[#] == imp &];
     theseRealsNoImp = makeFullParamDefs[Map[unqualifiedName, theseReals]];
     theseIntsNoImp = makeFullParamDefs[Map[unqualifiedName, theseInts]];
+    theseKeywordsNoImp = makeFullParamDefs[Map[unqualifiedName, theseKeywords]];
     realStructs = Map[krancParamStruct[#, "CCTK_REAL", True] &, theseRealsNoImp];
     intStructs = Map[krancParamStruct[#, "CCTK_INT", True] &, theseIntsNoImp];
-    If[(Length[theseReals] + Length[theseInts]) > 0,
-      Return[{Name -> imp, UsedParameters -> Join[realStructs, intStructs]}], 
+    keywordStructs = Map[krancParamStruct[#, "CCTK_KEYWORD", True] &, theseKeywordsNoImp];
+    If[(Length[theseReals] + Length[theseInts] + Length[theseKeywords]) > 0,
+      Return[{Name -> imp, UsedParameters -> Join[realStructs, intStructs, keywordStructs]}], 
       Return[{}]]
   ];
 
 createKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_, 
-  reals_, ints_, keywords_, inheritedReals_, inheritedInts_, calcs_] :=
+  reals_, ints_, keywords_, inheritedReals_, inheritedInts_, 
+  inheritedKeywords_, calcs_] :=
 
   Module[{nEvolved, nPrimitive, evolvedMoLParam, evolvedGFs,
     constrainedMoLParam, genericfdStruct, realStructs, intStructs,
@@ -500,7 +509,7 @@ createKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_,
 
     keywordStructs = Map[krancKeywordParamStruct, keywords];
 
-    allInherited = Join[inheritedReals, inheritedInts];
+    allInherited = Join[inheritedReals, inheritedInts, inheritedKeywords];
 (*    Print["allInherited == ", allInherited];*)
 
     implementationNames = Union[Map[implementationFromQualifiedName, allInherited]];
@@ -516,7 +525,7 @@ createKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_,
       }
     };
 
-    userImplementations = Map[inheritParameters[#, inheritedReals,inheritedInts] &, 
+    userImplementations = Map[inheritParameters[#, inheritedReals,inheritedInts,inheritedKeywords] &, 
                               implementationNames];
 
 (*    Print["userImplementations == ",   userImplementations]; *)

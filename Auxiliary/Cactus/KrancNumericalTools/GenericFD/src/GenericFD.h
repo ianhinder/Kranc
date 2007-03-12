@@ -66,7 +66,7 @@
 #endif
 
 #if defined(KRANC_C)
-#define IMAX(int1, int2) (int1 > int2) ? int1 : int2
+#define IMAX(int1, int2) ((int1) > (int2) ? (int1) : (int2))
 #endif
 
 
@@ -77,6 +77,18 @@
 /*                                   */
 /* add method argument to shorthands */
 /*                                   */
+
+/* third derivatives */
+#define D111x(gf)  string(D111,gf)
+#define D211x(gf)  string(D211,gf)
+#define D311x(gf)  string(D311,gf)
+#define D221x(gf)  string(D221,gf)
+#define D321x(gf)  string(D321,gf)
+#define D331x(gf)  string(D331,gf)
+#define D222x(gf)  string(D222,gf)
+#define D322x(gf)  string(D322,gf)
+#define D332x(gf)  string(D332,gf)
+#define D333x(gf)  string(D333,gf)
 
 /* second derivatives */
 #define D11x(gf)  string(D11,gf)
@@ -93,6 +105,18 @@
 
 #ifdef PRECOMPUTE
 
+/* third derivatives */
+#define D111(gf)  string(D111,gf)
+#define D211(gf)  string(D211,gf)
+#define D311(gf)  string(D311,gf)
+#define D221(gf)  string(D221,gf)
+#define D321(gf)  string(D321,gf)
+#define D331(gf)  string(D331,gf)
+#define D222(gf)  string(D222,gf)
+#define D322(gf)  string(D322,gf)
+#define D332(gf)  string(D332,gf)
+#define D333(gf)  string(D333,gf)
+
 /* second derivatives */
 #define D11(gf,i,j,k)  string(D11,gf)
 #define D22(gf,i,j,k)  string(D22,gf)
@@ -107,6 +131,18 @@
 #define D3(gf,i,j,k)   string(D3,gf) 
 
 #else
+
+/* third derivatives */
+#define D111(gf)  D111gf(gf,i,j,k)
+#define D211(gf)  D211gf(gf,i,j,k)
+#define D311(gf)  D311gf(gf,i,j,k)
+#define D221(gf)  D221gf(gf,i,j,k)
+#define D321(gf)  D321gf(gf,i,j,k)
+#define D331(gf)  D331gf(gf,i,j,k)
+#define D222(gf)  D222gf(gf,i,j,k)
+#define D322(gf)  D322gf(gf,i,j,k)
+#define D332(gf)  D332gf(gf,i,j,k)
+#define D333(gf)  D333gf(gf,i,j,k)
 
 /* second derivatives */
 #define D11(gf,i,j,k)  D11gf(gf,i,j,k)
@@ -125,6 +161,18 @@
 
 
 #ifdef FD_C0
+/* third derivatives */
+#define D111gf(gf,i,j,k)  D111_c0(gf,i,j,k)
+#define D211gf(gf,i,j,k)  D211_c0(gf,i,j,k)
+#define D311gf(gf,i,j,k)  D311_c0(gf,i,j,k)
+#define D221gf(gf,i,j,k)  D221_c0(gf,i,j,k)
+#define D321gf(gf,i,j,k)  D321_c0(gf,i,j,k)
+#define D331gf(gf,i,j,k)  D331_c0(gf,i,j,k)
+#define D222gf(gf,i,j,k)  D222_c0(gf,i,j,k)
+#define D322gf(gf,i,j,k)  D322_c0(gf,i,j,k)
+#define D332gf(gf,i,j,k)  D332_c0(gf,i,j,k)
+#define D333gf(gf,i,j,k)  D333_c0(gf,i,j,k)
+
 /* second derivatives */
 #define D11gf(gf,i,j,k)  D11_c0(gf,i,j,k)
 #define D22gf(gf,i,j,k)  D22_c0(gf,i,j,k)
@@ -142,6 +190,18 @@
 
 
 #ifdef FD_C2
+/* third derivatives */
+#define D111gf(gf,i,j,k)  D111_c2(gf,i,j,k)
+#define D211gf(gf,i,j,k)  D211_c2(gf,i,j,k)
+#define D311gf(gf,i,j,k)  D311_c2(gf,i,j,k)
+#define D221gf(gf,i,j,k)  D221_c2(gf,i,j,k)
+#define D321gf(gf,i,j,k)  D321_c2(gf,i,j,k)
+#define D331gf(gf,i,j,k)  D331_c2(gf,i,j,k)
+#define D222gf(gf,i,j,k)  D222_c2(gf,i,j,k)
+#define D322gf(gf,i,j,k)  D322_c2(gf,i,j,k)
+#define D332gf(gf,i,j,k)  D332_c2(gf,i,j,k)
+#define D333gf(gf,i,j,k)  D333_c2(gf,i,j,k)
+
 /* second derivatives */
 #define D11gf(gf,i,j,k)  D11_c2(gf,i,j,k)
 #define D22gf(gf,i,j,k)  D22_c2(gf,i,j,k)
@@ -159,6 +219,18 @@
 
 
 #ifdef FD_C4
+/* third derivatives */
+#define D111gf(gf,i,j,k)  D111_c4(gf,i,j,k)
+#define D211gf(gf,i,j,k)  D211_c4(gf,i,j,k)
+#define D311gf(gf,i,j,k)  D311_c4(gf,i,j,k)
+#define D221gf(gf,i,j,k)  D221_c4(gf,i,j,k)
+#define D321gf(gf,i,j,k)  D321_c4(gf,i,j,k)
+#define D331gf(gf,i,j,k)  D331_c4(gf,i,j,k)
+#define D222gf(gf,i,j,k)  D222_c4(gf,i,j,k)
+#define D322gf(gf,i,j,k)  D322_c4(gf,i,j,k)
+#define D332gf(gf,i,j,k)  D332_c4(gf,i,j,k)
+#define D333gf(gf,i,j,k)  D333_c4(gf,i,j,k)
+
 /* second derivatives */
 #define D11gf(gf,i,j,k)  D11_c4(gf,i,j,k) 
 #define D22gf(gf,i,j,k)  D22_c4(gf,i,j,k)
@@ -175,6 +247,18 @@
 
 
 #ifdef FD_C2C4
+/* third derivatives */
+#define D111gf(gf,i,j,k)  D111_c2c4(gf,i,j,k)
+#define D211gf(gf,i,j,k)  D211_c2c4(gf,i,j,k)
+#define D311gf(gf,i,j,k)  D311_c2c4(gf,i,j,k)
+#define D221gf(gf,i,j,k)  D221_c2c4(gf,i,j,k)
+#define D321gf(gf,i,j,k)  D321_c2c4(gf,i,j,k)
+#define D331gf(gf,i,j,k)  D331_c2c4(gf,i,j,k)
+#define D222gf(gf,i,j,k)  D222_c2c4(gf,i,j,k)
+#define D322gf(gf,i,j,k)  D322_c2c4(gf,i,j,k)
+#define D332gf(gf,i,j,k)  D332_c2c4(gf,i,j,k)
+#define D333gf(gf,i,j,k)  D333_c2c4(gf,i,j,k)
+
 /* second derivatives */
 #define D11gf(gf,i,j,k)  D11_c2c4(gf,i,j,k)
 #define D22gf(gf,i,j,k)  D22_c2c4(gf,i,j,k)
@@ -203,6 +287,19 @@
 /*  set all derivatives = 0         */
 /*  for debugging and benchmarking  */
 
+/* third derivatives */
+
+#define D111_c0(gf,i,j,k)   0.
+#define D211_c0(gf,i,j,k)   0.
+#define D311_c0(gf,i,j,k)   0.
+#define D221_c0(gf,i,j,k)   0.
+#define D321_c0(gf,i,j,k)   0.
+#define D331_c0(gf,i,j,k)   0.
+#define D222_c0(gf,i,j,k)   0.
+#define D322_c0(gf,i,j,k)   0.
+#define D332_c0(gf,i,j,k)   0.
+#define D333_c0(gf,i,j,k)   0.
+
 /*  second derivatives              */
 
 #define D11_c0(gf,i,j,k)   0.
@@ -219,13 +316,29 @@
 #define D3_c0(gf,i,j,k)    0.
 
 
+
+#ifndef KRANC_C
+
 /*  c2                  */
 /*                      */
 /*  2nd order centered  */
 /*                      */
+
+/* third derivatives, centered, 2nd order */
+
+#define D111_c2(gf,i,j,k)   ((- gf(i+2,j,k) + 2*gf(i+1,j,k) - 2*gf(i-1,j,k) + gf(i-2,j,k)) * dxi*dxi*dxi * (1.0/2.0))
+#define D211_c2(gf,i,j,k)   ((gf(i+1,j+1,k) - 2*gf(i,j+1,k) + gf(i-1,j+1,k) - gf(i+1,j-1,k) + 2*gf(i,j-1,k) - gf(i-1,j-1,k)) * dxi*dxi*dyi * (1.0/2.0))
+#define D311_c2(gf,i,j,k)   ((gf(i+1,j,k+1) - 2*gf(i,j,k+1) + gf(i-1,j,k+1) - gf(i+1,j,k-1) + 2*gf(i,j,k-1) - gf(i-1,j,k-1)) * dxi*dxi*dzi * (1.0/2.0))
+#define D221_c2(gf,i,j,k)   ((gf(i+1,j+1,k) - 2*gf(i+1,j,k) + gf(i+1,j-1,k) - gf(i-1,j+1,k) + 2*gf(i-1,j,k) - gf(i-1,j-1,k)) * dxi*dyi*dyi * (1.0/2.0))
+#define D321_c2(gf,i,j,k)   ((gf(i+1,j+1,k+1) - gf(i-1,j+1,k+1) - gf(i+1,j-1,k+1) + gf(i-1,j-1,k+1) - gf(i+1,j+1,k-1) + gf(i-1,j+1,k-1) + gf(i+1,j-1,k-1) - gf(i-1,j-1,k-1)) * dxi*dyi*dzi * (1.0/8.0))
+#define D331_c2(gf,i,j,k)   ((gf(i+1,j,k+1) - 2*gf(i+1,j,k) + gf(i+1,j,k-1) - gf(i-1,j,k+1) + 2*gf(i-1,j,k) - gf(i-1,j,k-1)) * dxi*dzi*dzi * (1.0/2.0))
+#define D222_c2(gf,i,j,k)   ((- gf(i,j+2,k) + 2*gf(i,j+1,k) - 2*gf(i,j-1,k) + gf(i,j-2,k)) * dyi*dyi*dyi * (1.0/2.0))
+#define D322_c2(gf,i,j,k)   ((gf(i,j+1,k+1) - 2*gf(i,j,k+1) + gf(i,j-1,k+1) - gf(i,j+1,k-1) + 2*gf(i,j,k-1) - gf(i,j-1,k-1)) * dyi*dyi*dzi * (1.0/2.0))
+#define D332_c2(gf,i,j,k)   ((gf(i,j+1,k+1) - 2*gf(i,j+1,k) + gf(i,j+1,k-1) - gf(i,j-1,k+1) + 2*gf(i,j-1,k) - gf(i,j-1,k-1)) * dyi*dzi*dzi * (1.0/2.0))
+#define D333_c2(gf,i,j,k)   ((- gf(i,j,k+2) + 2*gf(i,j,k+1) - 2*gf(i,j,k-1) + gf(i,j,k-2)) * dzi*dzi*dzi * (1.0/2.0))
+
 /* second derivatives, centered, 2nd order */
 
-#ifndef KRANC_C
 #define D11_c2(gf,i,j,k)                         \
 	 ((   gf(i+1,j,k) \
 	 - 2.*gf(i,  j,k) \
@@ -613,8 +726,8 @@ static inline CCTK_REAL sbp_deriv_z(int i, int j, int k,
 
 typedef void(*Kranc_Calculation)(cGH *cctkGH, CCTK_INT dir, CCTK_INT   face,
                                  CCTK_REAL  normal[3],
-                                 CCTK_REAL  tangent1[3],
-                                 CCTK_REAL  tangent2[3],
+                                 CCTK_REAL  tangentA[3],
+                                 CCTK_REAL  tangentB[3],
                                  CCTK_INT   min[3],
                                  CCTK_INT   max[3], 
                                  CCTK_INT   n_subblock_gfs, 

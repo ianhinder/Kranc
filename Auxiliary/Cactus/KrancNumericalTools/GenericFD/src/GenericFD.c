@@ -33,6 +33,8 @@
 #include "cctk_Parameters.h"                  
 #include "util_Table.h"
 #include <assert.h>
+#include <stdlib.h>
+#include <math.h>
             
 #include "Symmetry.h"                         
 
@@ -154,31 +156,13 @@ void GenericFD_LoopOverEverything(cGH *cctkGH, Kranc_Calculation calc)
   CCTK_INT   dir = 0;
   CCTK_INT   face = 0;
   CCTK_REAL  normal[] = {0,0,0};
-  CCTK_REAL  tangent1[] = {0,0,0};
-  CCTK_REAL  tangent2[] = {0,0,0};
+  CCTK_REAL  tangentA[] = {0,0,0};
+  CCTK_REAL  tangentB[] = {0,0,0};
   CCTK_INT   bmin[] = {0,0,0};
   CCTK_INT   bmax[] = {cctk_lsh[0], cctk_lsh[1], cctk_lsh[2]};
 
-  calc(cctkGH, dir, face, normal, tangent1, tangent2, bmin, bmax, 0, NULL);
+  calc(cctkGH, dir, face, normal, tangentA, tangentB, bmin, bmax, 0, NULL);
   return;
-}
-
-static void basis_on_boundary(int dir, int face, CCTK_REAL normal[3], CCTK_REAL tangent1[3], 
-                              CCTK_REAL tangent2[3])
-{
-  for (int i = 0; i < 3; i++)
-  {
-    normal[i] = 0.0;
-    tangent1[i] = 0.0;
-    tangent2[i] = 0.0;
-  }
-
-  // Do we need these to be chosen in a more intelligent way?  For
-  // example, do they need to form a right handed set, or a set of
-  // constant handedness?
-  normal[dir] = (face == 0) ? -1 : 1;
-  tangent1[(dir + 1) % 3] = 1;
-  tangent2[(dir + 2) % 3] = 1;
 }
 
 
@@ -186,52 +170,89 @@ void GenericFD_LoopOverBoundary(cGH *cctkGH, Kranc_Calculation calc)
 {
   DECLARE_CCTK_ARGUMENTS
 
-  CCTK_INT   dir = 0;
-  CCTK_INT   face = 0;
-  CCTK_REAL  normal[] = {0,0,0};
-  CCTK_REAL  tangent1[] = {0,0,0};
-  CCTK_REAL  tangent2[] = {0,0,0};
-  CCTK_INT   bmin[] = {0,0,0};
-  CCTK_INT   bmax[] = {cctk_lsh[0], cctk_lsh[1], cctk_lsh[2]};
+  CCTK_INT   dir1, dir2, dir3;
+  CCTK_INT   dir[3];
+  CCTK_REAL  normal[3];
+  CCTK_REAL  tangentA[3];
+  CCTK_REAL  tangentB[3];
+  CCTK_INT   bmin[3];
+  CCTK_INT   bmax[3];
+  CCTK_INT   here_is_physbnd;
+  CCTK_INT   d;
 
   CCTK_INT   is_symbnd[6], is_physbnd[6], is_ipbnd[6];
   CCTK_INT   imin[3], imax[3];
+  int        old_dir = 0;
+  int        old_face = 0;
 
   GenericFD_GetBoundaryInfo(cctkGH, cctk_lsh, cctk_bbox, cctk_nghostzones, 
                             imin, imax, is_symbnd, is_physbnd, is_ipbnd);
 
  /* Loop over all faces */
-  for (dir = 0; dir < 3; dir++)
+  for (dir3 = -1; dir3 <= +1; dir3++)
   {
-    for (face = 0; face < 2; face++)
+    for (dir2 = -1; dir2 <= +1; dir2++)
     {
-      /* Start by looping over the whole grid, minus the NON-PHYSICAL
-         boundary points, which are set by synchronization.  */
-      bmin[0] = is_physbnd[0*2+0] ? 0 : imin[0];
-      bmin[1] = is_physbnd[1*2+0] ? 0 : imin[1];
-      bmin[2] = is_physbnd[2*2+0] ? 0 : imin[2];
-      bmax[0] = is_physbnd[0*2+1] ? cctk_lsh[0] : imax[0];
-      bmax[1] = is_physbnd[1*2+1] ? cctk_lsh[1] : imax[1];
-      bmax[2] = is_physbnd[2*2+1] ? cctk_lsh[2] : imax[2];
-
-      /* Now restrict to only the boundary points on the current face */
-      switch(face)
+      for (dir1 = -1; dir1 <= +1; dir1++)
       {
-      case 0:
-        bmax[dir] = imin[dir];
-        bmin[dir] = 0;
-        break;
-      case 1:
-        bmin[dir] = imax[dir];
-        bmax[dir] = cctk_lsh[dir];
-        break;
-      }
+        dir[0] = dir1;
+        dir[1] = dir2;
+        dir[2] = dir3;
 
-      basis_on_boundary(dir, face, normal, tangent1, tangent2);
+        here_is_physbnd = 0;
 
-      if (is_physbnd[dir * 2 + face])
-      {
-        calc(cctkGH, dir, face, normal, tangent1, tangent2, bmin, bmax, 0, NULL);
+        /* Start by looping over the whole grid, minus the NON-PHYSICAL
+           boundary points, which are set by synchronization.  */
+        for (d = 0; d < 3; d++)
+        {
+          bmin[d] = is_physbnd[d*2+0] ? 0 : imin[d];
+          bmax[d] = is_physbnd[d*2+1] ? cctk_lsh[d] : imax[d];
+
+          /* Now restrict to only the boundary points on the current face */
+          switch(dir[d])
+          {
+          case -1:
+            bmin[d] = 0;
+            bmax[d] = imin[d];
+            here_is_physbnd = here_is_physbnd || is_physbnd[2*d+0];
+            break;
+          case 0:
+            /* do nothing */
+            break;
+          case +1:
+            bmin[d] = imax[d];
+            bmax[d] = cctk_lsh[d];
+            here_is_physbnd = here_is_physbnd || is_physbnd[2*d+1];
+            break;
+          }
+
+          /* Choose a basis */
+          normal[d] = dir[d];
+          tangentA[d] = dir[d]; // FIXME
+          tangentB[d] = dir[d]; // FIXME
+        }
+
+        /* Ensure the normal vector is normalized */
+        CCTK_REAL normal_norm = 0;
+        for (int i = 0; i < 3; i++)
+        {
+          normal_norm += pow(normal[i],2);
+        }
+        normal_norm = sqrt(normal_norm);
+
+        if (fabs(normal_norm) > 1e-10)
+        {
+          for (int i = 0; i < 3; i++)
+          {
+            normal[i] /= normal_norm;
+          }
+        }
+
+        if (here_is_physbnd)
+        {
+          calc(cctkGH, old_dir, old_face, normal, tangentA, tangentB, bmin, bmax, 0, NULL);
+        }
+
       }
     }
   }
@@ -243,19 +264,19 @@ void GenericFD_LoopOverInterior(cGH *cctkGH, Kranc_Calculation calc)
 {
   DECLARE_CCTK_ARGUMENTS
 
-  CCTK_INT   dir = 0;
-  CCTK_INT   face = 0;
   CCTK_REAL  normal[] = {0,0,0};
-  CCTK_REAL  tangent1[] = {0,0,0};
-  CCTK_REAL  tangent2[] = {0,0,0};
+  CCTK_REAL  tangentA[] = {0,0,0};
+  CCTK_REAL  tangentB[] = {0,0,0};
 
   CCTK_INT   is_symbnd[6], is_physbnd[6], is_ipbnd[6];
   CCTK_INT   imin[3], imax[3];
+  int        dir = 0;
+  int        face = 0;
 
   GenericFD_GetBoundaryInfo(cctkGH, cctk_lsh, cctk_bbox, cctk_nghostzones, 
                             imin, imax, is_symbnd, is_physbnd, is_ipbnd);
 
-  calc(cctkGH, dir, face, normal, tangent1, tangent2, imin, imax, 0, NULL);
+  calc(cctkGH, dir, face, normal, tangentA, tangentB, imin, imax, 0, NULL);
   
   return;
 }
@@ -274,12 +295,14 @@ void GenericFD_PenaltyPrim2Char(cGH *cctkGH, CCTK_INT const dir,
   DECLARE_CCTK_ARGUMENTS
 
   CCTK_REAL  normal[] = {0,0,0};
-  CCTK_REAL  tangent1[] = {0,0,0};
-  CCTK_REAL  tangent2[] = {0,0,0};
+  CCTK_REAL  tangentA[] = {0,0,0};
+  CCTK_REAL  tangentB[] = {0,0,0};
   CCTK_INT   bmin[] = {0,0,0};
   CCTK_INT   bmax[] = {cctk_lsh[0], cctk_lsh[1], cctk_lsh[2]};
   CCTK_REAL  **all_vars;
   int        i = 0;
+  int        dir = 0;
+  int        face = 0;
 
   all_vars = malloc(num_modes*2*sizeof(CCTK_REAL *));
   assert(all_vars != NULL);
@@ -292,11 +315,11 @@ void GenericFD_PenaltyPrim2Char(cGH *cctkGH, CCTK_INT const dir,
 
   for (int d=0; d<3; ++d) {
     normal[d] = base[d];        /* A covector, index down */
-    tangent1[d] = base[d+3];    /* A vector, index up */
-    tangent2[d] = base[d+6];    /* A vector, index up */
+    tangentA[d] = base[d+3];    /* A vector, index up */
+    tangentB[d] = base[d+6];    /* A vector, index up */
   }
 
-  calc(cctkGH, dir, face, normal, tangent1, tangent2, bmin, bmax, num_modes * 2, all_vars);
+  calc(cctkGH, dir, face, normal, tangentA, tangentB, bmin, bmax, num_modes * 2, all_vars);
 
   free(all_vars);
   

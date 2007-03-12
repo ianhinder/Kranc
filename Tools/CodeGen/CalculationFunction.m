@@ -24,7 +24,7 @@ BeginPackage["sym`"];
 
 {GridFunctions, Shorthands, Equations, t, DeclarationIncludes,
 LoopPreIncludes, GroupImplementations, PartialDerivatives, Dplus1,
-Dplus2, Dplus3, Boundary, Interior, Where, AddToStencilWidth, Everywhere}
+Dplus2, Dplus3, Boundary, Interior, Where, AddToStencilWidth, Everywhere, normal1, normal2, normal3}
 
 {INV, SQR, CUB, QAD, dot, pow, exp,dx,dy,dz, idx, idy, idz} 
 
@@ -148,6 +148,9 @@ assignVariableFromExpression[dest_, expr_] := Module[{tSym, cleanExpr, code},
       ];
 
       code = StringReplace[code, "=="          -> " = "];
+      code = StringReplace[code, "normal1"     -> "normal[0]"];
+      code = StringReplace[code, "normal2"     -> "normal[1]"];
+      code = StringReplace[code, "normal3"     -> "normal[2]"];
       code = StringReplace[code, "BesselJ"-> "gsl_sf_bessel_Jn"];
       code = StringReplace[code, ToString@tSym -> "cctk_time"];
       code = StringReplace[code, "\"" -> ""];
@@ -474,7 +477,9 @@ CreateCalculationFunction[calc_, debug_] :=
 
   (* Check that there are no unknown symbols in the calculation *)
   allSymbols = calculationSymbols[cleancalc];
-  knownSymbols = Join[lookupDefault[cleancalc, AllowedSymbols, {}], gfs, shorts, parameters, {dx,dy,dz,idx,idy,idz,t, Pi, E, Symbol["i"], Symbol["j"], Symbol["k"]}];
+  knownSymbols = Join[lookupDefault[cleancalc, AllowedSymbols, {}], gfs, shorts, parameters, 
+    {dx,dy,dz,idx,idy,idz,t, Pi, E, Symbol["i"], Symbol["j"], Symbol["k"], normal1, normal2, 
+    normal3, tangentA1, tangentA2, tangentA3, tangentB1, tangentB2, tangentB3}];
 
   unknownSymbols = Complement[allSymbols, knownSymbols];
 
@@ -483,7 +488,7 @@ CreateCalculationFunction[calc_, debug_] :=
        ThrowError["Unknown symbols in calculation.  Symbols are:", unknownSymbols, "Calculation is:", cleancalc]]];
 
   {
-  DefineFunction[bodyFunctionName, "void", "cGH *cctkGH, CCTK_INT dir, CCTK_INT face, CCTK_REAL normal[3], CCTK_REAL tangent1[3], CCTK_REAL tangent2[3], CCTK_INT min[3], CCTK_INT max[3], CCTK_INT n_subblock_gfs, CCTK_REAL *subblock_gfs[]", 
+  DefineFunction[bodyFunctionName, "void", "cGH *cctkGH, CCTK_INT dir, CCTK_INT face, CCTK_REAL normal[3], CCTK_REAL tangentA[3], CCTK_REAL tangentB[3], CCTK_INT min[3], CCTK_INT max[3], CCTK_INT n_subblock_gfs, CCTK_REAL *subblock_gfs[]", 
   { 
     "DECLARE_CCTK_ARGUMENTS\n",
     "DECLARE_CCTK_PARAMETERS\n\n",

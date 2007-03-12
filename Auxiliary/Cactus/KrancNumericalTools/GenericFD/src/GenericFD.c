@@ -301,8 +301,6 @@ void GenericFD_PenaltyPrim2Char(cGH *cctkGH, CCTK_INT const dir,
   CCTK_INT   bmax[] = {cctk_lsh[0], cctk_lsh[1], cctk_lsh[2]};
   CCTK_REAL  **all_vars;
   int        i = 0;
-  int        dir = 0;
-  int        face = 0;
 
   all_vars = malloc(num_modes*2*sizeof(CCTK_REAL *));
   assert(all_vars != NULL);

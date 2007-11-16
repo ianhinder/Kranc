@@ -283,26 +283,27 @@ ComponentDerivativeOperatorMacroDefinition[componentDerivOp:(name_[inds___] -> e
 (*       Print["ss == ", ss];*)
        num = rhs2 /. pat -> x;
        den = rhs2 /. pat -> y;
-       If[num < 0,
-          newnum = - num;
-          signModifier = "m",
-          newnum = num;
-          signModifier = ""];
+(*       Print["num == ", num];
+       Print["den == ", den];*)
+       If[{num, 1, 2} === {1, 2},(* Print["SEQ!"]; *) newnum = 1; den=1; signModifier = "",
+         If[num < 0,
+            newnum = - num;
+            signModifier = "m",
+            newnum = num;
+            signModifier = ""]];
 
        quotient = 
          If[newnum/den == 1,
             "1o",
             ToString[newnum] <> "o" <> ToString[den]];
           
-(*
-       Print["num == ", num];
-       Print["den == ", den];
-       Print["quotient == ", quotient];
+
+(*       Print["quotient == ", quotient];
        Print["signModifier == ", signModifier];
        Print["spacings2 == ", spacings2];
        Print["ss == ", ss//FullForm];
-       Print["Inverse spacings: ", Simplify[1/(ss /. spacings2)]];
-*)
+       Print["Inverse spacings: ", Simplify[1/(ss /. spacings2)]];*)
+
        liName = "p" <> signModifier <> quotient <> ToString[Apply[SequenceForm,Simplify[1/(ss /. spacings2)]]];
 (*       Print["liName == ", liName];*)
 

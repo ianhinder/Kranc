@@ -66,7 +66,7 @@ The {\em Cactus Computational Toolkit} is an open-source problem
 solving environment originally developed in the numerical relativity
 community.  It is arranged as a central {\em flesh} and a collection
 of modules called {\em thorns} which all communicate with the
-flesh. Many thorns are provided, and the user writes additional thorns
+flesh.  Many thorns are provided, and the user writes additional thorns
 in C or Fortran which solve their particular physics problem.  Cactus
 is particularly suited to the numerical solution of time dependent
 partial differential equations.
@@ -85,7 +85,7 @@ computational grid.
 \item Standard efficient time integrators such as fourth order
 Runge-Kutta and iterative Crank-Nicolson via the {\em MoL} thorn
 written by I.~Hawke.
-\item Mesh refinement \cite{Schnetter}; i.e.~using variable resolution
+\item Mesh refinement \cite{Schnetter}; i.e., using variable resolution
 across the numerical grid, so that the computational resources are
 focused on interesting parts of the simulation.
 \item Automatic parallelization of the code to run across multiple
@@ -97,7 +97,7 @@ format.
 \end{itemize}
 These tasks are completely divorced from the physics and numerical
 analysis side of the problem, but are necessary in most numerical
-codes.  
+codes.
 
 \section{Overview of the Kranc system}
 
@@ -120,14 +120,14 @@ evolved variables.
 \end{itemize}
 
 The most important data structure in Kranc is a {\em Calculation}
-structure. It encapsulates the idea of assigning new values to grid
+structure.  It encapsulates the idea of assigning new values to grid
 functions in a loop over grid points based upon evaluating expressions
-involving other grid functions. Calculations contain lists of
+involving other grid functions.  Calculations contain lists of
 assignment statements for different grid functions, and these are
 evaluated at each point on the grid.  Calculations can also contain
 temporary variables called {\em shorthands} into which are placed
 intermediate expressions which are used later in the
-calculation. Calculations also contain additional information needed
+calculation.  Calculations also contain additional information needed
 by the Kranc system, such as a name for the calculation.
 
 \chapter{Using Kranc}
@@ -142,7 +142,7 @@ a suitable default will be chosen.  Positional arguments are useful
 when there are few arguments to a function, and their meaning is clear
 in the calling context.  Named arguments are preferred when there are
 many arguments, as the argument names are given explicitly in the
-calling context. Named arguments are given after the positional
+calling context.  Named arguments are given after the positional
 arguments in the form \verb|ArgumentName -> argumentvalue|.  For
 example:
 
@@ -186,7 +186,7 @@ data structures is introduced below.
 
 \subsection{Data structure: Calculation}
 
-Calculation structures are the core of the Kranc system. A Calculation
+Calculation structures are the core of the Kranc system.  A Calculation
 structure has the following form:
 
 \begin{center}
@@ -207,7 +207,7 @@ The {\it Shorthands} and {\it CollectList} entries are optional.
 
 {\it name} is a string which will be used as the function name in
 Cactus, as well as the base of the filename of the source file
-implementing the calculation in the generated thorn. For example, 
+implementing the calculation in the generated thorn.  For example, 
 
 \begin{center}
 \begin{minipage}{0.8 \textwidth}
@@ -233,7 +233,7 @@ equations, or the analysis time bin.
 shorthands for the purposes of this calculation.  These are variables
 which are defined locally in the loop and are not grid functions
 defined over the whole grid.  They are used as temporary intermediate
-variables when setting more complicated grid functions. For example,
+variables when setting more complicated grid functions.  For example,
 \begin{center}
 \begin{minipage}{0.8 \textwidth}
 \begin{verbatim}
@@ -245,7 +245,7 @@ would define two shorthands called $a$ and $b$ which can be assigned
 to and used in the equations.
 
 {\it equationlist} is a list of assignments to perform in the
-calculation loop. Each equation is of the form
+calculation loop.  Each equation is of the form
 \begin{center}
 \begin{minipage}{0.8 \textwidth}
 \begin{verbatim}
@@ -257,7 +257,7 @@ When the calculation is performed, for each point in the grid, {\it
 expression} is evaluated and placed into the grid function {\it
 variable}.  Here {\it expression} may contain partial derivatives of
 grid functions which have been defined in a PartialDerivatives
-structure. {\it variable} may be either a grid function or a
+structure.  {\it variable} may be either a grid function or a
 shorthand.  Using the notation {\tt dot[{\it gf}]} for {\it variable}
 represents a time derivative of the grid function {\it gf}; this
 should be used when the calculation is scheduled in {\tt MoL\_CalcRHS}
@@ -272,13 +272,13 @@ of variables whose coefficients should be collected during
 simplification.
 
 Note that the system is not designed to allow the same grid function
-to be set more than once in a single loop of a calculation. This
+to be set more than once in a single loop of a calculation.  This
 limitation may be removed in the future.
 
 The following example is taken from the Kranc implementation of the
 NOR formulation of Einstein's equations.  It is a calculation which
 describes the time evolution equation for the lapse function $\alpha$
-in {\em harmonic slicing}. It uses the TensorTools package to
+in {\em harmonic slicing}.  It uses the TensorTools package to
 represent tensorial quantities.
 
 \begin{center}
@@ -320,7 +320,7 @@ It is clear that
 \begin{eqnarray}
 (E_+)^n v_j = v_{j+n}
 \end{eqnarray}
-and negative powers $n$ take on the obvious meaning. In three
+and negative powers $n$ take on the obvious meaning.  In three
 dimensions, there is one shift operator for each dimension:
 \begin{eqnarray}
 E_{+1} v_j \equiv v_{j+(100)} \qquad
@@ -335,7 +335,7 @@ derivative operators in terms of finite difference approximations:
 \begin{center}
 \begin{minipage}{0.8 \textwidth}
 \begin{tt}
-\{  {\it name}[i\_, j\_, \ldots] -> {\it defn}, ... \}
+\{  {\it name}[i\_, j\_, \ldots] -> {\it defn}, ...  \}
 \end{tt}
 \end{minipage}
 \end{center}
@@ -343,12 +343,12 @@ derivative operators in terms of finite difference approximations:
 where {\it name} is the name for the partial derivative, and {\it
 defn} is an algebraic expression in shift operators representing the
 difference operator.  The shift operator $E_{+i}$ is written as {\tt
-shift[i]}. The form {\tt spacing[i]} can be used in {\it defn} to
+shift[i]}.  The form {\tt spacing[i]} can be used in {\it defn} to
 represent the grid spacing in the $i$ direction.  The parameters {\tt
 i, j, \ldots} are used in {\it defn} to represent the direction of
-differentiation for the first, second, etc. derivatives.  Partial
+differentiation for the first, second, etc.  derivatives.  Partial
 derivatives with the same name but a different number of arguments
-(i.e.~for first and second derivatives) are allowed in the
+(i.e., for first and second derivatives) are allowed in the
 PartialDerivatives structure.
 
 Since the definitions of the difference operators are written in terms
@@ -471,7 +471,7 @@ would represent a group called {\tt sol} with variables {\tt phi} and
 
 The group name can be prefixed with the name of the Cactus
 implementation that provides the group followed by two colons
-(e.g.~``ADMBase::metric'').  
+(e.g.~``ADMBase::metric'').
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -577,7 +577,7 @@ kernels should be used for the different forms if this is a problem.
 %% converting expressions into components.  In order to convert an
 %% expression containing a covariant derivative into components,
 %% TensorTools first simplifies the expression.  In the following, $x$
-%% and $y$ represent expressions which may contain tensorial indices. The
+%% and $y$ represent expressions which may contain tensorial indices.  The
 %% following steps are performed to simplify the expression:
 %% \begin{itemize}
 %% \item{Replace any high order covariant derivatives with repeated
@@ -639,7 +639,7 @@ kernels should be used for the different forms if this is a problem.
 Prototype: CreateThorn[groups, directory, thornName, namedArgs]\\
 
 Note that if you want to use TensorTools tensors in calculations, you
-must call the CreateThornTT function instead of this one. It takes the
+must call the CreateThornTT function instead of this one.  It takes the
 same arguments, but they can be tensorial in nature.
 
 \subsubsection{Positional Arguments}
@@ -649,9 +649,9 @@ same arguments, but they can be tensorial in nature.
   \hline
   \bf Argument & \bf Type & \bf Description \\
   \hline
-  groups & list of GroupDefinition structures & These define what groups each grid function is a member of. \\
-  directory & string & What directory to create the thorn in.  Usually ".". \\ 
-  thornName & string & The name to give the thorn. \\
+  groups & list of GroupDefinition structures & These define what groups each grid function is a member of.  \\
+  directory & string & What directory to create the thorn in.  Usually ".".  \\ 
+  thornName & string & The name to give the thorn.  \\
   namedArgs & Rule & The named arguments (see below) \\
   \hline
 \end{tabularx}
@@ -667,22 +667,22 @@ same arguments, but they can be tensorial in nature.
   Calculations & list of Calculation structures & The calculations to perform & \{\} \\
 
   DeclaredGroups & list of strings & The names of groups present in the {\tt groups} argument 
-                                     which are to be created as new groups by this thorn. & \{\} \\
+                                     which are to be created as new groups by this thorn.  & \{\} \\
 
   PartialDerivatives & a PartialDerivatives structure & The partial derivative definitions that
-                                                        are used in this thorn (optional). & \{\} \\
+                                                        are used in this thorn (optional).  & \{\} \\
 
   RealParameters & list of strings & A list of real-valued parameters that this thorn will
-                                     define and use.  They will all default to zero. (optional) & \{\} \\
+                                     define and use.  They will all default to zero.  (optional) & \{\} \\
 
   IntParameters & list of strings & A list of integer-valued parameters that this thorn will
-                                     define and use.  They will all default to zero. (optional) & \{\} \\
+                                     define and use.  They will all default to zero.  (optional) & \{\} \\
 
   KeywordParameters & list of KeywordParameterDefinition structures & A list of parameter definition structures for all the keyword parameters which this thorn will define and use.  (optional) & \{\} \\
 
   InheritedImplementations & list of strings & A list of all the implementations which this thorn
                                                will inherit from.  This is necessary to use grid functions
-                                               provided by these implementations. (optional) & \{\} \\
+                                               provided by these implementations.  (optional) & \{\} \\
   \hline
 \end{tabularx}
 \end{center}
@@ -698,7 +698,7 @@ same arguments, but they can be tensorial in nature.
 \chapter{Kranc internal design}
 
 Kranc is composed of several Mathematica packages.  Each of these
-human readable scripts performs a distinct function.  
+human readable scripts performs a distinct function.
 The diagram in Figure \ref{fig:kranc_design} illustrates the
 relationships between the Kranc packages KrancThorns, TensorTools,
 CodeGen, Thorn and MapLookup, which are described in the following
@@ -761,7 +761,7 @@ the inside of such a structure.
 \subsection{Package: Thorn}
 
 The Thorn package is used by all the different thorn generators to
-construct the final Cactus thorn. It takes care of the mechanics of
+construct the final Cactus thorn.  It takes care of the mechanics of
 writing files to storage and parsing the Kranc structures necessary
 for writing parameter configuration files, grid function definitions
 etc.

@@ -44,8 +44,8 @@
 #include "GenericFD.h"
 
 
-/* TODO: provide functions for differencing, use FD macros to
-   evaluate == use macros to evaluate corresponding functions */
+/* TODO: provide functions for differencing, use FD macros to evaluate
+   corresponding functions */
 
 CCTK_INT sgn(CCTK_REAL x)
 {
@@ -201,14 +201,8 @@ void GenericFD_LoopOverBoundary(cGH *cctkGH, Kranc_Calculation calc)
 
         here_is_physbnd = 0;
 
-        /* Start by looping over the whole grid, minus the NON-PHYSICAL
-           boundary points, which are set by synchronization.  */
         for (d = 0; d < 3; d++)
         {
-          bmin[d] = is_physbnd[d*2+0] ? 0 : imin[d];
-          bmax[d] = is_physbnd[d*2+1] ? cctk_lsh[d] : imax[d];
-
-          /* Now restrict to only the boundary points on the current face */
           switch(dir[d])
           {
           case -1:
@@ -217,7 +211,8 @@ void GenericFD_LoopOverBoundary(cGH *cctkGH, Kranc_Calculation calc)
             here_is_physbnd = here_is_physbnd || is_physbnd[2*d+0];
             break;
           case 0:
-            /* do nothing */
+            bmin[d] = imin[d];
+            bmax[d] = imax[d];
             break;
           case +1:
             bmin[d] = imax[d];
@@ -228,28 +223,25 @@ void GenericFD_LoopOverBoundary(cGH *cctkGH, Kranc_Calculation calc)
 
           /* Choose a basis */
           normal[d] = dir[d];
-          tangentA[d] = dir[d]; // FIXME
-          tangentB[d] = dir[d]; // FIXME
-        }
-
-        /* Ensure the normal vector is normalized */
-        CCTK_REAL normal_norm = 0;
-        for (int i = 0; i < 3; i++)
-        {
-          normal_norm += pow(normal[i],2);
-        }
-        normal_norm = sqrt(normal_norm);
-
-        if (fabs(normal_norm) > 1e-10)
-        {
-          for (int i = 0; i < 3; i++)
-          {
-            normal[i] /= normal_norm;
-          }
+          tangentA[d] = dir[(d+1)%3];
+          tangentB[d] = dir[(d+2)%3];
         }
 
         if (here_is_physbnd)
         {
+#if 0
+          CCTK_REAL normal_norm = 0.0;
+          for (d = 0; d < 3; d++)
+          {
+            normal_norm += pow(normal[d], 2);
+          }
+          normal_norm = sqrt(normal_norm);
+          for (d = 0; d < 3; d++)
+          {
+            normal[d] /= normal_norm;
+          }
+#endif
+          
           calc(cctkGH, old_dir, old_face, normal, tangentA, tangentB, bmin, bmax, 0, NULL);
         }
 

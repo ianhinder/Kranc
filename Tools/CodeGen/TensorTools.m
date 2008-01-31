@@ -86,9 +86,10 @@ registered using DefineConnection into partial derivatives.";
 
 LieToPD::usage = "LieToPD[x] converts all Lie derivatives in x ";
 
-DefineConnection::usage = "DefineConnection[cd, ch] registers a
-connection with TensorTools.  The derivative operator will be cd, and
-the Christoffel symbol will be ch.";
+DefineConnection::usage = "DefineConnection[cd, pd, ch] registers a
+connection with TensorTools.  The covariant derivative operator will be cd,
+the partial derivative operator will be pd, and the Christoffel symbol will
+be ch.";
 
 KD::usage = "KD[x,y] is the Kronecker delta symbol.  It can be given
 tensorial or numerical indices.";

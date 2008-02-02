@@ -493,7 +493,7 @@ CreateCalculationFunction[calc_, debug_] :=
   { 
     "DECLARE_CCTK_ARGUMENTS\n",
     "DECLARE_CCTK_PARAMETERS\n\n",
-    DeclareGridLoopVariables[],
+    (* DeclareGridLoopVariables[], *)
     DeclareFDVariables[],
     (* declareVariablesForCalculation[cleancalc], *)
     (* declarePrecomputedDerivatives[dsUsed], *)
@@ -682,7 +682,7 @@ equationLoop[eqs_,
    code = {(*InitialiseGridLoopVariables[derivSwitch, addToStencilWidth], *)
    functionName = ToString@lookup[cleancalc, Name];
 
-   GenericGridLoop[
+   GenericGridLoop[functionName,
    {declareVariablesForCalculation[cleancalc],
     declarePrecomputedDerivatives[dsUsed],
     DeclareDerivatives[pddefs, eqs],

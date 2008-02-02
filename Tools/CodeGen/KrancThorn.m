@@ -101,12 +101,15 @@ replaceDots[x_] :=
 CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts___] :=
   Module[{calcs, declaredGroups, implementation,
   inheritedImplementations, includeFiles, evolutionTimelevels,
-  realParams, intParams,  keywordParams, inheritedRealParams, inheritedIntParams,
-  inheritedKeywordParams, extendedRealParams, extendedIntParams,
-  extendedKeywordParams, partialDerivs, coordGroup, evolvedGroups,
-  nonevolvedGroups, interface, evolvedGroupDefinitions,
-  rhsGroupDefinitions, thornspec, allParams, boundarySources,
-  reflectionSymmetries, realParamDefs, intParamDefs, pDefs},
+  realParams, intParams, keywordParams,
+  inheritedRealParams, inheritedIntParams, inheritedKeywordParams,
+  extendedRealParams, extendedIntParams, extendedKeywordParams,
+  configuration,
+  partialDerivs, coordGroup, evolvedGroups, nonevolvedGroups,
+  interface, evolvedGroupDefinitions, rhsGroupDefinitions, thornspec,
+  allParams, boundarySources, reflectionSymmetries,
+  realParamDefs, intParamDefs,
+  pDefs},
 
 (*  Return[];*)
 
@@ -177,6 +180,10 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts___] :=
 
     nonevolvedGroupsWithRHS = Join[nonevolvedGroups, Map[groupName, rhsGroupDefinitions]];
 
+    (* Construct the configuration file *)
+    InfoMessage[Terse, "Creating configuration file"];
+    configuration = createKrancConfiguration[];
+
     (* Construct the interface file *)
     InfoMessage[Terse, "Creating interface file"];
     interface = createKrancInterface[nonevolvedGroupsWithRHS,
@@ -240,13 +247,14 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts___] :=
       Map[lookup[#, Filename] &, boundarySources]]];
 
     (* Put all the above together and generate the Cactus thorn *)
-    thornspec = {Name      -> thornName, 
-                 Directory -> parentDirectory,
-	         Interface -> interface, 
-                 Schedule  -> schedule, 
-                 Param     -> param,
-                 Makefile  -> make,
-                 Sources   -> Join[{
+    thornspec = {Name          -> thornName, 
+                 Directory     -> parentDirectory,
+                 Configuration -> configuration,
+	         Interface     -> interface, 
+                 Schedule      -> schedule, 
+                 Param         -> param,
+                 Makefile      -> make,
+                 Sources       -> Join[{
                   {Filename -> "Startup.c", Contents -> startup}, 
                   {Filename -> "RegisterMoL.c", Contents -> molregister},
                   {Filename -> "RegisterSymmetries.c", Contents -> symregister},
@@ -324,6 +332,13 @@ evolvedGroupInterfaceStructure[group_, timelevels_] :=
 nonevolvedTimelevels[group_] :=
   Module[{tls = GroupTimelevels[group]},
     If[ tls === False, 1, tls]];
+
+
+createKrancConfiguration[] :=
+  Module[{configuration},
+    configuration = CreateConfiguration[];
+    Return[configuration];
+  ];
 
 
 createKrancInterface[nonevolvedGroups_, evolvedGroups_, groups_,

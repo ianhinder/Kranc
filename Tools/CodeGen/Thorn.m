@@ -36,7 +36,8 @@ SynchronizedGroups, StorageGroups, Timelevels, MaxTimelevels,
 VariableType, GridType,
 Visibility, Variables, Implementations, Value, AllowedValues,
 UsedParameters, Description, ExtendedParameters, NewParameters,
-Directory, Interface, Param, Schedule, Sources, Makefile, Filename,
+Directory, Configuration, Interface, Param, Schedule, Sources, Makefile,
+Filename,
 Contents, ThornName, BaseImplementation, EvolvedGFs, PrimitiveGFs,
 Groups, Calculation, GridFunctions, Shorthands, Equations, Parameter,
 Value, UsesFunctions, ArgString, Conditional, D1, D2, D3, D11, D22,
@@ -52,6 +53,7 @@ BeginPackage["Thorn`", "CodeGen`", "CalculationFunction`", "MapLookup`", "KrancG
    interface to this package. *)
 CreateSchedule::usage = "Create the content of the schedule.ccl file.";
 CreateMakefile::usage = "Create the content of the Cactus make.code.defn file.";
+CreateConfiguration::usage = "Create the content of the configuration.ccl file.";
 CreateInterface::usage = "Create the content of the interface.ccl file.";
 CreateParam::usage = "Create the content of the param.ccl file.";
 Quote::usage = ""; (* This should not be in this package *)
@@ -217,6 +219,15 @@ CreateParam[spec_] :=
        output a parameter block for it *)
     Map[{lookup[#, Visibility], ":\n", parameterBlock[#]} &, 
         lookupDefault[spec, NewParameters, {}]]};
+   
+(* ------------------------------------------------------------------------ 
+   Configuration file
+   ------------------------------------------------------------------------ *)
+
+CreateConfiguration[] :=
+  {whoWhen["CCL"],
+   "REQUIRES LoopControl\n"
+  };
 
 (* ------------------------------------------------------------------------ 
    Interface file
@@ -303,7 +314,7 @@ CreateInterface[implementation_, inheritedImplementations_, includeFiles_,
    If[mapContains[{opts}, Friends],
      {"friend:     ", SpaceSeparated[lookup[{opts}, Friends]]},{}],
    "\n\n",
-   Map[{"USES INCLUDE: ", #, "\n"} &, includeFiles],
+   Map[{"USES INCLUDE: ", #, "\n"} &, Join[includeFiles,{"loopcontrol.h"}]],
    "\n",
 
    Map[usesFunction,     lookupDefault[{opts}, UsesFunctions, {}]],
@@ -467,7 +478,8 @@ CreateSetterSource[calcs_, debug_, opts___] :=
       ],
 
    Map[IncludeFile, Join[{"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h",
-                     (*"precomputations.h",*) "GenericFD.h", "Differencing.h"}, include]],
+                     (*"precomputations.h",*) "GenericFD.h", "Differencing.h",
+                          "loopcontrol.h"}, include]],
    calculationMacros[],
 
    (* For each function structure passed, create the function and
@@ -1310,9 +1322,10 @@ CreateThorn[thorn_] :=
     EnsureDirectory[thornDirectory];
     EnsureDirectory[sourceDirectory];
 
-    GenerateFile[thornDirectory <> "/interface.ccl", lookup[thorn, Interface]];
-    GenerateFile[thornDirectory <> "/param.ccl",     lookup[thorn, Param]];
-    GenerateFile[thornDirectory <> "/schedule.ccl",  lookup[thorn, Schedule]];
+    GenerateFile[thornDirectory <> "/configuration.ccl", lookup[thorn, Configuration]];
+    GenerateFile[thornDirectory <> "/interface.ccl",     lookup[thorn, Interface]];
+    GenerateFile[thornDirectory <> "/param.ccl",         lookup[thorn, Param]];
+    GenerateFile[thornDirectory <> "/schedule.ccl",      lookup[thorn, Schedule]];
     
     Map[GenerateFile[sourceDirectory <> "/" <> lookup[#, Filename], 
                                                lookup[#, Contents]] &,

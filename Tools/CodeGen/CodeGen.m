@@ -69,8 +69,10 @@ DefineCCTKSubroutine::usage = "DefineCCTKSubroutine[name, block] returns a block
   "of code that defines a CCTK Fortran subroutine of name 'name' with body 'block'.";
 GridName::usage = "GridName[variable] returns the name needed to access variable " <>
   "assuming it is a grid variable when inside a grid loop.";
+(*
 DeclareGridLoopVariables::usage = "DeclareGridLoopVariables[] returns a block " <>
   "that defines the variables needed during a grid loop.";
+*)
 InitialiseGridLoopVariables::usage = "InitialiseGridLoopVariables[] returns a block " <>
   "that initialises variables needed by a grid loop.";
 InitialiseGridLoopVariablesWithStencil::usage = "InitialiseGridLoopVariables[] returns a block " <>
@@ -78,9 +80,14 @@ InitialiseGridLoopVariablesWithStencil::usage = "InitialiseGridLoopVariables[] r
 ConditionalOnParameter::usage = "ConditionalOnParameter[name, value, block] returns " <>
   "a block that introduces a conditional expression whereby 'block' is only executed " <>
   "if the Cactus parameter 'name' has value 'value'.";
+(*
 GridLoop::usage = "GridLoop[block] returns a block that is looped over for every " <>
   "grid point.  Must have previously set up the grid loop variables (see " <>
   "DeclareGridLoopVariables and InitialiseGridLoopVariables.";
+*)
+GridLoop::usage = "GridLoop[block] returns a block that is looped over for every " <>
+  "grid point.  Must have previously set up the grid loop variables (see " <>
+  "InitialiseGridLoopVariables.";
 SubblockGridName::usage = ""
 
 DeclareArray::usage = "";
@@ -399,6 +406,7 @@ SubblockGridName[x_] := If[SOURCELANGUAGE == "C",
                    ToString[x] <> "(i,j,k)"
                 ];
 
+(*
 DeclareGridLoopVariables[] :=
   SeparatedBlock[
     {insertComment["Declare the variables used for looping over grid points"],
@@ -412,6 +420,8 @@ DeclareGridLoopVariables[] :=
      If[SOURCELANGUAGE == "C", DeclareVariable["index", "CCTK_INT"], "\n"],
      If[SOURCELANGUAGE == "C", DeclareVariable["subblock_index", "CCTK_INT"], "\n"]
   }];
+*)
+
 
 (* Access an element of an array; syntax is different between C and
    Fortran.  Always give this function a C-style array index. *)
@@ -477,6 +487,7 @@ ConditionalOnParameterTextual[text_, block_] :=
    indentBlock[block],
    "}\n"}];
 
+(*
 GridLoop[block_] :=
   CommentedBlock["Loop over the grid points",
    loopOverInteger["k", "kstart", "kend",
@@ -505,6 +516,66 @@ GenericGridLoop[block_] :=
 	 block
        }
         ]]]];
+*)
+
+(*
+GridLoop[block_] :=
+  If[SOURCELANGUAGE == "C",  
+    CommentedBlock["Loop over the grid points",
+      {
+        "_Pragma (\"omp parallel\")\n",
+        "LC_LOOP3 (unnamed,\n",
+        "          i,j,k, istart,jstart,kstart, iend,jend,kend,\n",
+        "          cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])\n",
+        "{\n",
+        indentBlock[
+          {
+             DeclareVariable["index", "int"],
+             AssignVariable["index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"],
+             block
+          }
+        ],
+        "}\n",
+        "LC_ENDLOOP3 (unnamed);\n"
+      }
+    ],
+    CommentedBlock["Loop over the grid points",
+      {
+        "_Pragma (\"omp parallel\")\n",
+        "LC_LOOP3 (unnamed,\n",
+        "          i,j,k, istart,jstart,kstart, iend,jend,kend,\n",
+        "          cctk_lsh(1),cctk_lsh(2),cctk_lsh(3))\n",
+        indentBlock[block],
+        "LC_ENDLOOP3 (unnamed)\n"
+      }
+    ]
+  ];
+*)
+
+GenericGridLoop[functionName_, block_] :=
+  If[SOURCELANGUAGE == "C",  
+    CommentedBlock["Loop over the grid points",
+      {
+        "_Pragma (\"omp parallel\")\n",
+        "LC_LOOP3 (", functionName, ",\n",
+        "          i,j,k, min[0],min[1],min[2], max[0],max[1],max[2],\n",
+        "          cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])\n",
+        "{\n",
+        indentBlock[
+          {
+             DeclareVariable["index", "int"],
+             DeclareVariable["subblock_index", "int"],
+             AssignVariable["index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"],
+             AssignVariable["subblock_index", "i - min[0] + (max[0] - min[0]) * (j - min[1] + (max[1]-min[1]) * (k - min[2]))"],
+             block
+          }
+        ],
+        "}\n",
+        "LC_ENDLOOP3 (", functionName, ");\n"
+      }
+    ],
+    ""
+  ];
 
 switchOptions[{value_, block_}] :=
 {

@@ -101,7 +101,7 @@ replaceDots[x_] :=
 CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts___] :=
   Module[{calcs, declaredGroups, implementation,
   inheritedImplementations, includeFiles, evolutionTimelevels,
-  realParams, intParams, inheritedRealParams, inheritedIntParams,
+  realParams, intParams,  keywordParams, inheritedRealParams, inheritedIntParams,
   inheritedKeywordParams, extendedRealParams, extendedIntParams,
   extendedKeywordParams, partialDerivs, coordGroup, evolvedGroups,
   nonevolvedGroups, interface, evolvedGroupDefinitions,

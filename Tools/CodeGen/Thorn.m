@@ -669,6 +669,7 @@ CreateMoLBoundariesSource[spec_] :=
     }];
 
 
+(*
     symmetryBCGroup[group_] := Module[{boundpar, fullgroupname},
     (* symmetry boundary conditions *)
 
@@ -681,6 +682,7 @@ CreateMoLBoundariesSource[spec_] :=
      "  if (ierr < 0)\n",
      "     CCTK_WARN(-1, \"Failed to apply symmetry BC for " <> fullgroupname <> "!\");\n"}
      ];
+*)
 
     trivialBCGroup[group_] := Module[{boundpar, fullgroupname},
     (* boundary conditions that do not have parameters besides their name *)
@@ -872,7 +874,9 @@ CreateMoLBoundariesSource[spec_] :=
    "void",
      {DefineVariable["ierr",   "CCTK_INT", "0"],
 
+(*
        Map[symmetryBCGroup,  groups],
+*)
 
        Map[trivialBCGroup,   groups],
        Map[trivialBCGF,      gfs],

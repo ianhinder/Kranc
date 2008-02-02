@@ -319,7 +319,7 @@ ComponentDerivativeOperatorMacroDefinition[componentDerivOp:(name_[inds___] -> e
 (*    rhs4 = Factor[rhs3];*)
 
     rhs4 = rhs3 //. (x_ a_ + x_ b_) -> x(a+b);
-    rhs5 = rhs4 //. (x_ a_ - y_ b_) -> x(a-b);
+    rhs5 = rhs4 //. (x_ a_ - x_ b_) -> x(a-b);
     
 (*    Print[componentDerivOp, ": "];
     Print[FullForm[rhs5]];

@@ -27,8 +27,7 @@
 
 BeginPackage["sym`"];
 
-{Calculations, DeclaredGroups, RealParameters, IntParameters,
-  KeywordParameters,
+{Calculations, DeclaredGroups, RealParameters, IntParameters, KeywordParameters,
   InheritedRealParameters,InheritedIntParameters,InheritedKeywordParameters,
   ExtendedRealParameters,ExtendedIntParameters,ExtendedKeywordParameters,
   Parameters,
@@ -194,8 +193,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts___] :=
 
     (* Construct the param file *)
     InfoMessage[Terse, "Creating param file"];
-    param = createKrancParam[evolvedGroups, nonevolvedGroups, groups,
-      thornName, realParamDefs, intParamDefs, keywordParams,
+    param = createKrancParam[evolvedGroups, nonevolvedGroups, groups, thornName,
+      realParamDefs, intParamDefs, keywordParams,
       inheritedRealParams, inheritedIntParams, inheritedKeywordParams,
       extendedRealParams, extendedIntParams, extendedKeywordParams,
       evolutionTimelevels,

@@ -358,10 +358,11 @@ DefineCCTKSubroutine[name_, contents_] :=
 
 DeclareFDVariables[] := 
   CommentedBlock["Declare finite differencing variables",
-    Map[DeclareVariables[#, "CCTK_REAL"] &, {{"dx", "dy", "dz"}, 
-                                             {"dxi", "dyi", "dzi"},
-                                             {khalf,kthird,ktwothird,kfourthird,keightthird},
-                                             {"hdxi", "hdyi", "hdzi"}}]];
+    {Map[DeclareVariables[#, "CCTK_REAL"] &, {{"dx", "dy", "dz"}, 
+                                              {"dxi", "dyi", "dzi"},
+                                              {khalf,kthird,ktwothird,kfourthird,keightthird},
+                                              {"hdxi", "hdyi", "hdzi"}}],
+     "\n"}];
 
 InitialiseFDSpacingVariablesC[] := 
   {

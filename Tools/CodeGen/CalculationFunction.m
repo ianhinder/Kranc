@@ -495,9 +495,9 @@ CreateCalculationFunction[calc_, debug_] :=
     "DECLARE_CCTK_PARAMETERS\n\n",
     DeclareGridLoopVariables[],
     DeclareFDVariables[],
-    declareVariablesForCalculation[cleancalc],
-    declarePrecomputedDerivatives[dsUsed],
-    DeclareDerivatives[pddefs, eqs],
+    (* declareVariablesForCalculation[cleancalc], *)
+    (* declarePrecomputedDerivatives[dsUsed], *)
+    (* DeclareDerivatives[pddefs, eqs], *)
     declareSubblockGFs[subblockGFs, 0],
 
     declarePreDefinitions[pDefs],
@@ -533,7 +533,7 @@ CreateCalculationFunction[calc_, debug_] :=
        (* Have removed ability to include external header files here.
           Can be put back when we need it. *)
 
-	eqLoop = Map[equationLoop[#, gfs, shorts, subblockGFs, {}, groups, syncGroups, pddefs, where, addToStencilWidth] &, eqs]},
+	eqLoop = Map[equationLoop[#, cleancalc, dsUsed, gfs, shorts, subblockGFs, {}, groups, syncGroups, pddefs, where, addToStencilWidth] &, eqs]},
 
        (* search for SYNCs *)
        If[numeq <= 1,
@@ -642,10 +642,13 @@ pdCanonicalOrdering[name_[inds___] -> x_] :=
               name[f_,3,2] -> name[f,2,3]}],
       {}]];
 
-equationLoop[eqs_, gfs_, shorts_, subblockGFs_, incs_, groups_, syncGroups_, 
+equationLoop[eqs_, 
+             cleancalc_, dsUsed_,
+             gfs_, shorts_, subblockGFs_, incs_, groups_, syncGroups_, 
              pddefs_, where_, addToStencilWidth_] :=
   Module[{rhss, lhss, gfsInRHS, gfsInLHS, localGFs, localMap, eqs2,
-          derivSwitch, actualSyncGroups, code, syncCode, loopFunction},
+          derivSwitch, actualSyncGroups, code, functionName,
+          syncCode, loopFunction},
 
     rhss = Map[#[[2]] &, eqs];
     lhss = Map[#[[1]] &, eqs];
@@ -677,9 +680,14 @@ equationLoop[eqs_, gfs_, shorts_, subblockGFs_, incs_, groups_, syncGroups_,
 
     checkEquationAssignmentOrder[eqs2, shorts];
    code = {(*InitialiseGridLoopVariables[derivSwitch, addToStencilWidth], *)
+   functionName = ToString@lookup[cleancalc, Name];
 
    GenericGridLoop[
-   {CommentedBlock["Assign local copies of grid functions",
+   {declareVariablesForCalculation[cleancalc],
+    declarePrecomputedDerivatives[dsUsed],
+    DeclareDerivatives[pddefs, eqs],
+
+    CommentedBlock["Assign local copies of grid functions",
                    Map[AssignVariable[localName[#], GridName[#]] &, 
                        gfsInRHS]],
 

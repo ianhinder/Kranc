@@ -224,9 +224,9 @@ CreateParam[spec_] :=
    Configuration file
    ------------------------------------------------------------------------ *)
 
-CreateConfiguration[] :=
+CreateConfiguration[useLoopControl_] :=
   {whoWhen["CCL"],
-   "REQUIRES LoopControl\n"
+   If[useLoopControl, "REQUIRES LoopControl\n", {}]
   };
 
 (* ------------------------------------------------------------------------ 
@@ -314,7 +314,7 @@ CreateInterface[implementation_, inheritedImplementations_, includeFiles_,
    If[mapContains[{opts}, Friends],
      {"friend:     ", SpaceSeparated[lookup[{opts}, Friends]]},{}],
    "\n\n",
-   Map[{"USES INCLUDE: ", #, "\n"} &, Join[includeFiles,{"loopcontrol.h"}]],
+   Map[{"USES INCLUDE: ", #, "\n"} &, includeFiles],
    "\n",
 
    Map[usesFunction,     lookupDefault[{opts}, UsesFunctions, {}]],
@@ -461,7 +461,7 @@ calculationMacros[] :=
    CodeGen representation of a source file that defines a function for
    each Calculation. *)
 
-CreateSetterSource[calcs_, debug_, opts___] :=
+CreateSetterSource[calcs_, debug_, useLoopControl_, opts___] :=
   Module[{include},
   include = lookupDefault[{opts}, Include, {}];
 
@@ -478,14 +478,13 @@ CreateSetterSource[calcs_, debug_, opts___] :=
       ],
 
    Map[IncludeFile, Join[{"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h",
-                     (*"precomputations.h",*) "GenericFD.h", "Differencing.h",
-                          "loopcontrol.h"}, include]],
+                     (*"precomputations.h",*) "GenericFD.h", "Differencing.h"}, include]],
    calculationMacros[],
 
    (* For each function structure passed, create the function and
       insert it *)
 
-   Map[CreateCalculationFunction[# , debug]& , 
+   Map[CreateCalculationFunction[# , debug, useLoopControl]& , 
        calcs]}];
 
 

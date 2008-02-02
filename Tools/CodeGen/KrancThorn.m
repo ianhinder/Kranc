@@ -32,7 +32,7 @@ BeginPackage["sym`"];
   ExtendedRealParameters,ExtendedIntParameters,ExtendedKeywordParameters,
   Parameters,
   EvolutionTimelevels,
-  PartialDerivatives, InheritedImplementations, ConditionalOnKeyword, ReflectionSymmetries, ZeroDimensions, CollectList, Interior, Boundary, Where, PreDefinitions, AllowedSymbols};
+  PartialDerivatives, InheritedImplementations, ConditionalOnKeyword, ReflectionSymmetries, ZeroDimensions, CollectList, Interior, Boundary, Where, PreDefinitions, AllowedSymbols, UseLoopControl};
 
 EndPackage[];
 
@@ -85,7 +85,8 @@ Module[{allowed = {Calculations,
   EvolutionTimelevels, RealParameters, IntParameters, KeywordParameters,
   InheritedRealParameters,InheritedIntParameters,InheritedKeywordParameters,
   ExtendedRealParameters,ExtendedIntParameters,ExtendedKeywordParameters,
-  PartialDerivatives, ReflectionSymmetries, ZeroDimensions}, used, unrecognized},
+  PartialDerivatives, ReflectionSymmetries, ZeroDimensions, UseLoopControl},
+   used, unrecognized},
 
     used = Map[First, l];
     unrecognized = Complement[used, allowed];
@@ -108,7 +109,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts___] :=
   interface, evolvedGroupDefinitions, rhsGroupDefinitions, thornspec,
   allParams, boundarySources, reflectionSymmetries,
   realParamDefs, intParamDefs,
-  pDefs},
+  pDefs, useLoopControl},
 
 (*  Return[];*)
 
@@ -138,6 +139,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts___] :=
     extendedKeywordParams = lookupDefault[{opts}, ExtendedKeywordParameters, {}];
     partialDerivs = lookupDefault[{opts}, PartialDerivatives, {}];
     reflectionSymmetries = lookupDefault[{opts}, ReflectionSymmetries, {}];
+    useLoopControl = lookupDefault[{opts}, UseLoopControl, False];
 
 (*    Print["partialDerivs == ", partialDerivs];*)
 
@@ -181,13 +183,13 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts___] :=
 
     (* Construct the configuration file *)
     InfoMessage[Terse, "Creating configuration file"];
-    configuration = createKrancConfiguration[];
+    configuration = createKrancConfiguration[useLoopControl];
 
     (* Construct the interface file *)
     InfoMessage[Terse, "Creating interface file"];
     interface = createKrancInterface[nonevolvedGroupsWithRHS,
       evolvedGroups, groups, evolutionTimelevels, implementation,
-      inheritedImplementations, includeFiles];
+      inheritedImplementations, includeFiles, useLoopControl];
       
 (*    Print["interface == ", interface];*)
 
@@ -236,7 +238,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts___] :=
                      Map[unqualifiedName, inheritedIntParams], 
                      Map[unqualifiedName, inheritedKeywordParams]];
     InfoMessage[Terse, "Creating calculation source files"];
-    calcSources = Map[CreateSetterSourceWrapper[#, allParams, partialDerivs] &, calcs];
+    calcSources = Map[CreateSetterSourceWrapper[#, allParams, partialDerivs, useLoopControl] &, calcs];
     calcFilenames = Map[lookup[#, Name] <> ext &, calcs];
 
 
@@ -333,16 +335,16 @@ nonevolvedTimelevels[group_] :=
     If[ tls === False, 1, tls]];
 
 
-createKrancConfiguration[] :=
+createKrancConfiguration[useLoopControl_] :=
   Module[{configuration},
-    configuration = CreateConfiguration[];
+    configuration = CreateConfiguration[useLoopControl];
     Return[configuration];
   ];
 
 
 createKrancInterface[nonevolvedGroups_, evolvedGroups_, groups_,
   evolutionTimelevels_, implementation_, inheritedImplementations_,
-  includeFiles_] :=
+  includeFiles_, useLoopControl_] :=
 
   Module[{registerEvolved, registerConstrained,
   nonevolvedGroupStructures, evolvedGroupStructures, groupStructures,
@@ -394,7 +396,9 @@ createKrancInterface[nonevolvedGroups_, evolvedGroups_, groups_,
     groupStructures = Join[nonevolvedGroupStructures, evolvedGroupStructures];
 
     interface = CreateInterface[implementation, inheritedImplementations, 
-      Join[includeFiles, CactusBoundary`GetIncludeFiles[]], groupStructures,
+      Join[includeFiles, CactusBoundary`GetIncludeFiles[], 
+           If[useLoopControl, "loopcontrol.h", {}]],
+      groupStructures,
       UsesFunctions ->
         Join[{registerEvolved, registerConstrained,diffCoeff}, 
              CactusBoundary`GetUsedFunctions[]]];
@@ -742,13 +746,14 @@ createKrancScheduleFile[calcs_, groups_, evolvedGroups_, nonevolvedGroups_, thor
   ];
 
                           
-CreateSetterSourceWrapper[calc_, parameters_, derivs_] :=
+CreateSetterSourceWrapper[calc_, parameters_, derivs_, useLoopControl_] :=
   Module[{modCalc},
     modCalc = Join[calc /. ((Equations -> {es___}) -> (Equations -> {{es}})), 
       {Parameters -> parameters},
       {PartialDerivatives -> derivs}];
 
-    source = CreateSetterSource[{modCalc}, False, Include -> {}];
+    source = CreateSetterSource[{modCalc}, False, useLoopControl, Include -> 
+      If[useLoopControl, {"loopcontrol.h"}, {}]];
     Return[source]
   ];
 

@@ -402,7 +402,7 @@ definePreDefinitions[pDefs_] :=
 
 (* Calculation function generation *)
 
-CreateCalculationFunction[calc_, debug_] :=
+CreateCalculationFunction[calc_, debug_, useLoopControl_] :=
   Module[{gfs, allSymbols, knownSymbols,
           shorts, eqs, syncGroups, parameters,
           functionName, dsUsed, groups, pddefs, cleancalc, numeq, eqLoop, GrepSYNC, where, 
@@ -493,7 +493,7 @@ CreateCalculationFunction[calc_, debug_] :=
   { 
     "DECLARE_CCTK_ARGUMENTS\n",
     "DECLARE_CCTK_PARAMETERS\n\n",
-    (* DeclareGridLoopVariables[], *)
+    If[!useLoopControl, DeclareGridLoopVariables[], {}],
     DeclareFDVariables[],
     (* declareVariablesForCalculation[cleancalc], *)
     (* declarePrecomputedDerivatives[dsUsed], *)
@@ -533,7 +533,7 @@ CreateCalculationFunction[calc_, debug_] :=
        (* Have removed ability to include external header files here.
           Can be put back when we need it. *)
 
-	eqLoop = Map[equationLoop[#, cleancalc, dsUsed, gfs, shorts, subblockGFs, {}, groups, syncGroups, pddefs, where, addToStencilWidth] &, eqs]},
+	eqLoop = Map[equationLoop[#, cleancalc, dsUsed, gfs, shorts, subblockGFs, {}, groups, syncGroups, pddefs, where, addToStencilWidth, useLoopControl] &, eqs]},
 
        (* search for SYNCs *)
        If[numeq <= 1,
@@ -645,7 +645,7 @@ pdCanonicalOrdering[name_[inds___] -> x_] :=
 equationLoop[eqs_, 
              cleancalc_, dsUsed_,
              gfs_, shorts_, subblockGFs_, incs_, groups_, syncGroups_, 
-             pddefs_, where_, addToStencilWidth_] :=
+             pddefs_, where_, addToStencilWidth_, useLoopControl_] :=
   Module[{rhss, lhss, gfsInRHS, gfsInLHS, localGFs, localMap, eqs2,
           derivSwitch, actualSyncGroups, code, functionName,
           syncCode, loopFunction},
@@ -682,7 +682,7 @@ equationLoop[eqs_,
    code = {(*InitialiseGridLoopVariables[derivSwitch, addToStencilWidth], *)
    functionName = ToString@lookup[cleancalc, Name];
 
-   GenericGridLoop[functionName,
+   GenericGridLoop[functionName, useLoopControl,
    {declareVariablesForCalculation[cleancalc],
     declarePrecomputedDerivatives[dsUsed],
     DeclareDerivatives[pddefs, eqs],

@@ -69,10 +69,8 @@ DefineCCTKSubroutine::usage = "DefineCCTKSubroutine[name, block] returns a block
   "of code that defines a CCTK Fortran subroutine of name 'name' with body 'block'.";
 GridName::usage = "GridName[variable] returns the name needed to access variable " <>
   "assuming it is a grid variable when inside a grid loop.";
-(*
 DeclareGridLoopVariables::usage = "DeclareGridLoopVariables[] returns a block " <>
   "that defines the variables needed during a grid loop.";
-*)
 InitialiseGridLoopVariables::usage = "InitialiseGridLoopVariables[] returns a block " <>
   "that initialises variables needed by a grid loop.";
 InitialiseGridLoopVariablesWithStencil::usage = "InitialiseGridLoopVariables[] returns a block " <>
@@ -407,7 +405,7 @@ SubblockGridName[x_] := If[SOURCELANGUAGE == "C",
                    ToString[x] <> "(i,j,k)"
                 ];
 
-(*
+
 DeclareGridLoopVariables[] :=
   SeparatedBlock[
     {insertComment["Declare the variables used for looping over grid points"],
@@ -421,8 +419,6 @@ DeclareGridLoopVariables[] :=
      If[SOURCELANGUAGE == "C", DeclareVariable["index", "CCTK_INT"], "\n"],
      If[SOURCELANGUAGE == "C", DeclareVariable["subblock_index", "CCTK_INT"], "\n"]
   }];
-*)
-
 
 (* Access an element of an array; syntax is different between C and
    Fortran.  Always give this function a C-style array index. *)
@@ -502,21 +498,6 @@ GridLoop[block_] :=
        }
         ]]]];
 
-GenericGridLoop[block_] :=
-  CommentedBlock["Loop over the grid points",
-   loopOverInteger["k", "min[2]", "max[2]",
-     loopOverInteger["j", "min[1]", "max[1]",
-       loopOverInteger["i", "min[0]", "max[0]",
-
-       { If[SOURCELANGUAGE == "C",  
-            {
-              AssignVariable["index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"],
-              AssignVariable["subblock_index", "i - min[0] + (max[0] - min[0]) * (j - min[1] + (max[1]-min[1]) * (k - min[2]))"]
-            }
-            ""],
-	 block
-       }
-        ]]]];
 *)
 
 (*
@@ -553,7 +534,28 @@ GridLoop[block_] :=
   ];
 *)
 
-GenericGridLoop[functionName_, block_] :=
+GenericGridLoop[functionName_, useLoopControl_, block_] :=
+  If[useLoopControl,
+    GenericGridLoopUsingLoopControl[functionName, block],
+    GenericGridLoopTraditional[block]];
+
+GenericGridLoopTraditional[block_] :=
+  CommentedBlock["Loop over the grid points",
+   loopOverInteger["k", "min[2]", "max[2]",
+     loopOverInteger["j", "min[1]", "max[1]",
+       loopOverInteger["i", "min[0]", "max[0]",
+
+       { If[SOURCELANGUAGE == "C",  
+            {
+              AssignVariable["index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"],
+              AssignVariable["subblock_index", "i - min[0] + (max[0] - min[0]) * (j - min[1] + (max[1]-min[1]) * (k - min[2]))"]
+            }
+            ""],
+	 block
+       }
+        ]]]];
+
+GenericGridLoopUsingLoopControl[functionName_, block_] :=
   If[SOURCELANGUAGE == "C",  
     CommentedBlock["Loop over the grid points",
       {

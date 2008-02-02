@@ -27,11 +27,11 @@ need to supply examples for the fourth order differencing operators
 for people to use easily.
 
 In a calculation, the user uses expressions like PD[phi,1,2].  Kranc
-generates macro definitions for each derivative; i.e. in this case it
+generates macro definitions for each derivative; i.e., in this case it
 would create a macro definition for PD12(u,i,j,k).  At the start of a
 calculation loop, variables are created to store the results of
 precomputing each of the derivatives needed in that loop.
-e.g. PD12phi = PD12(phi,i,j,k).  Kranc then replaces PD[phi,1,2] with
+E.g. PD12phi = PD12(phi,i,j,k).  Kranc then replaces PD[phi,1,2] with
 PD12phi in the calculation.
 
 *)
@@ -54,7 +54,7 @@ should be differenced as a result of this derivative operator.  Note
 that the grid function itself is omitted from the definition.  For
 example,
 
-  PD[i_] -> 1/2(shift[i_] + 1/shift[i])
+  PD[i_] -> 1/2(shift[i] + 1/shift[i])
 
 ComponentDerivativeOperator
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -323,8 +323,6 @@ ComponentDerivativeOperatorMacroDefinition[componentDerivOp:(name_[inds___] -> e
 (*    Print[componentDerivOp, ": "];
     Print[FullForm[rhs5]];
     Print[""];*)
-
-(*    rhs4 = rhs4 //. (x_ a_ - x_ b_) -> x(a-b);*)
 
     rhs6 = CFormHideStrings[ReplacePowers[rhs5 /. spacings]];
     {pDefs, FlattenBlock[{"#define ", macroName, "(u,i,j,k) ", "(", rhs6, ")"}]}];

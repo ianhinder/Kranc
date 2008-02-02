@@ -32,7 +32,8 @@ BeginPackage["sym`"];
 
 {AccumulatorBase, ThornImplementation, Name, Type, Extend, Default,
 Comment, Range, Implementation, Group, SchedulePoint, Language,
-SynchronizedGroups, StorageGroups, Timelevels, VariableType, GridType,
+SynchronizedGroups, StorageGroups, Timelevels, MaxTimelevels,
+VariableType, GridType,
 Visibility, Variables, Implementations, Value, AllowedValues,
 UsedParameters, Description, ExtendedParameters, NewParameters,
 Directory, Interface, Param, Schedule, Sources, Makefile, Filename,
@@ -240,8 +241,8 @@ A 'tag' is of the form {"tensortypealias" -> "Scalar"}
 interfaceGroupBlock[spec_] :=
   {lookup[spec, Visibility], ":\n",
    lookup[spec, VariableType], " ", lookup[spec, Name], 
-     " type=", lookup[spec,GridType], " ",
-     "timelevels=", lookup[spec, Timelevels], 
+     " type=", lookup[spec,GridType],
+     " timelevels=", lookup[spec, Timelevels], 
      If[mapContains[spec,Tags], {" tags='", interfaceTags[lookupDefault[spec,Tags, {}]], "'"}, ""], 
      "\n",
    SuffixedCBlock[{CommaNewlineSeparated[lookup[spec, Variables]],"\n"}, 
@@ -346,7 +347,12 @@ CreateInterface[implementation_, inheritedImplementations_, includeFiles_,
    structure for inclusion in the schedule.ccl file to allocate
    storage for this group. *)
 groupStorage[spec_] :=
-  {"STORAGE: ", lookup[spec, Group], "[", lookup[spec, Timelevels], "]\n"}
+  If[mapContains[spec, MaxTimelevels],
+     Flatten[Table[{"if (timelevels == ", i, ")\n",
+                    "{\n",
+                    "  STORAGE: ", lookup[spec, Group], "[", i, "]\n",
+                    "}\n"}, {i, 1, lookup[spec, Timelevels]}], 1],
+     {"STORAGE: ", lookup[spec, Group], "[", lookup[spec, Timelevels], "]\n"}]
 
 
 (* Given a function scheduling specification as defined above, return

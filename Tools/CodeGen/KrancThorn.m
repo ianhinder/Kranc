@@ -31,10 +31,9 @@ BeginPackage["sym`"];
   KeywordParameters,
   InheritedRealParameters,InheritedIntParameters,InheritedKeywordParameters,
   ExtendedRealParameters,ExtendedIntParameters,ExtendedKeywordParameters,
-  Parameters, PartialDerivatives, InheritedImplementations,
-  ConditionalOnKeyword, ReflectionSymmetries, ZeroDimensions,
-  CollectList, Interior, Boundary, Where, PreDefinitions,
-  AllowedSymbols};
+  Parameters,
+  EvolutionTimelevels,
+  PartialDerivatives, InheritedImplementations, ConditionalOnKeyword, ReflectionSymmetries, ZeroDimensions, CollectList, Interior, Boundary, Where, PreDefinitions, AllowedSymbols};
 
 EndPackage[];
 
@@ -192,6 +191,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts___] :=
       thornName, realParamDefs, intParamDefs, keywordParams,
       inheritedRealParams, inheritedIntParams, inheritedKeywordParams,
       extendedRealParams, extendedIntParams, extendedKeywordParams,
+      evolutionTimelevels,
       calcs];
 
     (* Construct the schedule file *)
@@ -490,9 +490,11 @@ extendParameters[imp_, reals_, ints_, keywords_] :=
   ];
 
 createKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_, 
-  reals_, ints_, keywords_, inheritedReals_, inheritedInts_,
-  inheritedKeywords_, extendedReals_, extendedInts_,
-  extendedKeywords_, calcs_] :=
+  reals_, ints_, keywords_,
+  inheritedReals_, inheritedInts_, inheritedKeywords_,
+  extendedReals_, extendedInts_, extendedKeywords_,
+  evolutionTimelevels_,
+  calcs_] :=
 
   Module[{nEvolved, nPrimitive, evolvedMoLParam, evolvedGFs,
     constrainedMoLParam, genericfdStruct, realStructs, intStructs,
@@ -533,6 +535,17 @@ createKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_,
       AccumulatorBase -> "MethodofLines::MoL_Num_Constrained_Vars",
       AllowedValues -> {{Value -> ToString[nPrimitive] <> ":" <> ToString[nPrimitive] , 
                          Description -> "Number of constrained variables used by this thorn"}}
+    };
+
+    timelevelsParam =
+    {
+      Name -> "timelevels",
+      Type -> "CCTK_INT",
+      Default -> evolutionTimelevels,
+      Description -> "Number of active timelevels",
+      Visibility -> "private",
+      AllowedValues -> {{Value -> ToString[0] <> ":" <> ToString[evolutionTimelevels],
+                         Description -> ""}}
     };
 
     genericfdStruct =
@@ -590,7 +603,8 @@ createKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_,
     userImplementations2 = If[userImplementations2=={{}},{},userImplementations2];
 
     implementations = Join[userImplementations, userImplementations2, {genericfdStruct, molImplementation}];
-    params = Join[{verboseStruct}, realStructs, intStructs, keywordStructs, {evolvedMoLParam, constrainedMoLParam},  calcEveryStructs, calcOffsetStructs,
+    params = Join[{verboseStruct}, realStructs, intStructs, keywordStructs, {evolvedMoLParam, constrainedMoLParam, timelevelsParam},
+                  calcEveryStructs, calcOffsetStructs,
       CactusBoundary`GetParameters[evolvedGFs, evolvedGroups]];
 
     paramspec = {Implementations -> implementations,
@@ -606,6 +620,13 @@ simpleGroupStruct[groupName_, timelevels_] :=
 {
   Group -> groupName, 
   Timelevels -> timelevels
+};
+
+evolvedGroupStruct[groupName_, timelevels_, maxtimelevels_] := 
+{
+  Group -> groupName, 
+  Timelevels -> timelevels,
+  MaxTimelevels -> maxtimelevels
 };
 
 groupsSetInCalc[calc_, groups_] :=
@@ -690,7 +711,8 @@ createKrancScheduleFile[calcs_, groups_, evolvedGroups_, nonevolvedGroups_, thor
     };
 
     globalStorageGroups = Join[Map[simpleGroupStruct[#, nonevolvedTimelevels[groupFromName[#, groups]]] &, nonevolvedGroups], 
-                               Map[simpleGroupStruct[#, evolutionTimelevels] &, evolvedGroups]];
+                               Map[evolvedGroupStruct[#, evolutionTimelevels, evolutionTimelevels] &, evolvedGroups]];
+(*    Print["globalStorageGroups == ", globalStorageGroups];*)
 
     scheduledFunctions = 
       Join[{scheduledStartup, scheduleMoLRegister, scheduleRegisterSymmetries}, 
@@ -766,6 +788,7 @@ CreateKrancThornTT[groups_, parentDirectory_, thornName_, opts___] :=
     options = Join[DeleteCases[options, PartialDerivatives -> _], {PartialDerivatives -> expDerivs}];
 
     declaredGroups = lookupDefault[{opts}, DeclaredGroups, {}];
+    evolutionTimelevels = lookupDefault[{opts}, EvolutionTimelevels, 3];
     InfoMessage[Info, "Declared groups: " <> ToString[declaredGroups]];
     InfoMessage[Terse, "Computing reflection symmetries"];
     reflectionSymmetries = computeReflectionSymmetries[declaredGroups, groups];

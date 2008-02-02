@@ -644,8 +644,9 @@ groupsSetInCalc[calc_, groups_] :=
    function returns a LIST of schedule structures for each calculation
    *)
 scheduleCalc[calc_, groups_] :=
-  Module[{points, conditional, keyword, value, groupsToSync},
+  Module[{points, conditional, triggered, keyword, value, groupsToSync},
     conditional = mapContains[calc, ConditionalOnKeyword];
+    triggered = mapContains[calc, TriggerGroups];
     If[conditional,
       keywordConditional = lookup[calc, ConditionalOnKeyword];
       If[! MatchQ[keywordConditional, {lhs_String, rhs_String}],
@@ -671,6 +672,8 @@ scheduleCalc[calc_, groups_] :=
         Language           -> CodeGen`SOURCELANGUAGE, 
         Comment            -> lookup[calc, Name]
       },
+       If[triggered, {TriggerGroups -> lookup[calc, TriggerGroups]},
+          {}],
        If[conditional, {Conditional -> {Parameter -> keyword, Value -> value}},
           {}]
       ] &,

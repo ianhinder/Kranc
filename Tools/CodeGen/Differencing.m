@@ -303,9 +303,10 @@ ComponentDerivativeOperatorMacroDefinition[componentDerivOp:(name_[inds___] -> e
        Print["signModifier == ", signModifier];
        Print["spacings2 == ", spacings2];
        Print["ss == ", ss//FullForm];
-       Print["Inverse spacings: ", Simplify[1/(ss /. spacings2)]];*)
+       Print["Inverse spacings: ", Simplify[1/(ss /. spacings2)]];
+       Print["Sequenced: ", Apply[SequenceForm,Simplify[1/(ss /. spacings2)],{0,Infinity}]];*)
 
-       liName = "p" <> signModifier <> quotient <> ToString[Apply[SequenceForm,Simplify[1/(ss /. spacings2)]]];
+       liName = "p" <> signModifier <> quotient <> ToString[Apply[SequenceForm,Simplify[1/(ss /. spacings2)],{0,Infinity}]];
 (*       Print["liName == ", liName];*)
 
        rhs3 = rhs2 /. pat -> Times[liName, rest],

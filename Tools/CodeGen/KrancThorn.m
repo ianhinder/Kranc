@@ -99,8 +99,9 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts___] :=
   inheritedKeywordParams,
   partialDerivs, coordGroup, evolvedGroups, nonevolvedGroups,
   interface, evolvedGroupDefinitions, rhsGroupDefinitions, thornspec,
-  allParams, boundarySources, reflectionSymmetries, realParamDefs, 
-  intParamDefs, pDefs},
+  allParams, boundarySources, reflectionSymmetries,
+  realParamDefs, intParamDefs,
+  pDefs},
 
 (*  Return[];*)
 
@@ -395,16 +396,18 @@ unqualifiedName[name_] :=
 
 
 krancParamStruct[definition_, type_, inherited_] :=
-  Module[{},
+  Module[{description, name},
+    name = lookup[definition, Name];
+    description = lookupDefault[definition, Description, name];
     Join[
-    {Name        -> lookup[definition, Name], 
+    {Name        -> name,
      Type        -> type, 
+     Description -> description,
      Default     -> lookup[definition, Default],
-     Description -> lookup[definition, Name],
      Visibility  -> "restricted"},
     If[inherited,
       {},
-      {AllowedValues -> {{Value       -> "*:*", Description -> "no restrictions"}}}]]];
+      {AllowedValues -> {{Value -> "*:*", Description -> ""}}}]]];
 
 krancKeywordParamStruct[struct_] :=
 {
@@ -536,8 +539,10 @@ createKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_,
 
     paramspec = {Implementations -> implementations,
                  NewParameters   -> params};
+(*    Print["paramspec == ", paramspec];*)
 
     param = CreateParam[paramspec];
+(*    Print["param == ", param];*)
     Return[param]
   ];
 
@@ -567,7 +572,7 @@ scheduleCalc[calc_, groups_] :=
     If[conditional,
       keywordConditional = lookup[calc, ConditionalOnKeyword];
       If[! MatchQ[keywordConditional, {lhs_String, rhs_String}],
-        ThrowError["ConditionalOnKeyword entry in calculation expected to be of the form parameter == value, but was ", keywordConditional, "Calculation is ", calc]];
+        ThrowError["ConditionalOnKeyword entry in calculation expected to be of the form {parameter, value}, but was ", keywordConditional, "Calculation is ", calc]];
 
       keyword = keywordConditional[[1]];
       value = keywordConditional[[2]];
@@ -599,6 +604,7 @@ createKrancScheduleFile[calcs_, groups_, evolvedGroups_, nonevolvedGroups_, thor
   Module[{scheduledCalcs, scheduledStartup, scheduleMoLRegister, globalStorageGroups, scheduledFunctions, schedule},
 
     scheduledCalcs = Flatten[Map[scheduleCalc[#, groups] &, calcs], 1];
+(*    Print["scheduledCalcs == ", scheduledCalcs];*)
 
     scheduledStartup = 
     {

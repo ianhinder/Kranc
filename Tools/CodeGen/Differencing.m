@@ -193,7 +193,8 @@ DeclareDerivatives[derivOps_, expr_] :=
     Map[DerivativeOperatorVerify, derivOps];
     gfds = GridFunctionDerivativesInExpression[derivOps, expr];
     sortedgfds = Sort[gfds, ordergfds];
-    Map[DeclareDerivative, sortedgfds]];
+    {"/* Declare derivatives */\n",
+     Map[DeclareDerivative, sortedgfds]}];
 
 ReplaceDerivatives[derivOps_, expr_, precompute_] :=
   Module[{componentDerivOps, gfds},

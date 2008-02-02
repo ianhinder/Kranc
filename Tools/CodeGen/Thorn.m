@@ -76,20 +76,21 @@ Begin["`Private`"];
    ------------------------------------------------------------------------ *)
 
 (* date, user, etc. *)
-date[] := ToString[Date[][[3]]] <> "/" <>
-          ToString[Date[][[2]]] <> "/" <>
-          ToString[Date[][[1]]]
+date[] := ToString[Date[][[1]]] <> "-" <>
+          ToString[Date[][[2]]] <> "-" <>
+          ToString[Date[][[3]]]
 
 
-dateLong[] := ToString[Date[][[3]]] <> "/" <>
-              ToString[Date[][[2]]] <> "/" <>
-              ToString[Date[][[1]]] <> "/" <> "   " <>
+dateLong[] := ToString[Date[][[1]]] <> "-" <>
+              ToString[Date[][[2]]] <> "-" <>
+              ToString[Date[][[3]]] <> " " <>
               ToString[Date[][[4]]] <> ":" <>
               ToString[Date[][[5]]] <> ":" <>
               ToString[Date[][[6]]];
 
 
-user[] := ToString[<< "!whoami"];
+(* user[] := ToString[<< "!whoami"]; *)
+user[] := Environment["USER"];
 
 
 whoWhen[lang_] := Module[{com1, com2},
@@ -113,10 +114,11 @@ If[(lang == "shell" || lang == "CCL"),
    com1 = "#";  com2 = "";
 ];
 
-{com1 <> " file produced by user " <> user[] <> ", " <> date[]       <> com2 <> "\n"  <>
+(* Do not show the date, and do not use $Id$, since they introduce
+   spurious changes and lead to unnecessary recompilation *)
+{com1 <> " File produced by user " <> user[]                         <> com2 <> "\n"  <>
  com1 <> " Produced with Mathematica Version " <> ToString[$Version] <> com2 <> "\n\n"<>
- com1 <> " Mathematica script written by Ian Hinder and Sascha Husa" <> com2 <> "\n\n"<>
- com1 <> " $Id" <> "$"                                               <> com2 <> "\n\n"}
+ com1 <> " Mathematica script written by Ian Hinder and Sascha Husa" <> com2 <> "\n\n"}
 
 ];
 
@@ -129,7 +131,7 @@ If[(lang == "shell" || lang == "CCL"),
    list of filenames sourceFiles *)
 CreateMakefile[sourceFiles_] :=
   {whoWhen["shell"],
-   "SRCS = ", Map[{#, " "} &, sourceFiles]};
+   "SRCS = ", Map[{#, " "} &, sourceFiles], "\n"};
 
 (* ------------------------------------------------------------------------ 
    Parameter file
@@ -356,8 +358,8 @@ scheduleUnconditionalFunction[spec_] :=
                                    "LANG: " <> lookup[spec, Language] <> "\n"],
 
       If[lookupDefault[spec, Options, ""] != "",
-         "\nOPTIONS: " <> lookup[spec, Options] <> "\n",
-         "\n"],
+         "OPTIONS: " <> lookup[spec, Options] <> "\n",
+         ""],
 
       (* Insert a SYNC line for each group we want to synchronize. *)
       Map[{"SYNC: ", #, "\n"}     &, lookupDefault[spec, SynchronizedGroups, {}]],
@@ -913,7 +915,7 @@ CreateMoLExcisionSource[spec_] :=
       "! the boundary treatment is split into 3 steps:    \n",
       "! 1. excision                                      \n",
       "! 2. symmetries                                    \n",
-      "! 3. \"other\" boundary conditions, e.g. radiative \n\n",
+      "! 3. \"other\" boundary conditions, e.g. radiative \n",
       "! to simplify scheduling and testing, the 3 steps  \n",
       "! are currently applied in separate functions      \n\n"},
 

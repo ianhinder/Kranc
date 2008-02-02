@@ -187,7 +187,8 @@ oldDerivativesUsed[x_] :=
 declarePrecomputedDerivatives[derivs_] :=
   Module[{vars},
     vars = PartitionVarList@Map[ToString[Head[#]] <> ToString[First[#]] &, derivs];
-    {Map[DeclareVariables[#, "CCTK_REAL"] &, vars], "\n\n"}];
+    {"/* Declare precomputed derivatives*/\n",
+     Map[DeclareVariables[#, "CCTK_REAL"] &, vars], "\n"}];
 
 precomputeDerivative[d_] :=
   Module[{h=ToString[Head[d]], f = ToString[First[d]]},

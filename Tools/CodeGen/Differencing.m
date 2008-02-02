@@ -404,8 +404,16 @@ DifferenceGFTerm[op_, i_, j_, k_] :=
       ThrowError["Could not parse difference operator:", op]];
     
     If[CodeGen`SOURCELANGUAGE == "C",
-    remaining "u[CCTK_GFINDEX3D(cctkGH," <> ToString[CFormHideStrings[i+nx]] <> "," <>
-      ToString[CFormHideStrings[j+ny]] <> "," <> ToString[CFormHideStrings[k+nz]] <> ")]",
+    remaining "(u)[CCTK_GFINDEX3D(cctkGH," <>
+      ToString[CFormHideStrings[i+nx]] <> "," <>
+      ToString[CFormHideStrings[j+ny]] <> "," <>
+      ToString[CFormHideStrings[k+nz]] <> ")]",
+(*
+    remaining "(u)[CCTK_GFINDEX3D(cctkGH,floor((" <>
+      ToString[CFormHideStrings[i+nx]] <> ")+0.5),floor((" <>
+      ToString[CFormHideStrings[j+ny]] <> ")+0.5),floor((" <>
+      ToString[CFormHideStrings[k+nz]] <> ")+0.5))]",
+*)
     remaining "u(" <> ToString[FortranForm[i+nx]] <> "," <> 
       ToString[FortranForm[j+ny]] <> "," <> ToString[FortranForm[k+nz]] <> ")"] ];
 
@@ -426,7 +434,7 @@ DifferenceGFTermInline[op_, i_, j_, k_] :=
     If[Cases[{remaining}, shift[_], Infinity] != {},
       ThrowError["Could not parse difference operator:", op]];
     
-    remaining "u[CCTK_GFINDEX3D(cctkGH," <> ToString[CFormHideStrings[i+nx]] <> "," <>
+    remaining "(u)[CCTK_GFINDEX3D(cctkGH," <> ToString[CFormHideStrings[i+nx]] <> "," <>
       ToString[CFormHideStrings[j+ny]] <> "," <> ToString[CFormHideStrings[k+nz]] <> ")]"
      ];
 

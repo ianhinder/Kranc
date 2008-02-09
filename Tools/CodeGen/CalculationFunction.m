@@ -554,6 +554,7 @@ CreateCalculationFunction[calc_, debug_, useLoopControl_] :=
     Everywhere, DefineCCTKSubroutine[functionName, "GenericFD_LoopOverEverything(cctkGH, &" <> bodyFunctionName <> ");\n"],
     Interior, DefineCCTKSubroutine[functionName, "GenericFD_LoopOverInterior(cctkGH, &" <> bodyFunctionName <> ");\n"],
     Boundary, DefineCCTKSubroutine[functionName, "GenericFD_LoopOverBoundary(cctkGH, &" <> bodyFunctionName <> ");\n"],
+    BoundaryWithGhosts, DefineCCTKSubroutine[functionName, "GenericFD_LoopOverBoundaryWithGhosts(cctkGH, &" <> bodyFunctionName <> ");\n"],
     PenaltyPrim2Char, DefineFunction[functionName, "CCTK_INT", 
                "CCTK_POINTER_TO_CONST const cctkGH_, CCTK_INT const dir, CCTK_INT const face, CCTK_REAL const * restrict const base_, CCTK_INT const * restrict const lbnd, CCTK_INT const * restrict const lsh, CCTK_INT const rhs_flag, CCTK_INT const num_modes, CCTK_POINTER const * restrict const modes, CCTK_POINTER const * restrict const speeds", 
                   "GenericFD_PenaltyPrim2Char(cctkGH, &" <> bodyFunctionName <> ");\n"],

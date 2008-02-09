@@ -735,6 +735,7 @@ typedef void(*Kranc_Calculation)(cGH *cctkGH, CCTK_INT dir, CCTK_INT   face,
 
 void GenericFD_LoopOverEverything(cGH *cctkGH, Kranc_Calculation calc);
 void GenericFD_LoopOverBoundary(cGH *cctkGH, Kranc_Calculation calc);
+void GenericFD_LoopOverBoundaryWithGhosts(cGH *cctkGH, Kranc_Calculation calc);
 void GenericFD_LoopOverInterior(cGH *cctkGH, Kranc_Calculation calc);
 
 #endif

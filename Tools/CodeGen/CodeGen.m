@@ -109,6 +109,7 @@ CommaSeparated::usage = "";
 ReplacePowers::usage = "";
 CFormHideStrings::usage = "";
 BoundaryLoop::usage = "";
+BoundaryWithGhostsLoop::usage = "";
 GenericGridLoop::usage = "";
 
 NameRoot::usage = "";
@@ -604,6 +605,43 @@ BoundaryLoop[block_] :=
   AssignVariable[arrayElement["bmax", 0], "is_physbnd[0*2+1] ? cctk_lsh[0] : imax[0]"],
   AssignVariable[arrayElement["bmax", 1], "is_physbnd[1*2+1] ? cctk_lsh[1] : imax[1]"],
   AssignVariable[arrayElement["bmax", 2], "is_physbnd[2*2+1] ? cctk_lsh[2] : imax[2]"]}], 
+
+  CommentedBlock["Loop over all faces",
+   loopOverInteger["dir", "0", "3",
+     loopOverInteger["face", "0", "2",
+     {
+      CommentedBlock["Now restrict to only the boundary points on the current face",
+       SwitchStatement["face", 
+        {0,  {AssignVariable[arrayElement["bmax", "dir"], {arrayElement["imin", "dir"], ""}], 
+              AssignVariable[arrayElement["bmin", "dir"], {0, ""}]}},
+        {1,  {AssignVariable[arrayElement["bmin", "dir"], {arrayElement["imax", "dir"], "" }],
+              AssignVariable[arrayElement["bmax", "dir"], {"cctk_lsh[dir]", ""}]}}]],
+       conditional[arrayElement["is_physbnd", "dir * 2 + face"],
+         loopOverInteger["k", arrayElement["bmin",2], arrayElement["bmax",2],
+           loopOverInteger["j", arrayElement["bmin",1], arrayElement["bmax",1],
+             loopOverInteger["i", arrayElement["bmin",0], arrayElement["bmax",0],
+
+         { If[SOURCELANGUAGE == "C",  
+              AssignVariable["index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"],
+              ""],
+	   block
+         }
+      
+      ]]]
+      ]}
+     ]]]};
+
+BoundaryWithGhostsLoop[block_] :=
+{
+  "\nGenericFD_GetBoundaryInfo(cctkGH, cctk_lsh, cctk_bbox, cctk_nghostzones, imin, imax, is_symbnd, is_physbnd, is_ipbnd);\n",
+
+  CommentedBlock["Start by looping over the whole grid, including the NON-PHYSICAL boundary points.  ", {
+  AssignVariable[arrayElement["bmin", 0], "0"],
+  AssignVariable[arrayElement["bmin", 1], "0"],
+  AssignVariable[arrayElement["bmin", 2], "0"],
+  AssignVariable[arrayElement["bmax", 0], "cctk_lsh[0]"],
+  AssignVariable[arrayElement["bmax", 1], "cctk_lsh[1]"],
+  AssignVariable[arrayElement["bmax", 2], "cctk_lsh[2]"]}], 
 
   CommentedBlock["Loop over all faces",
    loopOverInteger["dir", "0", "3",

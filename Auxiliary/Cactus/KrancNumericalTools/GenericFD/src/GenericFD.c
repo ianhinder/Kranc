@@ -199,6 +199,93 @@ void GenericFD_LoopOverBoundary(cGH *cctkGH, Kranc_Calculation calc)
         dir[1] = dir2;
         dir[2] = dir3;
 
+        here_is_physbnd = 1;
+
+        for (d = 0; d < 3; d++)
+        {
+          switch(dir[d])
+          {
+          case -1:
+            bmin[d] = 0;
+            bmax[d] = imin[d];
+            here_is_physbnd = here_is_physbnd && is_physbnd[2*d+0];
+            break;
+          case 0:
+            bmin[d] = imin[d];
+            bmax[d] = imax[d];
+            break;
+          case +1:
+            bmin[d] = imax[d];
+            bmax[d] = cctk_lsh[d];
+            here_is_physbnd = here_is_physbnd && is_physbnd[2*d+1];
+            break;
+          }
+
+          /* Choose a basis */
+          normal[d] = dir[d];
+          tangentA[d] = dir[(d+1)%3];
+          tangentB[d] = dir[(d+2)%3];
+        }
+
+        if (here_is_physbnd)
+        {
+#if 0
+          CCTK_REAL normal_norm = 0.0;
+          for (d = 0; d < 3; d++)
+          {
+            normal_norm += pow(normal[d], 2);
+          }
+          normal_norm = sqrt(normal_norm);
+          for (d = 0; d < 3; d++)
+          {
+            normal[d] /= normal_norm;
+          }
+#endif
+          
+          calc(cctkGH, old_dir, old_face, normal, tangentA, tangentB, bmin, bmax, 0, NULL);
+        }
+
+      }
+    }
+  }
+  
+  return;
+}
+
+
+void GenericFD_LoopOverBoundaryWithGhosts(cGH *cctkGH, Kranc_Calculation calc)
+{
+  DECLARE_CCTK_ARGUMENTS
+
+  CCTK_INT   dir1, dir2, dir3;
+  CCTK_INT   dir[3];
+  CCTK_REAL  normal[3];
+  CCTK_REAL  tangentA[3];
+  CCTK_REAL  tangentB[3];
+  CCTK_INT   bmin[3];
+  CCTK_INT   bmax[3];
+  CCTK_INT   here_is_physbnd;
+  CCTK_INT   d;
+
+  CCTK_INT   is_symbnd[6], is_physbnd[6], is_ipbnd[6];
+  CCTK_INT   imin[3], imax[3];
+  int        old_dir = 0;
+  int        old_face = 0;
+
+  GenericFD_GetBoundaryInfo(cctkGH, cctk_lsh, cctk_bbox, cctk_nghostzones, 
+                            imin, imax, is_symbnd, is_physbnd, is_ipbnd);
+
+ /* Loop over all faces */
+  for (dir3 = -1; dir3 <= +1; dir3++)
+  {
+    for (dir2 = -1; dir2 <= +1; dir2++)
+    {
+      for (dir1 = -1; dir1 <= +1; dir1++)
+      {
+        dir[0] = dir1;
+        dir[1] = dir2;
+        dir[2] = dir3;
+
         here_is_physbnd = 0;
 
         for (d = 0; d < 3; d++)
@@ -252,6 +339,7 @@ void GenericFD_LoopOverBoundary(cGH *cctkGH, Kranc_Calculation calc)
   return;
 }
 
+
 void GenericFD_LoopOverInterior(cGH *cctkGH, Kranc_Calculation calc)
 {
   DECLARE_CCTK_ARGUMENTS
@@ -272,6 +360,7 @@ void GenericFD_LoopOverInterior(cGH *cctkGH, Kranc_Calculation calc)
   
   return;
 }
+
 
 void GenericFD_PenaltyPrim2Char(cGH *cctkGH, CCTK_INT const dir,
                                 CCTK_INT const face,

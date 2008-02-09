@@ -32,7 +32,7 @@ BeginPackage["sym`"];
   ExtendedRealParameters,ExtendedIntParameters,ExtendedKeywordParameters,
   Parameters,
   EvolutionTimelevels,
-  PartialDerivatives, InheritedImplementations, ConditionalOnKeyword, ReflectionSymmetries, ZeroDimensions, CollectList, Interior, Boundary, Where, PreDefinitions, AllowedSymbols, UseLoopControl};
+  PartialDerivatives, InheritedImplementations, ConditionalOnKeyword, ReflectionSymmetries, ZeroDimensions, CollectList, Interior, Boundary, BoundaryWithGhosts, Where, PreDefinitions, AllowedSymbols, UseLoopControl};
 
 EndPackage[];
 

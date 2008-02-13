@@ -561,7 +561,7 @@ createKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_,
       Type -> "CCTK_INT",
       Default -> evolutionTimelevels,
       Description -> "Number of active timelevels",
-      Visibility -> "private",
+      Visibility -> "restricted",
       AllowedValues -> {{Value -> ToString[0] <> ":" <> ToString[evolutionTimelevels],
                          Description -> ""}}
     };

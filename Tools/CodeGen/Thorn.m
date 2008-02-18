@@ -691,7 +691,7 @@ CreateMoLBoundariesSource[spec_] :=
      "  ierr = CartSymGN(cctkGH, \"" <> fullgroupname <> "\");\n",
 
      "  if (ierr < 0)\n",
-     "     CCTK_WARN(-1, \"Failed to apply symmetry BC for " <> fullgroupname <> "!\");\n"}
+     "     CCTK_WARN(0, \"Failed to apply symmetry BC for " <> fullgroupname <> "!\");\n"}
      ];
 *)
 
@@ -712,7 +712,7 @@ CreateMoLBoundariesSource[spec_] :=
      "                    \"" <> fullgroupname <> "\", " <> boundpar <> ");\n",
 
      "  if (ierr < 0)\n",
-     "     CCTK_WARN(-1, \"Failed to register "<>boundpar<>" BC for "<>fullgroupname<>"!\");\n",
+     "     CCTK_WARN(0, \"Failed to register "<>boundpar<>" BC for "<>fullgroupname<>"!\");\n",
 
      "}\n"}];
 
@@ -734,7 +734,7 @@ CreateMoLBoundariesSource[spec_] :=
      "                    \"" <> fullgfname <> "\", " <> boundpar <> ");\n",
 
      "  if (ierr < 0)\n",
-     "     CCTK_WARN(-1, \"Failed to register "<>boundpar<>" BC for "<>fullgfname<>"!\");\n",
+     "     CCTK_WARN(0, \"Failed to register "<>boundpar<>" BC for "<>fullgfname<>"!\");\n",
 
      "}\n"}];
 
@@ -750,22 +750,24 @@ CreateMoLBoundariesSource[spec_] :=
      "if (CCTK_EQUALS(" <> boundpar <> ", \"radiative\"))\n",
      "{\n /* apply radiation boundary condition */\n  ",
 
-      DefineVariable[myhandle, "CCTK_INT", "Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE)"],
+      DefineVariable[myhandle, "static CCTK_INT", "-1"],
 
-      "  if ("<>myhandle<>" < 0) CCTK_WARN(-1, \"could not create table!\");\n",
+      "  if ("<>myhandle<>" < 0) "<>myhandle<>" = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);\n",
+
+      "  if ("<>myhandle<>" < 0) CCTK_WARN(0, \"could not create table!\");\n",
 
       "  if (Util_TableSetReal("<>myhandle<>" , "<> boundpar <>"_limit, \"LIMIT\") < 0)\n",
-      "     CCTK_WARN(-1, \"could not set LIMIT value in table!\");\n",
+      "     CCTK_WARN(0, \"could not set LIMIT value in table!\");\n",
 
       "  if (Util_TableSetReal("<>myhandle<>" ," <> boundpar <> "_speed, \"SPEED\") < 0)\n",
-      "     CCTK_WARN(-1, \"could not set SPEED value in table!\");\n",
+      "     CCTK_WARN(0, \"could not set SPEED value in table!\");\n",
 
       "\n",
       "  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, 1, "<>myhandle<>", \n",
       "                    \"" <> fullgroupname <> "\", \"Radiation\");\n\n",
 
       "  if (ierr < 0)\n",
-      "     CCTK_WARN(-1, \"Failed to register Radiation BC for "<>fullgroupname<>"!\");\n",
+      "     CCTK_WARN(0, \"Failed to register Radiation BC for "<>fullgroupname<>"!\");\n",
 
       "\n}\n"}];
 
@@ -782,22 +784,24 @@ CreateMoLBoundariesSource[spec_] :=
      "if (CCTK_EQUALS(" <> boundpar <> ", \"radiative\"))\n",
      "{\n /* apply radiation boundary condition */\n  ",
 
-      DefineVariable[myhandle, "CCTK_INT", "Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE)"],
+      DefineVariable[myhandle, "static CCTK_INT", "-1"],
 
-      "  if ("<>myhandle<>" < 0) CCTK_WARN(-1, \"could not create table!\");\n",
+      "  if ("<>myhandle<>" < 0) "<>myhandle<>" = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);\n",
+
+      "  if ("<>myhandle<>" < 0) CCTK_WARN(0, \"could not create table!\");\n",
 
       "  if (Util_TableSetReal("<>myhandle<>" , "<> boundpar <>"_limit, \"LIMIT\") < 0)\n",
-      "     CCTK_WARN(-1, \"could not set LIMIT value in table!\");\n",
+      "     CCTK_WARN(0, \"could not set LIMIT value in table!\");\n",
 
       "  if (Util_TableSetReal("<>myhandle<>" ," <> boundpar <> "_speed, \"SPEED\") < 0)\n",
-      "      CCTK_WARN(-1, \"could not set SPEED value in table!\");\n",
+      "      CCTK_WARN(0, \"could not set SPEED value in table!\");\n",
 
       "\n",
       "  ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, "<>myhandle<>", \n",
       "                    \"" <> fullgfname <> "\", \"Radiation\");\n\n",
 
       "  if (ierr < 0)\n",
-      "     CCTK_WARN(-1, \"Failed to register Radiation BC for "<>fullgfname<>"!\");\n",
+      "     CCTK_WARN(0, \"Failed to register Radiation BC for "<>fullgfname<>"!\");\n",
 
      "\n}\n"}];
 
@@ -812,19 +816,21 @@ CreateMoLBoundariesSource[spec_] :=
      "if (CCTK_EQUALS(" <> boundpar <> ", \"scalar\"))\n",
      "{\n /* apply scalar boundary condition */\n  ",
 
-      DefineVariable[myhandle, "CCTK_INT", "Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE)"],
+      DefineVariable[myhandle, "static CCTK_INT", "-1"],
 
-      "  if ("<>myhandle<>" < 0) CCTK_WARN(-1, \"could not create table!\");\n",
+      "  if ("<>myhandle<>" < 0) "<>myhandle<>" = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);\n",
+
+      "  if ("<>myhandle<>" < 0) CCTK_WARN(0, \"could not create table!\");\n",
 
       "  if (Util_TableSetReal("<>myhandle<>" ," <> boundpar <> "_scalar, \"SCALAR\") < 0)\n",
-      "      CCTK_WARN(-1, \"could not set SCALAR value in table!\");\n",
+      "      CCTK_WARN(0, \"could not set SCALAR value in table!\");\n",
 
       "\n",
       "  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, 1, "<>myhandle<>", \n",
       "                    \"" <> fullgroupname <> "\", \"scalar\");\n\n",
 
       "  if (ierr < 0)\n",
-      "     CCTK_WARN(-1, \"Failed to register Scalar BC for "<>fullgroupname<>"!\");\n",
+      "     CCTK_WARN(0, \"Failed to register Scalar BC for "<>fullgroupname<>"!\");\n",
 
       "\n}\n"}];
 
@@ -840,19 +846,21 @@ CreateMoLBoundariesSource[spec_] :=
      "if (CCTK_EQUALS(" <> boundpar <> ", \"scalar\"))\n",
      "{\n /* apply scalar boundary condition */\n  ",
 
-      DefineVariable[myhandle, "CCTK_INT", "Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE)"],
+      DefineVariable[myhandle, "static CCTK_INT", "-1"],
 
-      "  if ("<>myhandle<>" < 0) CCTK_WARN(-1, \"could not create table!\");\n",
+      "  if ("<>myhandle<>" < 0) "<>myhandle<>" = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);\n",
+
+      "  if ("<>myhandle<>" < 0) CCTK_WARN(0, \"could not create table!\");\n",
 
       "  if (Util_TableSetReal("<>myhandle<>" ," <> boundpar <> "_scalar, \"SCALAR\") < 0)\n",
-      "    CCTK_WARN(-1, \"could not set SCALAR value in table!\");\n",
+      "    CCTK_WARN(0, \"could not set SCALAR value in table!\");\n",
 
       "\n",
       "  ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, "<>myhandle<>", \n",
       "                    \"" <> fullgfname <> "\", \"scalar\");\n\n",
 
       "  if (ierr < 0)\n",
-      "     CCTK_WARN(-1, \"Error in registering Scalar BC for "<>fullgfname<>"!\");\n",
+      "     CCTK_WARN(0, \"Error in registering Scalar BC for "<>fullgfname<>"!\");\n",
 
      "\n}\n"}];
 

@@ -396,8 +396,8 @@ createKrancInterface[nonevolvedGroups_, evolvedGroups_, groups_,
     groupStructures = Join[nonevolvedGroupStructures, evolvedGroupStructures];
 
     interface = CreateInterface[implementation, inheritedImplementations, 
-      Join[includeFiles, CactusBoundary`GetIncludeFiles[], 
-           If[useLoopControl, "loopcontrol.h", {}]],
+      Join[includeFiles, {CactusBoundary`GetIncludeFiles[]},
+           If[useLoopControl, {"loopcontrol.h"}, {}]],
       groupStructures,
       UsesFunctions ->
         Join[{registerEvolved, registerConstrained,diffCoeff}, 

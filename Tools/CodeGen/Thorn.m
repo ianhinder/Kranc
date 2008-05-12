@@ -473,8 +473,11 @@ CreateSetterSource[calcs_, debug_, useLoopControl_, opts___] :=
    "#define KRANC_" <> ToUpperCase[CodeGen`SOURCELANGUAGE] <> "\n\n",
 
    If[CodeGen`SOURCELANGUAGE == "C",
-         IncludeSystemFile["math.h"],
-         "\n"
+         {IncludeSystemFile["assert.h"],
+          IncludeSystemFile["math.h"],
+          IncludeSystemFile["stdio.h"],
+          IncludeSystemFile["stdlib.h"]},
+         {"\n"}
       ],
 
    Map[IncludeFile, Join[{"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h",

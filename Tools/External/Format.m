@@ -745,6 +745,7 @@ CDefs[expr_,trigQ_,hypQ_,optQ_,prec_,atoarry_,{optopts___}]:=
 (* Needs additional rules. *)
 
         CD[Power]=Power;
+        CD[IfThen]=IfThen;
 
 (* Numeric. *)
 

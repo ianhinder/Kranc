@@ -580,7 +580,7 @@ createKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_,
     realStructs = Map[krancParamStruct[#, "CCTK_REAL", False] &, reals];
 (*    Print["realStructs == ", realStructs];*)
 
-    verboseStruct = krancParamStruct[{Name -> "verbose", Default -> 0}, "CCTK_REAL", False];
+    verboseStruct = krancParamStruct[{Name -> "verbose", Default -> 0}, "CCTK_INT", False];
 
     intStructs = Map[krancParamStruct[#, "CCTK_INT", False] &, ints];
 

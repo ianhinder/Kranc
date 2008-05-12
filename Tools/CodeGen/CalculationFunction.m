@@ -132,8 +132,8 @@ assignVariableFromExpression[dest_, expr_] := Module[{tSym, cleanExpr, code},
       cleanExpr = ReplacePowers[expr] /. sym`t -> tSym;
   
       If[SOURCELANGUAGE == "C",      
-        code = ToString[dest == cleanExpr, CForm,       PageWidth -> 120] <> ";\n",
-        code = ToString@dest <> ".eq." <> ToString[cleanExpr, FortranForm, PageWidth -> 120] <> "\n"
+        code = ToString[dest == cleanExpr, CForm,       PageWidth -> 80] <> ";\n",
+        code = ToString@dest <> ".eq." <> ToString[cleanExpr, FortranForm, PageWidth -> 80] <> "\n"
        ];
  
       If[SOURCELANGUAGE != "C",
@@ -491,7 +491,7 @@ CreateCalculationFunction[calc_, debug_, useLoopControl_] :=
        ThrowError["Unknown symbols in calculation.  Symbols are:", unknownSymbols, "Calculation is:", cleancalc]]];
 
   {
-  DefineFunction[bodyFunctionName, "void", "cGH *cctkGH, CCTK_INT dir, CCTK_INT face, CCTK_REAL normal[3], CCTK_REAL tangentA[3], CCTK_REAL tangentB[3], CCTK_INT min[3], CCTK_INT max[3], CCTK_INT n_subblock_gfs, CCTK_REAL *subblock_gfs[]", 
+  DefineFunction[bodyFunctionName, "void", "cGH const * const cctkGH, CCTK_INT const dir, CCTK_INT const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], CCTK_INT const min[3], CCTK_INT const max[3], CCTK_INT const n_subblock_gfs, CCTK_REAL * const subblock_gfs[]", 
   { 
     "DECLARE_CCTK_ARGUMENTS\n",
     "DECLARE_CCTK_PARAMETERS\n\n",
@@ -691,11 +691,27 @@ equationLoop[eqs_,
     DeclareDerivatives[pddefs, eqs],
 
     CommentedBlock["Assign local copies of grid functions",
-                   Map[AssignVariable[localName[#], GridName[#]] &, 
+                   Map[AssignVariableInLoop[localName[#], GridName[#]] &, 
                        gfsInRHS]],
 
+(*
+    CommentedBlock["Check for nans",
+                   Join[{"if (\n"},
+                        Map[{"    isnan (", localName[#], ") ||\n"} &, 
+                            gfsInRHS],
+                        {"    0)\n",
+                         "{\n",
+                         "  CCTK_VInfo(CCTK_THORNSTRING, \"NaN found in RHS:\");\n",
+                         "  CCTK_VInfo(CCTK_THORNSTRING, \"ipos: %d %d %d\", i, j, k);\n",
+                         "  CCTK_VInfo(CCTK_THORNSTRING, \"lbnd: %d %d %d\", cctk_lbnd[0], cctk_lbnd[1], cctk_lbnd[2]);\n",
+                         "  CCTK_VInfo(CCTK_THORNSTRING, \"lsh: %d %d %d\", cctk_lsh[0], cctk_lsh[1], cctk_lsh[2]);\n"},
+                        Map[{"  CCTK_VInfo(CCTK_THORNSTRING, \"", localName[#], ": %.17g\", (double)", localName[#], ");\n"} &,
+                            gfsInRHS],
+                        {"}\n"}]],
+*)
+
     CommentedBlock["Assign local copies of subblock grid functions",
-                   Map[AssignVariable[localName[#], SubblockGridName[#]] &, 
+                   Map[AssignVariableInLoop[localName[#], SubblockGridName[#]] &, 
                        subblockGFs]],
 
     CommentedBlock["Include user supplied include files",
@@ -712,15 +728,31 @@ equationLoop[eqs_,
                    replaceDerivatives[
                      replaceWithDerivativesHidden[eqs2, localMap],{}]]],
 
-    If[debugInLoop, Map[InfoVariable[#[[1]]] &, eqs2 /. localMap], ""], 
+    If[debugInLoop, Map[InfoVariable[#[[1]]] &, (eqs2 /. localMap)], ""], 
 
     CommentedBlock["Copy local copies back to grid functions",
-                   Map[AssignVariable[GridName[#], localName[#]] &, 
+                   Map[AssignVariableInLoop[GridName[#], localName[#]] &, 
                        gfsInLHS]],
 
     CommentedBlock["Copy local copies back to subblock grid functions",
-                   Map[AssignVariable[SubblockGridName[#], localName[#]] &, 
+                   Map[AssignVariableInLoop[SubblockGridName[#], localName[#]] &, 
                        subblockGFs]],
+
+(*
+    CommentedBlock["Check for nans",
+                   Join[{"if (\n"},
+                        Map[{"    isnan (", localName[#], ") ||\n"} &,
+                            gfsInLHS],
+                        {"    0)\n",
+                         "{\n",
+                         "  CCTK_VInfo(CCTK_THORNSTRING, \"NaN found in LHS:\");\n",
+                         "  CCTK_VInfo(CCTK_THORNSTRING, \"ipos: %d %d %d\", i, j, k);\n",
+                         "  CCTK_VInfo(CCTK_THORNSTRING, \"lbnd: %d %d %d\", cctk_lbnd[0], cctk_lbnd[1], cctk_lbnd[2]);\n",
+                         "  CCTK_VInfo(CCTK_THORNSTRING, \"lsh: %d %d %d\", cctk_lsh[0], cctk_lsh[1], cctk_lsh[2]);\n"},
+                        Map[{"  CCTK_VInfo(CCTK_THORNSTRING, \"", localName[#], ": %.17g\", (double)", localName[#], ");\n"} &,
+                            gfsInLHS],
+                        {"}\n"}]],
+*)
 
     If[debugInLoop, Map[InfoVariable[GridName[#]] &, gfsInLHS], ""]}]
    };

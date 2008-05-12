@@ -60,6 +60,10 @@ DefineVariable::usage = "DefineVariable[name, type, value] returns a block of " 
   "code that declares and initialised a variable 'name' of type 'type' to value 'value'.";
 AssignVariable::usage = "AssignVariable[dest_, src_] returns a block of code " <>
   "that assigns 'src' to 'dest'.";
+AssignVariableInLoop::usage = "AssignVariable[dest_, src_] returns a block of code " <>
+  "that assigns 'src' to 'dest'.";
+TestForNaN::usage = "TestForNaN[expr_] returns a block of code " <>
+  "that tests 'expr' for nan.";
 CommentedBlock::usage = "CommentedBlock[comment, block] returns a block consisting " <>
   "of 'comment' followed by 'block'.";
 DefineCCTKFunction::usage = "DefineCCTKFunction[name, type, block] returns a block " <>
@@ -258,6 +262,22 @@ DefineVariable[name_, type_, value_] :=
 
 AssignVariable[dest_, src_] :=
   {dest, " = ", src, EOL[]};
+
+AssignVariableInLoop[dest_, src_] :=
+  {dest, " = ", src, EOL[]};
+(*
+  {dest, " = ", src, EOL[],
+   TestForNaN[dest]};
+*)
+
+TestForNaN[expr_] :=
+  {"if (isnan(", expr, ")) {\n",
+   "  CCTK_VInfo(CCTK_THORNSTRING, \"NaN found\");\n",
+   "  CCTK_VInfo(CCTK_THORNSTRING, \"ipos: %d %d %d\", i, j, k);\n",
+   "  CCTK_VInfo(CCTK_THORNSTRING, \"lbnd: %d %d %d\", cctk_lbnd[0], cctk_lbnd[1], cctk_lbnd[2]);\n",
+   "  CCTK_VInfo(CCTK_THORNSTRING, \"lsh: %d %d %d\", cctk_lsh[0], cctk_lsh[1], cctk_lsh[2]);\n",
+   "  CCTK_VInfo(CCTK_THORNSTRING, \"", expr, ": %.17g\", (double)", expr, ");\n",
+   "}\n"};
 
 (* comments are always done C-style because they are killed by cpp anyway *) 
 insertComment[text_] := {"/* ", text, " */\n"};
@@ -506,7 +526,7 @@ GridLoop[block_] :=
   If[SOURCELANGUAGE == "C",  
     CommentedBlock["Loop over the grid points",
       {
-        "_Pragma (\"omp parallel\")\n",
+        "#pragma omp parallel\n",
         "LC_LOOP3 (unnamed,\n",
         "          i,j,k, istart,jstart,kstart, iend,jend,kend,\n",
         "          cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])\n",
@@ -524,7 +544,7 @@ GridLoop[block_] :=
     ],
     CommentedBlock["Loop over the grid points",
       {
-        "_Pragma (\"omp parallel\")\n",
+        "#pragma omp parallel\n",
         "LC_LOOP3 (unnamed,\n",
         "          i,j,k, istart,jstart,kstart, iend,jend,kend,\n",
         "          cctk_lsh(1),cctk_lsh(2),cctk_lsh(3))\n",
@@ -560,7 +580,7 @@ GenericGridLoopUsingLoopControl[functionName_, block_] :=
   If[SOURCELANGUAGE == "C",  
     CommentedBlock["Loop over the grid points",
       {
-        "_Pragma (\"omp parallel\")\n",
+        "#pragma omp parallel\n",
         "LC_LOOP3 (", functionName, ",\n",
         "          i,j,k, min[0],min[1],min[2], max[0],max[1],max[2],\n",
         "          cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])\n",

@@ -18,7 +18,29 @@ CCTK_INT FUNCTION \
                               CCTK_INT OUT ARRAY is_internal,    \
                               CCTK_INT OUT ARRAY is_staggered,   \
                               CCTK_INT OUT ARRAY shiftout)
-REQUIRES FUNCTION GetBoundarySpecification
+USES FUNCTION GetBoundarySpecification
+
+CCTK_INT FUNCTION                         \
+    MultiPatch_GetMap                     \
+        (CCTK_POINTER_TO_CONST IN cctkGH)
+USES FUNCTION MultiPatch_GetMap
+
+CCTK_INT FUNCTION                         \
+    MultiPatch_GetBbox                    \
+        (CCTK_POINTER_TO_CONST IN cctkGH, \
+         CCTK_INT IN size,                \
+         CCTK_INT OUT ARRAY bbox)
+USES FUNCTION MultiPatch_GetBbox
+
+CCTK_INT FUNCTION                           \
+    MultiPatch_GetBoundarySpecification     \
+        (CCTK_INT IN map,                   \
+         CCTK_INT IN size,                  \
+         CCTK_INT OUT ARRAY nboundaryzones, \
+         CCTK_INT OUT ARRAY is_internal,    \
+         CCTK_INT OUT ARRAY is_staggered,   \
+         CCTK_INT OUT ARRAY shiftout)
+USES FUNCTION MultiPatch_GetBoundarySpecification
 
 CCTK_INT FUNCTION \
     SymmetryTableHandleForGrid (CCTK_POINTER_TO_CONST IN cctkGH)

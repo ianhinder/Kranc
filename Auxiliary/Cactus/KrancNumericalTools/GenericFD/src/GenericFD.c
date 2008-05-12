@@ -1,3 +1,4 @@
+
 /*@@                                         
    @file      GenericFD/src/GenericFD.c
    @date      June 16 2002
@@ -68,11 +69,17 @@ CCTK_INT sgn(CCTK_REAL x)
    symmetry, physical or interprocessor boundary.  Carpet refinement
    boundaries are treated as interprocessor boundaries.
 */
-void GenericFD_GetBoundaryInfo(cGH *cctkGH, CCTK_INT *cctk_lsh, CCTK_INT *cctk_bbox,
-			       CCTK_INT *cctk_nghostzones, CCTK_INT *imin, 
-			       CCTK_INT *imax, CCTK_INT *is_symbnd, 
-			       CCTK_INT *is_physbnd, CCTK_INT *is_ipbnd)
+void GenericFD_GetBoundaryInfo(cGH const * restrict const cctkGH,
+                               CCTK_INT const * restrict const cctk_lsh,
+                               CCTK_INT const * restrict const cctk_bbox,
+			       CCTK_INT const * restrict const cctk_nghostzones,
+                               CCTK_INT * restrict const imin, 
+			       CCTK_INT * restrict const imax,
+                               CCTK_INT * restrict const is_symbnd, 
+			       CCTK_INT * restrict const is_physbnd,
+                               CCTK_INT * restrict const is_ipbnd)
 {
+  CCTK_INT bbox[6];
   CCTK_INT nboundaryzones[6];
   CCTK_INT is_internal[6];
   CCTK_INT is_staggered[6];
@@ -86,10 +93,33 @@ void GenericFD_GetBoundaryInfo(cGH *cctkGH, CCTK_INT *cctk_lsh, CCTK_INT *cctk_b
   CCTK_INT iret = 0;
   CCTK_INT ierr = 0;
 
-  ierr = GetBoundarySpecification(6, nboundaryzones, is_internal, is_staggered, 
-				  shiftout);
-  if (ierr != 0)
+  if (CCTK_IsFunctionAliased ("MultiPatch_GetBbox")) {
+    ierr = MultiPatch_GetBbox (cctkGH, 6, bbox);
+    if (ierr != 0)
+      CCTK_WARN(0, "Could not obtain bbox specification");
+  } else {
+    for (dir = 0; dir < 6; dir++)
+    {
+      bbox[dir] = 0;
+    }
+  }
+
+  if (CCTK_IsFunctionAliased ("MultiPatch_GetBoundarySpecification")) {
+    CCTK_INT const map = MultiPatch_GetMap (cctkGH);
+    if (map < 0)
+      CCTK_WARN(0, "Could not obtain boundary specification");
+    ierr = MultiPatch_GetBoundarySpecification
+      (map, 6, nboundaryzones, is_internal, is_staggered, shiftout);
+    if (ierr != 0)
+      CCTK_WARN(0, "Could not obtain boundary specification");
+  } else if (CCTK_IsFunctionAliased ("GetBoundarySpecification")) {
+    ierr = GetBoundarySpecification
+      (6, nboundaryzones, is_internal, is_staggered, shiftout);
+    if (ierr != 0)
+      CCTK_WARN(0, "Could not obtain boundary specification");
+  } else {
     CCTK_WARN(0, "Could not obtain boundary specification");
+  }
 
   symtable = SymmetryTableHandleForGrid(cctkGH);
   if (symtable < 0) 
@@ -102,8 +132,8 @@ void GenericFD_GetBoundaryInfo(cGH *cctkGH, CCTK_INT *cctk_lsh, CCTK_INT *cctk_b
 
   for (dir = 0; dir < 6; dir++)
   {
-    is_symbnd[dir] = (symbnd[dir] >= 0);
-    is_ipbnd[dir] = (cctk_bbox[dir] == 0);
+    is_ipbnd[dir] = (!cctk_bbox[dir]);
+    is_symbnd[dir] = (!is_ipbnd[dir] && symbnd[dir] >= 0 && !bbox[dir]);
     is_physbnd[dir] = (!is_ipbnd[dir] && !is_symbnd[dir]);
   }
 
@@ -177,8 +207,8 @@ void GenericFD_LoopOverBoundary(cGH *cctkGH, Kranc_Calculation calc)
   CCTK_REAL  tangentB[3];
   CCTK_INT   bmin[3];
   CCTK_INT   bmax[3];
-  CCTK_INT   here_is_physbnd;
-  CCTK_INT   here_is_bnd;
+  CCTK_INT   have_bnd;
+  CCTK_INT   all_physbnd;
   CCTK_INT   d;
 
   CCTK_INT   is_symbnd[6], is_physbnd[6], is_ipbnd[6];
@@ -200,8 +230,9 @@ void GenericFD_LoopOverBoundary(cGH *cctkGH, Kranc_Calculation calc)
         dir[1] = dir2;
         dir[2] = dir3;
 
-        here_is_physbnd = 1;
-        here_is_bnd = 0;
+        have_bnd = 0;          /* one of the faces is a boundary */
+        all_physbnd = 1;       /* all boundary faces are physical
+                                  boundaries */
 
         for (d = 0; d < 3; d++)
         {
@@ -210,8 +241,8 @@ void GenericFD_LoopOverBoundary(cGH *cctkGH, Kranc_Calculation calc)
           case -1:
             bmin[d] = 0;
             bmax[d] = imin[d];
-            here_is_physbnd = here_is_physbnd && is_physbnd[2*d+0];
-            here_is_bnd = 1;
+            have_bnd = 1;
+            all_physbnd = all_physbnd && is_physbnd[2*d+0];
             break;
           case 0:
             bmin[d] = imin[d];
@@ -220,8 +251,8 @@ void GenericFD_LoopOverBoundary(cGH *cctkGH, Kranc_Calculation calc)
           case +1:
             bmin[d] = imax[d];
             bmax[d] = cctk_lsh[d];
-            here_is_physbnd = here_is_physbnd && is_physbnd[2*d+1];
-            here_is_bnd = 1;
+            have_bnd = 1;
+            all_physbnd = all_physbnd && is_physbnd[2*d+1];
             break;
           }
 
@@ -231,7 +262,7 @@ void GenericFD_LoopOverBoundary(cGH *cctkGH, Kranc_Calculation calc)
           tangentB[d] = dir[(d+2)%3];
         }
 
-        if (here_is_physbnd && here_is_bnd)
+        if (have_bnd && all_physbnd)
         {
 #if 0
           CCTK_REAL normal_norm = 0.0;
@@ -268,7 +299,8 @@ void GenericFD_LoopOverBoundaryWithGhosts(cGH *cctkGH, Kranc_Calculation calc)
   CCTK_REAL  tangentB[3];
   CCTK_INT   bmin[3];
   CCTK_INT   bmax[3];
-  CCTK_INT   have_bnd, have_symbnd, have_not_ipbnd;
+  CCTK_INT   have_bnd;
+  CCTK_INT   have_physbnd;
   CCTK_INT   d;
 
   CCTK_INT   is_symbnd[6], is_physbnd[6], is_ipbnd[6];
@@ -290,10 +322,9 @@ void GenericFD_LoopOverBoundaryWithGhosts(cGH *cctkGH, Kranc_Calculation calc)
         dir[1] = dir2;
         dir[2] = dir3;
 
-        have_bnd = 0;           /* one of the faces is a boundary */
-        have_symbnd = 0;        /* one of the faces is a symmetry boundary */
-        have_not_ipbnd = 0;     /* one of the faces is not an
-                                   interprocessor boundary */
+        have_bnd = 0;          /* one of the faces is a boundary */
+        have_physbnd = 0;      /* one of the boundary faces is a physical
+                                  boundary */
 
         for (d = 0; d < 3; d++)
         {
@@ -303,8 +334,7 @@ void GenericFD_LoopOverBoundaryWithGhosts(cGH *cctkGH, Kranc_Calculation calc)
             bmin[d] = 0;
             bmax[d] = imin[d];
             have_bnd = 1;
-            have_symbnd = have_symbnd || is_symbnd[2*d+0];
-            have_not_ipbnd = have_not_ipbnd || ! is_ipbnd[2*d+0];
+            have_physbnd = have_physbnd || is_physbnd[2*d+0];
             break;
           case 0:
             bmin[d] = imin[d];
@@ -314,8 +344,7 @@ void GenericFD_LoopOverBoundaryWithGhosts(cGH *cctkGH, Kranc_Calculation calc)
             bmin[d] = imax[d];
             bmax[d] = cctk_lsh[d];
             have_bnd = 1;
-            have_symbnd = have_symbnd || is_symbnd[2*d+1];
-            have_not_ipbnd = have_not_ipbnd || ! is_ipbnd[2*d+1];
+            have_physbnd = have_physbnd || is_physbnd[2*d+1];
             break;
           }
 
@@ -325,7 +354,7 @@ void GenericFD_LoopOverBoundaryWithGhosts(cGH *cctkGH, Kranc_Calculation calc)
           tangentB[d] = dir[(d+2)%3];
         }
 
-        if (have_bnd && ! have_symbnd && have_not_ipbnd)
+        if (have_bnd && have_physbnd)
         {
 #if 0
           CCTK_REAL normal_norm = 0.0;

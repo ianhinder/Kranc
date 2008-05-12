@@ -20,7 +20,7 @@
 
 (* Place these symbols in the sym context *)
 BeginPackage["sym`"];
-{D1, D2, D3, D11, D22, D33, D21, D31, D32, D12, D13, D23, dot, Eps}
+{D1, D2, D3, D11, D22, D33, D21, D31, D32, D12, D13, D23, dot, Eps, Zero3}
 EndPackage[];
 
 BeginPackage["TensorTools`", {"Errors`", "MapLookup`"}];
@@ -61,6 +61,9 @@ compatibility with MathTensor.";*)
 Lie::usage = "Lie[x,V] is the Lie derivative of expression x with
 respect to the TensorTools vector V (specified without an index).";
 
+FD::usage = "FD[x,i1, i2, ...] represents the local partial derivative of x
+with respect to the indices i1, i2, ...";
+
 MatrixOfComponents::usage = "MatrixOfComponents[tensor] returns a
 matrix of the components of a two-tensor";
 
@@ -86,16 +89,28 @@ registered using DefineConnection into partial derivatives.";
 
 LieToPD::usage = "LieToPD[x] converts all Lie derivatives in x ";
 
+PDtoFD::usage = "PDtoFD[x] converts all partial derivatives in x
+into local partial derivatives.";
+
 DefineConnection::usage = "DefineConnection[cd, pd, ch] registers a
 connection with TensorTools.  The covariant derivative operator will be cd,
 the partial derivative operator will be pd, and the Christoffel symbol will
 be ch.";
+
+DefineJacobian::usage = "DefineJacobian[pd, fd, J, dJ] registers a
+Jacobian with TensorTools.  The partial derivative operator will be pd,
+the local partial derivative operator will be fd, and the Jacobian and its
+derivative will be J and dJ.";
+
+ResetJacobians::usage = "ResetJacobians unregisters all Jacobians.";
 
 KD::usage = "KD[x,y] is the Kronecker delta symbol.  It can be given
 tensorial or numerical indices.";
 
 Eps::usage = "Eps[i,j,...] is the alternating symbol.  It can be given
 tensorial or numerical indices.";
+
+Zero3::usage = "Zero3[i,j,k] is zero.";
 
 Euc::usage = "Euc[i,j] is the Euclidian metric.  It can be given
 tensorial or numerical indices.";
@@ -379,7 +394,7 @@ Unprotect[Times];
 
 Times[TensorProduct[], x_] = x;
 
-Format[x_ t:TensorProduct[((Tensor[__] | CD[__] | PD[__]) ..)]] := 
+Format[x_ t:TensorProduct[((Tensor[__] | CD[__] | PD[__] | FD[__]) ..)]] := 
   SequenceForm[x," ",t];
 
 Format[x_ t:Tensor[__]] := 
@@ -387,7 +402,7 @@ Format[x_ t:Tensor[__]] :=
 
 Protect[Times];
 
-Format[TensorProduct[t:((Tensor[__] | CD[__] | PD[__]) ..)]] := 
+Format[TensorProduct[t:((Tensor[__] | CD[__] | PD[__] | FD[__]) ..)]] := 
   PrecedenceForm[SequenceForm[t],1000];
 
 Format[t:TensorProduct[x__]] := Infix[t,null];
@@ -450,7 +465,7 @@ Protect[Equal];
    expanded, and tensor components and derivatives in single-symbol
    form suitable for code generation *)
 MakeExplicit[x_] := 
-  ((((makeSplit[makeSum[LieToPD[CDtoPD[x]]]] /. componentNameRule) /. KDrule) /. EpsilonRule)
+  ((((makeSplit[makeSum[PDtoFD[LieToPD[CDtoPD[x]]]]] /. componentNameRule) /. KDrule) /. EpsilonRule)
        /. derivativeNameRule) /. TensorProduct -> Times;
 
 MakeExplicit[l:List[Rule[_, _] ..]] :=
@@ -850,6 +865,7 @@ PDReduce :=
 
 PD[x:(_Real | _Integer), is__] := 0;
 
+(*
 Format[PD[x_ ? AtomQ, is:((TensorIndex[_,_] | _Integer) ..)]] :=
   SequenceForm[x, ",", is];
 
@@ -858,6 +874,7 @@ Format[PD[Tensor[k_,inds__], is:((TensorIndex[_,_] | _Integer) ..)]] :=
 
 Format[PD[x_, is:((TensorIndex[_,_] | _Integer) ..)]] :=
   SequenceForm["(",x,")", ",", is];
+*)
 
 
 (* -------------------------------------------------------------------------- 
@@ -910,7 +927,7 @@ LieToPDRuleTensorProduct :=
 
 LieToPDRule :=
   Lie[x_, v_] :>
-    Module[{di},
+    Module[{di, diLower, diUpper},
       diLower = dummyNotIn[x];
       diUpper = toggleIndex[diLower];
       v[diUpper] PD[x,diLower] + Apply[Plus,Map[LietoPDTerm[x, #, v] &, indicesIn[x]]]];
@@ -932,6 +949,135 @@ LieToPD[x_] :=
   x //. LieToPDFullRule //. removeSingleTensorProducts;
 
 (* -------------------------------------------------------------------------- 
+   Local Partial Derivatives
+   -------------------------------------------------------------------------- *)
+
+jacobians = {};
+
+DefineJacobian[pd_, fd_, J_, dJ_] :=
+  Module[{},
+    jacobians = Join[jacobians, {{pd, fd, J, dJ}}]];
+
+ResetJacobians := Module[{}, jacobians = {}];
+
+
+
+(* This is duplicated (and extended!) from the PD case.  *)
+
+(* Reduction rules *)
+
+FDLeibnizTimes := 
+  FD[x_ y_, i_] :> FD[x,i] y + x FD[y,i];
+
+FDLeibnizTensorProduct := 
+  FD[TensorProduct[s_, t__], i_] :> 
+    TensorProduct[FD[s,i],t] + TensorProduct[s,FD[TensorProduct[t],i]];
+
+FDLinearity :=
+  FD[x_ + y_,i_] :> FD[x,i] + FD[y,i];
+
+FDFlatten := 
+  FD[FD[x_,is__],js__] :> FD[x,is,js];
+
+FDUnflatten :=
+  FD[x_, i_, is__] :> FD[FD[x,i],is];
+
+FDJacobi :=
+  FD[J[i_,j_], k_] :> dJ[i,j,k];
+
+FDConst :=
+  FD[x:(_Real | _Integer), is__] -> 0;
+
+FDReduce :=
+  x_ :> (((((((x //. FDUnflatten) //. FDJacobi) //. FDLeibnizTimes) //. FDLeibnizTensorProduct) //. FDLinearity) //. FDFlatten) //. FDConst);
+
+Format[FD[x_ ? AtomQ, is:((TensorIndex[_,_] | _Integer) ..)]] :=
+  SequenceForm[x, ",", is];
+
+Format[FD[Tensor[k_,inds__], is:((TensorIndex[_,_] | _Integer) ..)]] :=
+  SequenceForm[k, inds, ",", is];
+
+Format[FD[x_, is:((TensorIndex[_,_] | _Integer) ..)]] :=
+  SequenceForm["(",x,")", ",", is];
+
+
+
+(* After the PD is converted to a FD, it will contain a dummy index.
+   This needs careful attention, so instead of leaving the result in
+   its TensorProduct wrapper, we remove it and use a Times instead.
+   This will force the dummy indices to be checked and relabelled
+   automatically, and the result placed into a TensorProduct when it
+   is clean. *)
+
+PDtoFDRuleTensorProduct := 
+  TensorProduct[t1___, PD[x_,i___], t2___] :> 
+    (TensorProduct[t1, t2] /. PDtoFDRuleTensorProduct) PD[x,i]
+
+(* Convert a PD into an FD. *)
+
+PFdummies := {};
+setDummies[x_] := Module[{dums},
+                         dums=remainingLowerIndices[x];
+                         (* Print["Setting PFdummies to",dums]; *)
+                         PFdummies:=dums];
+newDummy := Module[{fst,rem},
+                   fst=First[PFdummies]; rem=Rest[PFdummies];
+                   (* Print["new dummy",fst]; *)
+                   PFdummies:=rem; fst];
+
+PDtoFDRule1[t_] :=
+  PD[x_, i_] :>
+    Module[{la, ua},
+      (* la = lz; *)
+      (* la = dummyNotIn[{t,x,i}]; *)
+      la = newDummy;
+      ua = toggleIndex[la];
+      J[ua,i] FD[x,la]];
+PDtoFDRule2[t_] :=
+  PD[x_, i_, j_] :>
+    Module[{la, ua, lb, ub},
+      (* la = lz; *)
+      (* la = dummyNotIn[{t,x,i,j}]; *)
+      la = newDummy;
+      ua = toggleIndex[la];
+      (* lb = ly; *)
+      (* lb = dummyNotIn[{t,x,i,j,la}]; *)
+      lb = newDummy;
+      ub = toggleIndex[lb];
+      dJ[ua,i,j] FD[x,la] + J[ua,i] J[ub,j] FD[x,la,lb]];
+PDtoFDRule[t_] :=
+  x_ :> (((x /. PDtoFDRule2[t]) /. PDtoFDRule1[t]) //. FDReduce);
+
+
+
+PDtoFDDefaultJacobian[x_] := Module[{y,z},
+  y = x /. PDtoFDRuleTensorProduct;
+  setDummies[y];
+  z = y /. PDtoFDRule[y];
+  setDummies[0];
+  z /. removeSingleTensorProducts];
+
+PDtoFDForJacobian[x_, jacobian_] :=
+  Module[{pd,fd,j,dj, y, result},
+    pd = jacobian[[1]];
+    fd = jacobian[[2]];
+    j  = jacobian[[3]];
+    dj = jacobian[[4]];
+    y = x /. {pd :> PD, fd :> FD, j :> J, dj :> dJ};
+    result = PDtoFDDefaultJacobian[y];
+    result /. {J :> j, dJ :> dj}];
+
+PDtoFDForJacobians[x_, js_] :=
+  If[js == {},
+    x,
+    PDtoFDForJacobians[PDtoFDForJacobian[x, First[js]], Rest[js]]];
+
+PDtoFD[x_] :=
+  PDtoFDForJacobians[x, jacobians];
+
+
+
+(* -------------------------------------------------------------------------- 
    Kronecker delta
    -------------------------------------------------------------------------- *)
 
@@ -951,6 +1097,12 @@ EpsilonRule := Eps[x__] :> Signature[Map[Abs, {x}]];
    -------------------------------------------------------------------------- *)
 
 Euc[a_,b_] := If[a == b, 1, 0];
+
+(* -------------------------------------------------------------------------- 
+   Zero3
+   -------------------------------------------------------------------------- *)
+
+Zero3[a_,b_,c_] := 0;
 
 (* -------------------------------------------------------------------------- 
    Miscellaneous

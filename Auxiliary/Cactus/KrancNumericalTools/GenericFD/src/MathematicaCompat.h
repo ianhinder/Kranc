@@ -7,10 +7,12 @@
 #define Abs(x)        (fabs(x))
 #define Min(x, y)     (fmin((x), (y)))
 #define Max(x, y)     (fmax((x), (y)))
+#define IfThen(x,y,z) ((x) ? (y) : (z))
 #else
 #define Abs(x)        (abs(x))
 #define Min(x, y)     (min((x), (y)))
 #define Max(x, y)     (max((x), (y)))
+/* IfThen cannot be expressed in Fortran */
 #endif
 
 #define Exp(x)        (exp(x))

@@ -40,7 +40,7 @@ Directory, Configuration, Interface, Param, Schedule, Sources, Makefile,
 Filename,
 Contents, ThornName, BaseImplementation, EvolvedGFs, PrimitiveGFs,
 Groups, Calculation, GridFunctions, Shorthands, Equations, Parameter,
-Value, UsesFunctions, ArgString, Conditional, D1, D2, D3, D11, D22,
+Value, UsesFunctions, ArgString, Conditional, Conditionals, D1, D2, D3, D11, D22,
 D33, D21, D31, D32, Textual, TriggerGroups, Include, RHSGroups, Tags};
 
 {ExcisionGFs};
@@ -335,6 +335,7 @@ CreateInterface[implementation_, inheritedImplementations_, includeFiles_,
 
   {Group -> "admbase::metric", Timelevels -> 3, 
    Conditional -> {Parameter -> "", Value -> ""},
+   Conditionals -> {{Parameter -> "", Value -> ""}},
    Conditional -> {Textual -> "CCTK_EQUALS(name,value)"}}
 
    A "conditional" structure looks like this: {Parameter -> "", Value -> ""}
@@ -346,7 +347,8 @@ CreateInterface[implementation_, inheritedImplementations_, includeFiles_,
    (optional) SynchronizedGroups -> {ADM_BSSN_gamma, ...}, 
    (optional) Options -> {"meta", "level", ...},
    (optional) StorageGroups -> {Group -> "mygroup", Timelevels -> 1},
-   (optional) Conditional -> {Parameter -> "", Value -> ""}}
+   (optional) Conditional -> {Parameter -> "", Value -> ""},
+   (optional) Conditionals -> {{Parameter -> "", Value -> ""}}}
 
   scheduled group:
 
@@ -392,29 +394,55 @@ scheduleUnconditionalFunction[spec_] :=
 
 (* Handle the aspect of scheduling the function conditionally *)
 scheduleFunction[spec_] :=
-  Module[{condition, parameter, value, u},
+  Module[{condition, conditions, parameter, value, u, v, w, x},
 
     u = scheduleUnconditionalFunction[spec];
 
-    If[mapContains[spec, Conditional],
+    v = If[mapContains[spec, Conditional],
 
-       (* Output the conditional structure *)
-       condition = lookup[spec, Conditional];
-
-       If[mapContains[condition, Textual],
-
-         ConditionalOnParameterTextual[lookup[condition, Textual], u],
-         
-         If[mapContains[condition, Parameter],
-
-            parameter = lookup[condition, Parameter];
-            value     = lookup[condition, Value];
-            ConditionalOnParameter[parameter, value, u],
+           (* Output the conditional structure *)
+           condition = lookup[spec, Conditional];
+    
+           If[mapContains[condition, Textual],
               
-            If[condition != {},
-              Throw["Unrecognized conditional structure", condition],
-              u]]],
-        u]];
+              ConditionalOnParameterTextual[lookup[condition, Textual], u],
+              
+              If[mapContains[condition, Parameter],
+                 
+                 parameter = lookup[condition, Parameter];
+                 value     = lookup[condition, Value];
+                 ConditionalOnParameter[parameter, value, u],
+                 
+                 If[condition != {},
+                    Throw["Unrecognized conditional structure", condition],
+                    u]]],
+           u];
+
+    w = If[mapContains[spec, Conditionals],
+    
+           (* Output the conditionals structure *)
+           conditions = lookup[spec, Conditionals];
+    
+           Fold[Function[{x, condition},
+    
+                If[mapContains[condition, Textual],
+                  
+                   ConditionalOnParameterTextual[lookup[condition, Textual], x],
+                   
+                   If[mapContains[condition, Parameter],
+                   
+                      parameter = lookup[condition, Parameter];
+                      value     = lookup[condition, Value];
+                      ConditionalOnParameter[parameter, value, x],
+                        
+                      If[condition != {},
+                         Throw["Unrecognized conditional structure", condition],
+                         x]],
+                   x]],
+                v, conditions],
+           v];
+    
+    w];
 
 
 (* Schedule a schedule group.  Use a slightly dirty trick; given that
@@ -1003,9 +1031,9 @@ CreateMoLExcisionSource[spec_] :=
 
       "! grid parameters\n",
 
-      "nx = cctk_lsh(1)\n", 
-      "ny = cctk_lsh(2)\n", 
-      "nz = cctk_lsh(3)\n\n", 
+      "nx = cctk_lsh(1)\n",
+      "ny = cctk_lsh(2)\n",
+      "nz = cctk_lsh(3)\n\n",
 
       "if (excision .ne. 0) then\n",
 

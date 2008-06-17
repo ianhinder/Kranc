@@ -32,7 +32,8 @@ BeginPackage["sym`"];
   ExtendedRealParameters,ExtendedIntParameters,ExtendedKeywordParameters,
   Parameters,
   EvolutionTimelevels,
-  PartialDerivatives, InheritedImplementations, ConditionalOnKeyword, ReflectionSymmetries, ZeroDimensions, CollectList, Interior, Boundary, BoundaryWithGhosts, Where, PreDefinitions, AllowedSymbols, UseLoopControl};
+  
+PartialDerivatives, InheritedImplementations, ConditionalOnKeyword, ConditionalOnKeywords, ReflectionSymmetries, ZeroDimensions, CollectList, Interior, Boundary, BoundaryWithGhosts, Where, PreDefinitions, AllowedSymbols, UseLoopControl};
 
 EndPackage[];
 
@@ -662,8 +663,9 @@ groupsSetInCalc[calc_, groups_] :=
    function returns a LIST of schedule structures for each calculation
    *)
 scheduleCalc[calc_, groups_] :=
-  Module[{points, conditional, triggered, keyword, value, groupsToSync},
+  Module[{points, conditional, conditionals, keywordConditional, keywordConditionals, triggered, keyword, value, keywordvaluepairs, groupsToSync},
     conditional = mapContains[calc, ConditionalOnKeyword];
+    conditionals = mapContains[calc, ConditionalOnKeywords];
     triggered = mapContains[calc, TriggerGroups];
     If[conditional,
       keywordConditional = lookup[calc, ConditionalOnKeyword];
@@ -672,6 +674,15 @@ scheduleCalc[calc_, groups_] :=
 
       keyword = keywordConditional[[1]];
       value = keywordConditional[[2]];
+      ];
+    If[conditionals,
+      keywordConditionals = lookup[calc, ConditionalOnKeywords];
+      If[! MatchQ[keywordConditionals, {{_, _} ...}],
+        ThrowError["ConditionalOnKeywords entry in calculation expected to be of the form {{parameter, value}}, but was ", keywordConditionals, "Calculation is ", calc]];
+
+      keywordvaluepairs =
+        Map[# /. {keyword_, value_} -> {Parameter -> keyword, Value -> value} &,
+            keywordConditionals];
       ];
 
     groupsToSync = If[lookupDefault[calc, Where, Everywhere] === Interior || 
@@ -693,6 +704,8 @@ scheduleCalc[calc_, groups_] :=
        If[triggered, {TriggerGroups -> lookup[calc, TriggerGroups]},
           {}],
        If[conditional, {Conditional -> {Parameter -> keyword, Value -> value}},
+          {}],
+       If[conditionals, {Conditionals -> keywordvaluepairs},
           {}]
       ] &,
       lookup[calc, Schedule]]];

@@ -347,7 +347,7 @@ createKrancInterface[nonevolvedGroups_, evolvedGroups_, groups_,
   evolutionTimelevels_, implementation_, inheritedImplementations_,
   includeFiles_, useLoopControl_] :=
 
-  Module[{registerEvolved, registerConstrained,
+  Module[{registerEvolved, (*registerConstrained,*)
   nonevolvedGroupStructures, evolvedGroupStructures, groupStructures,
   interface},
     VerifyGroupNames[nonevolvedGroups];
@@ -365,12 +365,14 @@ createKrancInterface[nonevolvedGroups_, evolvedGroups_, groups_,
       ArgString -> "CCTK_INT IN EvolvedIndex, CCTK_INT IN RHSIndex"
     };
 
+    (*
     registerConstrained = 
     {
       Name      -> "MoLRegisterConstrained",
       Type      -> "CCTK_INT",
       ArgString -> "CCTK_INT IN ConstrainedIndex"
     };
+    *)
 
     diffCoeff = 
     {
@@ -401,7 +403,7 @@ createKrancInterface[nonevolvedGroups_, evolvedGroups_, groups_,
            If[useLoopControl, {"loopcontrol.h"}, {}]],
       groupStructures,
       UsesFunctions ->
-        Join[{registerEvolved, registerConstrained,diffCoeff}, 
+        Join[{registerEvolved, (*registerConstrained,*) diffCoeff}, 
              CactusBoundary`GetUsedFunctions[]]];
     Return[interface];
   ];
@@ -515,8 +517,8 @@ createKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_,
   evolutionTimelevels_,
   calcs_] :=
 
-  Module[{nEvolved, nPrimitive, evolvedMoLParam, evolvedGFs,
-    constrainedMoLParam, genericfdStruct, realStructs, intStructs,
+  Module[{nEvolved, (*nPrimitive,*) evolvedMoLParam, evolvedGFs,
+    (*constrainedMoLParam,*) genericfdStruct, realStructs, intStructs,
     allInherited, allExtended, implementationNames, molImplementation,
     userImplementations, implementations, params, paramspec, param,
     verboseStruct, calcOffsetStructs, calcEveryStructs},
@@ -530,7 +532,7 @@ createKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_,
 
     nEvolved   = Length[variablesFromGroups[evolvedGroups, groups]];
 (*    nPrimitive = Length[variablesFromGroups[nonevolvedGroups, groups]];*)
-    nPrimitive = Length[getConstrainedVariables[evolvedGroups, groups]];
+(*    nPrimitive = Length[getConstrainedVariables[evolvedGroups, groups]];*)
 
     evolvedMoLParam =
     {
@@ -544,6 +546,7 @@ createKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_,
                          Description -> "Number of evolved variables used by this thorn"}}
     };
 
+    (*
     constrainedMoLParam =
     {
       Name -> thornName <> "_MaxNumConstrainedVars",
@@ -555,6 +558,7 @@ createKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_,
       AllowedValues -> {{Value -> ToString[nPrimitive] <> ":" <> ToString[nPrimitive] , 
                          Description -> "Number of constrained variables used by this thorn"}}
     };
+    *)
 
     timelevelsParam =
     {
@@ -605,8 +609,8 @@ createKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_,
       Name -> "MethodOfLines",
       UsedParameters -> 
       {
-        {Name -> "MoL_Num_Evolved_Vars",     Type -> "CCTK_INT"},
-        {Name -> "MoL_Num_Constrained_Vars", Type -> "CCTK_INT"}
+        {Name -> "MoL_Num_Evolved_Vars",     Type -> "CCTK_INT"}
+        (* {Name -> "MoL_Num_Constrained_Vars", Type -> "CCTK_INT"} *)
       }
     };
 
@@ -622,7 +626,7 @@ createKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_,
     userImplementations2 = If[userImplementations2=={{}},{},userImplementations2];
 
     implementations = Join[userImplementations, userImplementations2, {genericfdStruct, molImplementation}];
-    params = Join[{verboseStruct}, realStructs, intStructs, keywordStructs, {evolvedMoLParam, constrainedMoLParam, timelevelsParam},
+    params = Join[{verboseStruct}, realStructs, intStructs, keywordStructs, {evolvedMoLParam, (*constrainedMoLParam,*) timelevelsParam},
                   calcEveryStructs, calcOffsetStructs,
       CactusBoundary`GetParameters[evolvedGFs, evolvedGroups]];
 
@@ -738,7 +742,7 @@ createKrancScheduleFile[calcs_, groups_, evolvedGroups_, nonevolvedGroups_, thor
     scheduleRegisterSymmetries =
     {
       Name          -> thornName <> "_RegisterSymmetries",
-      SchedulePoint -> "at BASEGRID", 
+      SchedulePoint -> "in SymmetryRegister", 
       Language      -> "C",
       Options       -> "meta",
       Comment       -> "register symmetries"

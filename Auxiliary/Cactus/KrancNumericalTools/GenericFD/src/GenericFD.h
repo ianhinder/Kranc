@@ -675,6 +675,7 @@ CCTK_INT sgn(CCTK_REAL x);
 
 void GenericFD_GetBoundaryInfo(cGH const * restrict cctkGH,
                                CCTK_INT const * restrict cctk_lsh,
+                               CCTK_INT const * restrict cctk_lssh,
                                CCTK_INT const * restrict cctk_bbox,
 			       CCTK_INT const * restrict cctk_nghostzones,
                                CCTK_INT * restrict imin, 
@@ -691,7 +692,7 @@ static inline CCTK_REAL sbp_deriv_x(int i, int j, int k,
                                     CCTK_REAL *var, CCTK_REAL *q, cGH *cctkGH)
 {
   CCTK_REAL dvarl = 0;
-  int ni = cctkGH->cctk_lsh[0];
+  int ni = cctkGH->cctk_lssh[CCTK_LSSH_IDX(0,0)];
   for (int ii=min[i]-1; ii<=max[i]-1; ++ii) {
     dvarl += q[ii+ni*i]*var[CCTK_GFINDEX3D (cctkGH, ii, j, k)];
   }
@@ -705,7 +706,7 @@ static inline CCTK_REAL sbp_deriv_y(int i, int j, int k,
                                     CCTK_REAL *var, CCTK_REAL *q, cGH *cctkGH)
 {
   CCTK_REAL dvarl = 0;
-  int nj = cctkGH->cctk_lsh[1];
+  int nj = cctkGH->cctk_lssh[CCTK_LSSH_IDX(0,1)];
   for (int jj=min[j]-1; jj<=max[j]-1; ++jj) {
     dvarl += q[jj+nj*j]*var[CCTK_GFINDEX3D (cctkGH, i, jj, k)];
   }
@@ -719,7 +720,7 @@ static inline CCTK_REAL sbp_deriv_z(int i, int j, int k,
                                     CCTK_REAL *var, CCTK_REAL *q, cGH *cctkGH)
 {
   CCTK_REAL dvarl = 0;
-  int nk = cctkGH->cctk_lsh[2];
+  int nk = cctkGH->cctk_lssh[CCTK_LSSH_IDX(0,2)];
   for (int kk=min[k]-1; kk<=max[k]-1; ++kk) {
     dvarl += q[kk+nk*k]*var[CCTK_GFINDEX3D (cctkGH, i, j, kk)];
   }

@@ -1255,7 +1255,7 @@ calcSymmetryOfComponent[comp_, inds_] :=
       (* Get the index at the ith position as a number *)
       q = ToExpression[StringTake[string, {i}]];
       If[!IntegerQ[q], ThrowError["calcSymmetryOfComponent: Expecting a numeric index at position " 
-        <> ToString[i] <> " in \"" <> string <> "\"."]];
+        <> ToString[i] <> " in \"" <> string <> "\": \"" <> ToString[q] <> "\"."]];
 
       sym[[q]] = -sym[[q]],
       

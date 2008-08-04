@@ -276,6 +276,7 @@ TestForNaN[expr_] :=
    "  CCTK_VInfo(CCTK_THORNSTRING, \"ipos: %d %d %d\", i, j, k);\n",
    "  CCTK_VInfo(CCTK_THORNSTRING, \"lbnd: %d %d %d\", cctk_lbnd[0], cctk_lbnd[1], cctk_lbnd[2]);\n",
    "  CCTK_VInfo(CCTK_THORNSTRING, \"lsh: %d %d %d\", cctk_lsh[0], cctk_lsh[1], cctk_lsh[2]);\n",
+   "  CCTK_VInfo(CCTK_THORNSTRING, \"lssh: %d %d %d\", cctk_lssh[CCTK_LSSH_IDX(0,0)], cctk_lssh[CCTK_LSSH_IDX(0,1)], cctk_lssh[CCTK_LSSH_IDX(0,2)]);\n",
    "  CCTK_VInfo(CCTK_THORNSTRING, \"", expr, ": %.17g\", (double)", expr, ");\n",
    "}\n"};
 
@@ -473,9 +474,9 @@ InitialiseGridLoopVariables[derivativesUsedSwitch_, addToStencilWidth_] :=
   AssignVariable["kstart", arrayIndex["index_offset_z"]],
 
   "\n",
-  AssignVariable["iend", {arrayElement["cctk_lsh", 0], " - index_offset_x"}],
-  AssignVariable["jend", {arrayElement["cctk_lsh", 1], " - index_offset_y"}],
-  AssignVariable["kend", {arrayElement["cctk_lsh", 2], " - index_offset_z"}]
+  AssignVariable["iend", {arrayElement["cctk_lssh", "CCTK_LSSH_IDX(0,0)"], " - index_offset_x"}],
+  AssignVariable["jend", {arrayElement["cctk_lssh", "CCTK_LSSH_IDX(0,1)"], " - index_offset_y"}],
+  AssignVariable["kend", {arrayElement["cctk_lssh", "CCTK_LSSH_IDX(0,2)"], " - index_offset_z"}]
   },
 
   {
@@ -484,9 +485,9 @@ InitialiseGridLoopVariables[derivativesUsedSwitch_, addToStencilWidth_] :=
   AssignVariable["kstart", arrayIndex[0]],
 
   "\n",
-  AssignVariable["iend", arrayElement["cctk_lsh", 0]],
-  AssignVariable["jend", arrayElement["cctk_lsh", 1]],
-  AssignVariable["kend", arrayElement["cctk_lsh", 2]]
+  AssignVariable["iend", arrayElement["cctk_lssh", "CCTK_LSSH_IDX(0,0)"]],
+  AssignVariable["jend", arrayElement["cctk_lssh", "CCTK_LSSH_IDX(0,1)"]],
+  AssignVariable["kend", arrayElement["cctk_lssh", "CCTK_LSSH_IDX(0,2)"]]
   }]
 ];
 
@@ -529,7 +530,7 @@ GridLoop[block_] :=
         "#pragma omp parallel\n",
         "LC_LOOP3 (unnamed,\n",
         "          i,j,k, istart,jstart,kstart, iend,jend,kend,\n",
-        "          cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])\n",
+        "          cctk_lssh[CCTK_LSSH_IDX(0,0)],cctk_lssh[CCTK_LSSH_IDX(0,1)],cctk_lssh[CCTK_LSSH_IDX(0,2)])\n",
         "{\n",
         indentBlock[
           {
@@ -547,7 +548,7 @@ GridLoop[block_] :=
         "#pragma omp parallel\n",
         "LC_LOOP3 (unnamed,\n",
         "          i,j,k, istart,jstart,kstart, iend,jend,kend,\n",
-        "          cctk_lsh(1),cctk_lsh(2),cctk_lsh(3))\n",
+        "          cctk_lssh(CCTK_LSSH_IDX(0,1)),cctk_lssh(CCTK_LSSH_IDX(0,2)),cctk_lssh(CCTK_LSSH_IDX(0,3)))\n",
         indentBlock[block],
         "LC_ENDLOOP3 (unnamed)\n"
       }
@@ -583,7 +584,7 @@ GenericGridLoopUsingLoopControl[functionName_, block_] :=
         "#pragma omp parallel\n",
         "LC_LOOP3 (", functionName, ",\n",
         "          i,j,k, min[0],min[1],min[2], max[0],max[1],max[2],\n",
-        "          cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])\n",
+        "          cctk_lssh[CCTK_LSSH_IDX(0,0)],cctk_lssh[CCTK_LSSH_IDX(0,1)],cctk_lssh[CCTK_LSSH_IDX(0,2)])\n",
         "{\n",
         indentBlock[
           {
@@ -616,15 +617,15 @@ SwitchStatement[var_, pairs__] :=
 
 BoundaryLoop[block_] :=
 {
-  "\nGenericFD_GetBoundaryInfo(cctkGH, cctk_lsh, cctk_bbox, cctk_nghostzones, imin, imax, is_symbnd, is_physbnd, is_ipbnd);\n",
+  "\nGenericFD_GetBoundaryInfo(cctkGH, cctk_lsh, cctk_lssh, cctk_bbox, cctk_nghostzones, imin, imax, is_symbnd, is_physbnd, is_ipbnd);\n",
 
   CommentedBlock["Start by looping over the whole grid, minus the NON-PHYSICAL boundary points, which are set by synchronization.  ", {
   AssignVariable[arrayElement["bmin", 0], "is_physbnd[0*2+0] ? 0 : imin[0]"],
   AssignVariable[arrayElement["bmin", 1], "is_physbnd[1*2+0] ? 0 : imin[1]"],
   AssignVariable[arrayElement["bmin", 2], "is_physbnd[2*2+0] ? 0 : imin[2]"],
-  AssignVariable[arrayElement["bmax", 0], "is_physbnd[0*2+1] ? cctk_lsh[0] : imax[0]"],
-  AssignVariable[arrayElement["bmax", 1], "is_physbnd[1*2+1] ? cctk_lsh[1] : imax[1]"],
-  AssignVariable[arrayElement["bmax", 2], "is_physbnd[2*2+1] ? cctk_lsh[2] : imax[2]"]}], 
+  AssignVariable[arrayElement["bmax", 0], "is_physbnd[0*2+1] ? cctk_lssh[CCTK_LSSH_IDX(0,0)] : imax[0]"],
+  AssignVariable[arrayElement["bmax", 1], "is_physbnd[1*2+1] ? cctk_lssh[CCTK_LSSH_IDX(0,1)] : imax[1]"],
+  AssignVariable[arrayElement["bmax", 2], "is_physbnd[2*2+1] ? cctk_lssh[CCTK_LSSH_IDX(0,2)] : imax[2]"]}], 
 
   CommentedBlock["Loop over all faces",
    loopOverInteger["dir", "0", "3",
@@ -635,7 +636,7 @@ BoundaryLoop[block_] :=
         {0,  {AssignVariable[arrayElement["bmax", "dir"], {arrayElement["imin", "dir"], ""}], 
               AssignVariable[arrayElement["bmin", "dir"], {0, ""}]}},
         {1,  {AssignVariable[arrayElement["bmin", "dir"], {arrayElement["imax", "dir"], "" }],
-              AssignVariable[arrayElement["bmax", "dir"], {"cctk_lsh[dir]", ""}]}}]],
+              AssignVariable[arrayElement["bmax", "dir"], {"cctk_lssh[CCTK_LSSH_IDX(0,dir)]", ""}]}}]],
        conditional[arrayElement["is_physbnd", "dir * 2 + face"],
          loopOverInteger["k", arrayElement["bmin",2], arrayElement["bmax",2],
            loopOverInteger["j", arrayElement["bmin",1], arrayElement["bmax",1],
@@ -653,15 +654,15 @@ BoundaryLoop[block_] :=
 
 BoundaryWithGhostsLoop[block_] :=
 {
-  "\nGenericFD_GetBoundaryInfo(cctkGH, cctk_lsh, cctk_bbox, cctk_nghostzones, imin, imax, is_symbnd, is_physbnd, is_ipbnd);\n",
+  "\nGenericFD_GetBoundaryInfo(cctkGH, cctk_lsh, cctk_lssh, cctk_bbox, cctk_nghostzones, imin, imax, is_symbnd, is_physbnd, is_ipbnd);\n",
 
   CommentedBlock["Start by looping over the whole grid, including the NON-PHYSICAL boundary points.  ", {
   AssignVariable[arrayElement["bmin", 0], "0"],
   AssignVariable[arrayElement["bmin", 1], "0"],
   AssignVariable[arrayElement["bmin", 2], "0"],
-  AssignVariable[arrayElement["bmax", 0], "cctk_lsh[0]"],
-  AssignVariable[arrayElement["bmax", 1], "cctk_lsh[1]"],
-  AssignVariable[arrayElement["bmax", 2], "cctk_lsh[2]"]}], 
+  AssignVariable[arrayElement["bmax", 0], "cctk_lssh[CCTK_LSSH_IDX(0,0)]"],
+  AssignVariable[arrayElement["bmax", 1], "cctk_lssh[CCTK_LSSH_IDX(0,1)]"],
+  AssignVariable[arrayElement["bmax", 2], "cctk_lssh[CCTK_LSSH_IDX(0,2)]"]}], 
 
   CommentedBlock["Loop over all faces",
    loopOverInteger["dir", "0", "3",
@@ -672,7 +673,7 @@ BoundaryWithGhostsLoop[block_] :=
         {0,  {AssignVariable[arrayElement["bmax", "dir"], {arrayElement["imin", "dir"], ""}], 
               AssignVariable[arrayElement["bmin", "dir"], {0, ""}]}},
         {1,  {AssignVariable[arrayElement["bmin", "dir"], {arrayElement["imax", "dir"], "" }],
-              AssignVariable[arrayElement["bmax", "dir"], {"cctk_lsh[dir]", ""}]}}]],
+              AssignVariable[arrayElement["bmax", "dir"], {"cctk_lssh[CCTK_LSSH_IDX(0,dir)]", ""}]}}]],
        conditional[arrayElement["is_physbnd", "dir * 2 + face"],
          loopOverInteger["k", arrayElement["bmin",2], arrayElement["bmax",2],
            loopOverInteger["j", arrayElement["bmin",1], arrayElement["bmax",1],

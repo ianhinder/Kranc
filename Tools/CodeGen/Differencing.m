@@ -182,14 +182,14 @@ ordergfds[_[v1_,___], _[v2_,___]] :=
   Order[v1,v2] != -1;
 
 PrecomputeDerivatives[derivOps_, expr_] :=
-  Module[{componentDerivOps, gfds, dupsRemoved,sortedgfds},
+  Module[{componentDerivOps, gfds, sortedgfds},
     Map[DerivativeOperatorVerify, derivOps];
     gfds = GridFunctionDerivativesInExpression[derivOps, expr];
     sortedgfds = Sort[gfds, ordergfds];
     Map[PrecomputeDerivative, sortedgfds]];
 
 DeclareDerivatives[derivOps_, expr_] :=
-  Module[{componentDerivOps, gfds, dupsRemoved,sortedgfds},
+  Module[{componentDerivOps, gfds, sortedgfds},
     Map[DerivativeOperatorVerify, derivOps];
     gfds = GridFunctionDerivativesInExpression[derivOps, expr];
     sortedgfds = Sort[gfds, ordergfds];

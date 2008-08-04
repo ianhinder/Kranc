@@ -988,9 +988,9 @@ CreateMoLExcisionSource[spec_] :=
 
       "! grid parameters\n",
 
-      "nx = cctk_lsh(1)\n",
-      "ny = cctk_lsh(2)\n",
-      "nz = cctk_lsh(3)\n\n",
+      "nx = cctk_lssh(CCTK_LSSH_IDX(0,1))\n",
+      "ny = cctk_lssh(CCTK_LSSH_IDX(0,2))\n",
+      "nz = cctk_lssh(CCTK_LSSH_IDX(0,3))\n\n",
 
       "if ( (excision .ne. 0).AND.(find_excision_boundary .ne. 0) ) then\n\n",
 
@@ -1009,9 +1009,9 @@ CreateMoLExcisionSource[spec_] :=
 
       "! grid parameters\n",
 
-      "nx = cctk_lsh(1)\n",
-      "ny = cctk_lsh(2)\n",
-      "nz = cctk_lsh(3)\n\n",
+      "nx = cctk_lssh(CCTK_LSSH_IDX(0,1))\n",
+      "ny = cctk_lssh(CCTK_LSSH_IDX(0,2))\n",
+      "nz = cctk_lssh(CCTK_LSSH_IDX(0,3))\n\n",
 
       "if ( (excision .ne. 0).AND.(find_excision_normals .ne. 0) ) then\n\n",
 
@@ -1031,9 +1031,9 @@ CreateMoLExcisionSource[spec_] :=
 
       "! grid parameters\n",
 
-      "nx = cctk_lsh(1)\n",
-      "ny = cctk_lsh(2)\n",
-      "nz = cctk_lsh(3)\n\n",
+      "nx = cctk_lssh(CCTK_LSSH_IDX(0,1))\n", 
+      "ny = cctk_lssh(CCTK_LSSH_IDX(0,2))\n", 
+      "nz = cctk_lssh(CCTK_LSSH_IDX(0,3))\n\n", 
 
       "if (excision .ne. 0) then\n",
 
@@ -1127,6 +1127,7 @@ DefineFunction[funcName, "CCTK_INT", argString,
 "/*       CCTK_REAL ARRAY       base     ...              */\n",
 "/*       CCTK_INT ARRAY        lbnd     ...              */\n",
 "/*       CCTK_INT ARRAY        lsh      ...              */\n",
+"/*       CCTK_INT ARRAY        lssh     ...              */\n",
 "/*       CCTK_INT              rhs_flag ...              */\n",
 "/*       CCTK_INT              num_modes...              */\n",
 headerComment2,
@@ -1163,7 +1164,7 @@ headerComment2,
 "  assert (len);\n\n",
 
 "  for (d = 0; d < 3; ++d) {\n",
-"    assert (off[d] >= 0 && len[d] >= 0 && off[d] + len[d] <= cctk_lsh[d]);\n",
+"    assert (off[d] >= 0 && len[d] >= 0 && off[d] + len[d] <= cctk_lssh[CCTK_LSSH_IDX(0,d)]);\n",
 "  }\n\n",
 
 "  assert (modes);\n",

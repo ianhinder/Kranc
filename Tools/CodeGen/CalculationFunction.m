@@ -23,7 +23,7 @@
 BeginPackage["sym`"];
 
 {GridFunctions, Shorthands, Equations, t, DeclarationIncludes,
-LoopPreIncludes, GroupImplementations, PartialDerivatives, Dplus1,
+LoopPreIncludes, GroupImplementations, PartialDerivatives, Dplus1, NoSimplify,
 Dplus2, Dplus3, Boundary, Interior, Where, AddToStencilWidth, Everywhere, normal1, normal2, normal3}
 
 {INV, SQR, CUB, QAD, dot, pow, exp,dx,dy,dz, idx, idy, idz} 
@@ -449,7 +449,9 @@ CreateCalculationFunction[calc_, debug_, useLoopControl_] :=
                                              First[#], debug]&, 
                  eqs[[i]] ], {i, 1, Length@eqs}],
 
-     eqs = Simplify[eqs]
+     If[!lookupDefault[cleancalc, NoSimplify, False], 
+        InfoMessage[InfoFull, "Simplifying equations", eqs];
+        eqs = Simplify[eqs, {r>0}]]
    ];
 
   InfoMessage[InfoFull, "Equations:"];

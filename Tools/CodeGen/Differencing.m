@@ -512,6 +512,22 @@ StandardCenteredDifferenceOperator[p_, m_, i_] :=
     deriv = expansion /. Thread[coeffs -> result];
     deriv /. {f[n_ h] -> shift[i]^n, f[h]->shift[i], f[0] -> 1, h -> spacing[i]}];
 
+(* Return a difference operator approximating a derivative of order p
+   using m1 grid points before and m2 grid points after the centre
+   point. Return an error if this is not possible. *)
+
+StandardUpwindDifferenceOperator[p_, m1_, m2_, i_] := 
+  Module[{f, h, coeffs, expansion, e1, e2, eqs, mat, vec, result, deriv},
+    coeffs = Table[Symbol["c" <> ToString[n]], {n, 1, m1 + m2 + 1}];
+    expansion = Apply[Plus, Thread[coeffs Table[f[n h], {n, -m1, +m2}]]];
+    e1 = expansion /. f[n_ h] -> Series[f[n h], {h, 0, m1 + m2 + 1}];
+    e2 = Table[Coefficient[e1, Derivative[n][f][0]], {n, 0, m1 + m2 + 1}];
+    eqs = Table[e2[[n]] == If[n - 1 == p, 1, 0], {n, 1, m1 + m2 + 1}];
+    {mat, vec} = LinearEquationsToMatrices[eqs, coeffs];
+    result = Inverse[mat].vec;
+    deriv = expansion /. Thread[coeffs -> result];
+    deriv /. {f[n_ h] -> shift[i]^n, f[h]->shift[i], f[0] -> 1, h -> spacing[i]} ]; 
+
 End[];
 
 EndPackage[];

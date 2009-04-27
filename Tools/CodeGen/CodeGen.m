@@ -62,6 +62,8 @@ AssignVariable::usage = "AssignVariable[dest_, src_] returns a block of code " <
   "that assigns 'src' to 'dest'.";
 AssignVariableInLoop::usage = "AssignVariable[dest_, src_] returns a block of code " <>
   "that assigns 'src' to 'dest'.";
+DeclareVariablesInLoopVectorised::usage = "";
+AssignVariablesInLoopVectorised::usage = "";
 TestForNaN::usage = "TestForNaN[expr_] returns a block of code " <>
   "that tests 'expr' for nan.";
 CommentedBlock::usage = "CommentedBlock[comment, block] returns a block consisting " <>

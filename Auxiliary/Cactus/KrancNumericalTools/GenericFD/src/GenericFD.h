@@ -684,6 +684,25 @@ void GenericFD_GetBoundaryInfo(cGH const * restrict cctkGH,
 			       CCTK_INT * restrict is_physbnd,
                                CCTK_INT * restrict is_ipbnd);
 
+#if 0
+/* Finite differencing near boundaries */
+
+/* The array var is to be accessed at the location
+   [i+ioff,j+joff,k+koff].  idir,jdir,kdir specify whether there is a
+   lower (dir<0), upper (dir>0), or no boundary nearby.  If a boundary
+   is in the way, the value 0 is returned instead of the array
+   content.  */
+#define CCTK_GFACCESS3D(cctkGH, var, i,j,k, ioff,joff,koff, idir,jdir,kdir) \
+  (((idir)<0 && (ioff)<0) ||                                            \
+   ((jdir)<0 && (joff)<0) ||                                            \
+   ((kdir)<0 && (koff)<0) ||                                            \
+   ((idir)>0 && (ioff)>0) ||                                            \
+   ((jdir)>0 && (joff)>0) ||                                            \
+   ((kdir)>0 && (koff)>0) ||                                            \
+   ? 0                                                                  \
+   : (var)[CCTK_GFINDEX3D((cctkGH), (i)+(ioff),(j)+(joff),(k)+(koff))])
+#endif
+
 /* Summation by parts */
 
 static inline CCTK_REAL sbp_deriv_x(int i, int j, int k, 

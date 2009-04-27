@@ -577,7 +577,7 @@ componentNameRule :=
 
 
 (* Convert references to ordinary derivative components into single-symbol
-   names; i.e. PD[x, 1, 2, 3] -> D123[x]. *)
+   names; i.e., PD[x, 1, 2, 3] -> D123[x]. *)
 
 (* This is disabled now (by introducing a dummy pattern), because we
    would like all differencing to be performed by our custom
@@ -1063,9 +1063,25 @@ PDtoFDForJacobian[x_, jacobian_] :=
     fd = jacobian[[2]];
     j  = jacobian[[3]];
     dj = jacobian[[4]];
-    y = x /. {pd :> PD, fd :> FD, j :> J, dj :> dJ};
+    (* The above rules use the global function names PD, FD, J, and
+       dJ.  We therefore have to swap these names in and out.  *)
+    y = x /. If[pd=!=PD, {PD -> quotedPD}, {}]
+          /. If[pd=!=PD, {pd -> PD      }, {}]
+          /. If[fd=!=FD, {FD -> quotedFD}, {}]
+          /. If[fd=!=FD, {fd -> FD      }, {}]
+          /. If[j =!=J , {J  -> quotedJ }, {}]
+          /. If[j =!=J , {j  -> J       }, {}]
+          /. If[dj=!=dJ, {dJ -> quoteddJ}, {}]
+          /. If[dj=!=dJ, {dj -> dJ      }, {}];
     result = PDtoFDDefaultJacobian[y];
-    result /. {J :> j, dJ :> dj}];
+    result /. If[dj=!=dJ, {dJ       -> dj}, {}]
+           /. If[dj=!=dJ, {quoteddJ -> dJ}, {}]
+           /. If[j =!=J , {J        -> j }, {}]
+           /. If[j =!=J , {quotedJ  -> J }, {}]
+           /. If[fd=!=FD, {FD       -> fd}, {}]
+           /. If[fd=!=FD, {quotedFD -> FD}, {}]
+           /. If[pd=!=PD, {PD       -> pd}, {}]
+           /. If[pd=!=PD, {quotedPD -> PD}, {}]];
 
 PDtoFDForJacobians[x_, js_] :=
   If[js == {},

@@ -765,4 +765,40 @@ void GenericFD_LoopOverBoundary(cGH *cctkGH, Kranc_Calculation calc);
 void GenericFD_LoopOverBoundaryWithGhosts(cGH *cctkGH, Kranc_Calculation calc);
 void GenericFD_LoopOverInterior(cGH *cctkGH, Kranc_Calculation calc);
 
+
+
+/* Vectorisation of memory accesses  */
+
+#include <stdlib.h>
+#include <cctk.h>
+
+#if defined(__SSE2__) && defined(CCTK_REAL_PRECISION_8)
+
+#include <emmintrin.h>
+
+/* A vector type corresponding to CCTK_REAL */
+typedef __m128d CCTK_REAL_VEC;
+
+/* Really only SSE is required, but there doesn't seem to be a
+   preprocessing flag to check for this */
+#elif defined(__SSE2__) && defined(CCTK_REAL_PRECISION_4)
+
+#include <emmintrin.h>
+
+/* A vector type corresponding to CCTK_REAL */
+typedef __m128 CCTK_REAL_VEC;
+
+#else
+
+/* There is no vector type corresponding to CCTK_REAL */
+typedef CCTK_REAL CCTK_REAL_VEC;
+
+#endif
+
+/* The number of vector elements in a CCTK_REAL_VEC */
+static
+size_t const CCTK_REAL_VEC_SIZE = sizeof(CCTK_REAL_VEC) / sizeof(CCTK_REAL);
+
+
+
 #endif

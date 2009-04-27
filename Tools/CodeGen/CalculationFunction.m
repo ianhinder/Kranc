@@ -84,6 +84,7 @@ simpCollect[collectList_, eqrhs_, localvar_, debug_] :=
 (* Take a grid function name and return a name suitable for use in a local
    computation *)
 localName[x_] := ToExpression[ToString[x] <> "L"];
+localNameVectorised[x_] := ToExpression[ToString[x] <> "V"];
 
 (* Given a map (i.e. a list of rules { a -> A, b -> B, ... } return the
    inverse map { A -> a, B -> b, ...} *) 
@@ -131,7 +132,7 @@ assignVariableFromExpression[dest_, expr_] := Module[{tSym, cleanExpr, code},
       
       cleanExpr = ReplacePowers[expr] /. sym`t -> tSym;
   
-      If[SOURCELANGUAGE == "C",      
+      If[SOURCELANGUAGE == "C",
         code = ToString[dest == cleanExpr, CForm,       PageWidth -> 80] <> ";\n",
         code = ToString@dest <> ".eq." <> ToString[cleanExpr, FortranForm, PageWidth -> 80] <> "\n"
        ];

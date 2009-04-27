@@ -494,8 +494,8 @@ CreateCalculationFunction[calc_, debug_, useLoopControl_] :=
   {
   DefineFunction[bodyFunctionName, "void", "cGH const * const cctkGH, CCTK_INT const dir, CCTK_INT const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], CCTK_INT const min[3], CCTK_INT const max[3], CCTK_INT const n_subblock_gfs, CCTK_REAL * const subblock_gfs[]", 
   { 
-    "DECLARE_CCTK_ARGUMENTS\n",
-    "DECLARE_CCTK_PARAMETERS\n\n",
+    "DECLARE_CCTK_ARGUMENTS;\n",
+    "DECLARE_CCTK_PARAMETERS;\n\n",
     If[!useLoopControl, DeclareGridLoopVariables[], {}],
     DeclareFDVariables[],
     (* declareVariablesForCalculation[cleancalc], *)

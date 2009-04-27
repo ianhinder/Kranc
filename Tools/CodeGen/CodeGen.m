@@ -361,8 +361,8 @@ defineSubroutineF[name_, args_, contents_] :=
 DefineCCTKFunction[name_, type_, contents_] :=
   DefineFunction[name, type, "CCTK_ARGUMENTS", 
     {
-      "DECLARE_CCTK_ARGUMENTS\n",
-      "DECLARE_CCTK_PARAMETERS\n\n",
+      "DECLARE_CCTK_ARGUMENTS;\n",
+      "DECLARE_CCTK_PARAMETERS;\n\n",
       contents
     }];
 
@@ -371,8 +371,8 @@ DefineCCTKSubroutine[name_, contents_] :=
   defineSubroutine[
     name, "CCTK_ARGUMENTS", 
     {
-      "DECLARE_CCTK_ARGUMENTS\n",
-      "DECLARE_CCTK_PARAMETERS\n\n",
+      "DECLARE_CCTK_ARGUMENTS;\n",
+      "DECLARE_CCTK_PARAMETERS;\n\n",
       contents
     }];
 

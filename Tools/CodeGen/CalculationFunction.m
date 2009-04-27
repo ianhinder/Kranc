@@ -651,7 +651,7 @@ equationLoop[eqs_,
              gfs_, shorts_, subblockGFs_, incs_, groups_, syncGroups_, 
              pddefs_, where_, addToStencilWidth_, useLoopControl_] :=
   Module[{rhss, lhss, gfsInRHS, gfsInLHS, localGFs, localMap, eqs2,
-          derivSwitch, actualSyncGroups, code, functionName,
+          derivSwitch, actualSyncGroups, code, functionName, calcCode,
           syncCode, loopFunction},
 
     rhss = Map[#[[2]] &, eqs];
@@ -685,6 +685,27 @@ equationLoop[eqs_,
     checkEquationAssignmentOrder[eqs2, shorts];
    code = {(*InitialiseGridLoopVariables[derivSwitch, addToStencilWidth], *)
    functionName = ToString@lookup[cleancalc, Name];
+
+(*
+   calcCode =
+     Map[{assignVariableFromExpression[#[[1]], #[[2]]], "\n"} &,
+           replaceDerivatives[replaceWithDerivativesHidden[eqs2, localMap], {}]
+        ];
+*)
+   calcCode =
+     Map[{assignVariableFromExpression[#[[1]], #[[2]]], "\n"} &,
+         CSE[
+           replaceDerivatives[replaceWithDerivativesHidden[eqs2, localMap], {}]]
+        ];
+
+   Join[
+   (*
+   CommentedBlock["Declare temporary variables for vectorisation",
+                  DeclareVariablesInLoopVectorised[
+                    gfsInLHS,
+                    Map[localNameVectorised, gfsInLHS],
+                    Map[localName, gfsInLHS]]],
+   *)
 
    GenericGridLoop[functionName, useLoopControl,
    {declareVariablesForCalculation[cleancalc],
@@ -726,16 +747,20 @@ equationLoop[eqs_,
     CommentedBlock["Precompute derivatives (old style)",
                    Map[precomputeDerivative, oldDerivativesUsed[eqs]]],
 
-    CommentedBlock["Calculate temporaries and grid functions",
-                   Map[{assignVariableFromExpression[#[[1]], #[[2]]], "\n"}  &,
-                   replaceDerivatives[
-                     replaceWithDerivativesHidden[eqs2, localMap],{}]]],
+    CommentedBlock["Calculate temporaries and grid functions", calcCode],
 
     If[debugInLoop, Map[InfoVariable[#[[1]]] &, (eqs2 /. localMap)], ""], 
 
     CommentedBlock["Copy local copies back to grid functions",
                    Map[AssignVariableInLoop[GridName[#], localName[#]] &, 
                        gfsInLHS]],
+    (*
+    CommentedBlock["Copy local copies back to grid functions",
+                   AssignVariablesInLoopVectorised[
+                     gfsInLHS,
+                     Map[localNameVectorised, gfsInLHS],
+                     Map[localName, gfsInLHS]]],
+    *)
 
     CommentedBlock["Copy local copies back to subblock grid functions",
                    Map[AssignVariableInLoop[SubblockGridName[#], localName[#]] &, 
@@ -758,7 +783,7 @@ equationLoop[eqs_,
                         {"}\n"}]],
 *)
 
-    If[debugInLoop, Map[InfoVariable[GridName[#]] &, gfsInLHS], ""]}]
+    If[debugInLoop, Map[InfoVariable[GridName[#]] &, gfsInLHS], ""]}]]
    };
 
   lhsGroupNames    = containingGroups[gfsInLHS, groups];

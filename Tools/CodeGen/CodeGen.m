@@ -820,6 +820,8 @@ CFormHideStrings[x_, opts___] := StringReplace[ToString[CForm[x,opts]], "\"" -> 
 
 
 
+(* Debug output *)
+DebugCSE = True;
 
 (* Eliminate common subexpressions in a code sequence *)
 CSE[code_] := Module[
@@ -829,18 +831,18 @@ CSE[code_] := Module[
    replacevar,
    stmts4,
    stmts5, stmts6, stmts7},
-  (* Print["code\n", code, "\nendcode\n"]; *)
+  if [DebugCSE, Print["code\n", code, "\nendcode\n"]];
   
   (* The code is passed in as list of {lhs,rhs} tuples.  Turn this
      list into a single expression, so that it can be optimised.  *)
   expr = code //. {a_, b__} -> CSequence[a, {b}]
               //. {a_} -> a
               //. (a_ -> b_) -> CAssign[a, b];
-  (* Print["expr\n", expr, "\nendexpr\n"]; *)
+  If [DebugCSE, Print["expr\n", expr, "\nendexpr\n"]];
   
   (* Optimise this expression *)
   optexpr = Experimental`OptimizeExpression[expr];
-  (* Print["optexpr\n", optexpr, "\nendoptexpr\n"]; *)
+  If [DebugCSE, Print["optexpr\n", optexpr, "\nendoptexpr\n"]];
   
   (* This expression is a Mathematica expression.  Decompose it into
      the set of newly introduced local variables and the optimised
@@ -855,31 +857,31 @@ CSE[code_] := Module[
     code,
     
     {locals, block} = decomposed;
-    (* Print["locals\n", locals, "\nendlocals\n"]; *)
-    (* Print["block\n", block, "\nendblock\n"]; *)
+    If [DebugCSE, Print["locals\n", locals, "\nendlocals\n"]];
+    If [DebugCSE, Print["block\n", block, "\nendblock\n"]];
     
     block1 = block /. Hold[CompoundExpression[seq__]] :> Hold[{seq}];
-    (* Print["block1\n", block1, "\nendblock1\n"]; *)
+    If [DebugCSE, Print["block1\n", block1, "\nendblock1\n"]];
     block2 = First[block1 //. Hold[{a___Hold, b_, c___}]
                               /; Head[Unevaluated[b]] =!= Hold
                               :> Hold[{a, Hold[b], c}]];
-    (* Print["block2\n", block2, "\nendblock2\n"]; *)
+    If [DebugCSE, Print["block2\n", block2, "\nendblock2\n"]];
     
     (* Temporaries, including a fake declaration for them *)
     temps1 = Most[block2] //. Hold[lhs_ = rhs_] -> CAssign[CDeclare[lhs], rhs];
-    (* Print["temps1\n", temps1, "\nendtemps1\n"]; *)
+    If [DebugCSE, Print["temps1\n", temps1, "\nendtemps1\n"]];
     
     (* Expression *)
     stmts1 = ReleaseHold[Last[block2]];
-    (* Print["stmts1\n", stmts1, "\nendstmts1\n"]; *)
+    If [DebugCSE, Print["stmts1\n", stmts1, "\nendstmts1\n"]];
     
     (* Turn CSequence back into a list *)
     stmts2 = Flatten[{stmts1} //. CSequence[a_,b_] -> {a,b}];
-    (* Print["stmts2\n", stmts2, "\nendstmts2\n"]; *)
+    If [DebugCSE, Print["stmts2\n", stmts2, "\nendstmts2\n"]];
     
     (* Combine temporaries and expression *)
     stmts3 = Join[temps1, stmts2];
-    (* Print["stmts3\n", stmts3, "\nendstmts3\n"]; *)
+    If [DebugCSE, Print["stmts3\n", stmts3, "\nendstmts3\n"]];
     
     (* Replace the internal names of the newly generated temporaries
        with legal C names *)
@@ -888,16 +890,16 @@ CSE[code_] := Module[
         Symbol[
           StringReplace[StringReplace[ToString[#], {__ ~~ "`" ~~ a_ :> a}],
             "$" -> "T"]] & /@ locals}];
-    (* Print["replacevar\n", replacevar, "\nendreplacevar\n"]; *)
+    If [DebugCSE, Print["replacevar\n", replacevar, "\nendreplacevar\n"]];
     
     stmts4 = stmts3 //. replacevar;
-    (* Print["stmts4\n", stmts4, "\nendstmts4\n"]; *)
+    If [DebugCSE, Print["stmts4\n", stmts4, "\nendstmts4\n"]];
     
     (* Sort statements topologically *)
 (*
     stmts5 = stmts4;
 *)
-    (* Print["A\n"]; *)
+    If [DebugCSE, Print["A\n"]];
     stmts5 =
       Module[{debug,
               tmpVars, newVars, i,
@@ -907,24 +909,24 @@ CSE[code_] := Module[
               selfStmts, selfVars, allVars, nonSelfVars},
         debug = False;
         stmtsLeft = stmts4;
-        (* Print["B\n"]; *)
+        If [DebugCSE, Print["B\n"]];
         stmtsDone = {};
-        (* Print["C\n"]; *)
+        If [DebugCSE, Print["C\n"]];
         (* lhs[x_] := x[[1]]; *)
         lhs[x_] := x /. (CAssign[lhs_, rhs_] -> lhs);
-        (* Print["D\n"]; *)
+        If [DebugCSE, Print["D\n"]];
         (* rhs[x_] := x[[2]]; *)
         rhs[x_] := x /. (CAssign[lhs_, rhs_] -> rhs);
-        (* Print["E\n"]; *)
+        If [DebugCSE, Print["E\n"]];
         (* any[xs_] := Fold[Or, False, xs]; *)
         any[xs_] := MemberQ[xs, True];
-        (* Print["F\n"]; *)
+        If [DebugCSE, Print["F\n"]];
         (* contains[e_, x_] := (e /. x -> {}) =!= e; *)
         (* contains[e_, x_] := Count[{e}, x, Infinity] > 0; *)
         contains[e_, x_] := MemberQ[{e}, x, Infinity];
-        (* Print["G\n"]; *)
+        If [DebugCSE, Print["G\n"]];
         containsAny[e_, xs_] := any[Map[contains[e,#]&, xs]];
-        (* Print["H\n"]; *)
+        If [DebugCSE, Print["H\n"]];
         getVars[stmts_] := Map[lhs, stmts] //. (CDeclare[lhs_] -> lhs);
 
         (* Rename temporary variables deterministically *)
@@ -968,25 +970,25 @@ CSE[code_] := Module[
           ];
           If[canDoStmts == {}, ThrowError["canDoStmts == {}"]];
           stmtsDone = Join[stmtsDone, canDoStmts];
-          (* Print["I\n"]; *)
+          If [DebugCSE, Print["I\n"]];
           stmtsLeft = cannotDoStmts;
-          (* Print["J\n"]; *)
+          If [DebugCSE, Print["J\n"]];
         ];
         If[debug, Print["stmtsLeft\n", stmtsLeft]];
         If[debug, Print["stmtsDone\n", stmtsDone]];
       stmtsDone];
-    (* Print["Z\n"]; *)
+    If [DebugCSE, Print["Z\n"]];
     
     (* Turn CAssign statements back into (->) tuples *)
     stmts6 = stmts5 //. CAssign[lhs_,rhs_] -> (lhs -> rhs);
-    (* Print["stmts6\n", stmts6, "\nendstmts6\n"]; *)
+    If [DebugCSE, Print["stmts6\n", stmts6, "\nendstmts6\n"]];
     
     (* Turn CDeclare statements into "faked" declarations *)
     stmts7 = stmts6
       //. CDeclare[var_]
           :> "CCTK_REAL const " <>
              StringReplace[ToString[var], __ ~~ "`" -> ""];
-    (* Print["stmts7\n", stmts7, "\nendstmts7\n"]; *)
+    If [DebugCSE, Print["stmts7\n", stmts7, "\nendstmts7\n"]];
     
     stmts7
   ]

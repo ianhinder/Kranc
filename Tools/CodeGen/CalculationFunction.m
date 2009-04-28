@@ -133,8 +133,8 @@ assignVariableFromExpression[dest_, expr_] := Module[{tSym, cleanExpr, code},
       cleanExpr = ReplacePowers[expr] /. sym`t -> tSym;
   
       If[SOURCELANGUAGE == "C",
-        code = ToString[dest == cleanExpr, CForm,       PageWidth -> 80] <> ";\n",
-        code = ToString@dest <> ".eq." <> ToString[cleanExpr, FortranForm, PageWidth -> 80] <> "\n"
+        code = ToString[dest == cleanExpr, CForm,       PageWidth -> 120] <> ";\n",
+        code = ToString@dest <> ".eq." <> ToString[cleanExpr, FortranForm, PageWidth -> 120] <> "\n"
        ];
  
       If[SOURCELANGUAGE != "C",

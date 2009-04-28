@@ -206,6 +206,32 @@ equations.  We recommend the Intel Fortran Compiler, version 8 as of
 the time of writing.  See the Cactus documentation for details about
 telling Cactus which compiler to use for a particular configuration.
 
+Contributing to Kranc
+---------------------
+
+In order to contribute a patch to Kranc, first ensure that you are
+working with a clone of the public Kranc repository, obtained by
+
+  git clone http://www.aei.mpg.de/~ianhin/kranc.git
+
+Commit your patches to your local working copy, preferably with each
+new feature in a separate patch, and make sure the repository is up to
+date by using
+
+  git pull --rebase
+
+every so often.  The --rebase makes sure that your commits are moved
+to the end of the history.  It is wise to do this frequently to avoid
+complicated merging.  When your patches are ready, use
+
+  git format-patch origin
+
+which will output numbered .patch files, one per commit, to the
+current directory.  Commits which are present in your repository but
+not in the public repository you cloned from (origin) will be output.
+
+Email these to the maintainer (currently ian.hinder@aei.mpg.de) for
+review and inclusion.
 
 Authors:
 --------

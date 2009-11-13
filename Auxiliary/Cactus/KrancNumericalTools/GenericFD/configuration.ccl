@@ -1,0 +1,9 @@
+# GenericFD/configuration.ccl 
+# Configuration definition for thorn GenericFD
+# author: E. Schnetter
+
+PROVIDES GenericFD
+{
+  SCRIPT
+  LANG
+}

@@ -706,12 +706,19 @@ void GenericFD_GetBoundaryInfo(cGH const * restrict cctkGH,
 /* Summation by parts */
 
 static inline CCTK_REAL sbp_deriv_x(int i, int j, int k, 
-                                    CCTK_INT min[], CCTK_INT max[], 
+                                    const CCTK_INT min[], const CCTK_INT max[], 
                                     CCTK_REAL d,
-                                    CCTK_REAL *var, CCTK_REAL *q, cGH *cctkGH)
+                                    const CCTK_REAL *var, const CCTK_REAL *q,
+                                    const cGH *cctkGH)
+  CCTK_ATTRIBUTE_PURE;
+static inline CCTK_REAL sbp_deriv_x(int i, int j, int k, 
+                                    const CCTK_INT min[], const CCTK_INT max[], 
+                                    CCTK_REAL d,
+                                    const CCTK_REAL *var, const CCTK_REAL *q,
+                                    const cGH *cctkGH)
 {
   CCTK_REAL dvarl = 0;
-  int ni = cctkGH->cctk_lssh[CCTK_LSSH_IDX(0,0)];
+  int ni = cctkGH->cctk_lsh[0];
   for (int ii=min[i]-1; ii<=max[i]-1; ++ii) {
     dvarl += q[ii+ni*i]*var[CCTK_GFINDEX3D (cctkGH, ii, j, k)];
   }
@@ -720,12 +727,19 @@ static inline CCTK_REAL sbp_deriv_x(int i, int j, int k,
 }
 
 static inline CCTK_REAL sbp_deriv_y(int i, int j, int k, 
-                                    CCTK_INT min[], CCTK_INT max[], 
+                                    const CCTK_INT min[], const CCTK_INT max[], 
                                     CCTK_REAL d,
-                                    CCTK_REAL *var, CCTK_REAL *q, cGH *cctkGH)
+                                    const CCTK_REAL *var, const CCTK_REAL *q,
+                                    const cGH *cctkGH)
+  CCTK_ATTRIBUTE_PURE;
+static inline CCTK_REAL sbp_deriv_y(int i, int j, int k, 
+                                    const CCTK_INT min[], const CCTK_INT max[], 
+                                    CCTK_REAL d,
+                                    const CCTK_REAL *var, const CCTK_REAL *q,
+                                    const cGH *cctkGH)
 {
   CCTK_REAL dvarl = 0;
-  int nj = cctkGH->cctk_lssh[CCTK_LSSH_IDX(0,1)];
+  int nj = cctkGH->cctk_lsh[1];
   for (int jj=min[j]-1; jj<=max[j]-1; ++jj) {
     dvarl += q[jj+nj*j]*var[CCTK_GFINDEX3D (cctkGH, i, jj, k)];
   }
@@ -734,12 +748,19 @@ static inline CCTK_REAL sbp_deriv_y(int i, int j, int k,
 }
 
 static inline CCTK_REAL sbp_deriv_z(int i, int j, int k, 
-                                    CCTK_INT min[], CCTK_INT max[], 
+                                    const CCTK_INT min[], const CCTK_INT max[], 
                                     CCTK_REAL d,
-                                    CCTK_REAL *var, CCTK_REAL *q, cGH *cctkGH)
+                                    const CCTK_REAL *var, const CCTK_REAL *q,
+                                    const cGH *cctkGH)
+  CCTK_ATTRIBUTE_PURE;
+static inline CCTK_REAL sbp_deriv_z(int i, int j, int k, 
+                                    const CCTK_INT min[], const CCTK_INT max[], 
+                                    CCTK_REAL d,
+                                    const CCTK_REAL *var, const CCTK_REAL *q,
+                                    const cGH *cctkGH)
 {
   CCTK_REAL dvarl = 0;
-  int nk = cctkGH->cctk_lssh[CCTK_LSSH_IDX(0,2)];
+  int nk = cctkGH->cctk_lsh[2];
   for (int kk=min[k]-1; kk<=max[k]-1; ++kk) {
     dvarl += q[kk+nk*k]*var[CCTK_GFINDEX3D (cctkGH, i, j, kk)];
   }

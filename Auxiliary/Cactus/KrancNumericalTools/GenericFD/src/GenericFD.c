@@ -61,7 +61,7 @@ CCTK_INT sgn(CCTK_REAL x)
 /* Return the array indices in imin and imax for looping over the
    interior of the grid. imin is the index of the first grid point.
    imax is the index of the last grid point plus 1.  So a loop over
-   the interior of the grid would be 
+   the interior of the grid would be
 
    for (i = imin; i < imax; i++)
 
@@ -170,7 +170,7 @@ void GenericFD_GetBoundaryInfo(cGH const * restrict const cctkGH,
 	imin[dir] = npoints;
 	break;
       case 1: /* Upper boundary */
-	imax[dir] = cctk_lssh[CCTK_LSSH_IDX(0, dir)] - npoints;
+	imax[dir] = cctk_lssh[CCTK_LSSH_IDX(0,dir)] - npoints;
 	break;
       default:
 	CCTK_WARN(0, "internal error");
@@ -190,9 +190,7 @@ void GenericFD_LoopOverEverything(cGH *cctkGH, Kranc_Calculation calc)
   CCTK_REAL  tangentA[] = {0,0,0};
   CCTK_REAL  tangentB[] = {0,0,0};
   CCTK_INT   bmin[] = {0,0,0};
-  CCTK_INT   bmax[] = {cctk_lssh[CCTK_LSSH_IDX(0,0)],
-                       cctk_lssh[CCTK_LSSH_IDX(0,1)],
-                       cctk_lssh[CCTK_LSSH_IDX(0,2)]};
+  CCTK_INT   bmax[] = {cctk_lssh[CCTK_LSSH_IDX(0,0)],cctk_lssh[CCTK_LSSH_IDX(0,1)],cctk_lssh[CCTK_LSSH_IDX(0,2)]};
 
   calc(cctkGH, dir, face, normal, tangentA, tangentB, bmin, bmax, 0, NULL);
   return;
@@ -413,7 +411,8 @@ void GenericFD_PenaltyPrim2Char(cGH *cctkGH, CCTK_INT const dir,
                                 CCTK_REAL const * restrict const base,
                                 CCTK_INT const * restrict const lbnd,
                                 CCTK_INT const * restrict const lsh,
-                                CCTK_INT const * restrict const lssh,
+                                CCTK_INT const * restrict const from,
+                                CCTK_INT const * restrict const to,
                                 CCTK_INT const rhs_flag,
                                 CCTK_INT const num_modes,
                                 CCTK_POINTER const * restrict const modes,
@@ -426,9 +425,7 @@ void GenericFD_PenaltyPrim2Char(cGH *cctkGH, CCTK_INT const dir,
   CCTK_REAL  tangentA[] = {0,0,0};
   CCTK_REAL  tangentB[] = {0,0,0};
   CCTK_INT   bmin[] = {0,0,0};
-  CCTK_INT   bmax[] = {cctk_lssh[CCTK_LSSH_IDX(0,0)],
-                       cctk_lssh[CCTK_LSSH_IDX(0,1)],
-                       cctk_lssh[CCTK_LSSH_IDX(0,2)]};
+  CCTK_INT   bmax[] = {cctk_lssh[CCTK_LSSH_IDX(0,0)],cctk_lssh[CCTK_LSSH_IDX(0,1)],cctk_lssh[CCTK_LSSH_IDX(0,2)]};
   CCTK_REAL  **all_vars;
   int        i = 0;
 

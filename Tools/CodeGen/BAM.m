@@ -331,7 +331,7 @@ scheduleThis = True;
 
 If[StringMatchQ[name, "*Startup"],            scheduleThis = False];
 If[StringMatchQ[name, "*CheckBoundaries"],    scheduleThis = False];
-If[StringMatchQ[name, "*ApplyBoundConds"],    scheduleThis = False];
+If[StringMatchQ[name, "*SelectBoundConds"],   scheduleThis = False];
 If[StringMatchQ[name, "*RegisterSymmetries"], scheduleThis = False];
 If[StringMatchQ[name, "*_CalcRHS"],           scheduleThis = False];
 
@@ -575,7 +575,7 @@ CreateMoLBoundariesSource[spec_] :=
 
    tmp = {"\n\n",
 
-   cleanCPP@DefineBAMFunction[lookup[spec,ThornName] <> "_ApplyBoundConds", 
+   cleanCPP@DefineBAMFunction[lookup[spec,ThornName] <> "_SelectBoundConds", 
    "CCTK_INT",
      {DefineVariable["ierr",   "CCTK_INT", "0"],
 

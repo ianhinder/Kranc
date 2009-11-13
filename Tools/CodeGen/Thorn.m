@@ -119,9 +119,14 @@ If[(lang == "shell" || lang == "CCL"),
 
 (* Do not show the date, and do not use $Id$, since they introduce
    spurious changes and lead to unnecessary recompilation *)
+(*
 {com1 <> " File produced by user " <> user[]                         <> com2 <> "\n"  <>
  com1 <> " Produced with Mathematica Version " <> ToString[$Version] <> com2 <> "\n\n"<>
  com1 <> " Mathematica script written by Ian Hinder and Sascha Husa" <> com2 <> "\n\n"}
+*)
+(* Do not show the user and the Mathematica version, since they also
+   introduce spurious changes and lead to unnecessary recompilation *)
+{com1 <> " File produced by Kranc" <> com2 <> "\n\n"}
 
 ];
 
@@ -226,6 +231,7 @@ CreateParam[spec_] :=
 
 CreateConfiguration[useLoopControl_] :=
   {whoWhen["CCL"],
+   "REQUIRES GenericFD\n",
    If[useLoopControl, "REQUIRES LoopControl\n", {}]
   };
 
@@ -361,7 +367,7 @@ CreateInterface[implementation_, inheritedImplementations_, includeFiles_,
    storage for this group. *)
 groupStorage[spec_] :=
   If[mapContains[spec, MaxTimelevels],
-     Flatten[Table[{"if (timelevels == ", i, ")\n",
+     Flatten[Table[{"if (", lookup[spec, MaxTimelevels], " == ", i, ")\n",
                     "{\n",
                     "  STORAGE: ", lookup[spec, Group], "[", i, "]\n",
                     "}\n"}, {i, 1, lookup[spec, Timelevels]}], 1],
@@ -779,7 +785,7 @@ CreateMoLBoundariesSource[spec_] :=
 
     {"\n",
      "if (CCTK_EQUALS(" <> boundpar <> ", \"radiative\"))\n",
-     "{\n /* apply radiation boundary condition */\n  ",
+     "{\n /* select radiation boundary condition */\n  ",
 
       DefineVariable[myhandle, "static CCTK_INT", "-1"],
 
@@ -813,7 +819,7 @@ CreateMoLBoundariesSource[spec_] :=
 
     {"\n",
      "if (CCTK_EQUALS(" <> boundpar <> ", \"radiative\"))\n",
-     "{\n /* apply radiation boundary condition */\n  ",
+     "{\n /* select radiation boundary condition */\n  ",
 
       DefineVariable[myhandle, "static CCTK_INT", "-1"],
 
@@ -845,7 +851,7 @@ CreateMoLBoundariesSource[spec_] :=
 
     {"\n",
      "if (CCTK_EQUALS(" <> boundpar <> ", \"scalar\"))\n",
-     "{\n /* apply scalar boundary condition */\n  ",
+     "{\n /* select scalar boundary condition */\n  ",
 
       DefineVariable[myhandle, "static CCTK_INT", "-1"],
 
@@ -875,7 +881,7 @@ CreateMoLBoundariesSource[spec_] :=
 
     {"\n",
      "if (CCTK_EQUALS(" <> boundpar <> ", \"scalar\"))\n",
-     "{\n /* apply scalar boundary condition */\n  ",
+     "{\n /* select scalar boundary condition */\n  ",
 
       DefineVariable[myhandle, "static CCTK_INT", "-1"],
 
@@ -920,7 +926,7 @@ CreateMoLBoundariesSource[spec_] :=
      {"return;\n"}],
 
 
-   cleanCPP@DefineCCTKFunction[lookup[spec,ThornName] <> "_ApplyBoundConds", 
+   cleanCPP@DefineCCTKFunction[lookup[spec,ThornName] <> "_SelectBoundConds", 
    "void",
      {DefineVariable["ierr",   "CCTK_INT", "0"],
 
@@ -988,9 +994,9 @@ CreateMoLExcisionSource[spec_] :=
 
       "! grid parameters\n",
 
-      "nx = cctk_lssh(CCTK_LSSH_IDX(0,1))\n",
-      "ny = cctk_lssh(CCTK_LSSH_IDX(0,2))\n",
-      "nz = cctk_lssh(CCTK_LSSH_IDX(0,3))\n\n",
+      "nx = cctk_lsh(1)\n",
+      "ny = cctk_lsh(2)\n",
+      "nz = cctk_lsh(3)\n\n",
 
       "if ( (excision .ne. 0).AND.(find_excision_boundary .ne. 0) ) then\n\n",
 
@@ -1009,9 +1015,9 @@ CreateMoLExcisionSource[spec_] :=
 
       "! grid parameters\n",
 
-      "nx = cctk_lssh(CCTK_LSSH_IDX(0,1))\n",
-      "ny = cctk_lssh(CCTK_LSSH_IDX(0,2))\n",
-      "nz = cctk_lssh(CCTK_LSSH_IDX(0,3))\n\n",
+      "nx = cctk_lsh(1)\n",
+      "ny = cctk_lsh(2)\n",
+      "nz = cctk_lsh(3)\n\n",
 
       "if ( (excision .ne. 0).AND.(find_excision_normals .ne. 0) ) then\n\n",
 
@@ -1031,9 +1037,9 @@ CreateMoLExcisionSource[spec_] :=
 
       "! grid parameters\n",
 
-      "nx = cctk_lssh(CCTK_LSSH_IDX(0,1))\n", 
-      "ny = cctk_lssh(CCTK_LSSH_IDX(0,2))\n", 
-      "nz = cctk_lssh(CCTK_LSSH_IDX(0,3))\n\n", 
+      "nx = cctk_lsh(1)\n", 
+      "ny = cctk_lsh(2)\n", 
+      "nz = cctk_lsh(3)\n\n", 
 
       "if (excision .ne. 0) then\n",
 
@@ -1127,7 +1133,8 @@ DefineFunction[funcName, "CCTK_INT", argString,
 "/*       CCTK_REAL ARRAY       base     ...              */\n",
 "/*       CCTK_INT ARRAY        lbnd     ...              */\n",
 "/*       CCTK_INT ARRAY        lsh      ...              */\n",
-"/*       CCTK_INT ARRAY        lssh     ...              */\n",
+"/*       CCTK_INT ARRAY        from     ...              */\n",
+"/*       CCTK_INT ARRAY        to       ...              */\n",
 "/*       CCTK_INT              rhs_flag ...              */\n",
 "/*       CCTK_INT              num_modes...              */\n",
 headerComment2,

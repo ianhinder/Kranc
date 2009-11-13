@@ -325,7 +325,8 @@ char2prim =
          CCTK_REAL ARRAY IN base,              \
          CCTK_INT ARRAY IN lbnd,               \
          CCTK_INT ARRAY IN lsh,                \
-         CCTK_INT ARRAY IN lssh,               \
+         CCTK_INT ARRAY IN from,               \
+         CCTK_INT ARRAY IN to,                 \
          CCTK_INT IN rhs_flag,                 \
          CCTK_INT IN num_modes,                \
          CCTK_POINTER_TO_CONST ARRAY IN modes"};
@@ -340,7 +341,8 @@ prim2char =
          CCTK_REAL ARRAY IN base,         \
          CCTK_INT ARRAY IN lbnd,          \
          CCTK_INT ARRAY IN lsh,           \
-         CCTK_INT ARRAY IN lssh,          \
+         CCTK_INT ARRAY IN from,          \
+         CCTK_INT ARRAY IN to,            \
          CCTK_INT IN rhs_flag,            \
          CCTK_INT IN num_modes,           \
          CCTK_POINTER ARRAY IN modes,     \

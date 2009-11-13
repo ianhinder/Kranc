@@ -577,7 +577,7 @@ GridLoop[block_] :=
         "#pragma omp parallel\n",
         "LC_LOOP3 (unnamed,\n",
         "          i,j,k, istart,jstart,kstart, iend,jend,kend,\n",
-        "          cctk_lssh[CCTK_LSSH_IDX(0,0)],cctk_lssh[CCTK_LSSH_IDX(0,1)],cctk_lssh[CCTK_LSSH_IDX(0,2)])\n",
+        "          cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])\n",
         "{\n",
         indentBlock[
           {
@@ -595,7 +595,7 @@ GridLoop[block_] :=
         "#pragma omp parallel\n",
         "LC_LOOP3 (unnamed,\n",
         "          i,j,k, istart,jstart,kstart, iend,jend,kend,\n",
-        "          cctk_lssh(CCTK_LSSH_IDX(0,1)),cctk_lssh(CCTK_LSSH_IDX(0,2)),cctk_lssh(CCTK_LSSH_IDX(0,3)))\n",
+        "          cctk_lsh(1),cctk_lsh(2),cctk_lsh(3))\n",
         indentBlock[block],
         "LC_ENDLOOP3 (unnamed)\n"
       }
@@ -631,7 +631,7 @@ GenericGridLoopUsingLoopControl[functionName_, block_] :=
         "#pragma omp parallel\n",
         "LC_LOOP3 (", functionName, ",\n",
         "          i,j,k, min[0],min[1],min[2], max[0],max[1],max[2],\n",
-        "          cctk_lssh[CCTK_LSSH_IDX(0,0)],cctk_lssh[CCTK_LSSH_IDX(0,1)],cctk_lssh[CCTK_LSSH_IDX(0,2)])\n",
+        "          cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])\n",
         "{\n",
         indentBlock[
           {
@@ -670,9 +670,9 @@ BoundaryLoop[block_] :=
   AssignVariable[arrayElement["bmin", 0], "is_physbnd[0*2+0] ? 0 : imin[0]"],
   AssignVariable[arrayElement["bmin", 1], "is_physbnd[1*2+0] ? 0 : imin[1]"],
   AssignVariable[arrayElement["bmin", 2], "is_physbnd[2*2+0] ? 0 : imin[2]"],
-  AssignVariable[arrayElement["bmax", 0], "is_physbnd[0*2+1] ? cctk_lssh[CCTK_LSSH_IDX(0,0)] : imax[0]"],
-  AssignVariable[arrayElement["bmax", 1], "is_physbnd[1*2+1] ? cctk_lssh[CCTK_LSSH_IDX(0,1)] : imax[1]"],
-  AssignVariable[arrayElement["bmax", 2], "is_physbnd[2*2+1] ? cctk_lssh[CCTK_LSSH_IDX(0,2)] : imax[2]"]}], 
+  AssignVariable[arrayElement["bmax", 0], "is_physbnd[0*2+1] ? cctk_from[CCTK_LSSH_IDX(0,0)] : imax[0]"],
+  AssignVariable[arrayElement["bmax", 1], "is_physbnd[1*2+1] ? cctk_from[CCTK_LSSH_IDX(0,1)] : imax[1]"],
+  AssignVariable[arrayElement["bmax", 2], "is_physbnd[2*2+1] ? cctk_from[CCTK_LSSH_IDX(0,2)] : imax[2]"]}], 
 
   CommentedBlock["Loop over all faces",
    loopOverInteger["dir", "0", "3",

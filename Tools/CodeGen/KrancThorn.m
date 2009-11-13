@@ -108,7 +108,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts___] :=
   inheritedRealParams, inheritedIntParams, inheritedKeywordParams,
   extendedRealParams, extendedIntParams, extendedKeywordParams,
   configuration,
-  partialDerivs, coordGroup, evolvedGroups, nonevolvedGroups,
+  partialDerivs, coordGroup, evolvedGroups, rhsGroups, nonevolvedGroups,
   interface, evolvedGroupDefinitions, rhsGroupDefinitions, thornspec,
   allParams, boundarySources, reflectionSymmetries,
   realParamDefs, intParamDefs,
@@ -183,7 +183,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts___] :=
     (* Add the groups into the calcs *)
     calcs = Map[Join[#, {Groups -> groups}] &, calcs];
 
-    nonevolvedGroupsWithRHS = Join[nonevolvedGroups, Map[groupName, rhsGroupDefinitions]];
+    rhsGroups = Map[groupName, rhsGroupDefinitions];
 
     (* Construct the configuration file *)
     InfoMessage[Terse, "Creating configuration file"];
@@ -191,8 +191,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts___] :=
 
     (* Construct the interface file *)
     InfoMessage[Terse, "Creating interface file"];
-    interface = createKrancInterface[nonevolvedGroupsWithRHS,
-      evolvedGroups, groups, evolutionTimelevels, implementation,
+    interface = createKrancInterface[nonevolvedGroups,
+      evolvedGroups, rhsGroups, groups, evolutionTimelevels, implementation,
       inheritedImplementations, includeFiles, useLoopControl];
       
 (*    Print["interface == ", interface];*)
@@ -209,7 +209,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts___] :=
     (* Construct the schedule file *)
     InfoMessage[Terse, "Creating schedule file"];
     schedule = createKrancScheduleFile[calcs, groups, evolvedGroups,
-      nonevolvedGroupsWithRHS, thornName, evolutionTimelevels];
+      rhsGroups, nonevolvedGroups, thornName, evolutionTimelevels];
 
     boundarySources = CactusBoundary`GetSources[evolvedGroups, groups, 
                                             implementation, thornName];
@@ -313,7 +313,7 @@ nonevolvedGroupInterfaceStructure[group_] :=
 {
   Name -> groupName[group], 
   VariableType -> "CCTK_REAL",
-  Timelevels -> nonevolvedTimelevels[group], 
+  Timelevels -> nonevolvedTimelevels[group],
   GridType -> "GF",
   Comment -> groupName[group], 
   Visibility -> "public",
@@ -322,6 +322,18 @@ nonevolvedGroupInterfaceStructure[group_] :=
 }
 
 evolvedGroupInterfaceStructure[group_, timelevels_] := 
+{
+  Name -> groupName[group], 
+  VariableType -> "CCTK_REAL",
+  Timelevels -> timelevels, 
+  GridType -> "GF",
+  Comment -> groupName[group], 
+  Visibility -> "public",
+  Tags -> GroupTags[group],
+  Variables -> groupVariables[group]
+}
+
+rhsGroupInterfaceStructure[group_, timelevels_] := 
 {
   Name -> groupName[group], 
   VariableType -> "CCTK_REAL",
@@ -346,15 +358,17 @@ createKrancConfiguration[useLoopControl_] :=
   ];
 
 
-createKrancInterface[nonevolvedGroups_, evolvedGroups_, groups_,
+createKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_, groups_,
   evolutionTimelevels_, implementation_, inheritedImplementations_,
   includeFiles_, useLoopControl_] :=
 
   Module[{registerEvolved, (*registerConstrained,*)
-  nonevolvedGroupStructures, evolvedGroupStructures, groupStructures,
+  nonevolvedGroupStructures, evolvedGroupStructures, rhsGroupStructures,
+  groupStructures,
   interface},
     VerifyGroupNames[nonevolvedGroups];
     VerifyGroupNames[evolvedGroups];
+    VerifyGroupNames[rhsGroups];
     VerifyGroups[groups];
     VerifyInteger[evolutionTimelevels];
     VerifyString[implementation];
@@ -399,7 +413,12 @@ createKrancInterface[nonevolvedGroups_, evolvedGroups_, groups_,
       Map[evolvedGroupInterfaceStructure[groupFromName[#, groups],
           evolutionTimelevels] &, evolvedGroups];
 
-    groupStructures = Join[nonevolvedGroupStructures, evolvedGroupStructures];
+    rhsGroupStructures =
+      Map[rhsGroupInterfaceStructure[groupFromName[#, groups],
+          evolutionTimelevels] &, rhsGroups];
+
+    groupStructures = Join[nonevolvedGroupStructures,
+                           evolvedGroupStructures, rhsGroupStructures];
 
     interface = CreateInterface[implementation, inheritedImplementations, 
       Join[includeFiles, {CactusBoundary`GetIncludeFiles[]},
@@ -574,6 +593,17 @@ createKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_,
                          Description -> ""}}
     };
 
+    rhsTimelevelsParam =
+    {
+      Name -> "rhs_timelevels",
+      Type -> "CCTK_INT",
+      Default -> 1,
+      Description -> "Number of active RHS timelevels",
+      Visibility -> "restricted",
+      AllowedValues -> {{Value -> ToString[0] <> ":" <> ToString[evolutionTimelevels],
+                         Description -> ""}}
+    };
+
     genericfdStruct =
     {
       Name -> "GenericFD",
@@ -629,7 +659,7 @@ createKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_,
     userImplementations2 = If[userImplementations2=={{}},{},userImplementations2];
 
     implementations = Join[userImplementations, userImplementations2, {genericfdStruct, molImplementation}];
-    params = Join[{verboseStruct}, realStructs, intStructs, keywordStructs, {evolvedMoLParam, (*constrainedMoLParam,*) timelevelsParam},
+    params = Join[{verboseStruct}, realStructs, intStructs, keywordStructs, {evolvedMoLParam, (*constrainedMoLParam,*) timelevelsParam, rhsTimelevelsParam},
                   calcEveryStructs, calcOffsetStructs,
       CactusBoundary`GetParameters[evolvedGFs, evolvedGroups]];
 
@@ -652,7 +682,14 @@ evolvedGroupStruct[groupName_, timelevels_, maxtimelevels_] :=
 {
   Group -> groupName, 
   Timelevels -> timelevels,
-  MaxTimelevels -> maxtimelevels
+  MaxTimelevels -> "timelevels"
+};
+
+rhsGroupStruct[groupName_, timelevels_, maxtimelevels_] := 
+{
+  Group -> groupName, 
+  Timelevels -> timelevels,
+  MaxTimelevels -> "rhs_timelevels"
 };
 
 groupsSetInCalc[calc_, groups_] :=
@@ -717,7 +754,7 @@ scheduleCalc[calc_, groups_] :=
       ] &,
       lookup[calc, Schedule]]];
 
-createKrancScheduleFile[calcs_, groups_, evolvedGroups_, nonevolvedGroups_, thornName_, 
+createKrancScheduleFile[calcs_, groups_, evolvedGroups_, rhsGroups_, nonevolvedGroups_, thornName_, 
                         evolutionTimelevels_] :=
   Module[{scheduledCalcs, scheduledStartup, scheduleMoLRegister, globalStorageGroups, scheduledFunctions, schedule},
 
@@ -752,7 +789,8 @@ createKrancScheduleFile[calcs_, groups_, evolvedGroups_, nonevolvedGroups_, thor
     };
 
     globalStorageGroups = Join[Map[simpleGroupStruct[#, nonevolvedTimelevels[groupFromName[#, groups]]] &, nonevolvedGroups], 
-                               Map[evolvedGroupStruct[#, evolutionTimelevels, evolutionTimelevels] &, evolvedGroups]];
+                               Map[evolvedGroupStruct[#, evolutionTimelevels, evolutionTimelevels] &, evolvedGroups], 
+                               Map[rhsGroupStruct[#, evolutionTimelevels, evolutionTimelevels] &, rhsGroups]];
 (*    Print["globalStorageGroups == ", globalStorageGroups];*)
 
     scheduledFunctions = 

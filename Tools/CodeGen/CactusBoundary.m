@@ -67,7 +67,7 @@ GetUsedFunctions[] :=
    ArgString -> "CCTK_POINTER_TO_CONST IN GH, CCTK_INT IN faces, CCTK_INT IN boundary_width, CCTK_INT IN table_handle, CCTK_STRING IN var_name, CCTK_STRING IN bc_name"}
 };
 
-boundariesName[thornName_] := thornName <> "_ApplyBoundConds";
+boundariesName[thornName_] := thornName <> "_SelectBoundConds";
 checkBoundariesName[thornName_] := thornName <> "_CheckBoundaries";
 
 GetScheduledGroups[thornName_] :=
@@ -89,7 +89,7 @@ GetScheduledFunctions[thornName_, evolvedGroups_] :=
     SynchronizedGroups -> evolvedGroups,
     Language      -> "C",
     Options       -> "level", 
-    Comment       -> "apply boundary conditions"
+    Comment       -> "select boundary conditions"
   },
 
   {

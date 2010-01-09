@@ -34,7 +34,7 @@ BeginPackage["sym`"];
   EvolutionTimelevels,
   UseCSE,
   
-PartialDerivatives, InheritedImplementations, ConditionalOnKeyword, ConditionalOnKeywords, ReflectionSymmetries, ZeroDimensions, CollectList, Interior, Boundary, BoundaryWithGhosts, Where, PreDefinitions, AllowedSymbols, UseLoopControl};
+PartialDerivatives, InheritedImplementations, ConditionalOnKeyword, ConditionalOnKeywords, ReflectionSymmetries, ZeroDimensions, CollectList, Interior, InteriorNoSync, Boundary, BoundaryWithGhosts, Where, PreDefinitions, AllowedSymbols, UseLoopControl};
 
 EndPackage[];
 

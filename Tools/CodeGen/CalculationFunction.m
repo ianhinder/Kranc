@@ -24,7 +24,7 @@ BeginPackage["sym`"];
 
 {GridFunctions, Shorthands, Equations, t, DeclarationIncludes,
 LoopPreIncludes, GroupImplementations, PartialDerivatives, Dplus1, NoSimplify,
-Dplus2, Dplus3, Boundary, Interior, Where, AddToStencilWidth, Everywhere, normal1, normal2, normal3}
+Dplus2, Dplus3, Boundary, Interior, InteriorNoSync, Where, AddToStencilWidth, Everywhere, normal1, normal2, normal3}
 
 {INV, SQR, CUB, QAD, dot, pow, exp,dx,dy,dz, idx, idy, idz} 
 
@@ -556,6 +556,7 @@ CreateCalculationFunction[calc_, debug_, useLoopControl_, useCSE_] :=
   Switch[where, 
     Everywhere, DefineCCTKSubroutine[functionName, "GenericFD_LoopOverEverything(cctkGH, &" <> bodyFunctionName <> ");\n"],
     Interior, DefineCCTKSubroutine[functionName, "GenericFD_LoopOverInterior(cctkGH, &" <> bodyFunctionName <> ");\n"],
+    InteriorNoSync, DefineCCTKSubroutine[functionName, "GenericFD_LoopOverInterior(cctkGH, &" <> bodyFunctionName <> ");\n"],
     Boundary, DefineCCTKSubroutine[functionName, "GenericFD_LoopOverBoundary(cctkGH, &" <> bodyFunctionName <> ");\n"],
     BoundaryWithGhosts, DefineCCTKSubroutine[functionName, "GenericFD_LoopOverBoundaryWithGhosts(cctkGH, &" <> bodyFunctionName <> ");\n"],
     PenaltyPrim2Char, DefineFunction[functionName, "CCTK_INT", 
@@ -713,8 +714,14 @@ equationLoop[eqs_,
     (* DeclareDerivatives[pddefs, eqs], *)
     DeclareDerivatives[defsWithoutShorts, eqsOrdered],
 
+(*
     CommentedBlock["Assign local copies of grid functions",
                    Map[AssignVariableInLoop[localName[#], GridName[#]] &, 
+                       gfsInRHS]],
+*)
+    CommentedBlock["Assign local copies of grid functions",
+                   Map[MaybeAssignVariableInLoop[localName[#], GridName[#],
+                                                 StringMatchQ[ToString[localName[#]], "eT*L"]] &,
                        gfsInRHS]],
 
 (*

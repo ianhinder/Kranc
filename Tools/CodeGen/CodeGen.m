@@ -62,6 +62,8 @@ AssignVariable::usage = "AssignVariable[dest_, src_] returns a block of code " <
   "that assigns 'src' to 'dest'.";
 AssignVariableInLoop::usage = "AssignVariable[dest_, src_] returns a block of code " <>
   "that assigns 'src' to 'dest'.";
+MaybeAssignVariableInLoop::usage = "MaybeAssignVariable[dest_, src_, cond_] returns a block of code " <>
+  "that assigns 'src' to 'dest'.";
 DeclareVariablesInLoopVectorised::usage = "";
 AssignVariablesInLoopVectorised::usage = "";
 TestForNaN::usage = "TestForNaN[expr_] returns a block of code " <>
@@ -272,6 +274,11 @@ AssignVariableInLoop[dest_, src_] :=
   {dest, " = ", src, EOL[],
    TestForNaN[dest]};
 *)
+
+MaybeAssignVariableInLoop[dest_, src_, cond_] :=
+  If [cond,
+      {dest, " = useMatter ? ", src, " : 0.0", EOL[]},
+      {dest, " = ", src, EOL[]}];
 
 (* TODO: move these into OpenMP loop *)
 DeclareVariablesInLoopVectorised[dests_, temps_, srcs_] :=

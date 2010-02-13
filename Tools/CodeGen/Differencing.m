@@ -404,10 +404,16 @@ DifferenceGFTerm[op_, i_, j_, k_] :=
       ThrowError["Could not parse difference operator:", op]];
     
     If[CodeGen`SOURCELANGUAGE == "C",
+(*
     remaining "(u)[CCTK_GFINDEX3D(cctkGH," <>
       "(int)(" <> ToString[CFormHideStrings[i+nx]] <> ")," <>
       "(int)(" <> ToString[CFormHideStrings[j+ny]] <> ")," <>
       "(int)(" <> ToString[CFormHideStrings[k+nz]] <> "))]",
+*)
+    remaining "(u)[index" <>
+      "+di*(" <> ToString[CFormHideStrings[nx]] <> ")" <>
+      "+dj*(" <> ToString[CFormHideStrings[ny]] <> ")" <>
+      "+dk*(" <> ToString[CFormHideStrings[nz]] <> ")]",
 (*
     remaining "(u)[CCTK_GFINDEX3D(cctkGH,floor((" <>
       ToString[CFormHideStrings[i+nx]] <> ")+0.5),floor((" <>

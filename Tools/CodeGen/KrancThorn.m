@@ -31,7 +31,7 @@ BeginPackage["sym`"];
   InheritedRealParameters,InheritedIntParameters,InheritedKeywordParameters,
   ExtendedRealParameters,ExtendedIntParameters,ExtendedKeywordParameters,
   Parameters,
-  EvolutionTimelevels,
+  EvolutionTimelevels, DefaultEvolutionTimelevels,
   UseCSE,
   
 PartialDerivatives, InheritedImplementations, ConditionalOnKeyword, ConditionalOnKeywords, ReflectionSymmetries, ZeroDimensions, CollectList, Interior, InteriorNoSync, Boundary, BoundaryWithGhosts, Where, PreDefinitions, AllowedSymbols, UseLoopControl};
@@ -84,7 +84,8 @@ VerifyNewCalculation[calc_] :=
 cktCheckNamedArgs[l_] := 
 Module[{allowed = {Calculations,
   DeclaredGroups, Implementation, InheritedImplementations,
-  EvolutionTimelevels, RealParameters, IntParameters, KeywordParameters,
+  EvolutionTimelevels, DefaultEvolutionTimelevels,
+  RealParameters, IntParameters, KeywordParameters,
   InheritedRealParameters,InheritedIntParameters,InheritedKeywordParameters,
   ExtendedRealParameters,ExtendedIntParameters,ExtendedKeywordParameters,
   PartialDerivatives, ReflectionSymmetries, ZeroDimensions, UseLoopControl,
@@ -103,7 +104,8 @@ replaceDots[x_] :=
 
 CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts___] :=
   Module[{calcs, declaredGroups, implementation,
-  inheritedImplementations, includeFiles, evolutionTimelevels,
+  inheritedImplementations, includeFiles,
+  evolutionTimelevels, defaultEvolutionTimelevels,
   realParams, intParams, keywordParams,
   inheritedRealParams, inheritedIntParams, inheritedKeywordParams,
   extendedRealParams, extendedIntParams, extendedKeywordParams,
@@ -129,6 +131,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts___] :=
     includeFiles = lookupDefault[{opts}, 
       includeFiles, {}];
     evolutionTimelevels = lookupDefault[{opts}, EvolutionTimelevels, 3];
+    defaultEvolutionTimelevels = lookupDefault[{opts}, DefaultEvolutionTimelevels, evolutionTimelevels];
     realParams = lookupDefault[{opts}, RealParameters, {}];
     intParams = lookupDefault[{opts}, IntParameters, {}];
     realParamDefs = makeFullParamDefs[realParams];
@@ -192,7 +195,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts___] :=
     (* Construct the interface file *)
     InfoMessage[Terse, "Creating interface file"];
     interface = createKrancInterface[nonevolvedGroups,
-      evolvedGroups, rhsGroups, groups, evolutionTimelevels, implementation,
+      evolvedGroups, rhsGroups, groups,
+      evolutionTimelevels, implementation,
       inheritedImplementations, includeFiles, useLoopControl];
       
 (*    Print["interface == ", interface];*)
@@ -203,13 +207,14 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts___] :=
       realParamDefs, intParamDefs, keywordParams,
       inheritedRealParams, inheritedIntParams, inheritedKeywordParams,
       extendedRealParams, extendedIntParams, extendedKeywordParams,
-      evolutionTimelevels,
+      evolutionTimelevels, defaultEvolutionTimelevels,
       calcs];
 
     (* Construct the schedule file *)
     InfoMessage[Terse, "Creating schedule file"];
     schedule = createKrancScheduleFile[calcs, groups, evolvedGroups,
-      rhsGroups, nonevolvedGroups, thornName, evolutionTimelevels];
+      rhsGroups, nonevolvedGroups, thornName,
+      evolutionTimelevels];
 
     boundarySources = CactusBoundary`GetSources[evolvedGroups, groups, 
                                             implementation, thornName];
@@ -359,7 +364,8 @@ createKrancConfiguration[useLoopControl_] :=
 
 
 createKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_, groups_,
-  evolutionTimelevels_, implementation_, inheritedImplementations_,
+  evolutionTimelevels_,
+  implementation_, inheritedImplementations_,
   includeFiles_, useLoopControl_] :=
 
   Module[{registerEvolved, (*registerConstrained,*)
@@ -536,7 +542,7 @@ createKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_,
   reals_, ints_, keywords_,
   inheritedReals_, inheritedInts_, inheritedKeywords_,
   extendedReals_, extendedInts_, extendedKeywords_,
-  evolutionTimelevels_,
+  evolutionTimelevels_, defaultEvolutionTimelevels_,
   calcs_] :=
 
   Module[{nEvolved, (*nPrimitive,*) evolvedMoLParam, evolvedGFs,
@@ -586,7 +592,7 @@ createKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_,
     {
       Name -> "timelevels",
       Type -> "CCTK_INT",
-      Default -> evolutionTimelevels,
+      Default -> defaultEvolutionTimelevels,
       Description -> "Number of active timelevels",
       Visibility -> "restricted",
       AllowedValues -> {{Value -> ToString[0] <> ":" <> ToString[evolutionTimelevels],
@@ -869,6 +875,7 @@ CreateKrancThornTT[groups_, parentDirectory_, thornName_, opts___] :=
 
     declaredGroups = lookupDefault[{opts}, DeclaredGroups, {}];
     evolutionTimelevels = lookupDefault[{opts}, EvolutionTimelevels, 3];
+    defaultEvolutionTimelevels = lookupDefault[{opts}, DefaultEvolutionTimelevels, evolutionTimelevels];
     InfoMessage[Info, "Declared groups: " <> ToString[declaredGroups]];
     InfoMessage[Terse, "Computing reflection symmetries"];
     reflectionSymmetries = computeReflectionSymmetries[declaredGroups, groups];

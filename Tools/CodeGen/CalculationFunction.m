@@ -177,10 +177,10 @@ declareVariablesForCalculation[calc_] :=
     localGFs = PartitionVarList@localGFs;
 
     {CommentedBlock["Declare shorthands",
-       Map[DeclareVariables[#, "CCTK_REAL"] &, shorthands]],
+       Map[DeclareVariables[#, "// CCTK_REAL"] &, shorthands]],
 
      CommentedBlock["Declare local copies of grid functions",
-       Map[DeclareVariables[#, "CCTK_REAL"] &, localGFs]]}];
+       Map[DeclareVariables[#, "// CCTK_REAL"] &, localGFs]]}];
 
 (* Derivative precomputation *)
 
@@ -397,11 +397,11 @@ declareSubblockGFs[sbgfs_, counter_] :=
 
 declarePreDefinitions[pDefs_] :=
   CommentedBlock["Declare predefined quantities",
-    Map[DeclareVariable[#, "CCTK_REAL"] &, Map[First, pDefs]]];
+    Map[DeclareVariable[#, "// CCTK_REAL"] &, Map[First, pDefs]]];
 
 definePreDefinitions[pDefs_] :=
   CommentedBlock["Initialize predefined quantities",
-    Map[AssignVariable[#[[1]], #[[2]]] &, pDefs]];
+    Map[DeclareAssignVariable["CCTK_REAL", #[[1]], #[[2]]] &, pDefs]];
 
 
 (* Calculation function generation *)
@@ -654,7 +654,7 @@ equationLoop[eqs_,
              cleancalc_, dsUsed_,
              gfs_, shorts_, subblockGFs_, incs_, groups_, syncGroups_, 
              pddefs_, where_, addToStencilWidth_, useLoopControl_, useCSE_] :=
-  Module[{rhss, lhss, gfsInRHS, gfsInLHS, localGFs, localMap, eqs2,
+  Module[{rhss, lhss, gfsInRHS, gfsInLHS, gfsOnlyInRHS, localGFs, localMap, eqs2,
           derivSwitch, actualSyncGroups, code, functionName, calcCode,
           syncCode, loopFunction},
 
@@ -670,6 +670,7 @@ equationLoop[eqs_,
 
     gfsInRHS = Union[Cases[rhss, _ ? (MemberQ[gfs,#] &), Infinity]];
     gfsInLHS = Union[Cases[lhss, _ ? (MemberQ[gfs,#] &), Infinity]];
+    gfsOnlyInRHS = Complement[gfsInRHS, gfsInLHS];
 
     localGFs = Map[localName, gfs];
     localMap = Map[# -> localName[#] &, gfs];
@@ -719,13 +720,15 @@ equationLoop[eqs_,
 
 (*
     CommentedBlock["Assign local copies of grid functions",
-                   Map[AssignVariableInLoop[localName[#], GridName[#]] &, 
+                   Map[DeclareAssignVariableInLoop["CCTK_REAL", localName[#], GridName[#]] &, 
                        gfsInRHS]],
 *)
     CommentedBlock["Assign local copies of grid functions",
-                   Map[MaybeAssignVariableInLoop[localName[#], GridName[#],
-                                                 StringMatchQ[ToString[localName[#]], "eT*L"]] &,
-                       gfsInRHS]],
+                   Map[DeclareMaybeAssignVariableInLoop[
+                          "CCTK_REAL", localName[#], GridName[#],
+                          StringMatchQ[ToString[GridName[#]], "eT" ~~ _ ~~ _ ~~ "[" ~~ __ ~~ "]"],
+                          "stress_energy_state"] &,
+                       gfsOnlyInRHS]],
 
 (*
     CommentedBlock["Check for nans",
@@ -745,7 +748,7 @@ equationLoop[eqs_,
 *)
 
     CommentedBlock["Assign local copies of subblock grid functions",
-                   Map[AssignVariableInLoop[localName[#], SubblockGridName[#]] &, 
+                   Map[DeclareAssignVariableInLoop["CCTK_REAL", localName[#], SubblockGridName[#]] &, 
                        subblockGFs]],
 
     CommentedBlock["Include user supplied include files",

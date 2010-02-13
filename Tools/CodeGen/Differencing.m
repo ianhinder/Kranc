@@ -214,7 +214,7 @@ ReplaceDerivatives[derivOps_, expr_, precompute_] :=
 
 PrecomputeDerivative[d:pd_[gf_, inds___]] :=
   Module[{},
-    AssignVariable[GridFunctionDerivativeName[d], evaluateDerivative[d]]];
+    DeclareAssignVariable["CCTK_REAL", GridFunctionDerivativeName[d], evaluateDerivative[d]]];
 
 evaluateDerivative[d:pd_[gf_, inds___]] :=
   Module[{macroname},
@@ -222,7 +222,7 @@ evaluateDerivative[d:pd_[gf_, inds___]] :=
     Return[ToString[macroName] <> "(" <> ToString[gf] <> ", i, j, k)"]];
 
 DeclareDerivative[d:pd_[gf_, inds___]] :=
-  DeclareVariable[GridFunctionDerivativeName[d], "CCTK_REAL"];
+  DeclareVariable[GridFunctionDerivativeName[d], "// CCTK_REAL"];
 
 
 (*************************************************************)

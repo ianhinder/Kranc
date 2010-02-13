@@ -60,9 +60,15 @@ DefineVariable::usage = "DefineVariable[name, type, value] returns a block of " 
   "code that declares and initialised a variable 'name' of type 'type' to value 'value'.";
 AssignVariable::usage = "AssignVariable[dest_, src_] returns a block of code " <>
   "that assigns 'src' to 'dest'.";
-AssignVariableInLoop::usage = "AssignVariable[dest_, src_] returns a block of code " <>
+DeclareAssignVariable::usage = "DeclareAssignVariable[type_, dest_, src_] returns a block of code " <>
+  "that declares and sets a constant variable of given name and type.";
+AssignVariableInLoop::usage = "AssignVariableInLoop[dest_, src_] returns a block of code " <>
   "that assigns 'src' to 'dest'.";
-MaybeAssignVariableInLoop::usage = "MaybeAssignVariable[dest_, src_, cond_] returns a block of code " <>
+DeclareAssignVariableInLoop::usage = "DeclareAssignVariableInLoop[type_, dest_, src_] returns a block of code " <>
+  "that assigns 'src' to 'dest'.";
+MaybeAssignVariableInLoop::usage = "MaybeAssignVariableInLoop[dest_, src_, cond_] returns a block of code " <>
+  "that assigns 'src' to 'dest'.";
+DeclareMaybeAssignVariableInLoop::usage = "DeclareMaybeAssignVariableInLoop[type_, dest_, src_, cond_] returns a block of code " <>
   "that assigns 'src' to 'dest'.";
 DeclareVariablesInLoopVectorised::usage = "";
 AssignVariablesInLoopVectorised::usage = "";
@@ -268,6 +274,9 @@ DefineVariable[name_, type_, value_] :=
 AssignVariable[dest_, src_] :=
   {dest, " = ", src, EOL[]};
 
+DeclareAssignVariable[type_, dest_, src_] :=
+  {type, " const ", dest, " = ", src, EOL[]};
+
 AssignVariableInLoop[dest_, src_] :=
   {dest, " = ", src, EOL[]};
 (*
@@ -275,10 +284,18 @@ AssignVariableInLoop[dest_, src_] :=
    TestForNaN[dest]};
 *)
 
+DeclareAssignVariableInLoop[type_, dest_, src_] :=
+  {type, " const ", dest, " = ", src, EOL[]};
+
 MaybeAssignVariableInLoop[dest_, src_, cond_] :=
   If [cond,
       {dest, " = useMatter ? ", src, " : 0.0", EOL[]},
       {dest, " = ", src, EOL[]}];
+
+DeclareMaybeAssignVariableInLoop[type_, dest_, src_, mmaCond_, codeCond_] :=
+  If [mmaCond,
+      {type, " const ", dest, " = (", codeCond, ") ? (", src, ") : 0.0", EOL[]},
+      {type, " const ", dest, " = ", src, EOL[]}];
 
 (* TODO: move these into OpenMP loop *)
 DeclareVariablesInLoopVectorised[dests_, temps_, srcs_] :=
@@ -431,18 +448,27 @@ DefineCCTKSubroutine[name_, contents_] :=
     }];
 
 DeclareFDVariables[] := 
+(*
   CommentedBlock["Declare finite differencing variables",
     {Map[DeclareVariables[#, "CCTK_REAL"] &, {{"dx", "dy", "dz"}, 
                                               {"dxi", "dyi", "dzi"},
                                               {khalf,kthird,ktwothird,kfourthird,keightthird},
                                               {"hdxi", "hdyi", "hdzi"}}],
+     "\n"},
+    {Map[DeclareVariables[#, "int"] &, {{"di", "dj", "dk"}}],
      "\n"}];
+*)
+  CommentedBlock["Declare finite differencing variables", {}];
 
 InitialiseFDSpacingVariablesC[] := 
   {
-    AssignVariable["dx", "CCTK_DELTA_SPACE(0)"],
-    AssignVariable["dy", "CCTK_DELTA_SPACE(1)"],
-    AssignVariable["dz", "CCTK_DELTA_SPACE(2)"]
+    DeclareAssignVariable["CCTK_REAL", "dx", "CCTK_DELTA_SPACE(0)"],
+    DeclareAssignVariable["CCTK_REAL", "dy", "CCTK_DELTA_SPACE(1)"],
+    DeclareAssignVariable["CCTK_REAL", "dz", "CCTK_DELTA_SPACE(2)"],
+    (* DeclareAssignVariable["int", "di", "CCTK_GFINDEX3D(cctkGH,1,0,0) - CCTK_GFINDEX3D(cctkGH,0,0,0)"], *)
+    DeclareAssignVariable["int", "di", "1"],
+    DeclareAssignVariable["int", "dj", "CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0)"],
+    DeclareAssignVariable["int", "dk", "CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0)"]
   };
 
 InitialiseFDSpacingVariablesFortran[] := 
@@ -459,17 +485,17 @@ InitialiseFDVariables[] :=
        InitialiseFDSpacingVariablesFortran[],
        InitialiseFDSpacingVariablesC[]],
     
-    AssignVariable["dxi", "1.0 / dx"],
-    AssignVariable["dyi", "1.0 / dy"],
-    AssignVariable["dzi", "1.0 / dz"],
-    AssignVariable["khalf", "0.5"],
-    AssignVariable["kthird", "1/3.0"],
-    AssignVariable["ktwothird", "2.0/3.0"],
-    AssignVariable["kfourthird", "4.0/3.0"],
-    AssignVariable["keightthird", "8.0/3.0"],
-    AssignVariable["hdxi", "0.5 * dxi"],
-    AssignVariable["hdyi", "0.5 * dyi"],
-    AssignVariable["hdzi", "0.5 * dzi"]}];
+    DeclareAssignVariable["CCTK_REAL", "dxi", "1.0 / dx"],
+    DeclareAssignVariable["CCTK_REAL", "dyi", "1.0 / dy"],
+    DeclareAssignVariable["CCTK_REAL", "dzi", "1.0 / dz"],
+    DeclareAssignVariable["CCTK_REAL", "khalf", "0.5"],
+    DeclareAssignVariable["CCTK_REAL", "kthird", "1/3.0"],
+    DeclareAssignVariable["CCTK_REAL", "ktwothird", "2.0/3.0"],
+    DeclareAssignVariable["CCTK_REAL", "kfourthird", "4.0/3.0"],
+    DeclareAssignVariable["CCTK_REAL", "keightthird", "8.0/3.0"],
+    DeclareAssignVariable["CCTK_REAL", "hdxi", "0.5 * dxi"],
+    DeclareAssignVariable["CCTK_REAL", "hdyi", "0.5 * dyi"],
+    DeclareAssignVariable["CCTK_REAL", "hdzi", "0.5 * dzi"]}];
 
 GridName[x_] := If[SOURCELANGUAGE == "C",
                    ToExpression[ToString[x] <> "[index]"],
@@ -492,8 +518,8 @@ DeclareGridLoopVariables[] :=
      Map[DeclareArray[#, 6, "CCTK_INT"] &, {"is_symbnd", "is_physbnd", "is_ipbnd"}],
      Map[DeclareArray[#, 3, "CCTK_INT"] &, {"imin", "imax", "bmin", "bmax"}] *), 
 
-     If[SOURCELANGUAGE == "C", DeclareVariable["index", "CCTK_INT"], "\n"],
-     If[SOURCELANGUAGE == "C", DeclareVariable["subblock_index", "CCTK_INT"], "\n"]
+     If[SOURCELANGUAGE == "C", DeclareVariable["index", "// CCTK_INT"], "\n"],
+     If[SOURCELANGUAGE == "C", DeclareVariable["subblock_index", "// CCTK_INT"], "\n"]
   }];
 
 (* Access an element of an array; syntax is different between C and
@@ -623,8 +649,8 @@ GenericGridLoopTraditional[block_] :=
 
        { If[SOURCELANGUAGE == "C",  
             {
-              AssignVariable["index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"],
-              AssignVariable["subblock_index", "i - min[0] + (max[0] - min[0]) * (j - min[1] + (max[1]-min[1]) * (k - min[2]))"]
+              DeclareAssignVariable["int", "index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"],
+              DeclareAssignVariable["int", "subblock_index", "i - min[0] + (max[0] - min[0]) * (j - min[1] + (max[1]-min[1]) * (k - min[2]))"]
             }
             ""],
 	 block
@@ -642,10 +668,10 @@ GenericGridLoopUsingLoopControl[functionName_, block_] :=
         "{\n",
         indentBlock[
           {
-             DeclareVariable["index", "int"],
-             DeclareVariable["subblock_index", "int"],
-             AssignVariable["index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"],
-             AssignVariable["subblock_index", "i - min[0] + (max[0] - min[0]) * (j - min[1] + (max[1]-min[1]) * (k - min[2]))"],
+             DeclareVariable["index", "// int"],
+             DeclareVariable["subblock_index", "// int"],
+             DeclareAssignVariable["int", "index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"],
+             DeclareAssignVariable["int", "subblock_index", "i - min[0] + (max[0] - min[0]) * (j - min[1] + (max[1]-min[1]) * (k - min[2]))"],
              block
           }
         ],

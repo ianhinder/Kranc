@@ -30,9 +30,18 @@
 #define Cosh(x)       (cosh(x))
 #define Tanh(x)       (tanh(x))
 
+#ifdef KRANC_C
+#define Sign(x)       (signbit(x)?-1:+1)
+#else
 #define Sign(x)       (sgn(x))
+#endif
 
-#define E               2.71828182845904523536029
-#define Pi              3.14159265358979323846264
+#ifdef KRANC_C
+#define E               M_E
+#define Pi              M_PI
+#else
+#define E               2.71828182845904523536029d0
+#define Pi              3.14159265358979323846264d0
+#endif
 
 #define UnitStep(x) ( (x) > 0 ? 1 : 0 )

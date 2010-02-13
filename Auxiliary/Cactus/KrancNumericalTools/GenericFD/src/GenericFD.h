@@ -664,7 +664,7 @@
 #endif
 
 #ifdef KRANC_C
-CCTK_INT sgn(CCTK_REAL x);
+int sgn(CCTK_REAL x);
 
 #define Dupwind1(gf,dir,i,j,k) ((dir * gf[CCTK_GFINDEX3D(cctkGH,i+dir,j,k)] \
 	 - dir * gf[CCTK_GFINDEX3D(cctkGH,i,j,k)]) * dxi)
@@ -674,15 +674,15 @@ CCTK_INT sgn(CCTK_REAL x);
 	 - dir * gf[CCTK_GFINDEX3D(cctkGH,i,j,k)]) * dxi)
 
 void GenericFD_GetBoundaryInfo(cGH const * restrict cctkGH,
-                               CCTK_INT const * restrict cctk_lsh,
-                               CCTK_INT const * restrict cctk_lssh,
-                               CCTK_INT const * restrict cctk_bbox,
-			       CCTK_INT const * restrict cctk_nghostzones,
-                               CCTK_INT * restrict imin, 
-			       CCTK_INT * restrict imax,
-                               CCTK_INT * restrict is_symbnd, 
-			       CCTK_INT * restrict is_physbnd,
-                               CCTK_INT * restrict is_ipbnd);
+                               int const * restrict cctk_lsh,
+                               int const * restrict cctk_lssh,
+                               int const * restrict cctk_bbox,
+			       int const * restrict cctk_nghostzones,
+                               int * restrict imin, 
+			       int * restrict imax,
+                               int * restrict is_symbnd, 
+			       int * restrict is_physbnd,
+                               int * restrict is_ipbnd);
 
 #if 0
 /* Finite differencing near boundaries */
@@ -706,13 +706,13 @@ void GenericFD_GetBoundaryInfo(cGH const * restrict cctkGH,
 /* Summation by parts */
 
 static inline CCTK_REAL sbp_deriv_x(int i, int j, int k, 
-                                    const CCTK_INT min[], const CCTK_INT max[], 
+                                    const int min[], const int max[], 
                                     CCTK_REAL d,
                                     const CCTK_REAL *var, const CCTK_REAL *q,
                                     const cGH *cctkGH)
   CCTK_ATTRIBUTE_PURE;
 static inline CCTK_REAL sbp_deriv_x(int i, int j, int k, 
-                                    const CCTK_INT min[], const CCTK_INT max[], 
+                                    const int min[], const int max[], 
                                     CCTK_REAL d,
                                     const CCTK_REAL *var, const CCTK_REAL *q,
                                     const cGH *cctkGH)
@@ -727,13 +727,13 @@ static inline CCTK_REAL sbp_deriv_x(int i, int j, int k,
 }
 
 static inline CCTK_REAL sbp_deriv_y(int i, int j, int k, 
-                                    const CCTK_INT min[], const CCTK_INT max[], 
+                                    const int min[], const int max[], 
                                     CCTK_REAL d,
                                     const CCTK_REAL *var, const CCTK_REAL *q,
                                     const cGH *cctkGH)
   CCTK_ATTRIBUTE_PURE;
 static inline CCTK_REAL sbp_deriv_y(int i, int j, int k, 
-                                    const CCTK_INT min[], const CCTK_INT max[], 
+                                    const int min[], const int max[], 
                                     CCTK_REAL d,
                                     const CCTK_REAL *var, const CCTK_REAL *q,
                                     const cGH *cctkGH)
@@ -748,13 +748,13 @@ static inline CCTK_REAL sbp_deriv_y(int i, int j, int k,
 }
 
 static inline CCTK_REAL sbp_deriv_z(int i, int j, int k, 
-                                    const CCTK_INT min[], const CCTK_INT max[], 
+                                    const int min[], const int max[], 
                                     CCTK_REAL d,
                                     const CCTK_REAL *var, const CCTK_REAL *q,
                                     const cGH *cctkGH)
   CCTK_ATTRIBUTE_PURE;
 static inline CCTK_REAL sbp_deriv_z(int i, int j, int k, 
-                                    const CCTK_INT min[], const CCTK_INT max[], 
+                                    const int min[], const int max[], 
                                     CCTK_REAL d,
                                     const CCTK_REAL *var, const CCTK_REAL *q,
                                     const cGH *cctkGH)
@@ -770,21 +770,21 @@ static inline CCTK_REAL sbp_deriv_z(int i, int j, int k,
 
 /* New calculation format */
 
-typedef void(*Kranc_Calculation)(cGH const * cctkGH,
-                                 CCTK_INT   dir,
-                                 CCTK_INT   face,
+typedef void(*Kranc_Calculation)(cGH const * restrict cctkGH,
+                                 int eir,
+                                 int face,
                                  CCTK_REAL const normal[3],
                                  CCTK_REAL const tangentA[3],
                                  CCTK_REAL const tangentB[3],
-                                 CCTK_INT  const min[3],
-                                 CCTK_INT  const max[3], 
-                                 CCTK_INT   n_subblock_gfs, 
-                                 CCTK_REAL * const subblock_gfs[]);
+                                 int const min[3],
+                                 int const max[3], 
+                                 int n_subblock_gfs, 
+                                 CCTK_REAL * restrict const subblock_gfs[]);
 
-void GenericFD_LoopOverEverything(cGH *cctkGH, Kranc_Calculation calc);
-void GenericFD_LoopOverBoundary(cGH *cctkGH, Kranc_Calculation calc);
-void GenericFD_LoopOverBoundaryWithGhosts(cGH *cctkGH, Kranc_Calculation calc);
-void GenericFD_LoopOverInterior(cGH *cctkGH, Kranc_Calculation calc);
+void GenericFD_LoopOverEverything(cGH const * restrict cctkGH, Kranc_Calculation calc);
+void GenericFD_LoopOverBoundary(cGH const * restrict cctkGH, Kranc_Calculation calc);
+void GenericFD_LoopOverBoundaryWithGhosts(cGH const * restrict cctkGH, Kranc_Calculation calc);
+void GenericFD_LoopOverInterior(cGH const * restrict cctkGH, Kranc_Calculation calc);
 
 
 

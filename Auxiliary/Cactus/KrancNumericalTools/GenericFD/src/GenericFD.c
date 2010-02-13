@@ -48,7 +48,7 @@
 /* TODO: provide functions for differencing, use FD macros to evaluate
    corresponding functions */
 
-CCTK_INT sgn(CCTK_REAL x)
+int sgn(CCTK_REAL x)
 {
   if (x < 0)
     return -1;
@@ -70,29 +70,29 @@ CCTK_INT sgn(CCTK_REAL x)
    boundaries are treated as interprocessor boundaries.
 */
 void GenericFD_GetBoundaryInfo(cGH const * restrict const cctkGH,
-                               CCTK_INT const * restrict const cctk_lsh,
-                               CCTK_INT const * restrict const cctk_lssh,
-                               CCTK_INT const * restrict const cctk_bbox,
-			       CCTK_INT const * restrict const cctk_nghostzones,
-                               CCTK_INT * restrict const imin, 
-			       CCTK_INT * restrict const imax,
-                               CCTK_INT * restrict const is_symbnd, 
-			       CCTK_INT * restrict const is_physbnd,
-                               CCTK_INT * restrict const is_ipbnd)
+                               int const * restrict const cctk_lsh,
+                               int const * restrict const cctk_lssh,
+                               int const * restrict const cctk_bbox,
+			       int const * restrict const cctk_nghostzones,
+                               int * restrict const imin, 
+			       int * restrict const imax,
+                               int * restrict const is_symbnd, 
+			       int * restrict const is_physbnd,
+                               int * restrict const is_ipbnd)
 {
-  CCTK_INT bbox[6];
-  CCTK_INT nboundaryzones[6];
-  CCTK_INT is_internal[6];
-  CCTK_INT is_staggered[6];
-  CCTK_INT shiftout[6];
-  CCTK_INT symbnd[6];
+  int bbox[6];
+  int nboundaryzones[6];
+  int is_internal[6];
+  int is_staggered[6];
+  int shiftout[6];
+  int symbnd[6];
 
-  CCTK_INT symtable = 0;
-  CCTK_INT dir = 0;
-  CCTK_INT face = 0;
-  CCTK_INT npoints = 0;
-  CCTK_INT iret = 0;
-  CCTK_INT ierr = 0;
+  int symtable = 0;
+  int dir = 0;
+  int face = 0;
+  int npoints = 0;
+  int iret = 0;
+  int ierr = 0;
 
   if (CCTK_IsFunctionAliased ("MultiPatch_GetBbox")) {
     ierr = MultiPatch_GetBbox (cctkGH, 6, bbox);
@@ -106,7 +106,7 @@ void GenericFD_GetBoundaryInfo(cGH const * restrict const cctkGH,
   }
 
   if (CCTK_IsFunctionAliased ("MultiPatch_GetBoundarySpecification")) {
-    CCTK_INT const map = MultiPatch_GetMap (cctkGH);
+    int const map = MultiPatch_GetMap (cctkGH);
     if (map < 0)
       CCTK_WARN(0, "Could not obtain boundary specification");
     ierr = MultiPatch_GetBoundarySpecification
@@ -142,7 +142,7 @@ void GenericFD_GetBoundaryInfo(cGH const * restrict const cctkGH,
   {
     for (face = 0; face < 2; face++)
     {
-      CCTK_INT index = dir*2 + face;
+      int index = dir*2 + face;
       if (is_ipbnd[index])
       {
 	/* Inter-processor boundary */
@@ -180,40 +180,40 @@ void GenericFD_GetBoundaryInfo(cGH const * restrict const cctkGH,
 }
 
 
-void GenericFD_LoopOverEverything(cGH *cctkGH, Kranc_Calculation calc)
+void GenericFD_LoopOverEverything(cGH const * restrict const cctkGH, Kranc_Calculation const calc)
 {
   DECLARE_CCTK_ARGUMENTS
 
-  CCTK_INT   dir = 0;
-  CCTK_INT   face = 0;
+  int   dir = 0;
+  int   face = 0;
   CCTK_REAL  normal[] = {0,0,0};
   CCTK_REAL  tangentA[] = {0,0,0};
   CCTK_REAL  tangentB[] = {0,0,0};
-  CCTK_INT   bmin[] = {0,0,0};
-  CCTK_INT   bmax[] = {cctk_lssh[CCTK_LSSH_IDX(0,0)],cctk_lssh[CCTK_LSSH_IDX(0,1)],cctk_lssh[CCTK_LSSH_IDX(0,2)]};
+  int   bmin[] = {0,0,0};
+  int   bmax[] = {cctk_lssh[CCTK_LSSH_IDX(0,0)],cctk_lssh[CCTK_LSSH_IDX(0,1)],cctk_lssh[CCTK_LSSH_IDX(0,2)]};
 
   calc(cctkGH, dir, face, normal, tangentA, tangentB, bmin, bmax, 0, NULL);
   return;
 }
 
 
-void GenericFD_LoopOverBoundary(cGH *cctkGH, Kranc_Calculation calc)
+void GenericFD_LoopOverBoundary(cGH const * restrict const cctkGH, Kranc_Calculation const calc)
 {
   DECLARE_CCTK_ARGUMENTS
 
-  CCTK_INT   dir1, dir2, dir3;
-  CCTK_INT   dir[3];
+  int   dir1, dir2, dir3;
+  int   dir[3];
   CCTK_REAL  normal[3];
   CCTK_REAL  tangentA[3];
   CCTK_REAL  tangentB[3];
-  CCTK_INT   bmin[3];
-  CCTK_INT   bmax[3];
-  CCTK_INT   have_bnd;
-  CCTK_INT   all_physbnd;
-  CCTK_INT   d;
+  int   bmin[3];
+  int   bmax[3];
+  int   have_bnd;
+  int   all_physbnd;
+  int   d;
 
-  CCTK_INT   is_symbnd[6], is_physbnd[6], is_ipbnd[6];
-  CCTK_INT   imin[3], imax[3];
+  int   is_symbnd[6], is_physbnd[6], is_ipbnd[6];
+  int   imin[3], imax[3];
   int        old_dir = 0;
   int        old_face = 0;
 
@@ -290,23 +290,23 @@ void GenericFD_LoopOverBoundary(cGH *cctkGH, Kranc_Calculation calc)
 }
 
 
-void GenericFD_LoopOverBoundaryWithGhosts(cGH *cctkGH, Kranc_Calculation calc)
+void GenericFD_LoopOverBoundaryWithGhosts(cGH const * restrict const cctkGH, Kranc_Calculation const calc)
 {
   DECLARE_CCTK_ARGUMENTS
 
-  CCTK_INT   dir1, dir2, dir3;
-  CCTK_INT   dir[3];
+  int   dir1, dir2, dir3;
+  int   dir[3];
   CCTK_REAL  normal[3];
   CCTK_REAL  tangentA[3];
   CCTK_REAL  tangentB[3];
-  CCTK_INT   bmin[3];
-  CCTK_INT   bmax[3];
-  CCTK_INT   have_bnd;
-  CCTK_INT   have_physbnd;
-  CCTK_INT   d;
+  int   bmin[3];
+  int   bmax[3];
+  int   have_bnd;
+  int   have_physbnd;
+  int   d;
 
-  CCTK_INT   is_symbnd[6], is_physbnd[6], is_ipbnd[6];
-  CCTK_INT   imin[3], imax[3];
+  int   is_symbnd[6], is_physbnd[6], is_ipbnd[6];
+  int   imin[3], imax[3];
   int        old_dir = 0;
   int        old_face = 0;
 
@@ -383,7 +383,7 @@ void GenericFD_LoopOverBoundaryWithGhosts(cGH *cctkGH, Kranc_Calculation calc)
 }
 
 
-void GenericFD_LoopOverInterior(cGH *cctkGH, Kranc_Calculation calc)
+void GenericFD_LoopOverInterior(cGH const * restrict const cctkGH, Kranc_Calculation const calc)
 {
   DECLARE_CCTK_ARGUMENTS
 
@@ -391,8 +391,8 @@ void GenericFD_LoopOverInterior(cGH *cctkGH, Kranc_Calculation calc)
   CCTK_REAL  tangentA[] = {0,0,0};
   CCTK_REAL  tangentB[] = {0,0,0};
 
-  CCTK_INT   is_symbnd[6], is_physbnd[6], is_ipbnd[6];
-  CCTK_INT   imin[3], imax[3];
+  int   is_symbnd[6], is_physbnd[6], is_ipbnd[6];
+  int   imin[3], imax[3];
   int        dir = 0;
   int        face = 0;
 
@@ -406,15 +406,15 @@ void GenericFD_LoopOverInterior(cGH *cctkGH, Kranc_Calculation calc)
 }
 
 
-void GenericFD_PenaltyPrim2Char(cGH *cctkGH, CCTK_INT const dir,
-                                CCTK_INT const face,
+void GenericFD_PenaltyPrim2Char(cGH const * restrict const cctkGH, int const dir,
+                                int const face,
                                 CCTK_REAL const * restrict const base,
-                                CCTK_INT const * restrict const lbnd,
-                                CCTK_INT const * restrict const lsh,
-                                CCTK_INT const * restrict const from,
-                                CCTK_INT const * restrict const to,
-                                CCTK_INT const rhs_flag,
-                                CCTK_INT const num_modes,
+                                int const * restrict const lbnd,
+                                int const * restrict const lsh,
+                                int const * restrict const from,
+                                int const * restrict const to,
+                                int const rhs_flag,
+                                int const num_modes,
                                 CCTK_POINTER const * restrict const modes,
                                 CCTK_POINTER const * restrict const speeds,
                                 Kranc_Calculation calc)
@@ -424,8 +424,8 @@ void GenericFD_PenaltyPrim2Char(cGH *cctkGH, CCTK_INT const dir,
   CCTK_REAL  normal[] = {0,0,0};
   CCTK_REAL  tangentA[] = {0,0,0};
   CCTK_REAL  tangentB[] = {0,0,0};
-  CCTK_INT   bmin[] = {0,0,0};
-  CCTK_INT   bmax[] = {cctk_lssh[CCTK_LSSH_IDX(0,0)],cctk_lssh[CCTK_LSSH_IDX(0,1)],cctk_lssh[CCTK_LSSH_IDX(0,2)]};
+  int   bmin[] = {0,0,0};
+  int   bmax[] = {cctk_lssh[CCTK_LSSH_IDX(0,0)],cctk_lssh[CCTK_LSSH_IDX(0,1)],cctk_lssh[CCTK_LSSH_IDX(0,2)]};
   CCTK_REAL  **all_vars;
   int        i = 0;
 

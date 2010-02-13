@@ -126,14 +126,17 @@ replaceDerivatives[x_, derivRules_] :=
     x /. replaceStandard];
 
 (* Return a CodeGen block which assigns dest by evaluating expr *)
-assignVariableFromExpression[dest_, expr_] := Module[{tSym, cleanExpr, code},
+assignVariableFromExpression[dest_, expr_] := Module[{tSym, type, cleanExpr, code},
       
       tSym = Unique[];
       
+      type = If[StringMatchQ[ToString[dest], "dir*"], "int", "CCTK_REAL"];
+
       cleanExpr = ReplacePowers[expr] /. sym`t -> tSym;
   
       If[SOURCELANGUAGE == "C",
-        code = ToString[dest == cleanExpr, CForm,       PageWidth -> 120] <> ";\n",
+        code = type <> " const " <>
+               ToString[dest == cleanExpr, CForm,       PageWidth -> 120] <> ";\n",
         code = ToString@dest <> ".eq." <> ToString[cleanExpr, FortranForm, PageWidth -> 120] <> "\n"
        ];
  

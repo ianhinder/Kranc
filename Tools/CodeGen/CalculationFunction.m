@@ -727,7 +727,7 @@ equationLoop[eqs_,
                    Map[DeclareMaybeAssignVariableInLoop[
                           "CCTK_REAL", localName[#], GridName[#],
                           StringMatchQ[ToString[GridName[#]], "eT" ~~ _ ~~ _ ~~ "[" ~~ __ ~~ "]"],
-                          "stress_energy_state"] &,
+                          "*stress_energy_state"] &,
                        gfsOnlyInRHS]],
 
 (*

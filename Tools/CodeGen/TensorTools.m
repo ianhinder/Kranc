@@ -142,6 +142,7 @@ TensorWeight;
 TensorSpecial;
 TensorManualCartesianParities;
 IsTensor;
+toggleIndex;
 
 (* This is for compatibility with MathTensor notation *)
 (*OD = PD;*)

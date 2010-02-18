@@ -52,7 +52,7 @@ ThornOptions =
 
 {ConditionalOnKeyword, ConditionalOnKeywords, CollectList, Interior,
 InteriorNoSync, Boundary, BoundaryWithGhosts, Where, PreDefinitions,
-AllowedSymbols, Parameters};
+AllowedSymbols, Parameters, ConditionalOnTextuals};
 
 EndPackage[];
 

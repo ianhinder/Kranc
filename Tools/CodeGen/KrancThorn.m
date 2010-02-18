@@ -440,6 +440,9 @@ krancParamStruct[definition_, type_, inherited_] :=
      Description -> description,
      Default     -> lookup[definition, Default],
      Visibility  -> "restricted"},
+    If[mapContains[definition, Steerable],
+      {Steerable -> lookup[definition, Steerable]},
+      {}],
     If[inherited,
       {},
       {AllowedValues -> {{Value -> "*:*", Description -> ""}}}]]];

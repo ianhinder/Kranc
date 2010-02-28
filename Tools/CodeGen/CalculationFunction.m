@@ -125,6 +125,27 @@ replaceDerivatives[x_, derivRules_] :=
     replaceCustom = Flatten[derivRules,1];
     x /. replaceStandard];
 
+
+(* Take a string s and break it into separate lines using l as a guide
+   to the line length.  If a word (sequence of non-whitespace
+   characters) is longer than l, do not break it.  Add two spaces of
+   indentation after each line break (this will push the line length
+   over l). Algorithm essentially taken from
+   http://en.wikipedia.org/wiki/Word_wrap *)
+lineBreak[s_, l_] :=
+  Module[{spaceLeft, words, word, i, lineWidth = l, spaceWidth = 1,
+    len},
+   spaceLeft = l;
+   words = StringSplit[s];
+   Do[
+    word = words[[i]];
+    len = StringLength[word];
+    If[len > spaceLeft,
+     words[[i]] = "\n  " <> word;
+     spaceLeft = lineWidth - len,
+     spaceLeft = spaceLeft - (len + spaceWidth)], {i, 1, Length[words]}];
+   Return[StringJoin[Riffle[words, " "]]]];
+
 (* Return a CodeGen block which assigns dest by evaluating expr *)
 assignVariableFromExpression[dest_, expr_] := Module[{tSym, type, cleanExpr, code},
       
@@ -135,7 +156,7 @@ assignVariableFromExpression[dest_, expr_] := Module[{tSym, type, cleanExpr, cod
       cleanExpr = ReplacePowers[expr] /. sym`t -> tSym;
   
       If[SOURCELANGUAGE == "C",
-        code = type <> " const " <> ToString[dest] <> " = " <> ToString[cleanExpr, CForm,       PageWidth -> 120] <> ";\n",
+        code = type <> " const " <> ToString[dest] <> " = " <> ToString[cleanExpr, CForm,       PageWidth -> Infinity] <> ";\n",
         code = ToString@dest <> ".eq." <> ToString[cleanExpr, FortranForm, PageWidth -> 120] <> "\n"
        ];
  
@@ -149,6 +170,8 @@ assignVariableFromExpression[dest_, expr_] := Module[{tSym, type, cleanExpr, cod
            code = StringReplace[code, "(index)"   -> "(i,j,k)"];
          ];
       ];
+
+      code = lineBreak[code, 70] <> "\n";
 
 (*      code = StringReplace[code, "Rule"          -> " = "]; *)
       code = StringReplace[code, "normal1"     -> "normal[0]"];

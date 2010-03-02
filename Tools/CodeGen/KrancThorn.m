@@ -48,7 +48,8 @@ ThornOptions =
   ZeroDimensions -> {},
   UseLoopControl -> False,
   UseCSE -> False,
-  ProhibitAssignmentToGridFunctionsRead -> False};
+  ProhibitAssignmentToGridFunctionsRead -> False,
+  IncludeFiles -> {}};
 
 {ConditionalOnKeyword, ConditionalOnKeywords, CollectList, Interior, InteriorNoSync, Boundary, BoundaryWithGhosts, Where, PreDefinitions, AllowedSymbols, UseLoopControl, Parameters};
 
@@ -134,30 +135,31 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     InfoMessage[Terse, "Processing arguments to CreateKrancThorn"];
     cktCheckNamedArgs[{opts}];
 
-    calcs = lookupDefault[{opts}, Calculations, {}];
-    declaredGroups = lookupDefault[{opts}, DeclaredGroups, {}];
-    implementation = lookupDefault[{opts}, Implementation, thornName];
-    inheritedImplementations = lookupDefault[{opts}, 
-      InheritedImplementations, {}];
-    includeFiles = lookupDefault[{opts}, 
-      includeFiles, {}];
-    evolutionTimelevels = lookupDefault[{opts}, EvolutionTimelevels, 3];
+    calcs = OptionValue[Calculations];
+    declaredGroups = OptionValue[DeclaredGroups];
+    implementation = 
+      If[OptionValue[Implementation] =!= None, 
+        OptionValue[Implementation],
+        thornName];
+    inheritedImplementations = OptionValue[InheritedImplementations];
+    includeFiles = OptionValue[IncludeFiles];
+    evolutionTimelevels = OptionValue[EvolutionTimelevels]; (* Redundant *)
     defaultEvolutionTimelevels = lookupDefault[{opts}, DefaultEvolutionTimelevels, evolutionTimelevels];
-    realParams = lookupDefault[{opts}, RealParameters, {}];
-    intParams = lookupDefault[{opts}, IntParameters, {}];
+    realParams = OptionValue[RealParameters];
+    intParams = OptionValue[IntParameters];
     realParamDefs = makeFullParamDefs[realParams];
     intParamDefs = makeFullParamDefs[intParams];
-    keywordParams = lookupDefault[{opts}, KeywordParameters, {}];
-    inheritedRealParams = lookupDefault[{opts}, InheritedRealParameters, {}];
-    inheritedIntParams = lookupDefault[{opts}, InheritedIntParameters, {}];
-    inheritedKeywordParams = lookupDefault[{opts}, InheritedKeywordParameters, {}];
-    extendedRealParams = lookupDefault[{opts}, ExtendedRealParameters, {}];
-    extendedIntParams = lookupDefault[{opts}, ExtendedIntParameters, {}];
-    extendedKeywordParams = lookupDefault[{opts}, ExtendedKeywordParameters, {}];
-    partialDerivs = lookupDefault[{opts}, PartialDerivatives, {}];
-    reflectionSymmetries = lookupDefault[{opts}, ReflectionSymmetries, {}];
-    useLoopControl = lookupDefault[{opts}, UseLoopControl, False];
-    useCSE = lookupDefault[{opts}, UseCSE, False];
+    keywordParams = OptionValue[KeywordParameters];
+    inheritedRealParams = OptionValue[InheritedRealParameters];
+    inheritedIntParams = OptionValue[InheritedIntParameters];
+    inheritedKeywordParams = OptionValue[InheritedKeywordParameters];
+    extendedRealParams = OptionValue[ExtendedRealParameters];
+    extendedIntParams = OptionValue[ExtendedIntParameters];
+    extendedKeywordParams = OptionValue[ExtendedKeywordParameters];
+    partialDerivs = OptionValue[PartialDerivatives];
+    reflectionSymmetries = OptionValue[ReflectionSymmetries];
+    useLoopControl = OptionValue[UseLoopControl];
+    useCSE = OptionValue[UseCSE];
 
 (*    Print["partialDerivs == ", partialDerivs];*)
 
@@ -244,7 +246,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     (* Write the differencing header file *)
     InfoMessage[Terse, "Creating differencing header file"];
-    {pDefs, diffHeader} = CreateDifferencingHeader[partialDerivs, lookupDefault[{opts}, ZeroDimensions, {}]];
+    {pDefs, diffHeader} = CreateDifferencingHeader[partialDerivs, OptionValue[ZeroDimensions]];
 
     (* Add the predefinitions into the calcs *)
     calcs = Map[Join[#, {PreDefinitions -> pDefs}] &, calcs];

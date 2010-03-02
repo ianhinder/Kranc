@@ -680,7 +680,8 @@ equationLoop[eqs_,
              opts:OptionsPattern[]] :=
   Module[{rhss, lhss, gfsInRHS, gfsInLHS, gfsOnlyInRHS, localGFs, localMap, eqs2,
           derivSwitch, actualSyncGroups, code, functionName, calcCode,
-          syncCode, loopFunction, gfsInBoth},
+          syncCode, loopFunction, gfsInBoth, gfsDifferentiated,
+          gfsDifferentiatedAndOnLHS},
 
     rhss = Map[#[[2]] &, eqs];
     lhss = Map[#[[1]] &, eqs];
@@ -710,6 +711,18 @@ equationLoop[eqs_,
     localMap = Map[# -> localName[#] &, gfs];
     
     derivSwitch = Join[oldDerivativesUsed[eqsOrdered], GridFunctionDerivativesInExpression[pddefs, eqsOrdered]] != {};
+
+    gfsDifferentiated = Map[First,
+      GridFunctionDerivativesInExpression[pddefs, eqsOrdered]];
+
+    gfsDifferentiatedAndOnLHS = Intersection[gfsDifferentiated, gfsInLHS];
+
+    If[gfsDifferentiatedAndOnLHS =!= {},
+      Throw["The calculation " <> ToString@lookup[cleancalc, Name] <>
+        " has both assignments to, and derivatives of, the grid functions " <>
+        ToString[gfsDifferentiatedAndOnLHS] <>
+        ".  This is not allowed, as it gives results which are dependent" <>
+        " on the ordering of the loop over grid points."]];
 
     (* Replace the partial derivatives *)
 

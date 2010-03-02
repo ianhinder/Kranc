@@ -680,7 +680,7 @@ equationLoop[eqs_,
              opts:OptionsPattern[]] :=
   Module[{rhss, lhss, gfsInRHS, gfsInLHS, gfsOnlyInRHS, localGFs, localMap, eqs2,
           derivSwitch, actualSyncGroups, code, functionName, calcCode,
-          syncCode, loopFunction},
+          syncCode, loopFunction, gfsInBoth},
 
     rhss = Map[#[[2]] &, eqs];
     lhss = Map[#[[1]] &, eqs];
@@ -695,6 +695,16 @@ equationLoop[eqs_,
     gfsInRHS = Union[Cases[rhss, _ ? (MemberQ[gfs,#] &), Infinity]];
     gfsInLHS = Union[Cases[lhss, _ ? (MemberQ[gfs,#] &), Infinity]];
     gfsOnlyInRHS = Complement[gfsInRHS, gfsInLHS];
+
+    gfsInBoth = Intersection[gfsInRHS,gfsInLHS];
+
+    If[OptionValue[ProhibitAssignmentToGridFunctionsRead] &&
+       gfsInBoth =!= {},
+      Throw["The calculation " <> ToString@lookup[cleancalc, Name] <>
+        " has the grid functions " <> ToString[gfsInBoth] <>
+        " on both the left hand side and the right hand side.  This is" <>
+        " not allowed with the option" <>
+        " ProhibitAssignmentToGridFunctionsRead -> True."]];
 
     localGFs = Map[localName, gfs];
     localMap = Map[# -> localName[#] &, gfs];

@@ -27,14 +27,30 @@
 
 BeginPackage["sym`"];
 
-{Calculations, DeclaredGroups, RealParameters, IntParameters, KeywordParameters,
-  InheritedRealParameters,InheritedIntParameters,InheritedKeywordParameters,
-  ExtendedRealParameters,ExtendedIntParameters,ExtendedKeywordParameters,
-  Parameters,
-  EvolutionTimelevels, DefaultEvolutionTimelevels,
-  UseCSE, ThornOptions,
-  
-PartialDerivatives, InheritedImplementations, ConditionalOnKeyword, ConditionalOnKeywords, ReflectionSymmetries, ZeroDimensions, CollectList, Interior, InteriorNoSync, Boundary, BoundaryWithGhosts, Where, PreDefinitions, AllowedSymbols, UseLoopControl};
+ThornOptions =
+ {Calculations -> {},
+  DeclaredGroups -> {},
+  Implementation -> None,
+  InheritedImplementations -> {},
+  EvolutionTimelevels -> 3,
+  DefaultEvolutionTimelevels -> None,
+  RealParameters -> {},
+  IntParameters -> {},
+  KeywordParameters -> {},
+  InheritedRealParameters -> {},
+  InheritedIntParameters -> {},
+  InheritedKeywordParameters -> {},
+  ExtendedRealParameters -> {},
+  ExtendedIntParameters -> {},
+  ExtendedKeywordParameters -> {},
+  PartialDerivatives -> {},
+  ReflectionSymmetries -> {},
+  ZeroDimensions -> {},
+  UseLoopControl -> False,
+  UseCSE -> False,
+  ProhibitAssignmentToGridFunctionsRead -> False};
+
+{ConditionalOnKeyword, ConditionalOnKeywords, CollectList, Interior, InteriorNoSync, Boundary, BoundaryWithGhosts, Where, PreDefinitions, AllowedSymbols, UseLoopControl, Parameters};
 
 EndPackage[];
 
@@ -82,18 +98,10 @@ VerifyNewCalculation[calc_] :=
 
 
 cktCheckNamedArgs[l_] := 
-Module[{allowed = {Calculations,
-  DeclaredGroups, Implementation, InheritedImplementations,
-  EvolutionTimelevels, DefaultEvolutionTimelevels,
-  RealParameters, IntParameters, KeywordParameters,
-  InheritedRealParameters,InheritedIntParameters,InheritedKeywordParameters,
-  ExtendedRealParameters,ExtendedIntParameters,ExtendedKeywordParameters,
-  PartialDerivatives, ReflectionSymmetries, ZeroDimensions, UseLoopControl,
-  UseCSE},
-   used, unrecognized},
+Module[{used, unrecognized},
 
     used = Map[First, l];
-    unrecognized = Complement[used, allowed];
+    unrecognized = Complement[used, Map[First, ThornOptions]];
     If[Length[unrecognized] > 0,
       ThrowError["Unrecognized named arguments: ", unrecognized]]
 
@@ -102,28 +110,6 @@ Module[{allowed = {Calculations,
 replaceDots[x_] := 
   x /. (dot[y_] :> Symbol[ToString[y] <> "rhs"]);
 
-ThornOptions = 
- {Calculations -> {},
-  DeclaredGroups -> {},
-  Implementation -> None,
-  InheritedImplementations -> {},
-  EvolutionTimelevels -> 3,
-  DefaultEvolutionTimelevels -> None,
-  RealParameters -> {},
-  IntParameters -> {},
-  KeywordParameters -> {},
-  InheritedRealParameters -> {},
-  InheritedIntParameters -> {},
-  InheritedKeywordParameters -> {},
-  ExtendedRealParameters -> {},
-  ExtendedIntParameters -> {},
-  ExtendedKeywordParameters -> {},
-  PartialDerivatives -> {},
-  ReflectionSymmetries -> {},
-  ZeroDimensions -> {},
-  UseLoopControl -> False,
-  UseCSE -> False,
-  ProhibitAssignmentToGridfunctionsRead -> False};
 
 Options[CreateKrancThorn] = ThornOptions;
 

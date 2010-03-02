@@ -194,8 +194,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     InfoMessage[Terse, "Creating interface file"];
     interface = createKrancInterface[nonevolvedGroups,
       evolvedGroups, rhsGroups, groups,
-      evolutionTimelevels, implementation,
-      inheritedImplementations, includeFiles, useLoopControl];
+      implementation, inheritedImplementations, includeFiles, useLoopControl, opts];
 
     (* Construct the param file *)
     InfoMessage[Terse, "Creating param file"];
@@ -347,10 +346,11 @@ createKrancConfiguration[useLoopControl_] :=
     configuration = CreateConfiguration[useLoopControl];
     Return[configuration]];
 
+Options[createKrancInterface] = ThornOptions;
+
 createKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_, groups_,
-  evolutionTimelevels_,
   implementation_, inheritedImplementations_,
-  includeFiles_, useLoopControl_] :=
+  includeFiles_, useLoopControl_, opts:OptionsPattern[]] :=
 
   Module[{registerEvolved, (*registerConstrained,*)
     nonevolvedGroupStructures, evolvedGroupStructures, rhsGroupStructures,
@@ -359,7 +359,6 @@ createKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_, groups_,
     VerifyGroupNames[evolvedGroups];
     VerifyGroupNames[rhsGroups];
     VerifyGroups[groups];
-    VerifyInteger[evolutionTimelevels];
     VerifyString[implementation];
     VerifyStringList[inheritedImplementations];
     VerifyStringList[includeFiles];
@@ -398,11 +397,11 @@ createKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_, groups_,
 
     evolvedGroupStructures =
       Map[evolvedGroupInterfaceStructure[groupFromName[#, groups],
-          evolutionTimelevels] &, evolvedGroups];
+          OptionValue[EvolutionTimelevels]] &, evolvedGroups];
 
     rhsGroupStructures =
       Map[rhsGroupInterfaceStructure[groupFromName[#, groups],
-          evolutionTimelevels] &, rhsGroups];
+          OptionValue[EvolutionTimelevels]] &, rhsGroups];
 
     groupStructures = Join[nonevolvedGroupStructures,
                            evolvedGroupStructures, rhsGroupStructures];

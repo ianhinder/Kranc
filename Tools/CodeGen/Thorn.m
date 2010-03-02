@@ -495,9 +495,9 @@ calculationMacros[] :=
    CodeGen representation of a source file that defines a function for
    each Calculation. *)
 
-CreateSetterSource[calcs_, debug_, useLoopControl_, useCSE_, opts___] :=
-  Module[{include},
-  include = lookupDefault[{opts}, Include, {}];
+CreateSetterSource[calcs_, debug_, useLoopControl_, useCSE_, include_,
+  opts:OptionsPattern[]] :=
+  Module[{},
 
   If[!MatchQ[include, _List],
     Throw["CreateSetterSource: Include should be a list but is in fact " <> ToString[include]]];
@@ -521,7 +521,7 @@ CreateSetterSource[calcs_, debug_, useLoopControl_, useCSE_, opts___] :=
    (* For each function structure passed, create the function and
       insert it *)
 
-   Map[CreateCalculationFunction[# , debug, useLoopControl, useCSE]& ,
+   Map[CreateCalculationFunction[# , debug, useLoopControl, useCSE, opts]& ,
        calcs]}];
 
 

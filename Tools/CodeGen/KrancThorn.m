@@ -32,7 +32,7 @@ BeginPackage["sym`"];
   ExtendedRealParameters,ExtendedIntParameters,ExtendedKeywordParameters,
   Parameters,
   EvolutionTimelevels, DefaultEvolutionTimelevels,
-  UseCSE,
+  UseCSE, ThornOptions,
   
 PartialDerivatives, InheritedImplementations, ConditionalOnKeyword, ConditionalOnKeywords, ReflectionSymmetries, ZeroDimensions, CollectList, Interior, InteriorNoSync, Boundary, BoundaryWithGhosts, Where, PreDefinitions, AllowedSymbols, UseLoopControl};
 
@@ -102,7 +102,32 @@ Module[{allowed = {Calculations,
 replaceDots[x_] := 
   x /. (dot[y_] :> Symbol[ToString[y] <> "rhs"]);
 
-CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts___] :=
+ThornOptions = 
+ {Calculations -> {},
+  DeclaredGroups -> {},
+  Implementation -> None,
+  InheritedImplementations -> {},
+  EvolutionTimelevels -> 3,
+  DefaultEvolutionTimelevels -> None,
+  RealParameters -> {},
+  IntParameters -> {},
+  KeywordParameters -> {},
+  InheritedRealParameters -> {},
+  InheritedIntParameters -> {},
+  InheritedKeywordParameters -> {},
+  ExtendedRealParameters -> {},
+  ExtendedIntParameters -> {},
+  ExtendedKeywordParameters -> {},
+  PartialDerivatives -> {},
+  ReflectionSymmetries -> {},
+  ZeroDimensions -> {},
+  UseLoopControl -> False,
+  UseCSE -> False,
+  ProhibitAssignmentToGridfunctionsRead -> False};
+
+Options[CreateKrancThorn] = ThornOptions;
+
+CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[]] :=
   Module[{calcs, declaredGroups, implementation,
   inheritedImplementations, includeFiles,
   evolutionTimelevels, defaultEvolutionTimelevels,
@@ -247,7 +272,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts___] :=
                      Map[unqualifiedName, inheritedIntParams], 
                      Map[unqualifiedName, inheritedKeywordParams]];
     InfoMessage[Terse, "Creating calculation source files"];
-    calcSources = Map[CreateSetterSourceWrapper[#, allParams, partialDerivs, useLoopControl, useCSE] &, calcs];
+    calcSources = Map[CreateSetterSourceWrapper[#, allParams, partialDerivs, useLoopControl, useCSE, opts] &, calcs];
     calcFilenames = Map[lookup[#, Name] <> ext &, calcs];
 
 
@@ -810,14 +835,14 @@ createKrancScheduleFile[calcs_, groups_, evolvedGroups_, rhsGroups_, nonevolvedG
   ];
 
                           
-CreateSetterSourceWrapper[calc_, parameters_, derivs_, useLoopControl_, useCSE_] :=
+CreateSetterSourceWrapper[calc_, parameters_, derivs_, useLoopControl_, useCSE_, opts:OptionsPattern[]] :=
   Module[{modCalc},
     modCalc = Join[calc /. ((Equations -> {es___}) -> (Equations -> {{es}})), 
       {Parameters -> parameters},
       {PartialDerivatives -> derivs}];
 
-    source = CreateSetterSource[{modCalc}, False, useLoopControl, useCSE, Include ->
-      If[useLoopControl, {"loopcontrol.h"}, {}]];
+    source = CreateSetterSource[{modCalc}, False, useLoopControl, useCSE,
+      If[useLoopControl, {"loopcontrol.h"}, {}], opts];
     Return[source]
   ];
 

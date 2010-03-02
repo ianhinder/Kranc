@@ -428,7 +428,7 @@ definePreDefinitions[pDefs_] :=
 
 (* Calculation function generation *)
 
-CreateCalculationFunction[calc_, debug_, useLoopControl_, useCSE_] :=
+CreateCalculationFunction[calc_, debug_, useLoopControl_, useCSE_, opts:OptionsPattern[]] :=
   Module[{gfs, allSymbols, knownSymbols,
           shorts, eqs, syncGroups, parameters,
           functionName, dsUsed, groups, pddefs, cleancalc, numeq, eqLoop, GrepSYNC, where, 
@@ -561,7 +561,7 @@ CreateCalculationFunction[calc_, debug_, useLoopControl_, useCSE_] :=
        (* Have removed ability to include external header files here.
           Can be put back when we need it. *)
 
-	eqLoop = Map[equationLoop[#, cleancalc, dsUsed, gfs, shorts, subblockGFs, {}, groups, syncGroups, pddefs, where, addToStencilWidth, useLoopControl, useCSE] &, eqs]},
+	eqLoop = Map[equationLoop[#, cleancalc, dsUsed, gfs, shorts, subblockGFs, {}, groups, syncGroups, pddefs, where, addToStencilWidth, useLoopControl, useCSE, opts] &, eqs]},
 
        (* search for SYNCs *)
        If[numeq <= 1,
@@ -662,7 +662,6 @@ splitPDDefsWithShorthands[pddefs_, shorthands_] :=
     defsWithoutShorts = Select[pddefs, ! defContainsShorthand[#, shorthands] &];
     Return[{defsWithoutShorts, defsWithShorts}]];
 
-
 pdCanonicalOrdering[name_[inds___] -> x_] :=
   Module[{is},
     is = {inds};
@@ -672,10 +671,13 @@ pdCanonicalOrdering[name_[inds___] -> x_] :=
               name[f_,3,2] -> name[f,2,3]}],
       {}]];
 
+Options[equationLoop] = ThornOptions;
+
 equationLoop[eqs_, 
              cleancalc_, dsUsed_,
              gfs_, shorts_, subblockGFs_, incs_, groups_, syncGroups_, 
-             pddefs_, where_, addToStencilWidth_, useLoopControl_, useCSE_] :=
+             pddefs_, where_, addToStencilWidth_, useLoopControl_, useCSE_, 
+             opts:OptionsPattern[]] :=
   Module[{rhss, lhss, gfsInRHS, gfsInLHS, gfsOnlyInRHS, localGFs, localMap, eqs2,
           derivSwitch, actualSyncGroups, code, functionName, calcCode,
           syncCode, loopFunction},

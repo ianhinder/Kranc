@@ -229,10 +229,12 @@ CreateParam[spec_] :=
    Configuration file
    ------------------------------------------------------------------------ *)
 
-CreateConfiguration[useLoopControl_] :=
+Options[CreateConfiguration] = ThornOptions;
+
+CreateConfiguration[opts:OptionsPattern[]] :=
   {whoWhen["CCL"],
    "REQUIRES GenericFD\n",
-   If[useLoopControl, "REQUIRES LoopControl\n", {}]
+   If[OptionValue[UseLoopControl], "REQUIRES LoopControl\n", {}]
   };
 
 (* ------------------------------------------------------------------------ 
@@ -495,7 +497,7 @@ calculationMacros[] :=
    CodeGen representation of a source file that defines a function for
    each Calculation. *)
 
-CreateSetterSource[calcs_, debug_, useLoopControl_, useCSE_, include_,
+CreateSetterSource[calcs_, debug_, useCSE_, include_,
   opts:OptionsPattern[]] :=
   Module[{},
 
@@ -521,7 +523,7 @@ CreateSetterSource[calcs_, debug_, useLoopControl_, useCSE_, include_,
    (* For each function structure passed, create the function and
       insert it *)
 
-   Map[CreateCalculationFunction[# , debug, useLoopControl, useCSE, opts]& ,
+   Map[CreateCalculationFunction[# , debug, useCSE, opts]& ,
        calcs]}];
 
 

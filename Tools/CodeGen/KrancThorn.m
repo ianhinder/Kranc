@@ -52,7 +52,7 @@ ThornOptions =
 
 {ConditionalOnKeyword, ConditionalOnKeywords, CollectList, Interior,
 InteriorNoSync, Boundary, BoundaryWithGhosts, Where, PreDefinitions,
-AllowedSymbols, UseLoopControl, Parameters};
+AllowedSymbols, Parameters};
 
 EndPackage[];
 
@@ -117,7 +117,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     interface, evolvedGroupDefinitions, rhsGroupDefinitions, thornspec,
     allParams, boundarySources, reflectionSymmetries,
     realParamDefs, intParamDefs,
-    pDefs, useLoopControl, useCSE},
+    pDefs, useCSE},
 
     (* Parse named arguments *)
 
@@ -147,7 +147,6 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     extendedKeywordParams = OptionValue[ExtendedKeywordParameters];
     partialDerivs = OptionValue[PartialDerivatives];
     reflectionSymmetries = OptionValue[ReflectionSymmetries];
-    useLoopControl = OptionValue[UseLoopControl];
     useCSE = OptionValue[UseCSE];
 
     coordGroup = {"grid::coordinates", {sym`x,sym`y,sym`z,sym`r}};
@@ -188,13 +187,13 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     (* Construct the configuration file *)
     InfoMessage[Terse, "Creating configuration file"];
-    configuration = createKrancConfiguration[useLoopControl];
+    configuration = createKrancConfiguration[opts];
 
     (* Construct the interface file *)
     InfoMessage[Terse, "Creating interface file"];
     interface = createKrancInterface[nonevolvedGroups,
       evolvedGroups, rhsGroups, groups,
-      implementation, inheritedImplementations, includeFiles, useLoopControl, opts];
+      implementation, inheritedImplementations, includeFiles, opts];
 
     (* Construct the param file *)
     InfoMessage[Terse, "Creating param file"];
@@ -243,7 +242,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
                      Map[unqualifiedName, inheritedKeywordParams]];
 
     InfoMessage[Terse, "Creating calculation source files"];
-    calcSources = Map[CreateSetterSourceWrapper[#, allParams, partialDerivs, useLoopControl, useCSE, opts] &, calcs];
+    calcSources = Map[CreateSetterSourceWrapper[#, allParams, partialDerivs, useCSE, opts] &, calcs];
     calcFilenames = Map[lookup[#, Name] <> ext &, calcs];
 
     (* Makefile *)
@@ -341,16 +340,16 @@ nonevolvedTimelevels[group_] :=
   Module[{tls = GroupTimelevels[group]},
     If[ tls === False, 1, tls]];
 
-createKrancConfiguration[useLoopControl_] :=
+createKrancConfiguration[opts:OptionsPattern[]] :=
   Module[{configuration},
-    configuration = CreateConfiguration[useLoopControl];
+    configuration = CreateConfiguration[opts];
     Return[configuration]];
 
 Options[createKrancInterface] = ThornOptions;
 
 createKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_, groups_,
   implementation_, inheritedImplementations_,
-  includeFiles_, useLoopControl_, opts:OptionsPattern[]] :=
+  includeFiles_, opts:OptionsPattern[]] :=
 
   Module[{registerEvolved, (*registerConstrained,*)
     nonevolvedGroupStructures, evolvedGroupStructures, rhsGroupStructures,
@@ -408,7 +407,7 @@ createKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_, groups_,
 
     interface = CreateInterface[implementation, inheritedImplementations, 
       Join[includeFiles, {CactusBoundary`GetIncludeFiles[]},
-           If[useLoopControl, {"loopcontrol.h"}, {}]],
+           If[OptionValue[UseLoopControl], {"loopcontrol.h"}, {}]],
       groupStructures,
       UsesFunctions ->
         Join[{registerEvolved, (*registerConstrained,*) diffCoeff}, 
@@ -753,15 +752,16 @@ createKrancScheduleFile[calcs_, groups_, evolvedGroups_, rhsGroups_, nonevolvedG
 
     Return[schedule]];
 
-                          
-CreateSetterSourceWrapper[calc_, parameters_, derivs_, useLoopControl_, useCSE_, opts:OptionsPattern[]] :=
+Options[CreateSetterSourceWrapper] = ThornOptions;
+
+CreateSetterSourceWrapper[calc_, parameters_, derivs_, useCSE_, opts:OptionsPattern[]] :=
   Module[{modCalc},
     modCalc = Join[calc /. ((Equations -> {es___}) -> (Equations -> {{es}})), 
       {Parameters -> parameters},
       {PartialDerivatives -> derivs}];
 
-    source = CreateSetterSource[{modCalc}, False, useLoopControl, useCSE,
-      If[useLoopControl, {"loopcontrol.h"}, {}], opts];
+    source = CreateSetterSource[{modCalc}, False, useCSE,
+      If[OptionValue[UseLoopControl], {"loopcontrol.h"}, {}], opts];
     Return[source]];
 
 (* FIXME: This is still not quite right.  We only want to have those variables that

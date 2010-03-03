@@ -428,7 +428,9 @@ definePreDefinitions[pDefs_] :=
 
 (* Calculation function generation *)
 
-CreateCalculationFunction[calc_, debug_, useLoopControl_, useCSE_, opts:OptionsPattern[]] :=
+Options[CreateCalculationFunction] = ThornOptions;
+
+CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
   Module[{gfs, allSymbols, knownSymbols,
           shorts, eqs, syncGroups, parameters,
           functionName, dsUsed, groups, pddefs, cleancalc, numeq, eqLoop, GrepSYNC, where, 
@@ -521,7 +523,7 @@ CreateCalculationFunction[calc_, debug_, useLoopControl_, useCSE_, opts:OptionsP
   { 
     "DECLARE_CCTK_ARGUMENTS;\n",
     "DECLARE_CCTK_PARAMETERS;\n\n",
-    If[!useLoopControl, DeclareGridLoopVariables[], {}],
+    If[!OptionValue[UseLoopControl], DeclareGridLoopVariables[], {}],
     DeclareFDVariables[],
     (* declareVariablesForCalculation[cleancalc], *)
     (* declarePrecomputedDerivatives[dsUsed], *)
@@ -561,7 +563,7 @@ CreateCalculationFunction[calc_, debug_, useLoopControl_, useCSE_, opts:OptionsP
        (* Have removed ability to include external header files here.
           Can be put back when we need it. *)
 
-	eqLoop = Map[equationLoop[#, cleancalc, dsUsed, gfs, shorts, subblockGFs, {}, groups, syncGroups, pddefs, where, addToStencilWidth, useLoopControl, useCSE, opts] &, eqs]},
+	eqLoop = Map[equationLoop[#, cleancalc, dsUsed, gfs, shorts, subblockGFs, {}, groups, syncGroups, pddefs, where, addToStencilWidth, useCSE, opts] &, eqs]},
 
        (* search for SYNCs *)
        If[numeq <= 1,
@@ -676,7 +678,7 @@ Options[equationLoop] = ThornOptions;
 equationLoop[eqs_, 
              cleancalc_, dsUsed_,
              gfs_, shorts_, subblockGFs_, incs_, groups_, syncGroups_, 
-             pddefs_, where_, addToStencilWidth_, useLoopControl_, useCSE_, 
+             pddefs_, where_, addToStencilWidth_, useCSE_,
              opts:OptionsPattern[]] :=
   Module[{rhss, lhss, gfsInRHS, gfsInLHS, gfsOnlyInRHS, localGFs, localMap, eqs2,
           derivSwitch, actualSyncGroups, code, functionName, calcCode,
@@ -759,7 +761,7 @@ equationLoop[eqs_,
                     Map[localName, gfsInLHS]]],
    *)
 
-   GenericGridLoop[functionName, useLoopControl,
+   GenericGridLoop[functionName,
    {declareVariablesForCalculation[cleancalc],
     declarePrecomputedDerivatives[dsUsed],
     (* DeclareDerivatives[pddefs, eqs], *)
@@ -791,7 +793,7 @@ equationLoop[eqs_,
                          "  CCTK_VInfo(CCTK_THORNSTRING, \"from: %d %d %d\", cctk_lssh[CCTK_LSSH_IDX(0,0)], cctk_lssh[CCTK_LSSH_IDX(0,1)], cctk_lssh[CCTK_LSSH_IDX(0,2)]);\n"},
                         Map[{"  CCTK_VInfo(CCTK_THORNSTRING, \"", localName[#], ": %.17g\", (double)", localName[#], ");\n"} &,
                             gfsInRHS],
-                        {"}\n"}]],
+                        {"}\n"}],
 *)
 
     CommentedBlock["Assign local copies of subblock grid functions",
@@ -840,10 +842,10 @@ equationLoop[eqs_,
                          "  CCTK_VInfo(CCTK_THORNSTRING, \"from: %d %d %d\", cctk_lssh[CCTK_LSSH_IDX(0,0)], cctk_lssh[CCTK_LSSH_IDX(0,1)], cctk_lssh[CCTK_LSSH_IDX(0,2)]);\n"},
                         Map[{"  CCTK_VInfo(CCTK_THORNSTRING, \"", localName[#], ": %.17g\", (double)", localName[#], ");\n"} &,
                             gfsInLHS],
-                        {"}\n"}]],
+                        {"}\n"}],
 *)
 
-    If[debugInLoop, Map[InfoVariable[GridName[#]] &, gfsInLHS], ""]}]]
+    If[debugInLoop, Map[InfoVariable[GridName[#]] &, gfsInLHS], ""]}, opts]]
    };
 
   lhsGroupNames    = containingGroups[gfsInLHS, groups];

@@ -636,8 +636,10 @@ GridLoop[block_] :=
   ];
 *)
 
-GenericGridLoop[functionName_, useLoopControl_, block_] :=
-  If[useLoopControl,
+Options[GenericGridLoop] = ThornOptions;
+
+GenericGridLoop[functionName_, block_, opts:OptionsPattern[]] :=
+  If[OptionValue[UseLoopControl],
     GenericGridLoopUsingLoopControl[functionName, block],
     GenericGridLoopTraditional[block]];
 

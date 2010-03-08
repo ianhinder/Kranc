@@ -156,7 +156,7 @@ assignVariableFromExpression[dest_, expr_] := Module[{tSym, type, cleanExpr, cod
       cleanExpr = ReplacePowers[expr] /. sym`t -> tSym;
   
       If[SOURCELANGUAGE == "C",
-        code = type <> " const " <> ToString[dest] <> " = " <> ToString[cleanExpr, CForm,       PageWidth -> Infinity] <> ";\n",
+        code =  type <> " " <> ToString[dest] <> " = " <> ToString[cleanExpr, CForm,       PageWidth -> Infinity] <> ";\n",
         code = ToString@dest <> ".eq." <> ToString[cleanExpr, FortranForm, PageWidth -> 120] <> "\n"
        ];
  

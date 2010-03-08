@@ -294,8 +294,8 @@ MaybeAssignVariableInLoop[dest_, src_, cond_] :=
 
 DeclareMaybeAssignVariableInLoop[type_, dest_, src_, mmaCond_, codeCond_] :=
   If [mmaCond,
-      {type, " const ", dest, " = (", codeCond, ") ? (", src, ") : 0.0", EOL[]},
-      {type, " const ", dest, " = ", src, EOL[]}];
+      {type, "  ", dest, " = (", codeCond, ") ? (", src, ") : 0.0", EOL[]},
+      {type, "  ", dest, " = ", src, EOL[]}];
 
 (* TODO: move these into OpenMP loop *)
 DeclareVariablesInLoopVectorised[dests_, temps_, srcs_] :=

@@ -1,6 +1,4 @@
 
-(* $Id$ *)
-
 (*  Copyright 2004 Sascha Husa, Ian Hinder, Christiane Lechner
 
     This file is part of Kranc.
@@ -23,8 +21,9 @@
 BeginPackage["sym`"];
 
 {GridFunctions, Shorthands, Equations, t, DeclarationIncludes,
-LoopPreIncludes, GroupImplementations, PartialDerivatives, Dplus1, NoSimplify,
-Dplus2, Dplus3, Boundary, Interior, InteriorNoSync, Where, AddToStencilWidth, Everywhere, normal1, normal2, normal3}
+LoopPreIncludes, GroupImplementations, PartialDerivatives, Dplus1,
+NoSimplify, Dplus2, Dplus3, Boundary, Interior, InteriorNoSync, Where,
+AddToStencilWidth, Everywhere, normal1, normal2, normal3}
 
 {INV, SQR, CUB, QAD, dot, pow, exp,dx,dy,dz, idx, idy, idz} 
 
@@ -37,9 +36,12 @@ BeginPackage["CalculationFunction`", {"CodeGen`", "sym`", "MapLookup`", "KrancGr
 CreateCalculationFunction::usage = "";
 calculationUsedGroups::usage = "";
 
-UncommentSourceSync::usage = "UncommentSourceSync[source_struct] uncomments calls to CCTK_SyncGroup.";
-GrepSyncGroups::usage = "GrepSyncGroups[source_struct] 'greps' a list of groups to be SYNC'ed from" <>
-                        "code produced by CreateCalculationFunction."
+UncommentSourceSync::usage = 
+  "UncommentSourceSync[source_struct] uncomments calls to CCTK_SyncGroup.";
+
+GrepSyncGroups::usage = 
+  "GrepSyncGroups[source_struct] 'greps' a list of groups to be SYNC'ed from code " <>
+  "produced by CreateCalculationFunction."
 
 VerifyCalculation::usage = "";
 allVariables::usage = "";
@@ -50,16 +52,13 @@ Begin["`Private`"];
    General Utility Functions
    -------------------------------------------------------------------------- *)
 
+removeRHS[x_] :=
+  Module[{string = ToString[x]},
+    If[StringMatchQ[string, "*rhs"],
+       ToExpression@StringDrop[string, -3],
+       x]];
 
-(* remove the 'rhs' at the end of a symbol or string *)
-removeRHS[x_] := Module[{string = ToString[x]},
-      
-      If[StringMatchQ[string, "*rhs"],
-           ToExpression@StringDrop[string, -3],
-           x ]
-      ];
-
-(* collect and simplify terms *)
+(* Collect and simplify terms *)
 simpCollect[collectList_, eqrhs_, localvar_, debug_] :=
   Module[{rhs, collectCoeff, all, localCollectList},
       InfoMessage[InfoFull, localvar];
@@ -77,9 +76,7 @@ simpCollect[collectList_, eqrhs_, localvar_, debug_] :=
       all = Collect[rhs, localCollectList, Simplify];
       InfoMessage[InfoFull, "ByteCount[simplified rhs]: ", ByteCount@all];
 
-      all
-      ];
-
+      all];
 
 (* Take a grid function name and return a name suitable for use in a local
    computation *)
@@ -91,10 +88,8 @@ localNameVectorised[x_] := ToExpression[ToString[x] <> "V"];
 invertMap[m_] := Map[#[[2]] -> #[[1]] &, m];
 
 (* A convenient list of the derivative symbols *)
-derivativeHeads = {D1, D2, D3, 
-                          D11,
-                          D21, D22,
-                          D31, D32, D33, Dplus1, Dplus2, Dplus3};
+derivativeHeads = 
+  {D1, D2, D3, D11, D21, D22, D31, D32, D33, Dplus1, Dplus2, Dplus3};
 
 (* Take an expression containing derivatives (i.e. D1[<stuff> etc) and
    "hide" all the derivatives and their contents by replacing them
@@ -107,7 +102,6 @@ hideDerivatives[x_] :=
     derivatives = Union[Cases[x, _ ? (MemberQ[derivativeHeads, #] &)[__],Infinity]];
     unhide = Map[Unique[] -> # &, derivatives];
     hide = invertMap[unhide];
-
     {x /. hide, unhide}];
 
 (* Apply the map (list of rules) to the expression x, but avoid replacing
@@ -124,7 +118,6 @@ replaceDerivatives[x_, derivRules_] :=
     replaceStandard = (d_ ? (MemberQ[derivativeHeads, #] &)[f_] -> d[f,Symbol["i"],Symbol["j"],Symbol["k"]]);
     replaceCustom = Flatten[derivRules,1];
     x /. replaceStandard];
-
 
 (* Take a string s and break it into separate lines using l as a guide
    to the line length.  If a word (sequence of non-whitespace
@@ -147,50 +140,42 @@ lineBreak[s_, l_] :=
    Return[StringJoin[Riffle[words, " "]]]];
 
 (* Return a CodeGen block which assigns dest by evaluating expr *)
-assignVariableFromExpression[dest_, expr_, declare_] := Module[{tSym, type, cleanExpr, code},
-      
-      tSym = Unique[];
-      
-      type = If[StringMatchQ[ToString[dest], "dir*"], "int", "CCTK_REAL"];
-
-      cleanExpr = ReplacePowers[expr] /. sym`t -> tSym;
+assignVariableFromExpression[dest_, expr_, declare_] := 
+  Module[{tSym, type, cleanExpr, code},
+    tSym = Unique[];
+    type = If[StringMatchQ[ToString[dest], "dir*"], "int", "CCTK_REAL"];
+    cleanExpr = ReplacePowers[expr] /. sym`t -> tSym;
   
-      If[SOURCELANGUAGE == "C",
-        code = If[declare, type <> " ", ""] <> ToString[dest] <> " = " <> ToString[cleanExpr, CForm,       PageWidth -> Infinity] <> ";\n",
-        code = ToString@dest <> ".eq." <> ToString[cleanExpr, FortranForm, PageWidth -> 120] <> "\n"
-       ];
+    If[SOURCELANGUAGE == "C",
+      code = If[declare, type <> " ", ""] <> ToString[dest] <> " = " <> 
+        ToString[cleanExpr, CForm,         PageWidth -> Infinity] <> ";\n",
+      code = ToString@dest <> ".eq." <> ToString[cleanExpr, FortranForm, PageWidth -> 120] 
+        <> "\n"];
  
-      If[SOURCELANGUAGE != "C",
-         Module[{},
-           code = StringReplace[code, "\n  "      -> " &\n"];
-           code = StringReplace[code, "   -  "    -> " &  "];
-           code = StringReplace[code, ".eq."      -> " = "];
-           code = StringReplace[code, "=        " -> "="];
-           code = StringReplace[code, "\\"        -> ""];
-           code = StringReplace[code, "(index)"   -> "(i,j,k)"];
-         ];
-      ];
+    If[SOURCELANGUAGE != "C",
+      code = StringReplace[code, "\n  "      -> " &\n"];
+      code = StringReplace[code, "   -  "    -> " &  "];
+      code = StringReplace[code, ".eq."      -> " = "];
+      code = StringReplace[code, "=        " -> "="];
+      code = StringReplace[code, "\\"        -> ""];
+      code = StringReplace[code, "(index)"   -> "(i,j,k)"]];
 
-      code = lineBreak[code, 70] <> "\n";
+    code = lineBreak[code, 70] <> "\n";
+    code = StringReplace[code, "normal1"     -> "normal[0]"];
+    code = StringReplace[code, "normal2"     -> "normal[1]"];
+    code = StringReplace[code, "normal3"     -> "normal[2]"];
+    code = StringReplace[code, "BesselJ"-> "gsl_sf_bessel_Jn"];
+    code = StringReplace[code, ToString@tSym -> "cctk_time"];
+    code = StringReplace[code, "\"" -> ""];
 
-(*      code = StringReplace[code, "Rule"          -> " = "]; *)
-      code = StringReplace[code, "normal1"     -> "normal[0]"];
-      code = StringReplace[code, "normal2"     -> "normal[1]"];
-      code = StringReplace[code, "normal3"     -> "normal[2]"];
-      code = StringReplace[code, "BesselJ"-> "gsl_sf_bessel_Jn"];
-      code = StringReplace[code, ToString@tSym -> "cctk_time"];
-      code = StringReplace[code, "\"" -> ""];
-
-      {code}];
+    {code}];
 
 (* This flag determines whether you want to generate debugging code to
    do CCTK_INFO on the variables as they are translated.  This can
    help find problems in the construction of the translator maps. *)
-
 debugInLoop = False;
 
 (* Derivative precomputation *)
-
 oldDerivativesUsed[x_] :=
   Union[Cases[x, _ ? (MemberQ[derivativeHeads, #] &)[_],Infinity]];
 
@@ -207,18 +192,13 @@ precomputeDerivative[d_] :=
 
 printEq[eq_] := 
   Module[{lhs, rhs, rhsSplit, split, rhsString},
-
     lhs = First@eq;
     rhs = Last@eq;
-
     split[ x_ + y___] := { x, " + ..."};
     split[-x_ + y___] := {-x, " + ..."};
     split[ x_       ] := { x, ""};
-
     rhsSplit = split[Expand@ReplacePowers@rhs];
-
     rhsString = ToString@CForm[rhsSplit[[1]]] <> rhsSplit[[2]];
-
     InfoMessage[InfoFull, " " <> ToString@lhs <> " -> " <> rhsString]];
 
 (* Return the names of any gridfunctions used in the calculation *)
@@ -234,13 +214,11 @@ calculationUsedGFsLHS[calc_] :=
     allGFs = allVariables[lookup[calc, Groups]];
     Intersection[calcSymbols, allGFs]];
 
-
 calculationUsedGFsRHS[calc_] :=
   Module[{calcSymbols, allGFs},
     calcSymbols = calculationSymbolsRHS[calc];
     allGFs = allVariables[lookup[calc, Groups]];
     Intersection[calcSymbols, allGFs]];
-
 
 calculationUsedGroups[calc_] :=
   Module[{gfs},
@@ -270,8 +248,7 @@ calculationAllUsedShorthands[calc_] :=
 
 calculationSymbols[calc_] :=
   Module[{allAtoms},
-    allAtoms = Union[Level[lookup[calc, Equations], {-1}] (*,  
-                     Level[Map[Last, lookup[calc,PartialDerivatives]], {-1}] *) ];
+    allAtoms = Union[Level[lookup[calc, Equations], {-1}]];
     Cases[allAtoms, x_Symbol]];
 
 calculationSymbolsLHS[calc_] :=
@@ -281,7 +258,8 @@ calculationSymbolsLHS[calc_] :=
 
 calculationSymbolsRHS[calc_] :=
   Module[{allAtoms},
-    allAtoms = Union[Map[Last, Flatten@{lookup[calc, Equations], lookup[calc,PartialDerivatives]} ]];
+    allAtoms = Union[Map[Last, Flatten@{lookup[calc, Equations], 
+      lookup[calc,PartialDerivatives]} ]];
     allAtoms = Union[Level[allAtoms, {-1}]];
     Cases[allAtoms, x_Symbol]];
 
@@ -293,8 +271,6 @@ functionsInCalculation[calc_] :=
     y = Union[Select[x, Context[#] === "Global`" &]];
     y];
 
-
-
 simplifyEquationList[eqs_] :=
   Map[simplifyEquation, eqs];
 
@@ -304,10 +280,13 @@ simplifyEquation[lhs_ -> rhs_] :=
 VerifyListContent[l_, type_, while_] :=
   Module[{types},
     If[!(Head[l] === List),
-      ThrowError["Expecting a list of ", type, " objects, but found the following, which is not a List object: ", l, while]];
+      ThrowError["Expecting a list of ", type, 
+        " objects, but found the following, which is not a List object: ", l, while]];
     types = Union[Map[Head, l]];
     If [!(types === {type}) && !(types === {}),
-      ThrowError["Expecting a list of ", type , " objects, but found the following types of object: ", ToString[types], " in ", l, while]]];
+      ThrowError["Expecting a list of ", type , 
+        " objects, but found the following types of object: ", 
+      ToString[types], " in ", l, while]]];
 
 VerifyCalculation[calc_] :=
   Module[{calcName},
@@ -326,9 +305,8 @@ VerifyCalculation[calc_] :=
 
     If[mapContains[calc, Equations],
       VerifyListContent[First[lookup[calc, Equations]], Rule, " while checking the equation" <> ToString[calcName]],
-      ThrowError["Invalid Calculation structure. Must contain Equations element: ", ToString[calc], " while checking the calculation called ", ToString[calcName]]];
-  ];
-
+      ThrowError["Invalid Calculation structure. Must contain Equations element: ", 
+        ToString[calc], " while checking the calculation called ", ToString[calcName]]]];
 
 (* Remove equations in the calculation which assign to shorthands
    which are never used. Do not modify the Shorthands entry. This
@@ -342,7 +320,8 @@ VerifyCalculation[calc_] :=
    removed). *)
 
 removeUnusedShorthands[calc_] :=
-  Module[{rhsShorthands, lhsShorthands, unusedButAssignedShorthands, removeShorts, eqs, neweqs, newCalc},
+  Module[{rhsShorthands, lhsShorthands, unusedButAssignedShorthands, removeShorts,
+    eqs, neweqs, newCalc},
     rhsShorthands = calculationRHSUsedShorthands[calc];
     lhsShorthands = calculationLHSUsedShorthands[calc];
     unusedButAssignedShorthands = Complement[lhsShorthands, rhsShorthands];
@@ -364,7 +343,6 @@ syncGroup[name_] :=
   {"/* SYNC: "<>name<>" */\n", "/* sync via schedule instead of call CCTK_SyncGroup(i, cctkGH, \"", name, "\") -cut- */\n"}
   ];
 
-
 UncommentSourceSync[setRHS_]:= Module[{cleanRHS},
    cleanRHS = Map[SafeStringReplace[#, "/* sync via schedule instead of ", ""]&, setRHS, Infinity];
    cleanRHS = Map[SafeStringReplace[#, ") -cut- */", ")"]&,  cleanRHS, Infinity]; (* for Fortran *)
@@ -376,31 +354,29 @@ UncommentSourceSync[setRHS_]:= Module[{cleanRHS},
 InsertSyncFuncName[setRHS_, funcName_]:=
      Map[SafeStringReplace[#, "/* SYNC: ", "/* SYNC: " <> funcName <> "//"]&, setRHS, Infinity];
 
-GrepSyncGroups[setRHS_]:= Module[{grepSYNC},
- grepSYNC = Map[PickMatch[#, "*SYNC*"] &, Flatten[setRHS, Infinity]];
- grepSYNC = Select[grepSYNC, IsNotEmptyString];
+GrepSyncGroups[setRHS_] := 
+  Module[{grepSYNC},
+    grepSYNC = Map[PickMatch[#, "*SYNC*"] &, Flatten[setRHS, Infinity]];
+    grepSYNC = Select[grepSYNC, IsNotEmptyString];
 
- grepSYNC = Map[StringReplace[#, "/* SYNC: " -> ""]&, grepSYNC];
- grepSYNC = Map[StringReplace[#, "*/"        -> ""]&, grepSYNC];
+    grepSYNC = Map[StringReplace[#, "/* SYNC: " -> ""]&, grepSYNC];
+    grepSYNC = Map[StringReplace[#, "*/"        -> ""]&, grepSYNC];
 
- grepSYNC
-];
+    grepSYNC];
 
-GrepSyncGroups[x_, func_] := Module[{pick},
-
+GrepSyncGroups[x_, func_] := 
+  Module[{pick},
     pick = GrepSyncGroups[x];
     pick = Map[PickMatch[#, func <> "//*"] & , pick];
     pick = Select[pick, IsNotEmptyString];
     
-    pick = Map[StringReplace[#,  func <> "//" -> ""] &, pick]
-    ];
+    pick = Map[StringReplace[#,  func <> "//" -> ""] &, pick]];
 
 declareSubblockGFs[sbgfs_, counter_] :=
   If[Length[sbgfs] == 0,
     {},
     Join[{DefineVariable[sbgfs[[1]], "CCTK_REAL", "*subblock_gfs[" <> ToString[counter] <> "]"]},
          declareSubblockGFs[Rest[sbgfs], counter + 1]]];
-
 
 declarePreDefinitions[pDefs_] :=
   CommentedBlock["Declare predefined quantities",
@@ -409,7 +385,6 @@ declarePreDefinitions[pDefs_] :=
 definePreDefinitions[pDefs_] :=
   CommentedBlock["Initialize predefined quantities",
     Map[DeclareAssignVariable["CCTK_REAL", #[[1]], #[[2]]] &, pDefs]];
-
 
 (* Calculation function generation *)
 
@@ -456,7 +431,6 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
   InfoMessage[InfoFull, "Groups: ", Map[groupName, groups]];
 
    If[Length@lookupDefault[cleancalc, CollectList, {}] > 0,
-
      eqs = Table[Map[First[#] -> simpCollect[lookup[cleancalc, CollectList], 
                                              Last[ #], 
                                              First[#], debug]&, 
@@ -464,8 +438,7 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
 
      If[!lookupDefault[cleancalc, NoSimplify, False], 
         InfoMessage[InfoFull, "Simplifying equations", eqs];
-        eqs = Simplify[eqs, {r>0}]]
-   ];
+        eqs = Simplify[eqs, {r>0}]]];
 
   InfoMessage[InfoFull, "Equations:"];
 
@@ -475,21 +448,10 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
 
   functionsPresent = functionsInCalculation[cleancalc];
 
-(* FIXME: Sascha does not understand the next lines and commented
-  it out in order to avod problems with using the exp function in BSSN  *)
-(*   allowedFunctions = Map[Head[First[#]] &, pddefs]; *)
-(*  Print["allowedFunctions == ", allowedFunctions];*)
-
-(*  unknownFunctions = Complement[functionsPresent, allowedFunctions];
-
-  If[Length[unknownFunctions] != 0,
-     ThrowError["The following functions are used in the calculation but are not defined:", 
-                unknownFunctions, cleancalc]];
-
-*)
   (* Check that there are no shorthands defined with the same name as a grid function *)
   If[!(Intersection[shorts, gfs] === {}),
-    ThrowError["The following shorthands are already declared as grid functions:", Intersection[shorts, gfs]]];
+    ThrowError["The following shorthands are already declared as grid functions:", 
+      Intersection[shorts, gfs]]];
 
   (* Check that there are no unknown symbols in the calculation *)
   allSymbols = calculationSymbols[cleancalc];
@@ -501,8 +463,8 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
 
   If[unknownSymbols != {},
      Module[{},
-       ThrowError["Unknown symbols in calculation.  Symbols are:", unknownSymbols, "Calculation is:", cleancalc]]];
-
+       ThrowError["Unknown symbols in calculation.  Symbols are:", unknownSymbols, 
+         "Calculation is:", cleancalc]]];
   {
   DefineFunction[bodyFunctionName, "void", "cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const min[3], int const max[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[]", 
   { 
@@ -510,17 +472,14 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
     "DECLARE_CCTK_PARAMETERS;\n\n",
     If[!OptionValue[UseLoopControl], DeclareGridLoopVariables[], {}],
     DeclareFDVariables[],
-    (* declarePrecomputedDerivatives[dsUsed], *)
-    (* DeclareDerivatives[pddefs, eqs], *)
     declareSubblockGFs[subblockGFs, 0],
-
     declarePreDefinitions[pDefs],
 
     ConditionalOnParameterTextual["verbose > 1",
       "CCTK_VInfo(CCTK_THORNSTRING,\"Entering " <> bodyFunctionName <> "\");\n"],
 
-    ConditionalOnParameterTextual["cctk_iteration % " <> functionName <> "_calc_every != " <> functionName <> "_calc_offset",
-      "return;\n"],
+    ConditionalOnParameterTextual["cctk_iteration % " <> functionName <> "_calc_every != " <> 
+      functionName <> "_calc_offset", "return;\n"],
 
     CommentedBlock["Include user-supplied include files",
       Map[IncludeFile, lookupDefault[cleancalc, DeclarationIncludes, {}]]],
@@ -537,25 +496,16 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
 
     If[gfs != {},
       {
-      (* This has been moved into equationLoop, in order           *)
-      (* to be able to discriminate between the offsets necessary  *)
-      (* depending on whether or not we take derivatives           *)
-
-       (* InitialiseGridLoopVariables[], *)
-
-
-       (* Have removed ability to include external header files here.
-          Can be put back when we need it. *)
-
-	eqLoop = Map[equationLoop[#, cleancalc, dsUsed, gfs, shorts, subblockGFs, {}, groups, syncGroups, pddefs, where, addToStencilWidth, useCSE, opts] &, eqs]},
+	eqLoop = Map[equationLoop[#, cleancalc, dsUsed, gfs, shorts, subblockGFs, {}, groups, 
+          syncGroups, pddefs, where, addToStencilWidth, useCSE, opts] &, eqs]},
 
        (* search for SYNCs *)
        If[numeq <= 1,
          GrepSYNC = GrepSyncGroups[eqLoop],
          GrepSYNC = {};
          eqLoop = UncommentSourceSync[eqLoop];
-         InfoMessage[Warning, "> 1 loop in thorn -> scheduling in source code, incompatible with Multipatch!"];
-       ];
+         InfoMessage[Warning, 
+           "> 1 loop in thorn -> scheduling in source code, incompatible with Multipatch!"]];
 
        InfoMessage[InfoFull, "grepSync from eqLoop: ",GrepSyncGroups[eqLoop]];
 
@@ -565,21 +515,28 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
       {}]
     }],
   Switch[where, 
-    Everywhere, DefineCCTKSubroutine[functionName, "GenericFD_LoopOverEverything(cctkGH, &" <> bodyFunctionName <> ");\n"],
-    Interior, DefineCCTKSubroutine[functionName, "GenericFD_LoopOverInterior(cctkGH, &" <> bodyFunctionName <> ");\n"],
-    InteriorNoSync, DefineCCTKSubroutine[functionName, "GenericFD_LoopOverInterior(cctkGH, &" <> bodyFunctionName <> ");\n"],
-    Boundary, DefineCCTKSubroutine[functionName, "GenericFD_LoopOverBoundary(cctkGH, &" <> bodyFunctionName <> ");\n"],
-    BoundaryWithGhosts, DefineCCTKSubroutine[functionName, "GenericFD_LoopOverBoundaryWithGhosts(cctkGH, &" <> bodyFunctionName <> ");\n"],
-    PenaltyPrim2Char, DefineFunction[functionName, "CCTK_INT", 
+    Everywhere, 
+      DefineCCTKSubroutine[functionName, 
+        "GenericFD_LoopOverEverything(cctkGH, &" <> bodyFunctionName <> ");\n"],
+    Interior, 
+      DefineCCTKSubroutine[functionName, 
+        "GenericFD_LoopOverInterior(cctkGH, &" <> bodyFunctionName <> ");\n"],
+    InteriorNoSync, 
+      DefineCCTKSubroutine[functionName, 
+        "GenericFD_LoopOverInterior(cctkGH, &" <> bodyFunctionName <> ");\n"],
+    Boundary, 
+      DefineCCTKSubroutine[functionName, 
+        "GenericFD_LoopOverBoundary(cctkGH, &" <> bodyFunctionName <> ");\n"],
+    BoundaryWithGhosts, 
+      DefineCCTKSubroutine[functionName, 
+        "GenericFD_LoopOverBoundaryWithGhosts(cctkGH, &" <> bodyFunctionName <> ");\n"],
+    PenaltyPrim2Char, 
+      DefineFunction[functionName, "CCTK_INT", 
                "CCTK_POINTER_TO_CONST const cctkGH_, CCTK_INT const dir, CCTK_INT const face, CCTK_REAL const * restrict const base_, CCTK_INT const * restrict const lbnd, CCTK_INT const * restrict const lsh, CCTK_INT const * restrict const from, CCTK_INT const * restrict const to, CCTK_INT const rhs_flag, CCTK_INT const num_modes, CCTK_POINTER const * restrict const modes, CCTK_POINTER const * restrict const speeds", 
-                  "GenericFD_PenaltyPrim2Char(cctkGH, &" <> bodyFunctionName <> ");\n"],
-      _, ThrowError["Unknown 'Where' entry in calculation " <> functionName <> ": " <> ToString[where]]
-     ]
-  }];
-
-
-
-
+        "GenericFD_PenaltyPrim2Char(cctkGH, &" <> bodyFunctionName <> ");\n"],
+    _, 
+      ThrowError["Unknown 'Where' entry in calculation " <> 
+        functionName <> ": " <> ToString[where]]]}];
 
 allVariables[groups_] :=
   Flatten[Map[variablesInGroup, groups], 1];
@@ -607,16 +564,15 @@ checkShorthandAssignmentOrder[eqs_, shorthand_] :=
   (* Make a list of booleans describing, for each equation, whether it
      uses the given shorthand *)
   useBooleans = Map[equationUsesShorthand[#, shorthand] &, eqs];
-
   uses = Position[useBooleans, True];
-
   lhss = Map[First, eqs];
 
   (* The equation numbers that define this shorthand *)
   assignments = Position[lhss, shorthand];
 
   If[Length[uses] == 0 && Length[assignments] >= 1, 
-    InfoMessage[Warning, "WARNING: Shorthand ", shorthand, " is defined but not used in this equation list."]];
+    InfoMessage[Warning, "WARNING: Shorthand ", shorthand, 
+      " is defined but not used in this equation list."]];
 
   If[Length[uses] == 0, Return[]];
 
@@ -630,14 +586,14 @@ checkShorthandAssignmentOrder[eqs_, shorthand_] :=
     ThrowError["Shorthand", shorthand, "is not defined in this equation list", eqs]];
 
   If[assignments[[1]] >= firstUse,
-    ThrowError["Shorthand", shorthand, "is used before it is defined in this equation list", eqs]]];
+    ThrowError["Shorthand", shorthand, 
+      "is used before it is defined in this equation list", eqs]]];
 
 defContainsShorthand[def_, shorthands_] :=
 Module[{allAtoms, c},
   allAtoms = Union[Level[def, {-1}]];
   c = Intersection[shorthands, allAtoms];
   c != {}];
-
 
 (* Split the list of partial derivative definitions into those
 containing shorthands, and those that do not.  *)
@@ -658,8 +614,8 @@ pdCanonicalOrdering[name_[inds___] -> x_] :=
       {}]];
 
 (* Given an input list l, return a list L such that L[[i]] is True
-only if l[[i]] is the first occurrence of l[[i]] in l and is not in
-the list "already" *)
+   only if l[[i]] is the first occurrence of l[[i]] in l and is not in
+   the list "already" *)
 markFirst[l_List, already_List] :=
   If[l =!= {},
     {!MemberQ[already, First[l]]} ~Join~ markFirst[Rest[l], already ~Join~ {First[l]}],
@@ -681,10 +637,6 @@ equationLoop[eqs_,
     lhss = Map[#[[1]] &, eqs];
 
     orderings = Flatten[Map[pdCanonicalOrdering, pddefs], 1];
-(*    Print["Canonical orderings: ", orderings];
-
-    Print["Applying orderings to:", eqs];*)
-
     eqsOrdered = (eqs //. orderings);
 
     gfsInRHS = Union[Cases[rhss, _ ? (MemberQ[gfs,#] &), Infinity]];
@@ -704,7 +656,8 @@ equationLoop[eqs_,
     localGFs = Map[localName, gfs];
     localMap = Map[# -> localName[#] &, gfs];
     
-    derivSwitch = Join[oldDerivativesUsed[eqsOrdered], GridFunctionDerivativesInExpression[pddefs, eqsOrdered]] != {};
+    derivSwitch = Join[oldDerivativesUsed[eqsOrdered], 
+      GridFunctionDerivativesInExpression[pddefs, eqsOrdered]] != {};
 
     gfsDifferentiated = Map[First,
       GridFunctionDerivativesInExpression[pddefs, eqsOrdered]];
@@ -719,25 +672,14 @@ equationLoop[eqs_,
         " on the ordering of the loop over grid points."]];
 
     (* Replace the partial derivatives *)
-
     {defsWithoutShorts, defsWithShorts} = splitPDDefsWithShorthands[pddefs, shorts];
-
-(*    Map[ComponentDerivativeOperatorStencilWidth, pddefs];*)
 
     (* This is for the custom derivative operators pddefs *)
     eqs2 = ReplaceDerivatives[defsWithoutShorts, eqsOrdered, True];
     eqs2 = ReplaceDerivatives[defsWithShorts, eqs2, False];
 
     checkEquationAssignmentOrder[eqs2, shorts];
-   code = {(*InitialiseGridLoopVariables[derivSwitch, addToStencilWidth], *)
-   functionName = ToString@lookup[cleancalc, Name];
-
-(*
-   calcCode =
-     Map[{assignVariableFromExpression[#[[1]], #[[2]]], "\n"} &,
-           replaceDerivatives[replaceWithDerivativesHidden[eqs2, localMap], {}]
-        ];
-*)
+    functionName = ToString@lookup[cleancalc, Name];
 
    (* Replace grid functions with their local forms, and replace
       partial dervatives with their precomputed values *)
@@ -758,25 +700,13 @@ equationLoop[eqs_,
      MapThread[{assignVariableFromExpression[#1[[1]], #1[[2]], #2], "\n"} &,
       {eqsReplaced, declare}];
 
+   code = {
    Join[
-   (*
-   CommentedBlock["Declare temporary variables for vectorisation",
-                  DeclareVariablesInLoopVectorised[
-                    gfsInLHS,
-                    Map[localNameVectorised, gfsInLHS],
-                    Map[localName, gfsInLHS]]],
-   *)
 
    GenericGridLoop[functionName,
    {declarePrecomputedDerivatives[dsUsed],
-    (* DeclareDerivatives[pddefs, eqs], *)
     DeclareDerivatives[defsWithoutShorts, eqsOrdered],
 
-(*
-    CommentedBlock["Assign local copies of grid functions",
-                   Map[DeclareAssignVariableInLoop["CCTK_REAL", localName[#], GridName[#]] &, 
-                       gfsInRHS]],
-*)
     CommentedBlock["Assign local copies of grid functions",
                    Map[DeclareMaybeAssignVariableInLoop[
                           "CCTK_REAL", localName[#], GridName[#],
@@ -784,26 +714,10 @@ equationLoop[eqs_,
                           "*stress_energy_state"] &,
                        gfsInRHS]],
 
-(*
-    CommentedBlock["Check for nans",
-                   Join[{"if (\n"},
-                        Map[{"    isnan (", localName[#], ") ||\n"} &, 
-                            gfsInRHS],
-                        {"    0)\n",
-                         "{\n",
-                         "  CCTK_VInfo(CCTK_THORNSTRING, \"NaN found in RHS:\");\n",
-                         "  CCTK_VInfo(CCTK_THORNSTRING, \"ipos: %d %d %d\", i, j, k);\n",
-                         "  CCTK_VInfo(CCTK_THORNSTRING, \"lbnd: %d %d %d\", cctk_lbnd[0], cctk_lbnd[1], cctk_lbnd[2]);\n",
-                         "  CCTK_VInfo(CCTK_THORNSTRING, \"lsh: %d %d %d\", cctk_lsh[0], cctk_lsh[1], cctk_lsh[2]);\n"},
-                         "  CCTK_VInfo(CCTK_THORNSTRING, \"from: %d %d %d\", cctk_lssh[CCTK_LSSH_IDX(0,0)], cctk_lssh[CCTK_LSSH_IDX(0,1)], cctk_lssh[CCTK_LSSH_IDX(0,2)]);\n"},
-                        Map[{"  CCTK_VInfo(CCTK_THORNSTRING, \"", localName[#], ": %.17g\", (double)", localName[#], ");\n"} &,
-                            gfsInRHS],
-                        {"}\n"}],
-*)
-
     CommentedBlock["Assign local copies of subblock grid functions",
-                   Map[DeclareAssignVariableInLoop["CCTK_REAL", localName[#], SubblockGridName[#]] &, 
-                       subblockGFs]],
+                   Map[DeclareAssignVariableInLoop["CCTK_REAL", localName[#], 
+                     SubblockGridName[#]] &, 
+                     subblockGFs]],
 
     CommentedBlock["Include user supplied include files",
                    Map[IncludeFile, incs]],
@@ -821,46 +735,16 @@ equationLoop[eqs_,
     CommentedBlock["Copy local copies back to grid functions",
                    Map[AssignVariableInLoop[GridName[#], localName[#]] &, 
                        gfsInLHS]],
-    (*
-    CommentedBlock["Copy local copies back to grid functions",
-                   AssignVariablesInLoopVectorised[
-                     gfsInLHS,
-                     Map[localNameVectorised, gfsInLHS],
-                     Map[localName, gfsInLHS]]],
-    *)
 
     CommentedBlock["Copy local copies back to subblock grid functions",
                    Map[AssignVariableInLoop[SubblockGridName[#], localName[#]] &, 
                        subblockGFs]],
-
-(*
-    CommentedBlock["Check for nans",
-                   Join[{"if (\n"},
-                        Map[{"    isnan (", localName[#], ") ||\n"} &,
-                            gfsInLHS],
-                        {"    0)\n",
-                         "{\n",
-                         "  CCTK_VInfo(CCTK_THORNSTRING, \"NaN found in LHS:\");\n",
-                         "  CCTK_VInfo(CCTK_THORNSTRING, \"ipos: %d %d %d\", i, j, k);\n",
-                         "  CCTK_VInfo(CCTK_THORNSTRING, \"lbnd: %d %d %d\", cctk_lbnd[0], cctk_lbnd[1], cctk_lbnd[2]);\n",
-                         "  CCTK_VInfo(CCTK_THORNSTRING, \"lsh: %d %d %d\", cctk_lsh[0], cctk_lsh[1], cctk_lsh[2]);\n"},
-                         "  CCTK_VInfo(CCTK_THORNSTRING, \"from: %d %d %d\", cctk_lssh[CCTK_LSSH_IDX(0,0)], cctk_lssh[CCTK_LSSH_IDX(0,1)], cctk_lssh[CCTK_LSSH_IDX(0,2)]);\n"},
-                        Map[{"  CCTK_VInfo(CCTK_THORNSTRING, \"", localName[#], ": %.17g\", (double)", localName[#], ");\n"} &,
-                            gfsInLHS],
-                        {"}\n"}],
-*)
 
     If[debugInLoop, Map[InfoVariable[GridName[#]] &, gfsInLHS], ""]}, opts]]
    };
 
   lhsGroupNames    = containingGroups[gfsInLHS, groups];
   actualSyncGroups = Intersection[lhsGroupNames, syncGroups];
-
-    (* This is nonsense.  You need to synchronize only if the NEXT
-    loops contain derivatives.  This cannot be determined here, so I am
-    changing the code  so that synchronization is always performed *)
-
-(*  If[Not@derivSwitch, actualSyncGroups = {}];  only sync when derivs are taken *)
 
   If[Length@actualSyncGroups > 0,
     InfoMessage[InfoFull, "Synchronizing groups: ", actualSyncGroups];

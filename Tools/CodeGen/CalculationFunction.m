@@ -147,7 +147,7 @@ lineBreak[s_, l_] :=
    Return[StringJoin[Riffle[words, " "]]]];
 
 (* Return a CodeGen block which assigns dest by evaluating expr *)
-assignVariableFromExpression[dest_, expr_] := Module[{tSym, type, cleanExpr, code},
+assignVariableFromExpression[dest_, expr_, declare_] := Module[{tSym, type, cleanExpr, code},
       
       tSym = Unique[];
       
@@ -156,7 +156,7 @@ assignVariableFromExpression[dest_, expr_] := Module[{tSym, type, cleanExpr, cod
       cleanExpr = ReplacePowers[expr] /. sym`t -> tSym;
   
       If[SOURCELANGUAGE == "C",
-        code =  type <> " " <> ToString[dest] <> " = " <> ToString[cleanExpr, CForm,       PageWidth -> Infinity] <> ";\n",
+        code = If[declare, type <> " ", ""] <> ToString[dest] <> " = " <> ToString[cleanExpr, CForm,       PageWidth -> Infinity] <> ";\n",
         code = ToString@dest <> ".eq." <> ToString[cleanExpr, FortranForm, PageWidth -> 120] <> "\n"
        ];
  
@@ -188,21 +188,6 @@ assignVariableFromExpression[dest_, expr_] := Module[{tSym, type, cleanExpr, cod
    help find problems in the construction of the translator maps. *)
 
 debugInLoop = False;
-
-
-declareVariablesForCalculation[calc_] :=
-  Module[{shorthands, localGFs},
-    shorthands = Sort@Union@Map[ToString, Union@Flatten@calculationAllUsedShorthands@calc];
-    shorthands = PartitionVarList@shorthands;
-
-    localGFs = Map[localName, Sort@Union@Map[ToString, Union@Flatten@calculationUsedGFs@calc]];
-    localGFs = PartitionVarList@localGFs;
-
-    {CommentedBlock["Declare shorthands",
-       Map[DeclareVariables[#, "// CCTK_REAL"] &, shorthands]],
-
-     CommentedBlock["Declare local copies of grid functions",
-       Map[DeclareVariables[#, "// CCTK_REAL"] &, localGFs]]}];
 
 (* Derivative precomputation *)
 
@@ -525,7 +510,6 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
     "DECLARE_CCTK_PARAMETERS;\n\n",
     If[!OptionValue[UseLoopControl], DeclareGridLoopVariables[], {}],
     DeclareFDVariables[],
-    (* declareVariablesForCalculation[cleancalc], *)
     (* declarePrecomputedDerivatives[dsUsed], *)
     (* DeclareDerivatives[pddefs, eqs], *)
     declareSubblockGFs[subblockGFs, 0],
@@ -673,6 +657,14 @@ pdCanonicalOrdering[name_[inds___] -> x_] :=
               name[f_,3,2] -> name[f,2,3]}],
       {}]];
 
+(* Given an input list l, return a list L such that L[[i]] is True
+only if l[[i]] is the first occurrence of l[[i]] in l and is not in
+the list "already" *)
+markFirst[l_List, already_List] :=
+  If[l =!= {},
+    {!MemberQ[already, First[l]]} ~Join~ markFirst[Rest[l], already ~Join~ {First[l]}],
+    {}];
+
 Options[equationLoop] = ThornOptions;
 
 equationLoop[eqs_, 
@@ -683,7 +675,7 @@ equationLoop[eqs_,
   Module[{rhss, lhss, gfsInRHS, gfsInLHS, gfsOnlyInRHS, localGFs, localMap, eqs2,
           derivSwitch, actualSyncGroups, code, functionName, calcCode,
           syncCode, loopFunction, gfsInBoth, gfsDifferentiated,
-          gfsDifferentiatedAndOnLHS},
+          gfsDifferentiatedAndOnLHS, declare, eqsReplaced},
 
     rhss = Map[#[[2]] &, eqs];
     lhss = Map[#[[1]] &, eqs];
@@ -746,11 +738,25 @@ equationLoop[eqs_,
            replaceDerivatives[replaceWithDerivativesHidden[eqs2, localMap], {}]
         ];
 *)
+
+   (* Replace grid functions with their local forms, and replace
+      partial dervatives with their precomputed values *)
+   eqsReplaced = If[useCSE, CSE, Identity][
+     replaceDerivatives[replaceWithDerivativesHidden[eqs2, localMap], {}]];
+
+   (* Construct a list, corresponding to the list of equations,
+      marking those which need their LHS variables declared.  We
+      declare variables at the same time as assigning to them as it
+      gives a performance increase over declaring them separately at
+      the start of the loop.  The local variables for the grid
+      functions which appear in the RHSs have been declared and set
+      already (DeclareMaybeAssignVariableInLoop below), so assignments
+      to these do not generate declarations here. *)
+   declare = markFirst[First /@ eqsReplaced, Map[localName, gfsInRHS]];
+
    calcCode =
-     Map[{assignVariableFromExpression[#[[1]], #[[2]]], "\n"} &,
-         If[useCSE, CSE, Identity][
-           replaceDerivatives[replaceWithDerivativesHidden[eqs2, localMap], {}]]
-        ];
+     MapThread[{assignVariableFromExpression[#1[[1]], #1[[2]], #2], "\n"} &,
+      {eqsReplaced, declare}];
 
    Join[
    (*
@@ -762,8 +768,7 @@ equationLoop[eqs_,
    *)
 
    GenericGridLoop[functionName,
-   {declareVariablesForCalculation[cleancalc],
-    declarePrecomputedDerivatives[dsUsed],
+   {declarePrecomputedDerivatives[dsUsed],
     (* DeclareDerivatives[pddefs, eqs], *)
     DeclareDerivatives[defsWithoutShorts, eqsOrdered],
 
@@ -777,7 +782,7 @@ equationLoop[eqs_,
                           "CCTK_REAL", localName[#], GridName[#],
                           StringMatchQ[ToString[GridName[#]], "eT" ~~ _ ~~ _ ~~ "[" ~~ __ ~~ "]"],
                           "*stress_energy_state"] &,
-                       gfsOnlyInRHS]],
+                       gfsInRHS]],
 
 (*
     CommentedBlock["Check for nans",

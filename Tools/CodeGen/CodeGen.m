@@ -241,7 +241,7 @@ If[SOURCELANGUAGE == "C",
 
 DeclareVariables[names_?ListQ, type_] := 
 If[SOURCELANGUAGE == "C",
-   {type, " ",    CommaInitSeparated@names, EOL[]},
+   {type, " ",    CommaSeparated@names, EOL[]},
    {type, " :: ", CommaSeparated@names,     EOL[]} (* no value init avoids implicit SAVE attribute *)
    ];
 

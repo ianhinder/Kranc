@@ -271,12 +271,6 @@ removeUnusedShorthands[calc_] :=
       removeUnusedShorthands[newCalc],
       newCalc]];
 
-declareSubblockGFs[sbgfs_, counter_] :=
-  If[Length[sbgfs] == 0,
-    {},
-    Join[{DefineVariable[sbgfs[[1]], "CCTK_REAL", "*subblock_gfs[" <> ToString[counter] <> "]"]},
-         declareSubblockGFs[Rest[sbgfs], counter + 1]]];
-
 declarePreDefinitions[pDefs_] :=
   CommentedBlock["Declare predefined quantities",
     Map[DeclareVariable[#, "// CCTK_REAL"] &, Map[First, pDefs]]];
@@ -304,7 +298,6 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
   pddefs = lookupDefault[cleancalc, PartialDerivatives, {}];
   where = lookupDefault[cleancalc, Where, Everywhere];
   addToStencilWidth = lookupDefault[cleancalc, AddToStencilWidth, 0];
-  subblockGFs = lookupDefault[cleancalc, SubblockGridFunctions, {}];
   pDefs = lookup[cleancalc, PreDefinitions];
 
   VerifyCalculation[cleancalc];
@@ -365,7 +358,6 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
     "DECLARE_CCTK_PARAMETERS;\n\n",
     If[!OptionValue[UseLoopControl], DeclareGridLoopVariables[], {}],
     DeclareFDVariables[],
-    declareSubblockGFs[subblockGFs, 0],
     declarePreDefinitions[pDefs],
 
     ConditionalOnParameterTextual["verbose > 1",
@@ -389,7 +381,7 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
 
     If[gfs != {},
       {
-	eqLoop = equationLoop[eqs, cleancalc, gfs, shorts, subblockGFs, {}, groups,
+	eqLoop = equationLoop[eqs, cleancalc, gfs, shorts, {}, groups,
           pddefs, where, addToStencilWidth, useCSE, opts]},
 
        ConditionalOnParameterTextual["verbose > 1",
@@ -507,7 +499,7 @@ Options[equationLoop] = ThornOptions;
 
 equationLoop[eqs_, 
              cleancalc_,
-             gfs_, shorts_, subblockGFs_, incs_, groups_,
+             gfs_, shorts_, incs_, groups_,
              pddefs_, where_, addToStencilWidth_, useCSE_,
              opts:OptionsPattern[]] :=
   Module[{rhss, lhss, gfsInRHS, gfsInLHS, gfsOnlyInRHS, localGFs, localMap, eqs2,
@@ -596,11 +588,6 @@ equationLoop[eqs_,
                           "*stress_energy_state"] &,
                        gfsInRHS]],
 
-    CommentedBlock["Assign local copies of subblock grid functions",
-                   Map[DeclareAssignVariableInLoop["CCTK_REAL", localName[#], 
-                     SubblockGridName[#]] &, 
-                     subblockGFs]],
-
     CommentedBlock["Include user supplied include files",
                    Map[IncludeFile, incs]],
 
@@ -614,10 +601,6 @@ equationLoop[eqs_,
     CommentedBlock["Copy local copies back to grid functions",
                    Map[AssignVariableInLoop[GridName[#], localName[#]] &, 
                        gfsInLHS]],
-
-    CommentedBlock["Copy local copies back to subblock grid functions",
-                   Map[AssignVariableInLoop[SubblockGridName[#], localName[#]] &, 
-                       subblockGFs]],
 
     If[debugInLoop, Map[InfoVariable[GridName[#]] &, gfsInLHS], ""]}, opts]]
    };

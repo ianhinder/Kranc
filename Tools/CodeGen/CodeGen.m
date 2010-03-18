@@ -100,7 +100,6 @@ GridLoop::usage = "GridLoop[block] returns a block that is looped over for every
 GridLoop::usage = "GridLoop[block] returns a block that is looped over for every " <>
   "grid point.  Must have previously set up the grid loop variables (see " <>
   "InitialiseGridLoopVariables.";
-SubblockGridName::usage = ""
 
 DeclareArray::usage = "";
 
@@ -502,12 +501,6 @@ GridName[x_] := If[SOURCELANGUAGE == "C",
                    ToString[x] <> "(i,j,k)"
                 ];
 
-SubblockGridName[x_] := If[SOURCELANGUAGE == "C",
-                   ToExpression[ToString[x] <> "[subblock_index]"],
-                   ToString[x] <> "(i,j,k)"
-                ];
-
-
 DeclareGridLoopVariables[] :=
   SeparatedBlock[
     {insertComment["Declare the variables used for looping over grid points"],
@@ -518,8 +511,7 @@ DeclareGridLoopVariables[] :=
      Map[DeclareArray[#, 6, "CCTK_INT"] &, {"is_symbnd", "is_physbnd", "is_ipbnd"}],
      Map[DeclareArray[#, 3, "CCTK_INT"] &, {"imin", "imax", "bmin", "bmax"}] *), 
 
-     If[SOURCELANGUAGE == "C", DeclareVariable["index", "// CCTK_INT"], "\n"],
-     If[SOURCELANGUAGE == "C", DeclareVariable["subblock_index", "// CCTK_INT"], "\n"]
+     If[SOURCELANGUAGE == "C", DeclareVariable["index", "// CCTK_INT"], "\n"]
   }];
 
 (* Access an element of an array; syntax is different between C and
@@ -651,8 +643,7 @@ GenericGridLoopTraditional[block_] :=
 
        { If[SOURCELANGUAGE == "C",  
             {
-              DeclareAssignVariable["int", "index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"],
-              DeclareAssignVariable["int", "subblock_index", "i - min[0] + (max[0] - min[0]) * (j - min[1] + (max[1]-min[1]) * (k - min[2]))"]
+              DeclareAssignVariable["int", "index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"]
             }
             ""],
 	 block
@@ -671,9 +662,7 @@ GenericGridLoopUsingLoopControl[functionName_, block_] :=
         indentBlock[
           {
              DeclareVariable["index", "// int"],
-             DeclareVariable["subblock_index", "// int"],
              DeclareAssignVariable["int", "index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"],
-             DeclareAssignVariable["int", "subblock_index", "i - min[0] + (max[0] - min[0]) * (j - min[1] + (max[1]-min[1]) * (k - min[2]))"],
              block
           }
         ],

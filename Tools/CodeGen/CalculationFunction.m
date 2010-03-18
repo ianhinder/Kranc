@@ -34,7 +34,6 @@ BeginPackage["CalculationFunction`", {"CodeGen`", "sym`", "MapLookup`", "KrancGr
 
 (* This is the only externally callable function *)
 CreateCalculationFunction::usage = "";
-calculationUsedGroups::usage = "";
 
 UncommentSourceSync::usage = 
   "UncommentSourceSync[source_struct] uncomments calls to CCTK_SyncGroup.";
@@ -219,11 +218,6 @@ calculationUsedGFsRHS[calc_] :=
     calcSymbols = calculationSymbolsRHS[calc];
     allGFs = allVariables[lookup[calc, Groups]];
     Intersection[calcSymbols, allGFs]];
-
-calculationUsedGroups[calc_] :=
-  Module[{gfs},
-    gfs = calculationUsedGFs[calc];
-    containingGroups[gfs, lookup[calc, Groups]]];
 
 (* Return the names of any shorthands used in the RHSs of calculation *)
 calculationRHSUsedShorthands[calc_] :=

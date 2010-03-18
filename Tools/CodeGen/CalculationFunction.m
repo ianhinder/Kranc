@@ -32,10 +32,8 @@ EndPackage[];
 BeginPackage["CalculationFunction`", {"CodeGen`", "sym`", "MapLookup`", "KrancGroups`",
   "Differencing`", "Errors`", "Helpers`"}];
 
-(* This is the only externally callable function *)
 CreateCalculationFunction::usage = "";
 VerifyCalculation::usage = "";
-allVariables::usage = "";
 
 Begin["`Private`"];
 
@@ -76,10 +74,6 @@ markFirst[l_List, already_List] :=
     {!MemberQ[already, First[l]]} ~Join~ markFirst[Rest[l], already ~Join~ {First[l]}],
     {}];
 
-(* Given a map (i.e. a list of rules { a -> A, b -> B, ... } return the
-   inverse map { A -> a, B -> b, ...} *)
-invertMap[m_] := Map[#[[2]] -> #[[1]] &, m];
-
 VerifyListContent[l_, type_, while_] :=
   Module[{types},
     If[!(Head[l] === List),
@@ -95,25 +89,6 @@ VerifyListContent[l_, type_, while_] :=
    Calculations
    -------------------------------------------------------------------------- *)
 
-(* Return the names of any gridfunctions used in the calculation *)
-calculationUsedGFs[calc_] :=
-  Module[{calcSymbols, allGFs},
-    calcSymbols = calculationSymbols[calc];
-    allGFs = allVariables[lookup[calc, Groups]];
-    Intersection[calcSymbols, allGFs]];
-
-calculationUsedGFsLHS[calc_] :=
-  Module[{calcSymbols, allGFs},
-    calcSymbols = calculationSymbolsLHS[calc];
-    allGFs = allVariables[lookup[calc, Groups]];
-    Intersection[calcSymbols, allGFs]];
-
-calculationUsedGFsRHS[calc_] :=
-  Module[{calcSymbols, allGFs},
-    calcSymbols = calculationSymbolsRHS[calc];
-    allGFs = allVariables[lookup[calc, Groups]];
-    Intersection[calcSymbols, allGFs]];
-
 (* Return the names of any shorthands used in the RHSs of calculation *)
 calculationRHSUsedShorthands[calc_] :=
   Module[{calcSymbols, allShorthands},
@@ -125,13 +100,6 @@ calculationRHSUsedShorthands[calc_] :=
 calculationLHSUsedShorthands[calc_] :=
   Module[{calcSymbols, allShorthands},
     calcSymbols = calculationSymbolsLHS[calc];
-    allShorthands = lookupDefault[calc, Shorthands, {}];
-    Intersection[calcSymbols, allShorthands]];
-
-(* Return the names of any shorthands used anywhere in a calculation *)
-calculationAllUsedShorthands[calc_] :=
-  Module[{calcSymbols, allShorthands},
-    calcSymbols = calculationSymbols[calc];
     allShorthands = lookupDefault[calc, Shorthands, {}];
     Intersection[calcSymbols, allShorthands]];
 
@@ -153,6 +121,7 @@ calculationSymbolsRHS[calc_] :=
     Cases[allAtoms, x_Symbol]];
 
 (* Return all the functions used in a calculation *)
+(* Not currently used *)
 functionsInCalculation[calc_] :=
   Module[{eqs, x},
     eqs = lookup[calc, Equations];
@@ -203,20 +172,6 @@ removeUnusedShorthands[calc_] :=
     If[!(eqs === neweqs),
       removeUnusedShorthands[newCalc],
       newCalc]];
-
-
-(* --------------------------------------------------------------------------
-   Groups
-   -------------------------------------------------------------------------- *)
-
-allVariables[groups_] :=
-  Flatten[Map[variablesInGroup, groups], 1];
-
-variablesInGroup[g_] :=
-  g[[2]];
-
-groupName[g_] :=
-  g[[1]];
 
 (* --------------------------------------------------------------------------
    Variables
@@ -415,7 +370,7 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
 
   VerifyCalculation[cleancalc];
 
-  gfs = allVariables[groups];
+  gfs = allGroupVariables[groups];
   functionName = ToString@lookup[cleancalc, Name];
   bodyFunctionName = functionName <> "_Body";
 
@@ -445,7 +400,7 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
 
   (* Check all the function names *)
 
-  functionsPresent = functionsInCalculation[cleancalc];
+  functionsPresent = functionsInCalculation[cleancalc]; (* Not currently used *)
 
   (* Check that there are no shorthands defined with the same name as a grid function *)
   If[!(Intersection[shorts, gfs] === {}),

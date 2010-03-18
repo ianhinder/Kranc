@@ -646,7 +646,7 @@ rhsGroupStruct[groupName_, timelevels_, maxtimelevels_] :=
 
 groupsSetInCalc[calc_, groups_] :=
   Module[{gfs, eqs, lhss, gfsInLHS, lhsGroupNames},
-    gfs = allVariables[groups];
+    gfs = allGroupVariables[groups];
     eqs = lookup[calc, Equations];
     lhss = Map[First, eqs];
     gfsInLHS = Union[Cases[lhss, _ ? (MemberQ[gfs,#] &), Infinity]];

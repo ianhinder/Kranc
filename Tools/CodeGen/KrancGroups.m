@@ -54,6 +54,7 @@ VerifyGroupName;
 SetGroupName;
 AddGroupExtra;
 GroupTimelevels;
+allGroupVariables;
 
 Begin["`Private`"];
 
@@ -219,13 +220,13 @@ qualifyGroups[groups_, names_, imp_, defImp_] :=
 
 containingGroups[vars_, groups_] :=
   Module[{allVars},
-    allVars = Apply[Join, Map[variablesInGroup, groups]];
+    allVars = Apply[Join, Map[groupVariables, groups]];
     Map[If[!MemberQ[allVars, #],
            ThrowError[ToString[#] <> 
                  " is not a member of any of the following groups: ",
                  groups]] &, vars];
 
-    Union[Map[groupName, Select[groups, Intersection[variablesInGroup[#], vars] != {} &]]]];
+    Union[Map[groupName, Select[groups, Intersection[groupVariables[#], vars] != {} &]]]];
 
 
 qualifyGFName[gfname_, allgroups_, defaultImp_] := 
@@ -240,6 +241,8 @@ qualifyGFName[gfname_, allgroups_, defaultImp_] :=
 ]
   ];
 
+allGroupVariables[groups_] :=
+  Flatten[Map[groupVariables, groups], 1];
 
 End[];
 

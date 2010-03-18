@@ -21,16 +21,16 @@
 BeginPackage["sym`"];
 
 {GridFunctions, Shorthands, Equations, t, DeclarationIncludes,
-LoopPreIncludes, GroupImplementations, PartialDerivatives,
-NoSimplify, Boundary, Interior, InteriorNoSync, Where,
-AddToStencilWidth, Everywhere, normal1, normal2, normal3}
-
-{INV, SQR, CUB, QAD, dot, pow, exp,dx,dy,dz, idx, idy, idz}
+LoopPreIncludes, GroupImplementations, PartialDerivatives, NoSimplify,
+Boundary, Interior, InteriorNoSync, Where, AddToStencilWidth,
+Everywhere, normal1, normal2, normal3, INV, SQR, CUB, QAD, dot, pow,
+exp, dx, dy, dz, idx, idy, idz}
 
 EndPackage[];
 
-BeginPackage["CalculationFunction`", {"CodeGen`", "sym`", "MapLookup`", "KrancGroups`",
-  "Differencing`", "Errors`", "Helpers`"}];
+BeginPackage["CalculationFunction`", {"CodeGen`", "sym`",
+  "MapLookup`", "KrancGroups`", "Differencing`", "Errors`",
+  "Helpers`"}];
 
 CreateCalculationFunction::usage = "";
 VerifyCalculation::usage = "";
@@ -131,21 +131,17 @@ functionsInCalculation[calc_] :=
 
 VerifyCalculation[calc_] :=
   Module[{calcName},
-
     calcName = lookupDefault[calc, Name, "<unknown>"];
-
     If[Head[calc] != List,
       ThrowError["Invalid Calculation structure: " <> ToString[calc]]];
-
     VerifyListContent[calc, Rule,
       " while checking the calculation with name " <> ToString[calcName]];
-
     If[mapContains[calc, Shorthands],
       VerifyListContent[lookup[calc, Shorthands], Symbol,
         " while checking the Shorthands member of the calculation called " <> ToString[calcName]]];
-
     If[mapContains[calc, Equations],
-      VerifyListContent[lookup[calc, Equations], Rule, " while checking the equation" <> ToString[calcName]],
+      VerifyListContent[lookup[calc, Equations], Rule,
+        " while checking the equation" <> ToString[calcName]],
       ThrowError["Invalid Calculation structure. Must contain Equations element: ",
         ToString[calc], " while checking the calculation called ", ToString[calcName]]]];
 
@@ -154,21 +150,19 @@ VerifyCalculation[calc_] :=
    shorthand might be missed if the order of assignments is
    pathalogical enough (e.g. {s1 -> s2, s2 -> s1} would not be
    removed). *)
-
 removeUnusedShorthands[calc_] :=
   Module[{rhsShorthands, lhsShorthands, unusedButAssignedShorthands, removeShorts,
     eqs, neweqs, newCalc},
-    rhsShorthands = calculationRHSUsedShorthands[calc];
-    lhsShorthands = calculationLHSUsedShorthands[calc];
-    unusedButAssignedShorthands = Complement[lhsShorthands, rhsShorthands];
 
-    eqs = lookup[calc, Equations];
     removeShorts[eqlist_] :=
       Select[eqlist, (!MemberQ[unusedButAssignedShorthands, First[#]]) &];
 
+    rhsShorthands = calculationRHSUsedShorthands[calc];
+    lhsShorthands = calculationLHSUsedShorthands[calc];
+    unusedButAssignedShorthands = Complement[lhsShorthands, rhsShorthands];
+    eqs = lookup[calc, Equations];
     neweqs = removeShorts[eqs];
     newCalc = mapReplace[calc, Equations, neweqs];
-
     If[!(eqs === neweqs),
       removeUnusedShorthands[newCalc],
       newCalc]];
@@ -185,7 +179,8 @@ removeRHS[x_] :=
 
 (* Take a grid function name and return a name suitable for use in a local
    computation *)
-localName[x_] := ToExpression[ToString[x] <> "L"];
+localName[x_] :=
+  ToExpression[ToString[x] <> "L"];
 
 (* --------------------------------------------------------------------------
    Predefinitions
@@ -200,7 +195,7 @@ definePreDefinitions[pDefs_] :=
    -------------------------------------------------------------------------- *)
 
 equationUsesShorthand[eq_, shorthand_] :=
-    Length[Cases[{Last[eq]}, shorthand, Infinity]] != 0;
+  Length[Cases[{Last[eq]}, shorthand, Infinity]] != 0;
 
 (* Check that the given list of equations assigns things in the
    correct order.  Specifically, shorthands must not be used before
@@ -223,22 +218,22 @@ printEq[eq_] :=
 (* Collect and simplify terms *)
 simpCollect[collectList_, eqrhs_, localvar_, debug_] :=
   Module[{rhs, collectCoeff, all, localCollectList},
-      InfoMessage[InfoFull, localvar];
+    InfoMessage[InfoFull, localvar];
 
-      rhs = eqrhs;
+    rhs = eqrhs;
 
-      rhs = rhs /. Abs[MathTensor`Detg] -> MathTensor`Detg;
-      InfoMessage[InfoFull, "ByteCount[rhs]: ", ByteCount@rhs];
+    rhs = rhs /. Abs[MathTensor`Detg] -> MathTensor`Detg;
+    InfoMessage[InfoFull, "ByteCount[rhs]: ", ByteCount@rhs];
 
-      localCollectList = collectList /. VAR :> removeRHS@localvar;
+    localCollectList = collectList /. VAR :> removeRHS@localvar;
 
-      collectCoeff = Collect[rhs, localCollectList];
-      InfoMessage[InfoFull, "ByteCount[terms collected]: ", ByteCount@collectCoeff];
+    collectCoeff = Collect[rhs, localCollectList];
+    InfoMessage[InfoFull, "ByteCount[terms collected]: ", ByteCount@collectCoeff];
 
-      all = Collect[rhs, localCollectList, Simplify];
-      InfoMessage[InfoFull, "ByteCount[simplified rhs]: ", ByteCount@all];
+    all = Collect[rhs, localCollectList, Simplify];
+    InfoMessage[InfoFull, "ByteCount[simplified rhs]: ", ByteCount@all];
 
-      all];
+    all];
 
 (* Return a CodeGen block which assigns dest by evaluating expr *)
 assignVariableFromExpression[dest_, expr_, declare_] :=
@@ -372,22 +367,21 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
   InfoMessage[InfoFull, "Grid functions: ", gfs];
   InfoMessage[InfoFull, "Groups: ", Map[groupName, groups]];
 
-   If[Length@lookupDefault[cleancalc, CollectList, {}] > 0,
-     eqs = Map[First[#] -> simpCollect[lookup[cleancalc, CollectList],
-                                             Last[ #],
-                                             First[#], debug]&,
-                 eqs],
+  If[Length@lookupDefault[cleancalc, CollectList, {}] > 0,
+    eqs = Map[First[#] -> simpCollect[lookup[cleancalc, CollectList],
+                                      Last[#],
+                                      First[#], debug] &,
+              eqs],
 
-     If[!lookupDefault[cleancalc, NoSimplify, False],
-        InfoMessage[InfoFull, "Simplifying equations", eqs];
-        eqs = Simplify[eqs, {r>0}]]];
+    If[!lookupDefault[cleancalc, NoSimplify, False],
+       InfoMessage[InfoFull, "Simplifying equations", eqs];
+       eqs = Simplify[eqs, {r>0}]]];
 
   InfoMessage[InfoFull, "Equations:"];
 
   Map[printEq, eqs];
 
   (* Check all the function names *)
-
   functionsPresent = functionsInCalculation[cleancalc]; (* Not currently used *)
 
   (* Check that there are no shorthands defined with the same name as a grid function *)
@@ -404,9 +398,9 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
   unknownSymbols = Complement[allSymbols, knownSymbols];
 
   If[unknownSymbols != {},
-     Module[{},
-       ThrowError["Unknown symbols in calculation.  Symbols are:", unknownSymbols,
-         "Calculation is:", cleancalc]]];
+     ThrowError["Unknown symbols in calculation.  Symbols are:", unknownSymbols,
+       "Calculation is:", cleancalc]];
+
   {
   DefineFunction[bodyFunctionName, "void", "cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const min[3], int const max[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[]",
   {
@@ -426,8 +420,6 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
 
     InitialiseFDVariables[],
     definePreDefinitions[pDefs],
-
-    (* This is a very coarse test *)
 
     If[Cases[{pddefs}, SBPDerivative[_], Infinity] != {},
       CommentedBlock["Compute Summation By Parts derivatives",
@@ -469,13 +461,11 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
 
 Options[equationLoop] = ThornOptions;
 
-equationLoop[eqs_,
-             cleancalc_,
-             gfs_, shorts_, incs_, groups_,
-             pddefs_, where_, addToStencilWidth_, useCSE_,
+equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
+             where_, addToStencilWidth_, useCSE_,
              opts:OptionsPattern[]] :=
-  Module[{rhss, lhss, gfsInRHS, gfsInLHS, gfsOnlyInRHS, localGFs, localMap, eqs2,
-          derivSwitch, code, functionName, calcCode,
+  Module[{rhss, lhss, gfsInRHS, gfsInLHS, gfsOnlyInRHS, localGFs,
+          localMap, eqs2, derivSwitch, code, functionName, calcCode,
           loopFunction, gfsInBoth, gfsDifferentiated,
           gfsDifferentiatedAndOnLHS, declare, eqsReplaced},
 
@@ -519,66 +509,60 @@ equationLoop[eqs_,
 
     (* Replace the partial derivatives *)
     {defsWithoutShorts, defsWithShorts} = splitPDDefsWithShorthands[pddefs, shorts];
-
-    (* This is for the custom derivative operators pddefs *)
     eqs2 = ReplaceDerivatives[defsWithoutShorts, eqsOrdered, True];
     eqs2 = ReplaceDerivatives[defsWithShorts, eqs2, False];
 
     checkEquationAssignmentOrder[eqs2, shorts];
     functionName = ToString@lookup[cleancalc, Name];
 
-   (* Replace grid functions with their local forms, and replace
-      partial dervatives with their precomputed values *)
-   eqsReplaced = If[useCSE, CSE, Identity][
-     (* replaceDerivatives[replaceWithDerivativesHidden[ *) eqs2 /. localMap (*], {}] *) ];
+    (* Replace grid functions with their local forms *)
+    eqsReplaced = eqs2 /. localMap;
 
-   (* Construct a list, corresponding to the list of equations,
-      marking those which need their LHS variables declared.  We
-      declare variables at the same time as assigning to them as it
-      gives a performance increase over declaring them separately at
-      the start of the loop.  The local variables for the grid
-      functions which appear in the RHSs have been declared and set
-      already (DeclareMaybeAssignVariableInLoop below), so assignments
-      to these do not generate declarations here. *)
-   declare = markFirst[First /@ eqsReplaced, Map[localName, gfsInRHS]];
+    If[useCSE,
+      eqsReplaced = CSE[eqsReplaced]];
 
-   calcCode =
-     MapThread[{assignVariableFromExpression[#1[[1]], #1[[2]], #2], "\n"} &,
-      {eqsReplaced, declare}];
+    (* Construct a list, corresponding to the list of equations,
+       marking those which need their LHS variables declared.  We
+       declare variables at the same time as assigning to them as it
+       gives a performance increase over declaring them separately at
+       the start of the loop.  The local variables for the grid
+       functions which appear in the RHSs have been declared and set
+       already (DeclareMaybeAssignVariableInLoop below), so assignments
+       to these do not generate declarations here. *)
+    declare = markFirst[First /@ eqsReplaced, Map[localName, gfsInRHS]];
 
-   code = {
-   Join[
+    calcCode =
+      MapThread[{assignVariableFromExpression[#1[[1]], #1[[2]], #2], "\n"} &,
+       {eqsReplaced, declare}];
 
-   GenericGridLoop[functionName,
-   {
-    DeclareDerivatives[defsWithoutShorts, eqsOrdered],
+    GenericGridLoop[functionName,
+    {
+      DeclareDerivatives[defsWithoutShorts, eqsOrdered],
 
-    CommentedBlock["Assign local copies of grid functions",
-                   Map[DeclareMaybeAssignVariableInLoop[
-                          "CCTK_REAL", localName[#], GridName[#],
-                          StringMatchQ[ToString[GridName[#]], "eT" ~~ _ ~~ _ ~~ "[" ~~ __ ~~ "]"],
-                          "*stress_energy_state"] &,
-                       gfsInRHS]],
+      CommentedBlock["Assign local copies of grid functions",
+        Map[DeclareMaybeAssignVariableInLoop[
+              "CCTK_REAL", localName[#], GridName[#],
+              StringMatchQ[ToString[GridName[#]], "eT" ~~ _ ~~ _ ~~ "[" ~~ __ ~~ "]"],
+                "*stress_energy_state"] &,
+            gfsInRHS]],
 
-    CommentedBlock["Include user supplied include files",
-                   Map[IncludeFile, incs]],
+      CommentedBlock["Include user supplied include files",
+        Map[IncludeFile, incs]],
 
-    CommentedBlock["Precompute derivatives",
-                   PrecomputeDerivatives[defsWithoutShorts, eqsOrdered]],
+      CommentedBlock["Precompute derivatives",
+        PrecomputeDerivatives[defsWithoutShorts, eqsOrdered]],
 
-    CommentedBlock["Calculate temporaries and grid functions", calcCode],
+      CommentedBlock["Calculate temporaries and grid functions", calcCode],
 
-    If[debugInLoop, Map[InfoVariable[#[[1]]] &, (eqs2 /. localMap)], ""],
+      If[debugInLoop,
+        Map[InfoVariable[#[[1]]] &, (eqs2 /. localMap)],
+        ""],
 
-    CommentedBlock["Copy local copies back to grid functions",
-                   Map[AssignVariableInLoop[GridName[#], localName[#]] &,
-                       gfsInLHS]],
+      CommentedBlock["Copy local copies back to grid functions",
+        Map[AssignVariableInLoop[GridName[#], localName[#]] &,
+            gfsInLHS]],
 
-    If[debugInLoop, Map[InfoVariable[GridName[#]] &, gfsInLHS], ""]}, opts]]
-   };
-
-code
-];
+      If[debugInLoop, Map[InfoVariable[GridName[#]] &, gfsInLHS], ""]}, opts]];
 
 End[];
 

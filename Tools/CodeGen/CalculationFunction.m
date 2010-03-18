@@ -34,14 +34,6 @@ BeginPackage["CalculationFunction`", {"CodeGen`", "sym`", "MapLookup`", "KrancGr
 
 (* This is the only externally callable function *)
 CreateCalculationFunction::usage = "";
-
-UncommentSourceSync::usage = 
-  "UncommentSourceSync[source_struct] uncomments calls to CCTK_SyncGroup.";
-
-GrepSyncGroups::usage = 
-  "GrepSyncGroups[source_struct] 'greps' a list of groups to be SYNC'ed from code " <>
-  "produced by CreateCalculationFunction."
-
 VerifyCalculation::usage = "";
 allVariables::usage = "";
 
@@ -331,41 +323,6 @@ removeUnusedShorthands[calc_] :=
       removeUnusedShorthands[newCalc],
       newCalc]];
 
-syncGroup[name_] :=
- If[SOURCELANGUAGE == "C",
-  {"/* SYNC: "<>name<>" */\n", "/* sync via schedule instead of CCTK_SyncGroup(cctkGH, \"", name, "\"); -cut- */\n"},
-  {"/* SYNC: "<>name<>" */\n", "/* sync via schedule instead of call CCTK_SyncGroup(i, cctkGH, \"", name, "\") -cut- */\n"}
-  ];
-
-UncommentSourceSync[setRHS_]:= Module[{cleanRHS},
-   cleanRHS = Map[SafeStringReplace[#, "/* sync via schedule instead of ", ""]&, setRHS, Infinity];
-   cleanRHS = Map[SafeStringReplace[#, ") -cut- */", ")"]&,  cleanRHS, Infinity]; (* for Fortran *)
-   cleanRHS = Map[SafeStringReplace[#, "); -cut- */", ");"]&, cleanRHS, Infinity]; (* for C       *)
-
-   cleanRHS
-];
-
-InsertSyncFuncName[setRHS_, funcName_]:=
-     Map[SafeStringReplace[#, "/* SYNC: ", "/* SYNC: " <> funcName <> "//"]&, setRHS, Infinity];
-
-GrepSyncGroups[setRHS_] := 
-  Module[{grepSYNC},
-    grepSYNC = Map[PickMatch[#, "*SYNC*"] &, Flatten[setRHS, Infinity]];
-    grepSYNC = Select[grepSYNC, IsNotEmptyString];
-
-    grepSYNC = Map[StringReplace[#, "/* SYNC: " -> ""]&, grepSYNC];
-    grepSYNC = Map[StringReplace[#, "*/"        -> ""]&, grepSYNC];
-
-    grepSYNC];
-
-GrepSyncGroups[x_, func_] := 
-  Module[{pick},
-    pick = GrepSyncGroups[x];
-    pick = Map[PickMatch[#, func <> "//*"] & , pick];
-    pick = Select[pick, IsNotEmptyString];
-    
-    pick = Map[StringReplace[#,  func <> "//" -> ""] &, pick]];
-
 declareSubblockGFs[sbgfs_, counter_] :=
   If[Length[sbgfs] == 0,
     {},
@@ -386,15 +343,14 @@ Options[CreateCalculationFunction] = ThornOptions;
 
 CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
   Module[{gfs, allSymbols, knownSymbols,
-          shorts, eqs, syncGroups, parameters,
-          functionName, dsUsed, groups, pddefs, cleancalc, numeq, eqLoop, GrepSYNC, where, 
+          shorts, eqs, parameters,
+          functionName, dsUsed, groups, pddefs, cleancalc, numeq, eqLoop, where,
           addToStencilWidth, pDefs},
 
   cleancalc = removeUnusedShorthands[calc];
   shorts = lookupDefault[cleancalc, Shorthands, {}];
 
   eqs    = lookup[cleancalc, Equations];
-  syncGroups = lookupDefault[cleancalc, SyncGroups, {}];
   parameters = lookupDefault[cleancalc, Parameters, {}];
   groups = lookup[cleancalc, Groups];
   pddefs = lookupDefault[cleancalc, PartialDerivatives, {}];
@@ -491,19 +447,8 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
     If[gfs != {},
       {
 	eqLoop = Map[equationLoop[#, cleancalc, dsUsed, gfs, shorts, subblockGFs, {}, groups, 
-          syncGroups, pddefs, where, addToStencilWidth, useCSE, opts] &, eqs]},
+          pddefs, where, addToStencilWidth, useCSE, opts] &, eqs]},
 
-       (* search for SYNCs *)
-       If[numeq <= 1,
-         GrepSYNC = GrepSyncGroups[eqLoop],
-         GrepSYNC = {};
-         eqLoop = UncommentSourceSync[eqLoop];
-         InfoMessage[Warning, 
-           "> 1 loop in thorn -> scheduling in source code, incompatible with Multipatch!"]];
-
-       InfoMessage[InfoFull, "grepSync from eqLoop: ",GrepSyncGroups[eqLoop]];
-
-       InsertSyncFuncName[eqLoop, lookup[cleancalc, Name]];
        ConditionalOnParameterTextual["verbose > 1",
          "CCTK_VInfo(CCTK_THORNSTRING,\"Leaving " <> bodyFunctionName <> "\");\n"],
       {}]
@@ -619,12 +564,12 @@ Options[equationLoop] = ThornOptions;
 
 equationLoop[eqs_, 
              cleancalc_, dsUsed_,
-             gfs_, shorts_, subblockGFs_, incs_, groups_, syncGroups_, 
+             gfs_, shorts_, subblockGFs_, incs_, groups_,
              pddefs_, where_, addToStencilWidth_, useCSE_,
              opts:OptionsPattern[]] :=
   Module[{rhss, lhss, gfsInRHS, gfsInLHS, gfsOnlyInRHS, localGFs, localMap, eqs2,
-          derivSwitch, actualSyncGroups, code, functionName, calcCode,
-          syncCode, loopFunction, gfsInBoth, gfsDifferentiated,
+          derivSwitch, code, functionName, calcCode,
+          loopFunction, gfsInBoth, gfsDifferentiated,
           gfsDifferentiatedAndOnLHS, declare, eqsReplaced},
 
     rhss = Map[#[[2]] &, eqs];
@@ -736,16 +681,6 @@ equationLoop[eqs_,
 
     If[debugInLoop, Map[InfoVariable[GridName[#]] &, gfsInLHS], ""]}, opts]]
    };
-
-  lhsGroupNames    = containingGroups[gfsInLHS, groups];
-  actualSyncGroups = Intersection[lhsGroupNames, syncGroups];
-
-  If[Length@actualSyncGroups > 0,
-    InfoMessage[InfoFull, "Synchronizing groups: ", actualSyncGroups];
-     syncCode = Map[syncGroup, actualSyncGroups];
-
-    AppendTo[code, CommentedBlock["Synchronize the groups that have just been set", syncCode]];
-];
 
 code
 ];

@@ -186,20 +186,14 @@ removeRHS[x_] :=
 (* Take a grid function name and return a name suitable for use in a local
    computation *)
 localName[x_] := ToExpression[ToString[x] <> "L"];
-localNameVectorised[x_] := ToExpression[ToString[x] <> "V"];
 
 (* --------------------------------------------------------------------------
    Predefinitions
    -------------------------------------------------------------------------- *)
 
-declarePreDefinitions[pDefs_] :=
-  CommentedBlock["Declare predefined quantities",
-    Map[DeclareVariable[#, "// CCTK_REAL"] &, Map[First, pDefs]]];
-
 definePreDefinitions[pDefs_] :=
   CommentedBlock["Initialize predefined quantities",
     Map[DeclareAssignVariable["CCTK_REAL", #[[1]], #[[2]]] &, pDefs]];
-
 
 (* --------------------------------------------------------------------------
    Equations
@@ -225,12 +219,6 @@ printEq[eq_] :=
     rhsSplit = split[Expand@ReplacePowers@rhs];
     rhsString = ToString@CForm[rhsSplit[[1]]] <> rhsSplit[[2]];
     InfoMessage[InfoFull, " " <> ToString@lhs <> " -> " <> rhsString]];
-
-simplifyEquationList[eqs_] :=
-  Map[simplifyEquation, eqs];
-
-simplifyEquation[lhs_ -> rhs_] :=
-  lhs -> Simplify[rhs];
 
 (* Collect and simplify terms *)
 simpCollect[collectList_, eqrhs_, localvar_, debug_] :=
@@ -426,7 +414,6 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
     "DECLARE_CCTK_PARAMETERS;\n\n",
     If[!OptionValue[UseLoopControl], DeclareGridLoopVariables[], {}],
     DeclareFDVariables[],
-    declarePreDefinitions[pDefs],
 
     ConditionalOnParameterTextual["verbose > 1",
       "CCTK_VInfo(CCTK_THORNSTRING,\"Entering " <> bodyFunctionName <> "\");\n"],
@@ -592,7 +579,6 @@ equationLoop[eqs_,
 
 code
 ];
-
 
 End[];
 

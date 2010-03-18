@@ -756,7 +756,7 @@ Options[CreateSetterSourceWrapper] = ThornOptions;
 
 CreateSetterSourceWrapper[calc_, parameters_, derivs_, useCSE_, opts:OptionsPattern[]] :=
   Module[{modCalc},
-    modCalc = Join[calc /. ((Equations -> {es___}) -> (Equations -> {{es}})), 
+    modCalc = Join[calc,
       {Parameters -> parameters},
       {PartialDerivatives -> derivs}];
 

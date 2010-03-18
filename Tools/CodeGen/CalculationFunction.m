@@ -290,17 +290,12 @@ VerifyCalculation[calc_] :=
         " while checking the Shorthands member of the calculation called " <> ToString[calcName]]];
 
     If[mapContains[calc, Equations],
-      VerifyListContent[First[lookup[calc, Equations]], Rule, " while checking the equation" <> ToString[calcName]],
+      VerifyListContent[lookup[calc, Equations], Rule, " while checking the equation" <> ToString[calcName]],
       ThrowError["Invalid Calculation structure. Must contain Equations element: ", 
         ToString[calc], " while checking the calculation called ", ToString[calcName]]]];
 
 (* Remove equations in the calculation which assign to shorthands
-   which are never used. Do not modify the Shorthands entry. This
-   routine has two shortcomings.  First, it does not get rid of as
-   many shorthand assignments as it could in the case where there is
-   more than one list of equations in Equations.  I do not intend to
-   fix this as I consider the feature of having more than one list of
-   equations to be obsolete.  The second shortcoming is that an unused
+   which are never used. Do not modify the Shorthands entry. An unused
    shorthand might be missed if the order of assignments is
    pathalogical enough (e.g. {s1 -> s2, s2 -> s1} would not be
    removed). *)
@@ -316,7 +311,7 @@ removeUnusedShorthands[calc_] :=
     removeShorts[eqlist_] :=
       Select[eqlist, (!MemberQ[unusedButAssignedShorthands, First[#]]) &];
 
-    neweqs = Map[removeShorts, eqs];
+    neweqs = removeShorts[eqs];
     newCalc = mapReplace[calc, Equations, neweqs];
 
     If[!(eqs === neweqs),
@@ -344,7 +339,7 @@ Options[CreateCalculationFunction] = ThornOptions;
 CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
   Module[{gfs, allSymbols, knownSymbols,
           shorts, eqs, parameters,
-          functionName, dsUsed, groups, pddefs, cleancalc, numeq, eqLoop, where,
+          functionName, dsUsed, groups, pddefs, cleancalc, eqLoop, where,
           addToStencilWidth, pDefs},
 
   cleancalc = removeUnusedShorthands[calc];
@@ -358,10 +353,6 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
   addToStencilWidth = lookupDefault[cleancalc, AddToStencilWidth, 0];
   subblockGFs = lookupDefault[cleancalc, SubblockGridFunctions, {}];
   pDefs = lookup[cleancalc, PreDefinitions];
-
-  numeq = Length@eqs;
-
-  InfoMessage[InfoFull, "number of equations in calculation: ", numeq];
 
   VerifyCalculation[cleancalc];
 
@@ -381,10 +372,10 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
   InfoMessage[InfoFull, "Groups: ", Map[groupName, groups]];
 
    If[Length@lookupDefault[cleancalc, CollectList, {}] > 0,
-     eqs = Table[Map[First[#] -> simpCollect[lookup[cleancalc, CollectList], 
+     eqs = Map[First[#] -> simpCollect[lookup[cleancalc, CollectList], 
                                              Last[ #], 
-                                             First[#], debug]&, 
-                 eqs[[i]] ], {i, 1, Length@eqs}],
+                                             First[#], debug]&,
+                 eqs],
 
      If[!lookupDefault[cleancalc, NoSimplify, False], 
         InfoMessage[InfoFull, "Simplifying equations", eqs];
@@ -392,7 +383,7 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
 
   InfoMessage[InfoFull, "Equations:"];
 
-  Map[Map[printEq, #]&, eqs];
+  Map[printEq, eqs];
 
   (* Check all the function names *)
 
@@ -446,8 +437,8 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
 
     If[gfs != {},
       {
-	eqLoop = Map[equationLoop[#, cleancalc, dsUsed, gfs, shorts, subblockGFs, {}, groups, 
-          pddefs, where, addToStencilWidth, useCSE, opts] &, eqs]},
+	eqLoop = equationLoop[eqs, cleancalc, dsUsed, gfs, shorts, subblockGFs, {}, groups,
+          pddefs, where, addToStencilWidth, useCSE, opts]},
 
        ConditionalOnParameterTextual["verbose > 1",
          "CCTK_VInfo(CCTK_THORNSTRING,\"Leaving " <> bodyFunctionName <> "\");\n"],

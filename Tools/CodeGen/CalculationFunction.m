@@ -21,8 +21,8 @@
 BeginPackage["sym`"];
 
 {GridFunctions, Shorthands, Equations, t, DeclarationIncludes,
-LoopPreIncludes, GroupImplementations, PartialDerivatives, Dplus1,
-NoSimplify, Dplus2, Dplus3, Boundary, Interior, InteriorNoSync, Where,
+LoopPreIncludes, GroupImplementations, PartialDerivatives,
+NoSimplify, Boundary, Interior, InteriorNoSync, Where,
 AddToStencilWidth, Everywhere, normal1, normal2, normal3}
 
 {INV, SQR, CUB, QAD, dot, pow, exp,dx,dy,dz, idx, idy, idz} 
@@ -77,38 +77,6 @@ localNameVectorised[x_] := ToExpression[ToString[x] <> "V"];
 (* Given a map (i.e. a list of rules { a -> A, b -> B, ... } return the
    inverse map { A -> a, B -> b, ...} *) 
 invertMap[m_] := Map[#[[2]] -> #[[1]] &, m];
-
-(* A convenient list of the derivative symbols *)
-derivativeHeads = 
-  {D1, D2, D3, D11, D21, D22, D31, D32, D33, Dplus1, Dplus2, Dplus3};
-
-(* Take an expression containing derivatives (i.e. D1[<stuff> etc) and
-   "hide" all the derivatives and their contents by replacing them
-   with unique new symbols.  So D1[g11] would become $NEWSYMBOL1 or
-   something.  Return a list whose first element is the replaced
-   expression and whose second element is a map (list of rules) which
-   can be used to return the symbols to the derivatives *)
-hideDerivatives[x_] :=
-  Module[{derivatives, unhide, hide},
-    derivatives = Union[Cases[x, _ ? (MemberQ[derivativeHeads, #] &)[__],Infinity]];
-    unhide = Map[Unique[] -> # &, derivatives];
-    hide = invertMap[unhide];
-    {x /. hide, unhide}];
-
-(* Apply the map (list of rules) to the expression x, but avoid replacing
-   anything in a derivative (D1[<stuff>]) by first "hiding" the derivatives. *)
-replaceWithDerivativesHidden[x_, map_] :=
-  Module[{hide = hideDerivatives[x], newExpr, unhide},
-    newExpr = hide[[1]]; (* The expression with the derivatives hidden *)
-    unhide = hide[[2]]; (* The map to unhide the derivatives *)
-    (newExpr /. map) /. unhide];
-
-(* Change D21[g11] into D21[g11,i,j,k] (for example)*)
-replaceDerivatives[x_, derivRules_] :=
-  Module[{},
-    replaceStandard = (d_ ? (MemberQ[derivativeHeads, #] &)[f_] -> d[f,Symbol["i"],Symbol["j"],Symbol["k"]]);
-    replaceCustom = Flatten[derivRules,1];
-    x /. replaceStandard];
 
 (* Take a string s and break it into separate lines using l as a guide
    to the line length.  If a word (sequence of non-whitespace
@@ -165,21 +133,6 @@ assignVariableFromExpression[dest_, expr_, declare_] :=
    do CCTK_INFO on the variables as they are translated.  This can
    help find problems in the construction of the translator maps. *)
 debugInLoop = False;
-
-(* Derivative precomputation *)
-oldDerivativesUsed[x_] :=
-  Union[Cases[x, _ ? (MemberQ[derivativeHeads, #] &)[_],Infinity]];
-
-(* Expects a list of the form {D11[h22], ...} *)
-declarePrecomputedDerivatives[derivs_] :=
-  Module[{vars},
-    vars = PartitionVarList@Map[ToString[Head[#]] <> ToString[First[#]] &, derivs];
-    {"/* Declare precomputed derivatives*/\n",
-     Map[DeclareVariables[#, "CCTK_REAL"] &, vars], "\n"}];
-
-precomputeDerivative[d_] :=
-  Module[{h=ToString[Head[d]], f = ToString[First[d]]},
-  {h <> f, " = ", h, "gf(", f, ",i,j,k)" <> EOL[] <>"\n"}];
 
 printEq[eq_] := 
   Module[{lhs, rhs, rhsSplit, split, rhsString},
@@ -359,7 +312,6 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
   gfs = allVariables[groups];
   functionName = ToString@lookup[cleancalc, Name];
   bodyFunctionName = functionName <> "_Body";
-  dsUsed = oldDerivativesUsed[eqs];
 
   InfoMessage[Terse, "Creating calculation function: " <> functionName];
 
@@ -437,7 +389,7 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
 
     If[gfs != {},
       {
-	eqLoop = equationLoop[eqs, cleancalc, dsUsed, gfs, shorts, subblockGFs, {}, groups,
+	eqLoop = equationLoop[eqs, cleancalc, gfs, shorts, subblockGFs, {}, groups,
           pddefs, where, addToStencilWidth, useCSE, opts]},
 
        ConditionalOnParameterTextual["verbose > 1",
@@ -554,7 +506,7 @@ markFirst[l_List, already_List] :=
 Options[equationLoop] = ThornOptions;
 
 equationLoop[eqs_, 
-             cleancalc_, dsUsed_,
+             cleancalc_,
              gfs_, shorts_, subblockGFs_, incs_, groups_,
              pddefs_, where_, addToStencilWidth_, useCSE_,
              opts:OptionsPattern[]] :=
@@ -586,8 +538,8 @@ equationLoop[eqs_,
     localGFs = Map[localName, gfs];
     localMap = Map[# -> localName[#] &, gfs];
     
-    derivSwitch = Join[oldDerivativesUsed[eqsOrdered], 
-      GridFunctionDerivativesInExpression[pddefs, eqsOrdered]] != {};
+    derivSwitch =
+      GridFunctionDerivativesInExpression[pddefs, eqsOrdered] != {};
 
     gfsDifferentiated = Map[First,
       GridFunctionDerivativesInExpression[pddefs, eqsOrdered]];
@@ -614,7 +566,7 @@ equationLoop[eqs_,
    (* Replace grid functions with their local forms, and replace
       partial dervatives with their precomputed values *)
    eqsReplaced = If[useCSE, CSE, Identity][
-     replaceDerivatives[replaceWithDerivativesHidden[eqs2, localMap], {}]];
+     (* replaceDerivatives[replaceWithDerivativesHidden[ *) eqs2 /. localMap (*], {}] *) ];
 
    (* Construct a list, corresponding to the list of equations,
       marking those which need their LHS variables declared.  We
@@ -634,7 +586,7 @@ equationLoop[eqs_,
    Join[
 
    GenericGridLoop[functionName,
-   {declarePrecomputedDerivatives[dsUsed],
+   {
     DeclareDerivatives[defsWithoutShorts, eqsOrdered],
 
     CommentedBlock["Assign local copies of grid functions",
@@ -652,11 +604,8 @@ equationLoop[eqs_,
     CommentedBlock["Include user supplied include files",
                    Map[IncludeFile, incs]],
 
-    CommentedBlock["Precompute derivatives (new style)",
+    CommentedBlock["Precompute derivatives",
                    PrecomputeDerivatives[defsWithoutShorts, eqsOrdered]],
-
-    CommentedBlock["Precompute derivatives (old style)",
-                   Map[precomputeDerivative, oldDerivativesUsed[eqs]]],
 
     CommentedBlock["Calculate temporaries and grid functions", calcCode],
 

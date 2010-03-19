@@ -870,6 +870,8 @@ CreateGroupFromTensor[k_, inds_] :=
     nInds = Length[inds];
     If[nInds == 2 && GetTensorAttribute[k, Symmetries] == {{2,1},1}, 
         ttypeString = ttypeString <> "_sym"];
+    If[nInds == 3 && GetTensorAttribute[k, Symmetries] == {{1,3,2},1}, 
+        ttypeString = ttypeString <> "_sym"];
     tags = {"tensortypealias" -> ttypeString, "tensorweight" -> GetTensorAttribute[k, TensorWeight]};
     If[HasTensorAttribute[k, TensorSpecial],
       tags = Append[tags, "tensorspecial" -> GetTensorAttribute[k, TensorSpecial]]];

@@ -155,13 +155,14 @@ SortTensorComponentsCactusStyle[stringlist_?ListQ] :=
 SortTensorComponentsCactusStyle[stringlist_?ListQ, type_?StringQ] :=
     
     Switch[type,
-      "scalar", stringlist,
-      "U",      Sort[stringlist, compareReordered],
-      "D",      stringlist,
-      "DD",     Sort@stringlist,
-      "UU",     Sort@stringlist,
-      "DD_sym", Sort[stringlist, compareReordered],
-      "UU_sym", Sort[stringlist, compareReordered],
+      "scalar",  stringlist,
+      "U",       Sort[stringlist, compareReordered],
+      "D",       stringlist,
+      "DD",      Sort@stringlist,
+      "UU",      Sort@stringlist,
+      "DD_sym",  Sort[stringlist, compareReordered],
+      "UU_sym",  Sort[stringlist, compareReordered],
+      "DDD_sym", Sort[stringlist, compareReordered],
       _, stringlist
       ];
 End[];

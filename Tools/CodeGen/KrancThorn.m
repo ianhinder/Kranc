@@ -400,6 +400,10 @@ CreateGroupFromTensor[k_, inds_] :=
                           reflectionParityString[GetTensorAttribute[k, TensorManualCartesianParities]]]];
     If[HasTensorAttribute[k, TensorParity],
       tags = Append[tags, "tensorparity" -> GetTensorAttribute[k, TensorParity]]];
+
+    If[HasTensorAttribute[k, Checkpoint],
+      tags = Append[tags, "checkpoint" -> GetTensorAttribute[k, Checkpoint]]];
+
     vars = If[nInds == 0, {k}, {Apply[Tensor, {k, Apply[Sequence,inds]}]}];
     group = CreateGroup[ToString[k] <> "_group", vars, {Tags -> tags}];
     Return[group]];

@@ -137,6 +137,7 @@ TensorParity;
 TensorWeight;
 TensorSpecial;
 TensorManualCartesianParities;
+Checkpoint;
 IsTensor;
 toggleIndex;
 

@@ -59,7 +59,7 @@ EndPackage[];
 BeginPackage["KrancThorn`", {"CodeGen`", "sym`", "Thorn`",
  "MapLookup`", "KrancGroups`", "Differencing`",
  "CalculationFunction`", "Errors`", "Helpers`", "CactusBoundary`",
- "TensorTools`"}];
+ "TensorTools`", "Param`"}];
 
 CreateKrancThorn::usage = "Construct a Kranc thorn";
 CreateKrancThornTT::usage = "Construct a Kranc thorn using TensorTools";
@@ -144,8 +144,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     defaultEvolutionTimelevels = lookupDefault[{opts}, DefaultEvolutionTimelevels, evolutionTimelevels];
     realParams = OptionValue[RealParameters];
     intParams = OptionValue[IntParameters];
-    realParamDefs = makeFullParamDefs[realParams];
-    intParamDefs = makeFullParamDefs[intParams];
+    realParamDefs = MakeFullParamDefs[realParams];
+    intParamDefs = MakeFullParamDefs[intParams];
     keywordParams = OptionValue[KeywordParameters];
     inheritedRealParams = OptionValue[InheritedRealParameters];
     inheritedIntParams = OptionValue[InheritedIntParameters];
@@ -205,7 +205,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     (* Construct the param file *)
     InfoMessage[Terse, "Creating param file"];
-    param = createKrancParam[evolvedGroups, nonevolvedGroups, groups, thornName,
+    param = CreateKrancParam[evolvedGroups, nonevolvedGroups, groups, thornName,
       realParamDefs, intParamDefs, keywordParams,
       inheritedRealParams, inheritedIntParams, inheritedKeywordParams,
       extendedRealParams, extendedIntParams, extendedKeywordParams,
@@ -243,8 +243,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     ext = CodeGen`SOURCESUFFIX;
 
     (* Construct a source file for each calculation *)
-    allParams = Join[Map[paramName, realParamDefs],
-                     Map[paramName, intParamDefs],
+    allParams = Join[Map[ParamName, realParamDefs],
+                     Map[ParamName, intParamDefs],
                      Map[unqualifiedName, inheritedRealParams], 
                      Map[unqualifiedName, inheritedIntParams], 
                      Map[unqualifiedName, inheritedKeywordParams]];
@@ -433,223 +433,6 @@ createKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_, groups_,
         Join[{registerEvolved, (*registerConstrained,*) diffCoeff}, 
              CactusBoundary`GetUsedFunctions[]]];
     Return[interface]];
-
-(* --------------------------------------------------------------------------
-   Parameter definitions
-   -------------------------------------------------------------------------- *)
-
-VerifyQualifiedName[name_] :=
-  If[! StringQ[name] || ! StringMatchQ[name, "*::*"],
-    ThrowError["Not a name with an implementation:", name]];
-
-implementationFromQualifiedName[name_] :=
-  Module[{colon},
-    VerifyQualifiedName[name];
-    colon = First[First[StringPosition[name, ":", 1]]];
-    StringDrop[name, colon - 1 - StringLength[name]]];
-
-unqualifiedName[name_] :=
-  Module[{colon},
-    VerifyQualifiedName[name];
-    colon = First[First[StringPosition[name, ":", 1]]];
-    Return[StringDrop[name, colon + 1]]];
-
-krancParamStruct[definition_, type_, inherited_] :=
-  Module[{description, name},
-    name = lookup[definition, Name];
-    description = lookupDefault[definition, Description, name];
-    Join[
-    {Name        -> name,
-     Type        -> type, 
-     Description -> description,
-     Default     -> lookup[definition, Default],
-     Visibility  -> "restricted"},
-    If[mapContains[definition, Steerable],
-      {Steerable -> lookup[definition, Steerable]},
-      {}],
-    If[inherited,
-      {},
-      {AllowedValues -> {{Value -> "*:*", Description -> ""}}}]]];
-
-krancParamStructExtended[definition_, type_] :=
-  Module[{allowedValues, description, name},
-    name = unqualifiedName[lookup[definition, Name]];
-    description = lookupDefault[definition, Description, name];
-    allowedValues = lookup[definition, AllowedValues];
-    {Name        -> name,
-     Type        -> type, 
-     Description -> description,
-     Default     -> "",
-     Visibility  -> "restricted",
-     AllowedValues -> Map[{Value -> #, Description -> ""} &, allowedValues]}];
-
-krancKeywordParamStruct[struct_] :=
-{
-  Name -> lookup[struct, Name],
-  Type -> "KEYWORD",
-  Default -> lookup[struct, Default],
-  Description -> lookupDefault[struct, Description, lookup[struct, Name]],
-  Visibility -> lookupDefault[struct, Visibility, "private"],
-  AllowedValues -> Map[{Value -> #, Description -> #} &, lookup[struct, AllowedValues]]
-};
-
-makeFullParamDefs[params_] :=
-  Module[{p},
-    p = Map[If[!ListQ[#], {Name -> #, Default -> 0}, #] &, params];
-    p];
-
-paramName[paramDef_] :=
-  lookup[paramDef, Name];
-
-inheritParameters[imp_, reals_, ints_, keywords_] :=
-  Module[{theseReals, theseInts, theseKeywords, theseRealsNoImp, theseIntsNoImp, theseKeywordsNoImp, realStructs, intStructs, keywordStructs},
-    theseReals = Select[reals, implementationFromQualifiedName[#] == imp &];
-    theseInts = Select[ints, implementationFromQualifiedName[#] == imp &];
-    theseKeywords = Select[keywords, implementationFromQualifiedName[#] == imp &];
-    theseRealsNoImp = makeFullParamDefs[Map[unqualifiedName, theseReals]];
-    theseIntsNoImp = makeFullParamDefs[Map[unqualifiedName, theseInts]];
-    theseKeywordsNoImp = makeFullParamDefs[Map[unqualifiedName, theseKeywords]];
-    realStructs = Map[krancParamStruct[#, "CCTK_REAL", True] &, theseRealsNoImp];
-    intStructs = Map[krancParamStruct[#, "CCTK_INT", True] &, theseIntsNoImp];
-    keywordStructs = Map[krancParamStruct[#, "CCTK_KEYWORD", True] &, theseKeywordsNoImp];
-    If[(Length[theseReals] + Length[theseInts] + Length[theseKeywords]) > 0,
-      Return[{Name -> imp, UsedParameters -> Join[realStructs, intStructs, keywordStructs]}], 
-      Return[{}]]];
-
-extendParameters[imp_, reals_, ints_, keywords_] :=
-  Module[{theseReals, theseInts, theseKeywords, realStructs, intStructs, keywordStructs},
-    theseReals = Select[reals, implementationFromQualifiedName[lookup[#, Name]] == imp &];
-    theseInts = Select[ints, implementationFromQualifiedName[lookup[#, Name]] == imp &];
-    theseKeywords = Select[keywords, implementationFromQualifiedName[lookup[#, Name]] == imp &];
-    realStructs = Map[krancParamStructExtended[#, "CCTK_REAL"] &, theseReals];
-    intStructs = Map[krancParamStructExtended[#, "CCTK_INT"] &, theseInts];
-    keywordStructs = Map[krancParamStructExtended[#, "CCTK_KEYWORD"] &, theseKeywords];
-    If[(Length[theseReals] + Length[theseInts] + Length[theseKeywords]) > 0,
-      Return[{Name -> imp, ExtendedParameters -> Join[realStructs, intStructs, keywordStructs]}],
-      Return[{}]]];
-
-createKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_, 
-  reals_, ints_, keywords_,
-  inheritedReals_, inheritedInts_, inheritedKeywords_,
-  extendedReals_, extendedInts_, extendedKeywords_,
-  evolutionTimelevels_, defaultEvolutionTimelevels_,
-  calcs_] :=
-  Module[{nEvolved, evolvedMoLParam, evolvedGFs,
-    (*constrainedMoLParam,*) genericfdStruct, realStructs, intStructs,
-    allInherited, allExtended, implementationNames, molImplementation,
-    userImplementations, implementations, params, paramspec, param,
-    verboseStruct, calcOffsetStructs, calcEveryStructs},
-
-    (* reals and ints are symbols containing parameter names.  The
-       inherited ones have implementation names as well *)
-
-    evolvedGFs = variablesFromGroups[evolvedGroups, groups];
-
-    nEvolved   = Length[variablesFromGroups[evolvedGroups, groups]];
-(*    nPrimitive = Length[variablesFromGroups[nonevolvedGroups, groups]];*)
-(*    nPrimitive = Length[getConstrainedVariables[evolvedGroups, groups]];*)
-
-    evolvedMoLParam =
-    {
-      Name -> thornName <> "_MaxNumEvolvedVars",
-      Type -> "CCTK_INT",
-      Default -> nEvolved,
-      Description -> "Number of evolved variables used by this thorn",
-      Visibility -> "restricted",
-      AccumulatorBase -> "MethodofLines::MoL_Num_Evolved_Vars",
-      AllowedValues -> {{Value -> ToString[nEvolved] <> ":" <> ToString[nEvolved] , 
-                         Description -> "Number of evolved variables used by this thorn"}}
-    };
-
-    (*
-    constrainedMoLParam =
-    {
-      Name -> thornName <> "_MaxNumConstrainedVars",
-      Type -> "CCTK_INT",
-      Default -> nPrimitive,
-      Description -> "Number of constrained variables used by this thorn",
-      Visibility -> "restricted",
-      AccumulatorBase -> "MethodofLines::MoL_Num_Constrained_Vars",
-      AllowedValues -> {{Value -> ToString[nPrimitive] <> ":" <> ToString[nPrimitive] , 
-                         Description -> "Number of constrained variables used by this thorn"}}
-    };
-    *)
-
-    timelevelsParam =
-    {
-      Name -> "timelevels",
-      Type -> "CCTK_INT",
-      Default -> defaultEvolutionTimelevels,
-      Description -> "Number of active timelevels",
-      Visibility -> "restricted",
-      AllowedValues -> {{Value -> ToString[0] <> ":" <> ToString[evolutionTimelevels],
-                         Description -> ""}}
-    };
-
-    rhsTimelevelsParam =
-    {
-      Name -> "rhs_timelevels",
-      Type -> "CCTK_INT",
-      Default -> 1,
-      Description -> "Number of active RHS timelevels",
-      Visibility -> "restricted",
-      AllowedValues -> {{Value -> ToString[0] <> ":" <> ToString[evolutionTimelevels],
-                         Description -> ""}}
-    };
-
-    genericfdStruct =
-    {
-      Name -> "GenericFD",
-      UsedParameters -> 
-        {{Name -> "stencil_width",    Type -> "CCTK_INT"},
-         {Name -> "stencil_width_x",  Type -> "CCTK_INT"},
-         {Name -> "stencil_width_y",  Type -> "CCTK_INT"},
-         {Name -> "stencil_width_z",  Type -> "CCTK_INT"},
-         {Name -> "boundary_width",   Type -> "CCTK_INT"}}
-    };
-
-    realStructs = Map[krancParamStruct[#, "CCTK_REAL", False] &, reals];
-    verboseStruct = krancParamStruct[{Name -> "verbose", Default -> 0}, "CCTK_INT", False];
-    intStructs = Map[krancParamStruct[#, "CCTK_INT", False] &, ints];
-    calcEveryStructs = Map[krancParamStruct[{Name -> lookup[#, Name] <> "_calc_every", Default -> 1}, "CCTK_INT", False] &, calcs];
-    calcOffsetStructs = Map[krancParamStruct[{Name -> lookup[#, Name] <> "_calc_offset", Default -> 0}, "CCTK_INT", False] &, calcs];
-    keywordStructs = Map[krancKeywordParamStruct, keywords];
-
-    allInherited = Join[inheritedReals, inheritedInts, inheritedKeywords];
-    allExtended = Join[extendedReals, extendedInts, extendedKeywords];
-
-    implementationNames = Union[Map[implementationFromQualifiedName, allInherited],
-                                Map[implementationFromQualifiedName[lookup[#, Name]] &, allExtended]];
-
-    molImplementation =
-    {
-      Name -> "MethodOfLines",
-      UsedParameters -> 
-      {
-        {Name -> "MoL_Num_Evolved_Vars",     Type -> "CCTK_INT"}
-        (* {Name -> "MoL_Num_Constrained_Vars", Type -> "CCTK_INT"} *)
-      }
-    };
-
-    userImplementations = Map[inheritParameters[#, inheritedReals,inheritedInts,inheritedKeywords] &, 
-                              implementationNames];
-    userImplementations2 = Map[extendParameters[#, extendedReals,extendedInts,extendedKeywords] &, 
-                               implementationNames];
-
-    userImplementations = If[userImplementations=={{}},{},userImplementations];
-    userImplementations2 = If[userImplementations2=={{}},{},userImplementations2];
-
-    implementations = Join[userImplementations, userImplementations2, {genericfdStruct, molImplementation}];
-    params = Join[{verboseStruct}, realStructs, intStructs, keywordStructs, {evolvedMoLParam, (*constrainedMoLParam,*) timelevelsParam, rhsTimelevelsParam},
-                  calcEveryStructs, calcOffsetStructs,
-      CactusBoundary`GetParameters[evolvedGFs, evolvedGroups]];
-
-    paramspec = {Implementations -> implementations,
-                 NewParameters   -> params};
-
-    param = CreateParam[paramspec];
-    Return[param]
-  ];
 
 (* --------------------------------------------------------------------------
    Scheduling

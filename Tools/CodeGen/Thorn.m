@@ -481,6 +481,8 @@ calculationMacros[] :=
    CodeGen representation of a source file that defines a function for
    each Calculation. *)
 
+Options[CreateSetterSource] = ThornOptions;
+
 CreateSetterSource[calcs_, debug_, useCSE_, include_,
   opts:OptionsPattern[]] :=
   Module[{},
@@ -501,7 +503,8 @@ CreateSetterSource[calcs_, debug_, useCSE_, include_,
       ],
 
    Map[IncludeFile, Join[{"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h",
-                     (*"precomputations.h",*) "GenericFD.h", "Differencing.h"}, include]],
+                     (*"precomputations.h",*) "GenericFD.h", "Differencing.h"}, include,
+                         If[OptionValue[UseLoopControl], {"loopcontrol.h"}, {}]]],
    calculationMacros[],
 
    (* For each function structure passed, create the function and

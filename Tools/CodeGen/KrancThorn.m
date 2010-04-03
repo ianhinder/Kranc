@@ -218,7 +218,9 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
                      Map[unqualifiedName, inheritedKeywordParams]];
 
     InfoMessage[Terse, "Creating calculation source files"];
-    calcSources = Map[CreateSetterSourceWrapper[#, allParams, partialDerivs, useCSE, opts] &, calcs];
+    calcSources = Map[CreateSetterSource[
+      {Join[#, {Parameters -> allParams, PartialDerivatives -> partialDerivs}]},
+      False, useCSE, {}, opts] &, calcs];
     calcFilenames = Map[lookup[#, Name] <> ext &, calcs];
 
     (* Makefile *)
@@ -279,18 +281,6 @@ extractNonevolvedGroups[declaredGroups_, calcs_, groups_] :=
     nonevolvedGroups = Complement[declaredGroups, evolvedGroups];
 
     Return[nonevolvedGroups]];
-
-Options[CreateSetterSourceWrapper] = ThornOptions;
-
-CreateSetterSourceWrapper[calc_, parameters_, derivs_, useCSE_, opts:OptionsPattern[]] :=
-  Module[{modCalc},
-    modCalc = Join[calc,
-      {Parameters -> parameters},
-      {PartialDerivatives -> derivs}];
-
-    source = CreateSetterSource[{modCalc}, False, useCSE,
-      If[OptionValue[UseLoopControl], {"loopcontrol.h"}, {}], opts];
-    Return[source]];
 
 (* FIXME: This is still not quite right.  We only want to have those variables that
    we set as constrained, but I don't think this can hurt.*)

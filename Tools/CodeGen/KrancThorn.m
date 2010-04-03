@@ -195,7 +195,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     (* Construct the configuration file *)
     InfoMessage[Terse, "Creating configuration file"];
-    configuration = createKrancConfiguration[opts];
+    configuration = CreateConfiguration[opts];
 
     (* Construct the interface file *)
     InfoMessage[Terse, "Creating interface file"];
@@ -311,15 +311,6 @@ extractNonevolvedGroups[declaredGroups_, calcs_, groups_] :=
     nonevolvedGroups = Complement[declaredGroups, evolvedGroups];
 
     Return[nonevolvedGroups]];
-
-(* --------------------------------------------------------------------------
-   Configuration file
-   -------------------------------------------------------------------------- *)
-
-createKrancConfiguration[opts:OptionsPattern[]] :=
-  Module[{configuration},
-    configuration = CreateConfiguration[opts];
-    Return[configuration]];
 
 (* --------------------------------------------------------------------------
    Interface and variable definitions

@@ -24,12 +24,8 @@
 (* Manipulate Kranc group structures                                        *)
 (****************************************************************************)
 
-BeginPackage["sym`"];
-{Timelevels}
-EndPackage[];
-
 BeginPackage["KrancGroups`", 
-             {"sym`", "Errors`", "MapLookup`"}];
+             {"Kranc`", "Errors`", "MapLookup`"}];
 
 CreateGroup;
 groupsFromGFs::usage = "";

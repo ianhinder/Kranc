@@ -24,42 +24,10 @@
 (* Generate Cactus Thorns from a high-level interface  *)
 (****************************************************************************)
 
-BeginPackage["sym`"];
-
-ThornOptions =
- {Calculations -> {},
-  DeclaredGroups -> {},
-  Implementation -> None,
-  InheritedImplementations -> {},
-  EvolutionTimelevels -> 3,
-  DefaultEvolutionTimelevels -> None,
-  RealParameters -> {},
-  IntParameters -> {},
-  KeywordParameters -> {},
-  InheritedRealParameters -> {},
-  InheritedIntParameters -> {},
-  InheritedKeywordParameters -> {},
-  ExtendedRealParameters -> {},
-  ExtendedIntParameters -> {},
-  ExtendedKeywordParameters -> {},
-  PartialDerivatives -> {},
-  ReflectionSymmetries -> {},
-  ZeroDimensions -> {},
-  UseLoopControl -> False,
-  UseCSE -> False,
-  ProhibitAssignmentToGridFunctionsRead -> False,
-  IncludeFiles -> {}};
-
-{ConditionalOnKeyword, ConditionalOnKeywords, CollectList, Interior,
-InteriorNoSync, Boundary, BoundaryWithGhosts, Where, PreDefinitions,
-AllowedSymbols, Parameters, ConditionalOnTextuals};
-
-EndPackage[];
-
-BeginPackage["KrancThorn`", {"CodeGen`", "sym`", "Thorn`",
+BeginPackage["KrancThorn`", {"CodeGen`", "Thorn`",
  "MapLookup`", "KrancGroups`", "Differencing`",
  "CalculationFunction`", "Errors`", "Helpers`", "CactusBoundary`",
- "TensorTools`", "Param`", "Schedule`"}];
+ "TensorTools`", "Param`", "Schedule`", "Interface`", "Kranc`"}];
 
 CreateKrancThorn::usage = "Construct a Kranc thorn";
 CreateKrancThornTT::usage = "Construct a Kranc thorn using TensorTools";
@@ -157,7 +125,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     reflectionSymmetries = OptionValue[ReflectionSymmetries];
     useCSE = OptionValue[UseCSE];
 
-    coordGroup = {"grid::coordinates", {sym`x,sym`y,sym`z,sym`r}};
+    coordGroup = {"grid::coordinates", {Kranc`x,Kranc`y,Kranc`z,Kranc`r}};
     groups = Join[groupsOrig, {coordGroup}];
     includeFiles = Join[includeFiles, {"GenericFD.h", "Symmetry.h", "sbp_calc_coeffs.h"}];
 
@@ -199,7 +167,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     (* Construct the interface file *)
     InfoMessage[Terse, "Creating interface file"];
-    interface = createKrancInterface[nonevolvedGroups,
+    interface = CreateKrancInterface[nonevolvedGroups,
       evolvedGroups, rhsGroups, groups,
       implementation, inheritedImplementations, includeFiles, opts];
 
@@ -311,117 +279,6 @@ extractNonevolvedGroups[declaredGroups_, calcs_, groups_] :=
     nonevolvedGroups = Complement[declaredGroups, evolvedGroups];
 
     Return[nonevolvedGroups]];
-
-(* --------------------------------------------------------------------------
-   Interface and variable definitions
-   -------------------------------------------------------------------------- *)
-
-nonevolvedGroupInterfaceStructure[group_] := 
-{
-  Name -> groupName[group], 
-  VariableType -> "CCTK_REAL",
-  Timelevels -> NonevolvedTimelevels[group],
-  GridType -> "GF",
-  Comment -> groupName[group], 
-  Visibility -> "public",
-  Tags -> Join[GroupTags[group]],
-  Variables -> groupVariables[group]
-}
-
-evolvedGroupInterfaceStructure[group_, timelevels_] := 
-{
-  Name -> groupName[group], 
-  VariableType -> "CCTK_REAL",
-  Timelevels -> timelevels, 
-  GridType -> "GF",
-  Comment -> groupName[group], 
-  Visibility -> "public",
-  Tags -> GroupTags[group],
-  Variables -> groupVariables[group]
-}
-
-rhsGroupInterfaceStructure[group_, timelevels_] := 
-{
-  Name -> groupName[group], 
-  VariableType -> "CCTK_REAL",
-  Timelevels -> timelevels, 
-  GridType -> "GF",
-  Comment -> groupName[group], 
-  Visibility -> "public",
-  Tags -> GroupTags[group],
-  Variables -> groupVariables[group]
-}
-
-
-Options[createKrancInterface] = ThornOptions;
-
-createKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_, groups_,
-  implementation_, inheritedImplementations_,
-  includeFiles_, opts:OptionsPattern[]] :=
-
-  Module[{registerEvolved, (*registerConstrained,*)
-    nonevolvedGroupStructures, evolvedGroupStructures, rhsGroupStructures,
-    groupStructures, interface},
-    VerifyGroupNames[nonevolvedGroups];
-    VerifyGroupNames[evolvedGroups];
-    VerifyGroupNames[rhsGroups];
-    VerifyGroups[groups];
-    VerifyString[implementation];
-    VerifyStringList[inheritedImplementations];
-    VerifyStringList[includeFiles];
-    (* These are the aliased functions that are USED by this thorn from other thorns *)
-    registerEvolved = 
-    {
-      Name      -> "MoLRegisterEvolved",
-      Type      -> "CCTK_INT",
-      ArgString -> "CCTK_INT IN EvolvedIndex, CCTK_INT IN RHSIndex"
-    };
-
-    (*
-    registerConstrained = 
-    {
-      Name      -> "MoLRegisterConstrained",
-      Type      -> "CCTK_INT",
-      ArgString -> "CCTK_INT IN ConstrainedIndex"
-    };
-    *)
-
-    diffCoeff = 
-    {
-      Name -> "Diff_coeff",
-      Type -> "SUBROUTINE",
-      ArgString -> "CCTK_POINTER_TO_CONST IN cctkGH, CCTK_INT IN dir, CCTK_INT IN nsize, CCTK_INT OUT ARRAY imin, CCTK_INT OUT ARRAY imax, CCTK_REAL OUT ARRAY q, CCTK_INT IN table_handle"
-    };
-
-
-    (* For each group declared in this thorn, we need an entry in the
-        interface file.  Each evolved group needs an associated rhs
-        group, but these are constructed at a higher level and are
-        listed in the nonevolved groups. *)
-    nonevolvedGroupStructures = 
-      Map[nonevolvedGroupInterfaceStructure[groupFromName[#, groups]] &, 
-          nonevolvedGroups];
-
-    evolvedGroupStructures =
-      Map[evolvedGroupInterfaceStructure[groupFromName[#, groups],
-          OptionValue[EvolutionTimelevels]] &, evolvedGroups];
-
-    rhsGroupStructures =
-      Map[rhsGroupInterfaceStructure[groupFromName[#, groups],
-          OptionValue[EvolutionTimelevels]] &, rhsGroups];
-
-    groupStructures = Join[nonevolvedGroupStructures,
-                           evolvedGroupStructures, rhsGroupStructures];
-
-    interface = CreateInterface[implementation, inheritedImplementations, 
-      Join[includeFiles, {CactusBoundary`GetIncludeFiles[]},
-           If[OptionValue[UseLoopControl], {"loopcontrol.h"}, {}]],
-      groupStructures,
-      UsesFunctions ->
-        Join[{registerEvolved, (*registerConstrained,*) diffCoeff}, 
-             CactusBoundary`GetUsedFunctions[]]];
-    Return[interface]];
-
 
 Options[CreateSetterSourceWrapper] = ThornOptions;
 

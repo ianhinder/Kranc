@@ -18,13 +18,9 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-BeginPackage["sym`"];
+BeginPackage["Schedule`", {"Thorn`", "KrancGroups`", "MapLookup`", "Errors`", "Helpers`", "Kranc`"}];
 
 CreateKrancScheduleFile;
-
-EndPackage[];
-
-BeginPackage["Blank`", {"Thorn`", "KrancGroups`", "MapLookup`", "Errors`", "Helpers`", "sym`"}];
 
 Begin["`Private`"];
 

@@ -23,32 +23,7 @@
 (* This package provides a set of functions to create the various
    parts of a Cactus thorn and assemble them. *)
 
-BeginPackage["sym`"];
-
-(* These symbols are used in this file.  Whenever this package is
-   used, the symbols will be added into the sym` context.  You will
-   need to make sure the sym` context is on your ContextPath to use
-   the symbols without the sym` prefix. *)
-
-{AccumulatorBase, ThornImplementation, Name, Type, Extend, Default,
-Comment, Range, Implementation, Group, SchedulePoint, Language,
-SynchronizedGroups, StorageGroups, Timelevels, MaxTimelevels,
-VariableType, GridType,
-Visibility, Variables, Implementations, Value, AllowedValues,
-UsedParameters, Description, ExtendedParameters, NewParameters,
-Directory, Configuration, Interface, Param, Schedule, Sources, Makefile,
-Filename,
-Contents, ThornName, BaseImplementation, EvolvedGFs, PrimitiveGFs,
-Groups, Calculation, GridFunctions, Shorthands, Equations, Parameter,
-Value, UsesFunctions, ArgString, Conditional, Conditionals, D1, D2, D3, D11, D22,
-D33, D21, D31, D32, Textual, TriggerGroups, Include, RHSGroups, Tags, 
-Steerable, Never, Always, Recover};
-
-{ExcisionGFs};
-
-EndPackage[];
-
-BeginPackage["Thorn`", "CodeGen`", "CalculationFunction`", "MapLookup`", "KrancGroups`", "Helpers`", "Errors`"];
+BeginPackage["Thorn`", "CodeGen`", "CalculationFunction`", "MapLookup`", "KrancGroups`", "Helpers`", "Errors`", "Kranc`"];
 
 (* These functions are externally visible, and comprise the public
    interface to this package. *)
@@ -70,7 +45,7 @@ CreatePrecompMacros::usage = "";
 CreateStartupFile::usage = "";
 
 (* Ensure that we can refer to symbols without the `sym prefix *)
-$ContextPath = Join[{"sym`"}, $ContextPath];
+(*$ContextPath = Join[{"sym`"}, $ContextPath];*)
 
 Begin["`Private`"];
 

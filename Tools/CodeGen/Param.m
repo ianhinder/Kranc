@@ -18,13 +18,7 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-BeginPackage["sym`"];
-
-Name;
-
-EndPackage[];
-
-BeginPackage["Param`", {"Thorn`", "Errors`", "Helpers`", "MapLookup`", "sym`", "KrancGroups`"}];
+BeginPackage["Param`", {"Thorn`", "Errors`", "Helpers`", "MapLookup`", "KrancGroups`", "Kranc`"}];
 
 CreateKrancParam;
 MakeFullParamDefs;

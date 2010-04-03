@@ -32,14 +32,8 @@
 
     *)
 
-BeginPackage["sym`"];
-
-{};
-
-EndPackage[];
-
-BeginPackage["CactusBoundary`", {"CodeGen`", "sym`", "Thorn`",
- "MapLookup`", "KrancGroups`", "Errors`", "Helpers`"}];
+BeginPackage["CactusBoundary`", {"CodeGen`", "Thorn`",
+ "MapLookup`", "KrancGroups`", "Errors`", "Helpers`", "Kranc`"}];
 
 GetInheritedImplementations::usage = "";
 GetIncludeFiles::usage = "";

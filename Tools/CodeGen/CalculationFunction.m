@@ -18,19 +18,9 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-BeginPackage["sym`"];
-
-{GridFunctions, Shorthands, Equations, t, DeclarationIncludes,
-LoopPreIncludes, GroupImplementations, PartialDerivatives, NoSimplify,
-Boundary, Interior, InteriorNoSync, Where, AddToStencilWidth,
-Everywhere, normal1, normal2, normal3, INV, SQR, CUB, QAD, dot, pow,
-exp, dx, dy, dz, idx, idy, idz}
-
-EndPackage[];
-
-BeginPackage["CalculationFunction`", {"CodeGen`", "sym`",
+BeginPackage["CalculationFunction`", {"CodeGen`",
   "MapLookup`", "KrancGroups`", "Differencing`", "Errors`",
-  "Helpers`"}];
+  "Helpers`", "Kranc`"}];
 
 CreateCalculationFunction::usage = "";
 VerifyCalculation::usage = "";
@@ -240,7 +230,7 @@ assignVariableFromExpression[dest_, expr_, declare_] :=
   Module[{tSym, type, cleanExpr, code},
     tSym = Unique[];
     type = If[StringMatchQ[ToString[dest], "dir*"], "int", "CCTK_REAL"];
-    cleanExpr = ReplacePowers[expr] /. sym`t -> tSym;
+    cleanExpr = ReplacePowers[expr] /. Kranc`t -> tSym;
 
     If[SOURCELANGUAGE == "C",
       code = If[declare, type <> " ", ""] <> ToString[dest] <> " = " <>

@@ -67,6 +67,10 @@ CreateGroupFromTensor::usage = "";
 
 Begin["`Private`"];
 
+(* --------------------------------------------------------------------------
+   Utility functions
+   -------------------------------------------------------------------------- *)
+
 VerifyGroups[gs_] := 
   If[!ListQ[gs],
    ThrowError["Not a list of group definitions: ", gs],
@@ -102,6 +106,10 @@ Module[{used, unrecognized},
 
 replaceDots[x_] := 
   x /. (dot[y_] :> Symbol[ToString[y] <> "rhs"]);
+
+(* --------------------------------------------------------------------------
+   Thorn generation (main entry point for non-tensorial thorns)
+   -------------------------------------------------------------------------- *)
 
 Options[CreateKrancThorn] = ThornOptions;
 
@@ -268,6 +276,10 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     InfoMessage[Terse, "Creating thorn"];
     CreateThorn[thornspec]];
 
+(* --------------------------------------------------------------------------
+   Functions related to calculations
+   -------------------------------------------------------------------------- *)
+
 CalculationEvolvedVars[calc_] :=
   Module[{eqs, evolved, lhss},
     VerifyNewCalculation[calc];
@@ -299,6 +311,19 @@ extractNonevolvedGroups[declaredGroups_, calcs_, groups_] :=
     nonevolvedGroups = Complement[declaredGroups, evolvedGroups];
 
     Return[nonevolvedGroups]];
+
+(* --------------------------------------------------------------------------
+   Configuration file
+   -------------------------------------------------------------------------- *)
+
+createKrancConfiguration[opts:OptionsPattern[]] :=
+  Module[{configuration},
+    configuration = CreateConfiguration[opts];
+    Return[configuration]];
+
+(* --------------------------------------------------------------------------
+   Interface and variable definitions
+   -------------------------------------------------------------------------- *)
 
 nonevolvedGroupInterfaceStructure[group_] := 
 {
@@ -339,11 +364,6 @@ rhsGroupInterfaceStructure[group_, timelevels_] :=
 nonevolvedTimelevels[group_] :=
   Module[{tls = GroupTimelevels[group]},
     If[ tls === False, 1, tls]];
-
-createKrancConfiguration[opts:OptionsPattern[]] :=
-  Module[{configuration},
-    configuration = CreateConfiguration[opts];
-    Return[configuration]];
 
 Options[createKrancInterface] = ThornOptions;
 
@@ -413,6 +433,10 @@ createKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_, groups_,
         Join[{registerEvolved, (*registerConstrained,*) diffCoeff}, 
              CactusBoundary`GetUsedFunctions[]]];
     Return[interface]];
+
+(* --------------------------------------------------------------------------
+   Parameter definitions
+   -------------------------------------------------------------------------- *)
 
 VerifyQualifiedName[name_] :=
   If[! StringQ[name] || ! StringMatchQ[name, "*::*"],
@@ -627,6 +651,10 @@ createKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_,
     Return[param]
   ];
 
+(* --------------------------------------------------------------------------
+   Scheduling
+   -------------------------------------------------------------------------- *)
+
 simpleGroupStruct[groupName_, timelevels_] := 
 {
   Group -> groupName, 
@@ -794,7 +822,9 @@ createKrancMoLRegister[evolvedGroupNames_, nonevolvedGroupNames_, groups_, imple
     molregister = CreateMoLRegistrationSource[molspec, False];
     Return[molregister]];
 
-(* Tensorial wrapper *)
+(* --------------------------------------------------------------------------
+   Tensors
+   -------------------------------------------------------------------------- *)
 
 CreateKrancThornTT[groups_, parentDirectory_, thornName_, opts___] :=
   Module[{calcs, expCalcs, expGroups, options, derivs, expDerivs, reflectionSymmetries, declaredGroups},

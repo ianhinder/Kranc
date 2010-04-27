@@ -133,6 +133,7 @@ GetTensorAttribute;
 SetTensorAttribute;
 TensorAttributes;
 Symmetries;
+TensorParity;
 TensorWeight;
 TensorSpecial;
 TensorManualCartesianParities;
@@ -1282,12 +1283,26 @@ ReflectionSymmetriesOfTensor[Tensor[k_, inds__]] :=
 
     indexCount = Length[is];
     components = MakeExplicit[k[inds]];
+
+    If[HasTensorAttribute[k, TensorParity],
+      sym = sym * GetTensorAttribute[k, TensorParity]];
   
     Map[# -> calcSymmetryOfComponent[#, indexCount] &, components]
   ];
 
 ReflectionSymmetriesOfTensor[f_] :=
   f -> {1,1,1};
+
+ReflectionSymmetriesOfTensor[f_ ? IsTensor] :=
+  Module[{sym = {1,1,1}},
+
+    If[HasTensorAttribute[f, TensorParity],
+      sym = sym * GetTensorAttribute[f, TensorParity]];
+    If[HasTensorAttribute[f, TensorManualCartesianParities],
+      sym = GetTensorAttribute[f, TensorManualCartesianParities]];
+
+    f -> sym
+  ];
   
 (* -------------------------------------------------------------------------- 
    TensorAttributes

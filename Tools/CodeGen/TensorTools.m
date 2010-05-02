@@ -18,11 +18,16 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307
 *)
 
-BeginPackage["TensorTools`", {"Errors`", "MapLookup`", "Kranc`"}];
+(* Place these symbols in the sym context *)
+BeginPackage["sym`"];
+{D1, D2, D3, D11, D22, D33, D21, D31, D32, D12, D13, D23, dot, Eps, Zero3}
+EndPackage[];
+
+BeginPackage["TensorTools`", {"Errors`", "MapLookup`"}];
 
 (* Cause the sym context to be added to the context of anyone loading
    this package *)
-(*$ContextPath = Join[{"sym`"}, $ContextPath]; *)
+$ContextPath = Join[{"sym`"}, $ContextPath];
 
 (* Define usage messages for these functions.  Mentioning them here
    adds them to the TensorTools context *)

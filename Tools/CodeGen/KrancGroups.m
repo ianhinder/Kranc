@@ -24,8 +24,12 @@
 (* Manipulate Kranc group structures                                        *)
 (****************************************************************************)
 
+BeginPackage["sym`"];
+{Timelevels}
+EndPackage[];
+
 BeginPackage["KrancGroups`", 
-             {"Kranc`", "Errors`", "MapLookup`"}];
+             {"sym`", "Errors`", "MapLookup`"}];
 
 CreateGroup;
 groupsFromGFs::usage = "";
@@ -51,7 +55,6 @@ SetGroupName;
 AddGroupExtra;
 GroupTimelevels;
 allGroupVariables;
-NonevolvedTimelevels;
 
 Begin["`Private`"];
 
@@ -103,10 +106,6 @@ GroupTimelevels[g_] :=
   Module[{extras},
     extras = Drop[g, 2];
     lookupDefault[extras, Timelevels, False]];
-
-NonevolvedTimelevels[group_] :=
-  Module[{tls = GroupTimelevels[group]},
-    If[ tls === False, 1, tls]];
 
 
 

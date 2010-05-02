@@ -18,9 +18,19 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-BeginPackage["CalculationFunction`", {"CodeGen`",
+BeginPackage["sym`"];
+
+{GridFunctions, Shorthands, Equations, t, DeclarationIncludes,
+LoopPreIncludes, GroupImplementations, PartialDerivatives, NoSimplify,
+Boundary, Interior, InteriorNoSync, Where, AddToStencilWidth,
+Everywhere, normal1, normal2, normal3, INV, SQR, CUB, QAD, dot, pow,
+exp, dx, dy, dz, idx, idy, idz}
+
+EndPackage[];
+
+BeginPackage["CalculationFunction`", {"CodeGen`", "sym`",
   "MapLookup`", "KrancGroups`", "Differencing`", "Errors`",
-  "Helpers`", "Kranc`"}];
+  "Helpers`"}];
 
 CreateCalculationFunction::usage = "";
 VerifyCalculation::usage = "";
@@ -230,7 +240,7 @@ assignVariableFromExpression[dest_, expr_, declare_] :=
   Module[{tSym, type, cleanExpr, code},
     tSym = Unique[];
     type = If[StringMatchQ[ToString[dest], "dir*"], "int", "CCTK_REAL_VEC"];
-    cleanExpr = ReplacePowers[expr] /. Kranc`t -> tSym;
+    cleanExpr = ReplacePowers[expr] /. sym`t -> tSym;
 
     If[SOURCELANGUAGE == "C",
       code = If[declare, type <> " ", ""] <> ToString[dest] <> " = " <>
@@ -328,7 +338,7 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
   Module[{gfs, allSymbols, knownSymbols,
           shorts, eqs, parameters,
           functionName, dsUsed, groups, pddefs, cleancalc, eqLoop, where,
-          addToStencilWidth, pDefs, haveCondTextuals, condTextuals},
+          addToStencilWidth, pDefs},
 
   cleancalc = removeUnusedShorthands[calc];
   shorts = lookupDefault[cleancalc, Shorthands, {}];
@@ -340,7 +350,6 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
   where = lookupDefault[cleancalc, Where, Everywhere];
   addToStencilWidth = lookupDefault[cleancalc, AddToStencilWidth, 0];
   pDefs = lookup[cleancalc, PreDefinitions];
-  haveCondTextuals = mapContains[cleancalc, ConditionalOnTextuals];
 
   VerifyCalculation[cleancalc];
 
@@ -380,13 +389,6 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
     ThrowError["The following shorthands are already declared as grid functions:",
       Intersection[shorts, gfs]]];
 
-  (* check that the passed in textual condition makes sense *)
-  If[haveCondTextuals,
-    condTextuals = lookup[cleancalc, ConditionalOnTextuals];
-    If[! MatchQ[condTextuals, {_String ...}],
-      ThrowError["ConditionalOnTextuals entry in calculation expected to be of the form {string, ...}, but was ", condTextuals, "Calculation is ", calc]];
-    ];
-
   (* Check that there are no unknown symbols in the calculation *)
   allSymbols = calculationSymbols[cleancalc];
   knownSymbols = Join[lookupDefault[cleancalc, AllowedSymbols, {}], gfs, shorts, parameters,
@@ -412,8 +414,6 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
 
     ConditionalOnParameterTextual["cctk_iteration % " <> functionName <> "_calc_every != " <>
       functionName <> "_calc_offset", "return;\n"],
-
-    If[haveCondTextuals, Map[ConditionalOnParameterTextual["!(" <> # <> ")", "return;\n"] &,condTextuals], {}],
 
     CommentedBlock["Include user-supplied include files",
       Map[IncludeFile, lookupDefault[cleancalc, DeclarationIncludes, {}]]],

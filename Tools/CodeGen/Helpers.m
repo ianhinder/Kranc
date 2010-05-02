@@ -18,8 +18,12 @@
     along with Kranc; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
+BeginPackage["sym`"];
+{dummy};
 
-BeginPackage["Helpers`", {"Kranc`"}];
+EndPackage[];
+
+BeginPackage["Helpers`", {"sym`"}];
 
 TensorName::usage = "get the base name of a tensor object, i.e. TensorName[g[la, lb]] -> TensorName";
 

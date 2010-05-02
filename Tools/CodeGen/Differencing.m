@@ -125,7 +125,13 @@ point. Should be checked by someone competent!
 
 *)
 
-BeginPackage["Differencing`", {"CodeGen`", "Kranc`", "MapLookup`", 
+BeginPackage["sym`"];
+
+{Name, Definitions, shift, spacing, SBPDerivative};
+
+EndPackage[];
+
+BeginPackage["Differencing`", {"CodeGen`", "sym`", "MapLookup`", 
              "LinearAlgebra`MatrixManipulation`", "Errors`"}];
 
 CreateDifferencingHeader::usage = "";

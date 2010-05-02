@@ -24,20 +24,48 @@
 (* Generate Cactus Thorns from a high-level interface  *)
 (****************************************************************************)
 
-BeginPackage["KrancThorn`", {"CodeGen`", "Thorn`",
+BeginPackage["sym`"];
+
+ThornOptions =
+ {Calculations -> {},
+  DeclaredGroups -> {},
+  Implementation -> None,
+  InheritedImplementations -> {},
+  EvolutionTimelevels -> 3,
+  DefaultEvolutionTimelevels -> None,
+  RealParameters -> {},
+  IntParameters -> {},
+  KeywordParameters -> {},
+  InheritedRealParameters -> {},
+  InheritedIntParameters -> {},
+  InheritedKeywordParameters -> {},
+  ExtendedRealParameters -> {},
+  ExtendedIntParameters -> {},
+  ExtendedKeywordParameters -> {},
+  PartialDerivatives -> {},
+  ReflectionSymmetries -> {},
+  ZeroDimensions -> {},
+  UseLoopControl -> False,
+  UseCSE -> False,
+  ProhibitAssignmentToGridFunctionsRead -> False,
+  IncludeFiles -> {}};
+
+{ConditionalOnKeyword, ConditionalOnKeywords, CollectList, Interior,
+InteriorNoSync, Boundary, BoundaryWithGhosts, Where, PreDefinitions,
+AllowedSymbols, Parameters};
+
+EndPackage[];
+
+BeginPackage["KrancThorn`", {"CodeGen`", "sym`", "Thorn`",
  "MapLookup`", "KrancGroups`", "Differencing`",
  "CalculationFunction`", "Errors`", "Helpers`", "CactusBoundary`",
- "TensorTools`", "Param`", "Schedule`", "Interface`", "Kranc`"}];
+ "TensorTools`"}];
 
 CreateKrancThorn::usage = "Construct a Kranc thorn";
 CreateKrancThornTT::usage = "Construct a Kranc thorn using TensorTools";
 CreateGroupFromTensor::usage = "";
 
 Begin["`Private`"];
-
-(* --------------------------------------------------------------------------
-   Utility functions
-   -------------------------------------------------------------------------- *)
 
 VerifyGroups[gs_] := 
   If[!ListQ[gs],
@@ -75,10 +103,6 @@ Module[{used, unrecognized},
 replaceDots[x_] := 
   x /. (dot[y_] :> Symbol[ToString[y] <> "rhs"]);
 
-(* --------------------------------------------------------------------------
-   Thorn generation (main entry point for non-tensorial thorns)
-   -------------------------------------------------------------------------- *)
-
 Options[CreateKrancThorn] = ThornOptions;
 
 CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[]] :=
@@ -112,8 +136,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     defaultEvolutionTimelevels = lookupDefault[{opts}, DefaultEvolutionTimelevels, evolutionTimelevels];
     realParams = OptionValue[RealParameters];
     intParams = OptionValue[IntParameters];
-    realParamDefs = MakeFullParamDefs[realParams];
-    intParamDefs = MakeFullParamDefs[intParams];
+    realParamDefs = makeFullParamDefs[realParams];
+    intParamDefs = makeFullParamDefs[intParams];
     keywordParams = OptionValue[KeywordParameters];
     inheritedRealParams = OptionValue[InheritedRealParameters];
     inheritedIntParams = OptionValue[InheritedIntParameters];
@@ -125,7 +149,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     reflectionSymmetries = OptionValue[ReflectionSymmetries];
     useCSE = OptionValue[UseCSE];
 
-    coordGroup = {"grid::coordinates", {Kranc`x,Kranc`y,Kranc`z,Kranc`r}};
+    coordGroup = {"grid::coordinates", {sym`x,sym`y,sym`z,sym`r}};
     groups = Join[groupsOrig, {coordGroup}];
     includeFiles = Join[includeFiles, {"GenericFD.h", "Symmetry.h", "Vectors.hh", "sbp_calc_coeffs.h"}];
 
@@ -163,17 +187,17 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     (* Construct the configuration file *)
     InfoMessage[Terse, "Creating configuration file"];
-    configuration = CreateConfiguration[opts];
+    configuration = createKrancConfiguration[opts];
 
     (* Construct the interface file *)
     InfoMessage[Terse, "Creating interface file"];
-    interface = CreateKrancInterface[nonevolvedGroups,
+    interface = createKrancInterface[nonevolvedGroups,
       evolvedGroups, rhsGroups, groups,
       implementation, inheritedImplementations, includeFiles, opts];
 
     (* Construct the param file *)
     InfoMessage[Terse, "Creating param file"];
-    param = CreateKrancParam[evolvedGroups, nonevolvedGroups, groups, thornName,
+    param = createKrancParam[evolvedGroups, nonevolvedGroups, groups, thornName,
       realParamDefs, intParamDefs, keywordParams,
       inheritedRealParams, inheritedIntParams, inheritedKeywordParams,
       extendedRealParams, extendedIntParams, extendedKeywordParams,
@@ -182,7 +206,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     (* Construct the schedule file *)
     InfoMessage[Terse, "Creating schedule file"];
-    schedule = CreateKrancScheduleFile[calcs, groups, evolvedGroups,
+    schedule = createKrancScheduleFile[calcs, groups, evolvedGroups,
       rhsGroups, nonevolvedGroups, thornName,
       evolutionTimelevels];
 
@@ -211,16 +235,14 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     ext = CodeGen`SOURCESUFFIX;
 
     (* Construct a source file for each calculation *)
-    allParams = Join[Map[ParamName, realParamDefs],
-                     Map[ParamName, intParamDefs],
+    allParams = Join[Map[paramName, realParamDefs],
+                     Map[paramName, intParamDefs],
                      Map[unqualifiedName, inheritedRealParams], 
                      Map[unqualifiedName, inheritedIntParams], 
                      Map[unqualifiedName, inheritedKeywordParams]];
 
     InfoMessage[Terse, "Creating calculation source files"];
-    calcSources = Map[CreateSetterSource[
-      {Join[#, {Parameters -> allParams, PartialDerivatives -> partialDerivs}]},
-      False, useCSE, {}, opts] &, calcs];
+    calcSources = Map[CreateSetterSourceWrapper[#, allParams, partialDerivs, useCSE, opts] &, calcs];
     calcFilenames = Map[lookup[#, Name] <> ext &, calcs];
 
     (* Makefile *)
@@ -245,10 +267,6 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
                             {calcFilenames, calcSources}], boundarySources]};
     InfoMessage[Terse, "Creating thorn"];
     CreateThorn[thornspec]];
-
-(* --------------------------------------------------------------------------
-   Functions related to calculations
-   -------------------------------------------------------------------------- *)
 
 CalculationEvolvedVars[calc_] :=
   Module[{eqs, evolved, lhss},
@@ -282,6 +300,470 @@ extractNonevolvedGroups[declaredGroups_, calcs_, groups_] :=
 
     Return[nonevolvedGroups]];
 
+nonevolvedGroupInterfaceStructure[group_] := 
+{
+  Name -> groupName[group], 
+  VariableType -> "CCTK_REAL",
+  Timelevels -> nonevolvedTimelevels[group],
+  GridType -> "GF",
+  Comment -> groupName[group], 
+  Visibility -> "public",
+  Tags -> Join[GroupTags[group]],
+  Variables -> groupVariables[group]
+}
+
+evolvedGroupInterfaceStructure[group_, timelevels_] := 
+{
+  Name -> groupName[group], 
+  VariableType -> "CCTK_REAL",
+  Timelevels -> timelevels, 
+  GridType -> "GF",
+  Comment -> groupName[group], 
+  Visibility -> "public",
+  Tags -> GroupTags[group],
+  Variables -> groupVariables[group]
+}
+
+rhsGroupInterfaceStructure[group_, timelevels_] := 
+{
+  Name -> groupName[group], 
+  VariableType -> "CCTK_REAL",
+  Timelevels -> timelevels, 
+  GridType -> "GF",
+  Comment -> groupName[group], 
+  Visibility -> "public",
+  Tags -> GroupTags[group],
+  Variables -> groupVariables[group]
+}
+
+nonevolvedTimelevels[group_] :=
+  Module[{tls = GroupTimelevels[group]},
+    If[ tls === False, 1, tls]];
+
+createKrancConfiguration[opts:OptionsPattern[]] :=
+  Module[{configuration},
+    configuration = CreateConfiguration[opts];
+    Return[configuration]];
+
+Options[createKrancInterface] = ThornOptions;
+
+createKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_, groups_,
+  implementation_, inheritedImplementations_,
+  includeFiles_, opts:OptionsPattern[]] :=
+
+  Module[{registerEvolved, (*registerConstrained,*)
+    nonevolvedGroupStructures, evolvedGroupStructures, rhsGroupStructures,
+    groupStructures, interface},
+    VerifyGroupNames[nonevolvedGroups];
+    VerifyGroupNames[evolvedGroups];
+    VerifyGroupNames[rhsGroups];
+    VerifyGroups[groups];
+    VerifyString[implementation];
+    VerifyStringList[inheritedImplementations];
+    VerifyStringList[includeFiles];
+    (* These are the aliased functions that are USED by this thorn from other thorns *)
+    registerEvolved = 
+    {
+      Name      -> "MoLRegisterEvolved",
+      Type      -> "CCTK_INT",
+      ArgString -> "CCTK_INT IN EvolvedIndex, CCTK_INT IN RHSIndex"
+    };
+
+    (*
+    registerConstrained = 
+    {
+      Name      -> "MoLRegisterConstrained",
+      Type      -> "CCTK_INT",
+      ArgString -> "CCTK_INT IN ConstrainedIndex"
+    };
+    *)
+
+    diffCoeff = 
+    {
+      Name -> "Diff_coeff",
+      Type -> "SUBROUTINE",
+      ArgString -> "CCTK_POINTER_TO_CONST IN cctkGH, CCTK_INT IN dir, CCTK_INT IN nsize, CCTK_INT OUT ARRAY imin, CCTK_INT OUT ARRAY imax, CCTK_REAL OUT ARRAY q, CCTK_INT IN table_handle"
+    };
+
+
+    (* For each group declared in this thorn, we need an entry in the
+        interface file.  Each evolved group needs an associated rhs
+        group, but these are constructed at a higher level and are
+        listed in the nonevolved groups. *)
+    nonevolvedGroupStructures = 
+      Map[nonevolvedGroupInterfaceStructure[groupFromName[#, groups]] &, 
+          nonevolvedGroups];
+
+    evolvedGroupStructures =
+      Map[evolvedGroupInterfaceStructure[groupFromName[#, groups],
+          OptionValue[EvolutionTimelevels]] &, evolvedGroups];
+
+    rhsGroupStructures =
+      Map[rhsGroupInterfaceStructure[groupFromName[#, groups],
+          OptionValue[EvolutionTimelevels]] &, rhsGroups];
+
+    groupStructures = Join[nonevolvedGroupStructures,
+                           evolvedGroupStructures, rhsGroupStructures];
+
+    interface = CreateInterface[implementation, inheritedImplementations, 
+      Join[includeFiles, {CactusBoundary`GetIncludeFiles[]},
+           If[OptionValue[UseLoopControl], {"loopcontrol.h"}, {}]],
+      groupStructures,
+      UsesFunctions ->
+        Join[{registerEvolved, (*registerConstrained,*) diffCoeff}, 
+             CactusBoundary`GetUsedFunctions[]]];
+    Return[interface]];
+
+VerifyQualifiedName[name_] :=
+  If[! StringQ[name] || ! StringMatchQ[name, "*::*"],
+    ThrowError["Not a name with an implementation:", name]];
+
+implementationFromQualifiedName[name_] :=
+  Module[{colon},
+    VerifyQualifiedName[name];
+    colon = First[First[StringPosition[name, ":", 1]]];
+    StringDrop[name, colon - 1 - StringLength[name]]];
+
+unqualifiedName[name_] :=
+  Module[{colon},
+    VerifyQualifiedName[name];
+    colon = First[First[StringPosition[name, ":", 1]]];
+    Return[StringDrop[name, colon + 1]]];
+
+krancParamStruct[definition_, type_, inherited_] :=
+  Module[{description, name},
+    name = lookup[definition, Name];
+    description = lookupDefault[definition, Description, name];
+    Join[
+    {Name        -> name,
+     Type        -> type, 
+     Description -> description,
+     Default     -> lookup[definition, Default],
+     Visibility  -> "restricted"},
+    If[inherited,
+      {},
+      {AllowedValues -> {{Value -> "*:*", Description -> ""}}}]]];
+
+krancParamStructExtended[definition_, type_] :=
+  Module[{allowedValues, description, name},
+    name = unqualifiedName[lookup[definition, Name]];
+    description = lookupDefault[definition, Description, name];
+    allowedValues = lookup[definition, AllowedValues];
+    {Name        -> name,
+     Type        -> type, 
+     Description -> description,
+     Default     -> "",
+     Visibility  -> "restricted",
+     AllowedValues -> Map[{Value -> #, Description -> ""} &, allowedValues]}];
+
+krancKeywordParamStruct[struct_] :=
+{
+  Name -> lookup[struct, Name],
+  Type -> "KEYWORD",
+  Default -> lookup[struct, Default],
+  Description -> lookupDefault[struct, Description, lookup[struct, Name]],
+  Visibility -> lookupDefault[struct, Visibility, "private"],
+  AllowedValues -> Map[{Value -> #, Description -> #} &, lookup[struct, AllowedValues]]
+};
+
+makeFullParamDefs[params_] :=
+  Module[{p},
+    p = Map[If[!ListQ[#], {Name -> #, Default -> 0}, #] &, params];
+    p];
+
+paramName[paramDef_] :=
+  lookup[paramDef, Name];
+
+inheritParameters[imp_, reals_, ints_, keywords_] :=
+  Module[{theseReals, theseInts, theseKeywords, theseRealsNoImp, theseIntsNoImp, theseKeywordsNoImp, realStructs, intStructs, keywordStructs},
+    theseReals = Select[reals, implementationFromQualifiedName[#] == imp &];
+    theseInts = Select[ints, implementationFromQualifiedName[#] == imp &];
+    theseKeywords = Select[keywords, implementationFromQualifiedName[#] == imp &];
+    theseRealsNoImp = makeFullParamDefs[Map[unqualifiedName, theseReals]];
+    theseIntsNoImp = makeFullParamDefs[Map[unqualifiedName, theseInts]];
+    theseKeywordsNoImp = makeFullParamDefs[Map[unqualifiedName, theseKeywords]];
+    realStructs = Map[krancParamStruct[#, "CCTK_REAL", True] &, theseRealsNoImp];
+    intStructs = Map[krancParamStruct[#, "CCTK_INT", True] &, theseIntsNoImp];
+    keywordStructs = Map[krancParamStruct[#, "CCTK_KEYWORD", True] &, theseKeywordsNoImp];
+    If[(Length[theseReals] + Length[theseInts] + Length[theseKeywords]) > 0,
+      Return[{Name -> imp, UsedParameters -> Join[realStructs, intStructs, keywordStructs]}], 
+      Return[{}]]];
+
+extendParameters[imp_, reals_, ints_, keywords_] :=
+  Module[{theseReals, theseInts, theseKeywords, realStructs, intStructs, keywordStructs},
+    theseReals = Select[reals, implementationFromQualifiedName[lookup[#, Name]] == imp &];
+    theseInts = Select[ints, implementationFromQualifiedName[lookup[#, Name]] == imp &];
+    theseKeywords = Select[keywords, implementationFromQualifiedName[lookup[#, Name]] == imp &];
+    realStructs = Map[krancParamStructExtended[#, "CCTK_REAL"] &, theseReals];
+    intStructs = Map[krancParamStructExtended[#, "CCTK_INT"] &, theseInts];
+    keywordStructs = Map[krancParamStructExtended[#, "CCTK_KEYWORD"] &, theseKeywords];
+    If[(Length[theseReals] + Length[theseInts] + Length[theseKeywords]) > 0,
+      Return[{Name -> imp, ExtendedParameters -> Join[realStructs, intStructs, keywordStructs]}],
+      Return[{}]]];
+
+createKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_, 
+  reals_, ints_, keywords_,
+  inheritedReals_, inheritedInts_, inheritedKeywords_,
+  extendedReals_, extendedInts_, extendedKeywords_,
+  evolutionTimelevels_, defaultEvolutionTimelevels_,
+  calcs_] :=
+  Module[{nEvolved, evolvedMoLParam, evolvedGFs,
+    (*constrainedMoLParam,*) genericfdStruct, realStructs, intStructs,
+    allInherited, allExtended, implementationNames, molImplementation,
+    userImplementations, implementations, params, paramspec, param,
+    verboseStruct, calcOffsetStructs, calcEveryStructs},
+
+    (* reals and ints are symbols containing parameter names.  The
+       inherited ones have implementation names as well *)
+
+    evolvedGFs = variablesFromGroups[evolvedGroups, groups];
+
+    nEvolved   = Length[variablesFromGroups[evolvedGroups, groups]];
+(*    nPrimitive = Length[variablesFromGroups[nonevolvedGroups, groups]];*)
+(*    nPrimitive = Length[getConstrainedVariables[evolvedGroups, groups]];*)
+
+    evolvedMoLParam =
+    {
+      Name -> thornName <> "_MaxNumEvolvedVars",
+      Type -> "CCTK_INT",
+      Default -> nEvolved,
+      Description -> "Number of evolved variables used by this thorn",
+      Visibility -> "restricted",
+      AccumulatorBase -> "MethodofLines::MoL_Num_Evolved_Vars",
+      AllowedValues -> {{Value -> ToString[nEvolved] <> ":" <> ToString[nEvolved] , 
+                         Description -> "Number of evolved variables used by this thorn"}}
+    };
+
+    (*
+    constrainedMoLParam =
+    {
+      Name -> thornName <> "_MaxNumConstrainedVars",
+      Type -> "CCTK_INT",
+      Default -> nPrimitive,
+      Description -> "Number of constrained variables used by this thorn",
+      Visibility -> "restricted",
+      AccumulatorBase -> "MethodofLines::MoL_Num_Constrained_Vars",
+      AllowedValues -> {{Value -> ToString[nPrimitive] <> ":" <> ToString[nPrimitive] , 
+                         Description -> "Number of constrained variables used by this thorn"}}
+    };
+    *)
+
+    timelevelsParam =
+    {
+      Name -> "timelevels",
+      Type -> "CCTK_INT",
+      Default -> defaultEvolutionTimelevels,
+      Description -> "Number of active timelevels",
+      Visibility -> "restricted",
+      AllowedValues -> {{Value -> ToString[0] <> ":" <> ToString[evolutionTimelevels],
+                         Description -> ""}}
+    };
+
+    rhsTimelevelsParam =
+    {
+      Name -> "rhs_timelevels",
+      Type -> "CCTK_INT",
+      Default -> 1,
+      Description -> "Number of active RHS timelevels",
+      Visibility -> "restricted",
+      AllowedValues -> {{Value -> ToString[0] <> ":" <> ToString[evolutionTimelevels],
+                         Description -> ""}}
+    };
+
+    genericfdStruct =
+    {
+      Name -> "GenericFD",
+      UsedParameters -> 
+        {{Name -> "stencil_width",    Type -> "CCTK_INT"},
+         {Name -> "stencil_width_x",  Type -> "CCTK_INT"},
+         {Name -> "stencil_width_y",  Type -> "CCTK_INT"},
+         {Name -> "stencil_width_z",  Type -> "CCTK_INT"},
+         {Name -> "boundary_width",   Type -> "CCTK_INT"}}
+    };
+
+    realStructs = Map[krancParamStruct[#, "CCTK_REAL", False] &, reals];
+    verboseStruct = krancParamStruct[{Name -> "verbose", Default -> 0}, "CCTK_INT", False];
+    intStructs = Map[krancParamStruct[#, "CCTK_INT", False] &, ints];
+    calcEveryStructs = Map[krancParamStruct[{Name -> lookup[#, Name] <> "_calc_every", Default -> 1}, "CCTK_INT", False] &, calcs];
+    calcOffsetStructs = Map[krancParamStruct[{Name -> lookup[#, Name] <> "_calc_offset", Default -> 0}, "CCTK_INT", False] &, calcs];
+    keywordStructs = Map[krancKeywordParamStruct, keywords];
+
+    allInherited = Join[inheritedReals, inheritedInts, inheritedKeywords];
+    allExtended = Join[extendedReals, extendedInts, extendedKeywords];
+
+    implementationNames = Union[Map[implementationFromQualifiedName, allInherited],
+                                Map[implementationFromQualifiedName[lookup[#, Name]] &, allExtended]];
+
+    molImplementation =
+    {
+      Name -> "MethodOfLines",
+      UsedParameters -> 
+      {
+        {Name -> "MoL_Num_Evolved_Vars",     Type -> "CCTK_INT"}
+        (* {Name -> "MoL_Num_Constrained_Vars", Type -> "CCTK_INT"} *)
+      }
+    };
+
+    userImplementations = Map[inheritParameters[#, inheritedReals,inheritedInts,inheritedKeywords] &, 
+                              implementationNames];
+    userImplementations2 = Map[extendParameters[#, extendedReals,extendedInts,extendedKeywords] &, 
+                               implementationNames];
+
+    userImplementations = If[userImplementations=={{}},{},userImplementations];
+    userImplementations2 = If[userImplementations2=={{}},{},userImplementations2];
+
+    implementations = Join[userImplementations, userImplementations2, {genericfdStruct, molImplementation}];
+    params = Join[{verboseStruct}, realStructs, intStructs, keywordStructs, {evolvedMoLParam, (*constrainedMoLParam,*) timelevelsParam, rhsTimelevelsParam},
+                  calcEveryStructs, calcOffsetStructs,
+      CactusBoundary`GetParameters[evolvedGFs, evolvedGroups]];
+
+    paramspec = {Implementations -> implementations,
+                 NewParameters   -> params};
+
+    param = CreateParam[paramspec];
+    Return[param]
+  ];
+
+simpleGroupStruct[groupName_, timelevels_] := 
+{
+  Group -> groupName, 
+  Timelevels -> timelevels
+};
+
+evolvedGroupStruct[groupName_, timelevels_, maxtimelevels_] := 
+{
+  Group -> groupName, 
+  Timelevels -> timelevels,
+  MaxTimelevels -> "timelevels"
+};
+
+rhsGroupStruct[groupName_, timelevels_, maxtimelevels_] := 
+{
+  Group -> groupName, 
+  Timelevels -> timelevels,
+  MaxTimelevels -> "rhs_timelevels"
+};
+
+groupsSetInCalc[calc_, groups_] :=
+  Module[{gfs, eqs, lhss, gfsInLHS, lhsGroupNames},
+    gfs = allGroupVariables[groups];
+    eqs = lookup[calc, Equations];
+    lhss = Map[First, eqs];
+    gfsInLHS = Union[Cases[lhss, _ ? (MemberQ[gfs,#] &), Infinity]];
+
+    lhsGroupNames = containingGroups[gfsInLHS, groups];
+    Return[lhsGroupNames]
+  ];
+
+(* Each calculation can be scheduled at multiple points, so this
+   function returns a LIST of schedule structures for each calculation
+   *)
+scheduleCalc[calc_, groups_] :=
+  Module[{points, conditional, conditionals, keywordConditional, keywordConditionals, triggered, keyword, value, keywordvaluepairs, groupsToSync},
+    conditional = mapContains[calc, ConditionalOnKeyword];
+    conditionals = mapContains[calc, ConditionalOnKeywords];
+    triggered = mapContains[calc, TriggerGroups];
+    If[conditional,
+      keywordConditional = lookup[calc, ConditionalOnKeyword];
+      If[! MatchQ[keywordConditional, {lhs_String, rhs_String}],
+        ThrowError["ConditionalOnKeyword entry in calculation expected to be of the form {parameter, value}, but was ", keywordConditional, "Calculation is ", calc]];
+
+      keyword = keywordConditional[[1]];
+      value = keywordConditional[[2]];
+      ];
+    If[conditionals,
+      keywordConditionals = lookup[calc, ConditionalOnKeywords];
+      If[! MatchQ[keywordConditionals, {{_, _} ...}],
+        ThrowError["ConditionalOnKeywords entry in calculation expected to be of the form {{parameter, value}}, but was ", keywordConditionals, "Calculation is ", calc]];
+
+      keywordvaluepairs =
+        Map[# /. {keyword_, value_} -> {Parameter -> keyword, Value -> value} &,
+            keywordConditionals];
+      ];
+
+    groupsToSync = If[lookupDefault[calc, Where, Everywhere] === Interior || 
+                      lookupDefault[calc, Where, Everywhere] === Boundary,
+                      groupsSetInCalc[calc, groups],
+                      {}];
+
+    Map[
+      Join[
+      {
+        Name               -> lookup[calc, Name],
+        SchedulePoint      -> #,
+        SynchronizedGroups -> If[StringMatchQ[#, "*MoL_CalcRHS*", IgnoreCase -> True] || StringMatchQ[#, "*MoL_RHSBoundaries*", IgnoreCase -> True],
+                                 {},
+                                 groupsToSync],
+        Language           -> CodeGen`SOURCELANGUAGE, 
+        Comment            -> lookup[calc, Name]
+      },
+       If[triggered, {TriggerGroups -> lookup[calc, TriggerGroups]},
+          {}],
+       If[conditional, {Conditional -> {Parameter -> keyword, Value -> value}},
+          {}],
+       If[conditionals, {Conditionals -> keywordvaluepairs},
+          {}]
+      ] &,
+      lookup[calc, Schedule]]];
+
+createKrancScheduleFile[calcs_, groups_, evolvedGroups_, rhsGroups_, nonevolvedGroups_, thornName_, 
+                        evolutionTimelevels_] :=
+  Module[{scheduledCalcs, scheduledStartup, scheduleMoLRegister, globalStorageGroups, scheduledFunctions, schedule},
+
+    scheduledCalcs = Flatten[Map[scheduleCalc[#, groups] &, calcs], 1];
+
+    scheduledStartup = 
+    {
+      Name          -> thornName <> "_Startup",
+      SchedulePoint -> "at STARTUP",
+      Language      -> "C",
+      Options       -> "meta",
+      Comment       -> "create banner"
+    };
+
+    scheduleMoLRegister =
+    {
+      Name          -> thornName <> "_RegisterVars",
+      SchedulePoint -> "in MoL_Register", 
+      Language      -> "C", 
+      Options       -> "meta",
+      Comment       -> "Register Variables for MoL"
+    };
+    
+    scheduleRegisterSymmetries =
+    {
+      Name          -> thornName <> "_RegisterSymmetries",
+      SchedulePoint -> "in SymmetryRegister", 
+      Language      -> "C",
+      Options       -> "meta",
+      Comment       -> "register symmetries"
+    };
+
+    globalStorageGroups = Join[Map[simpleGroupStruct[#, nonevolvedTimelevels[groupFromName[#, groups]]] &, nonevolvedGroups], 
+                               Map[evolvedGroupStruct[#, evolutionTimelevels, evolutionTimelevels] &, evolvedGroups], 
+                               Map[rhsGroupStruct[#, evolutionTimelevels, evolutionTimelevels] &, rhsGroups]];
+
+    scheduledFunctions = 
+      Join[{scheduledStartup, scheduleMoLRegister, scheduleRegisterSymmetries}, 
+        scheduledCalcs, CactusBoundary`GetScheduledFunctions[thornName, evolvedGroups]];
+
+    schedule = CreateSchedule[globalStorageGroups, 
+      CactusBoundary`GetScheduledGroups[thornName], scheduledFunctions];
+
+    Return[schedule]];
+
+Options[CreateSetterSourceWrapper] = ThornOptions;
+
+CreateSetterSourceWrapper[calc_, parameters_, derivs_, useCSE_, opts:OptionsPattern[]] :=
+  Module[{modCalc},
+    modCalc = Join[calc,
+      {Parameters -> parameters},
+      {PartialDerivatives -> derivs}];
+
+    source = CreateSetterSource[{modCalc}, False, useCSE,
+      If[OptionValue[UseLoopControl], {"loopcontrol.h"}, {}], opts];
+    Return[source]];
+
 (* FIXME: This is still not quite right.  We only want to have those variables that
    we set as constrained, but I don't think this can hurt.*)
 
@@ -309,9 +791,7 @@ createKrancMoLRegister[evolvedGroupNames_, nonevolvedGroupNames_, groups_, imple
     molregister = CreateMoLRegistrationSource[molspec, False];
     Return[molregister]];
 
-(* --------------------------------------------------------------------------
-   Tensors
-   -------------------------------------------------------------------------- *)
+(* Tensorial wrapper *)
 
 CreateKrancThornTT[groups_, parentDirectory_, thornName_, opts___] :=
   Module[{calcs, expCalcs, expGroups, options, derivs, expDerivs, reflectionSymmetries, declaredGroups},

@@ -23,7 +23,31 @@
 (* This package provides a set of functions to create the various
    parts of a Cactus thorn and assemble them. *)
 
-BeginPackage["Thorn`", "CodeGen`", "CalculationFunction`", "MapLookup`", "KrancGroups`", "Helpers`", "Errors`", "Kranc`"];
+BeginPackage["sym`"];
+
+(* These symbols are used in this file.  Whenever this package is
+   used, the symbols will be added into the sym` context.  You will
+   need to make sure the sym` context is on your ContextPath to use
+   the symbols without the sym` prefix. *)
+
+{AccumulatorBase, ThornImplementation, Name, Type, Extend, Default,
+Comment, Range, Implementation, Group, SchedulePoint, Language,
+SynchronizedGroups, StorageGroups, Timelevels, MaxTimelevels,
+VariableType, GridType,
+Visibility, Variables, Implementations, Value, AllowedValues,
+UsedParameters, Description, ExtendedParameters, NewParameters,
+Directory, Configuration, Interface, Param, Schedule, Sources, Makefile,
+Filename,
+Contents, ThornName, BaseImplementation, EvolvedGFs, PrimitiveGFs,
+Groups, Calculation, GridFunctions, Shorthands, Equations, Parameter,
+Value, UsesFunctions, ArgString, Conditional, Conditionals, D1, D2, D3, D11, D22,
+D33, D21, D31, D32, Textual, TriggerGroups, Include, RHSGroups, Tags};
+
+{ExcisionGFs};
+
+EndPackage[];
+
+BeginPackage["Thorn`", "CodeGen`", "CalculationFunction`", "MapLookup`", "KrancGroups`", "Helpers`"];
 
 (* These functions are externally visible, and comprise the public
    interface to this package. *)
@@ -45,7 +69,7 @@ CreatePrecompMacros::usage = "";
 CreateStartupFile::usage = "";
 
 (* Ensure that we can refer to symbols without the `sym prefix *)
-(*$ContextPath = Join[{"sym`"}, $ContextPath];*)
+$ContextPath = Join[{"sym`"}, $ContextPath];
 
 Begin["`Private`"];
 
@@ -154,14 +178,6 @@ parameterBlock[spec_] :=
 
    If[mapContains[spec, AccumulatorBase],
       {" ACCUMULATOR-BASE=", lookup[spec, AccumulatorBase]},
-      {}],
-  
-   If[mapContains[spec, Steerable],
-      {" STEERABLE=",Switch[lookup[spec, Steerable], 
-        Never,"NEVER", 
-        Always,"ALWAYS", 
-        Recover, "RECOVER", 
-        _,ThrowError["Unknown 'Steerable' entry in parameter " <> ToString[lookup[spec, Name]] <> ": " <> ToString[lookup[spec, Steerable]]]]},
       {}],
 
    "\n",
@@ -481,8 +497,6 @@ calculationMacros[] :=
    CodeGen representation of a source file that defines a function for
    each Calculation. *)
 
-Options[CreateSetterSource] = ThornOptions;
-
 CreateSetterSource[calcs_, debug_, useCSE_, include_,
   opts:OptionsPattern[]] :=
   Module[{},
@@ -503,8 +517,7 @@ CreateSetterSource[calcs_, debug_, useCSE_, include_,
       ],
 
    Map[IncludeFile, Join[{"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h",
-                     (*"precomputations.h",*) "GenericFD.h", "Differencing.h", "Vectors.hh"}, include,
-                         If[OptionValue[UseLoopControl], {"loopcontrol.h"}, {}]]],
+                     (*"precomputations.h",*) "GenericFD.h", "Differencing.h", "Vectors.hh"}, include]],
    calculationMacros[],
 
    (* For each function structure passed, create the function and

@@ -151,7 +151,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     coordGroup = {"grid::coordinates", {sym`x,sym`y,sym`z,sym`r}};
     groups = Join[groupsOrig, {coordGroup}];
-    includeFiles = Join[includeFiles, {"GenericFD.h", "Symmetry.h", "sbp_calc_coeffs.h"}];
+    includeFiles = Join[includeFiles, {"GenericFD.h", "Symmetry.h", "Vectors.hh", "sbp_calc_coeffs.h"}];
 
     inheritedImplementations = Join[inheritedImplementations, {"Grid",
      "GenericFD"}, CactusBoundary`GetInheritedImplementations[]];

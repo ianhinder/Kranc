@@ -19,12 +19,8 @@
     along with Kranc; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
-BeginPackage["sym`"];
-{INV, SQR, CUB, QAD, exp, pow, fmax, fmin, dx, dy, dz, khalf, kthird, ktwothird, kfourthird, keightthird};
 
-EndPackage[];
-
-BeginPackage["CodeGen`", {"sym`", "Errors`"}];
+BeginPackage["CodeGen`", {"Errors`", "Kranc`"}];
 
 SOURCELANGUAGE::usage = "global variable == \"C\" or \"Fortran\" determines language
                         for code generation";

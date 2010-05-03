@@ -27,11 +27,7 @@
     along with Kranc; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+                         
 #ifndef NOPRECOMPUTE
 #define PRECOMPUTE
 #endif
@@ -677,14 +673,6 @@ int sgn(CCTK_REAL x);
 #define Dupwind3(gf,dir,i,j,k) ((dir * gf[CCTK_GFINDEX3D(cctkGH,i,j,k+dir)] \
 	 - dir * gf[CCTK_GFINDEX3D(cctkGH,i,j,k)]) * dxi)
 
-#ifdef __cplusplus
-// Define the restrict qualifier
-#  ifdef CCTK_CXX_RESTRICT
-#    undef restrict
-#    define restrict CCTK_CXX_RESTRICT
-#  endif
-#endif
-
 void GenericFD_GetBoundaryInfo(cGH const * restrict cctkGH,
                                int const * restrict cctk_lsh,
                                int const * restrict cctk_lssh,
@@ -800,8 +788,38 @@ void GenericFD_LoopOverInterior(cGH const * restrict cctkGH, Kranc_Calculation c
 
 
 
-#ifdef __cplusplus
-} /* extern "C" */
+/* Vectorisation of memory accesses  */
+
+#include <stdlib.h>
+#include <cctk.h>
+
+#if defined(__SSE2__) && defined(CCTK_REAL_PRECISION_8)
+
+#include <emmintrin.h>
+
+/* A vector type corresponding to CCTK_REAL */
+typedef __m128d CCTK_REAL_VEC;
+
+/* Really only SSE is required, but there doesn't seem to be a
+   preprocessing flag to check for this */
+#elif defined(__SSE2__) && defined(CCTK_REAL_PRECISION_4)
+
+#include <emmintrin.h>
+
+/* A vector type corresponding to CCTK_REAL */
+typedef __m128 CCTK_REAL_VEC;
+
+#else
+
+/* There is no vector type corresponding to CCTK_REAL */
+typedef CCTK_REAL CCTK_REAL_VEC;
+
 #endif
+
+/* The number of vector elements in a CCTK_REAL_VEC */
+static
+size_t const CCTK_REAL_VEC_SIZE = sizeof(CCTK_REAL_VEC) / sizeof(CCTK_REAL);
+
+
 
 #endif

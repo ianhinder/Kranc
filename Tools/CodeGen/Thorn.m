@@ -517,7 +517,7 @@ CreateSetterSource[calcs_, debug_, useCSE_, include_,
       ],
 
    Map[IncludeFile, Join[{"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h",
-                     (*"precomputations.h",*) "GenericFD.h", "Differencing.h", "Vectors.hh"}, include]],
+                     (*"precomputations.h",*) "GenericFD.h", "Differencing.h"}, include]],
    calculationMacros[],
 
    (* For each function structure passed, create the function and

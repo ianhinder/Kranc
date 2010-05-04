@@ -1310,7 +1310,7 @@ GetTensorAttribute[k_, attr_] :=
   Module[{oldMap},
     oldMap = TensorAttributes[k];
     If[!ListQ[oldMap],
-      ThrowError["SetTensorAttribute: " <> ToString[k] <> " has not been defined as a tensor"]];
+      ThrowError["GetTensorAttribute: " <> ToString[k] <> " has not been defined as a tensor"]];
     If[mapContains[oldMap, attr],
       Return[lookup[oldMap, attr]],
       ThrowError["Tensor " <> ToString[k] <> " does not have a " <> ToString[attr] <> " attribute."]]
@@ -1320,7 +1320,7 @@ HasTensorAttribute[k_, attr_] :=
   Module[{oldMap},
     oldMap = TensorAttributes[k];
     If[!ListQ[oldMap],
-      ThrowError["SetTensorAttribute: " <> ToString[k] <> " has not been defined as a tensor"]];
+      ThrowError["HasTensorAttribute: " <> ToString[k] <> " has not been defined as a tensor"]];
     mapContains[oldMap, attr]];
 
 

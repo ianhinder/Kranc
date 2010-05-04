@@ -254,6 +254,9 @@ interfaceGroupBlock[spec_] :=
 interfaceTag[tagName_String -> tagValue_String] :=
   tagName <> "=" <> "\"" <> tagValue <> "\"";
 
+interfaceTag[tagName_String -> tagValue_?IntegerQ] :=
+  tagName <> "=" <> ToString[tagValue];
+
 interfaceTag[tagName_String -> tagValue_?NumberQ] :=
   tagName <> "=" <> ToString[N[tagValue, 20]];
 

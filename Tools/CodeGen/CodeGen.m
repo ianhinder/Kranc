@@ -124,6 +124,7 @@ GenericGridLoop::usage = "";
 
 NameRoot::usage = "";
 PartitionVarList::usage = "";
+Quote::usage = "Quote[x] returns x surrounded by quotes";
 
 Begin["`Private`"];
 
@@ -1014,7 +1015,7 @@ CSE[code_] := Module[
   ]
 ];
 
-
+Quote[x_] := {"\"", x, "\""};
 
 End[];
 

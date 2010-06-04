@@ -36,6 +36,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <math.h>
+#include <stdio.h>
             
 #include "Symmetry.h"                         
 
@@ -57,6 +58,54 @@ int sgn(CCTK_REAL x)
   else 
     return 0;
 }
+
+int GenericFD_GetBoundaryWidth(cGH const * restrict const cctkGH)
+{
+  int is_internal[6];
+  int is_staggered[6];
+  int nboundaryzones[6];
+  int shiftout[6];
+  int ierr = -1;
+
+  if (CCTK_IsFunctionAliased ("MultiPatch_GetBoundarySpecification")) {
+    int const map = MultiPatch_GetMap (cctkGH);
+    if (map < 0)
+      CCTK_WARN(0, "Could not obtain boundary specification");
+    ierr = MultiPatch_GetBoundarySpecification
+      (map, 6, nboundaryzones, is_internal, is_staggered, shiftout);
+    if (ierr != 0)
+      CCTK_WARN(0, "Could not obtain boundary specification");
+  } else if (CCTK_IsFunctionAliased ("GetBoundarySpecification")) {
+    ierr = GetBoundarySpecification
+      (6, nboundaryzones, is_internal, is_staggered, shiftout);
+    if (ierr != 0)
+      CCTK_WARN(0, "Could not obtain boundary specification");
+  } else {
+    CCTK_WARN(0, "Could not obtain boundary specification");
+  }
+
+  int bw = nboundaryzones[0];
+
+  for (int i = 1; i < 6; i++)
+    if (nboundaryzones[i] != bw)
+    CCTK_WARN(0, "Number of boundary points is different on different faces");
+
+  return bw;
+}
+
+/* int GenericFD_BoundaryWidthTable(cGH const * restrict const cctkGH) */
+/* { */
+/*   int nboundaryzones[6]; */
+/*   GenericFD_GetBoundaryWidth(cctkGH, nboundaryzones); */
+
+/*   int table = Util_TableCreate(0); */
+/*   if (table < 0) CCTK_WARN(0, "Could not create table"); */
+
+/*   if (Util_TableSetIntArray(table, 6, nboundaryzones, "BOUNDARY_WIDTH") < 0) */
+/*     CCTK_WARN(0, "Could not set table"); */
+/*   return table; */
+/* } */
+
 
 /* Return the array indices in imin and imax for looping over the
    interior of the grid. imin is the index of the first grid point.

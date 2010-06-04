@@ -673,6 +673,10 @@ int sgn(CCTK_REAL x);
 #define Dupwind3(gf,dir,i,j,k) ((dir * gf[CCTK_GFINDEX3D(cctkGH,i,j,k+dir)] \
 	 - dir * gf[CCTK_GFINDEX3D(cctkGH,i,j,k)]) * dxi)
 
+int GenericFD_GetBoundaryWidth(cGH const * restrict const cctkGH);
+
+/* int GenericFD_BoundaryWidthTable(cGH const * restrict const cctkGH); */
+
 void GenericFD_GetBoundaryInfo(cGH const * restrict cctkGH,
                                int const * restrict cctk_lsh,
                                int const * restrict cctk_lssh,

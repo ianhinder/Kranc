@@ -220,7 +220,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     InfoMessage[Terse, "Creating calculation source files"];
     calcSources = Map[CreateSetterSource[
       {Join[#, {Parameters -> allParams, PartialDerivatives -> partialDerivs}]},
-      False, useCSE, {}, opts] &, calcs];
+      False, useCSE, {}, implementation, opts] &, calcs];
     calcFilenames = Map[lookup[#, Name] <> ext &, calcs];
 
     (* Makefile *)

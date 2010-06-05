@@ -63,7 +63,10 @@ groupsSetInCalc[calc_, groups_] :=
    function returns a LIST of schedule structures for each calculation
    *)
 scheduleCalc[calc_, groups_] :=
-  Module[{points, conditional, conditionals, keywordConditional, keywordConditionals, triggered, keyword, value, keywordvaluepairs, groupsToSync},
+  Module[{points, conditional, conditionals, keywordConditional,
+          keywordConditionals, triggered, keyword, value, keywordvaluepairs,
+          groupsToSync, groupName, userSchedule, groupSched, fnSched,
+          selbcSched, appbcSched, bcGroupName, condParams, bcGroupSched},
     conditional = mapContains[calc, ConditionalOnKeyword];
     conditionals = mapContains[calc, ConditionalOnKeywords];
     triggered = mapContains[calc, TriggerGroups];
@@ -90,7 +93,9 @@ scheduleCalc[calc_, groups_] :=
                       groupsSetInCalc[calc, groups],
                       {}];
 
-    Map[
+    userSchedule = lookupDefault[calc, Schedule, Automatic];
+    If[userSchedule =!= Automatic,
+    Return[Map[
       Join[
       {
         Name               -> lookup[calc, Name],
@@ -108,14 +113,73 @@ scheduleCalc[calc_, groups_] :=
        If[conditionals, {Conditionals -> keywordvaluepairs},
           {}]
       ] &,
-      lookup[calc, Schedule]]];
+      lookup[calc, Schedule]]],
+
+      (* Scheduling is automatic.  For the moment, all automatically
+      scheduled functions are going to be performed in
+      MoL_PseudoEvolution in a new group, along with routines to apply
+      boundary conditions to the variables set in the calculation. All
+      variables set in the calculation will be synchronised. *)
+
+      groupName = lookup[calc, Name] <> "_group";
+      bcGroupName = lookup[calc, Name] <> "_bc_group";
+
+      condParams = Join[
+        If[conditional,
+           {Conditional -> {Parameter -> keyword, Value -> value}}, {}],
+        If[conditionals, {Conditionals -> keywordvaluepairs}, {}]];
+
+      groupSched = {
+        Name               -> "group " <> groupName,
+        SchedulePoint      -> "in MoL_PseudoEvolution",
+        SynchronizedGroups -> {},
+        Language           -> "None",
+        Comment            -> lookup[calc, Name]
+      }
+      ~Join~ condParams;
+
+      fnSched = {
+        Name               -> lookup[calc, Name],
+        SchedulePoint      -> "in " <> groupName,
+        Language           -> CodeGen`SOURCELANGUAGE,
+        Comment            -> lookup[calc, Name]
+      };
+
+      bcGroupSched[where_] := {
+        Name               -> "group " <> bcGroupName,
+        SchedulePoint      -> where,
+        SynchronizedGroups -> {},
+        Language           -> "None",
+        Comment            -> lookup[calc, Name]
+      }
+      ~Join~ condParams;
+
+      selbcSched = {
+        Name               -> lookup[calc, Name] <> "_SelectBCs",
+        SchedulePoint      -> "in " <> bcGroupName,
+        SynchronizedGroups -> groupsToSync,
+        Language           -> CodeGen`SOURCELANGUAGE,
+        Comment            -> lookup[calc, Name] <> "_SelectBCs"
+      };
+
+      appbcSched = {
+        Name               -> "group ApplyBCs as " <> lookup[calc,Name] <> "_ApplyBCs",
+        SchedulePoint      -> "in " <> bcGroupName <> " after " <> lookup[calc, Name] <> "_SelectBCs",
+        Language           -> "None",
+        Comment            -> "Apply BCs for groups set in " <> lookup[calc, Name]
+      };
+
+      Return[{groupSched, fnSched} ~Join~ If[groupsToSync =!= {},
+        {selbcSched, appbcSched,
+         bcGroupSched["in "<>groupName <> " after " <> lookup[calc, Name]],
+         bcGroupSched["at CCTK_POSTRESTRICT"],
+         bcGroupSched["at CCTK_POSTRESTRICTINITIAL"]},{}]]]];
 
 CreateKrancScheduleFile[calcs_, groups_, evolvedGroups_, rhsGroups_, nonevolvedGroups_, thornName_, 
                         evolutionTimelevels_] :=
   Module[{scheduledCalcs, scheduledStartup, scheduleMoLRegister, globalStorageGroups, scheduledFunctions, schedule},
 
     scheduledCalcs = Flatten[Map[scheduleCalc[#, groups] &, calcs], 1];
-
     scheduledStartup = 
     {
       Name          -> thornName <> "_Startup",
@@ -143,9 +207,15 @@ CreateKrancScheduleFile[calcs_, groups_, evolvedGroups_, rhsGroups_, nonevolvedG
       Comment       -> "register symmetries"
     };
 
-    globalStorageGroups = Join[Map[simpleGroupStruct[#, NonevolvedTimelevels[groupFromName[#, groups]]] &, nonevolvedGroups], 
-                               Map[evolvedGroupStruct[#, evolutionTimelevels, evolutionTimelevels] &, evolvedGroups], 
-                               Map[rhsGroupStruct[#, evolutionTimelevels, evolutionTimelevels] &, rhsGroups]];
+    globalStorageGroups =
+      Join[
+        Map[simpleGroupStruct[#,
+              NonevolvedTimelevels[groupFromName[#, groups]]] &,
+            nonevolvedGroups],
+        Map[evolvedGroupStruct[#, evolutionTimelevels, evolutionTimelevels] &,
+            evolvedGroups],
+        Map[rhsGroupStruct[#, evolutionTimelevels, evolutionTimelevels] &,
+            rhsGroups]];
 
     scheduledFunctions = 
       Join[{scheduledStartup, scheduleMoLRegister, scheduleRegisterSymmetries}, 

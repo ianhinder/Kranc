@@ -23,7 +23,9 @@
 (* This package provides a set of functions to create the various
    parts of a Cactus thorn and assemble them. *)
 
-BeginPackage["Thorn`", "CodeGen`", "CalculationFunction`", "MapLookup`", "KrancGroups`", "Helpers`", "Errors`", "Kranc`"];
+BeginPackage["Thorn`", "CodeGen`", "CalculationFunction`",
+  "CalculationBoundaries`", "MapLookup`", "KrancGroups`", "Helpers`",
+  "Errors`", "Kranc`"];
 
 (* These functions are externally visible, and comprise the public
    interface to this package. *)
@@ -486,7 +488,7 @@ calculationMacros[] :=
 
 Options[CreateSetterSource] = ThornOptions;
 
-CreateSetterSource[calcs_, debug_, useCSE_, include_,
+CreateSetterSource[calcs_, debug_, useCSE_, include_, imp_,
   opts:OptionsPattern[]] :=
   Module[{},
 
@@ -513,7 +515,9 @@ CreateSetterSource[calcs_, debug_, useCSE_, include_,
    (* For each function structure passed, create the function and
       insert it *)
 
-   Map[CreateCalculationFunction[# , debug, useCSE, opts]& ,
+   CalculationBoundariesFunction[First[calcs], imp],
+
+   Map[CreateCalculationFunction[# , debug, useCSE, opts] &,
        calcs]}];
 
 

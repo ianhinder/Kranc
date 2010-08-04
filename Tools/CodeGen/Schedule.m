@@ -158,6 +158,7 @@ scheduleCalc[calc_, groups_] :=
         Name               -> lookup[calc, Name] <> "_SelectBCs",
         SchedulePoint      -> "in " <> bcGroupName,
         SynchronizedGroups -> groupsToSync,
+        Options               -> "level",
         Language           -> CodeGen`SOURCELANGUAGE,
         Comment            -> lookup[calc, Name] <> "_SelectBCs"
       };

@@ -34,6 +34,8 @@
 }
 \newcommand{\Tud}[3]{  #1 ^#2 _{\phantom{#2} #3}}
 
+\newcommand{\fixme}[1]{\textcolor{red}{#1}}
+
 \title{Kranc User Guide}
 \author{Sascha Husa and Ian Hinder}
 
@@ -46,7 +48,7 @@
 \section{Kranc}
 Kranc is a suite of Mathematica-based computer-algebra packages, which
 comprise a toolbox to convert certain (tensorial) systems of partial
-differential evolution equations to parallelized C or Fortran code for
+differential evolution equations to parallelized C code for
 solving initial boundary value problems.  Kranc can be used as a rapid
 prototyping system for physicists or mathematicians handling
 complicated systems of partial differential equations, but through
@@ -95,7 +97,7 @@ memory of a single node.
 \item Output of grid variables to permanent storage in a structured
 format.
 \end{itemize}
-These tasks are completely divorced from the physics and numerical
+These tasks are completely separate from the physics and numerical
 analysis side of the problem, but are necessary in most numerical
 codes.
 
@@ -103,21 +105,26 @@ codes.
 
 Kranc provides a Mathematica function called {\em CreateThorn}.  The
 user must construct arguments and data structures for this function
-describing the thorn they wish to create.  A Kranc thorn can:
+describing the thorn they wish to create.  Kranc generates code and
+Cactus CCL files for:
 
 \begin{itemize}
-\item Define the grid functions which the simulation will use.
-\item Compute the right hand sides of evolution equations so that the
+\item Declaring the grid functions which the simulation will use;
+\item Registering the grid functions for the evolved variables with
+  the MoL thorn;
+\item Computing the right hand sides of evolution equations so that the
 time integrator can compute the evolved variables at the next time
-step.  The time integration methods in Cactus require that those grid
-functions containing evolved variables must be registered as such, and
-the MoL thorn performs this registration.
-\item Performs a user-specified calculation at each point of the grid.
-This will typically set certain grid variables as functions of others,
-and can be used for various purposes including making a change of
-variables or computing intermediate or analysis quantities from
-evolved variables.
+step;
+\item Computing finite differences, both using built-in definitions of
+  standard centred finite differencing operators, as well as allowing
+  the user to create customised operators;
+\item Performing a user-specified calculation at each point of the grid.
 \end{itemize}
+
+User-specified calculations will typically set certain grid variables
+as functions of others, and can be used for various purposes including
+making a change of variables or computing intermediate or analysis
+quantities from evolved variables.
 
 The most important data structure in Kranc is a {\em Calculation}
 structure.  It encapsulates the idea of assigning new values to grid
@@ -132,29 +139,29 @@ by the Kranc system, such as a name for the calculation.
 
 \chapter{Using Kranc}
 
-\section{Types of arguments}
+%% \section{Types of arguments}
 
-Mathematica allows two types of arguments to be passed to a function.
-{\em positional arguments} and {\em named arguments} (referred to in
-the Mathematica book as {\em optional arguments}).  It is possible for
-some named arguments to be omitted from a function call; in this case
-a suitable default will be chosen.  Positional arguments are useful
-when there are few arguments to a function, and their meaning is clear
-in the calling context.  Named arguments are preferred when there are
-many arguments, as the argument names are given explicitly in the
-calling context.  Named arguments are given after the positional
-arguments in the form \verb|ArgumentName -> argumentvalue|.  For
-example:
+%% Mathematica allows two types of arguments to be passed to a function.
+%% {\em positional arguments} and {\em named arguments} (referred to in
+%% the Mathematica book as {\em optional arguments}).  It is possible for
+%% some named arguments to be omitted from a function call; in this case
+%% a suitable default will be chosen.  Positional arguments are useful
+%% when there are few arguments to a function, and their meaning is clear
+%% in the calling context.  Named arguments are preferred when there are
+%% many arguments, as the argument names are given explicitly in the
+%% calling context.  Named arguments are given after the positional
+%% arguments in the form \verb|ArgumentName -> argumentvalue|.  For
+%% example:
 
-\begin{center}
-\begin{minipage}{0.8 \textwidth}
-\begin{verbatim}
-f[x, y, Sum -> True, Verbose -> True]
-\end{verbatim}
-\end{minipage}
-\end{center}
-Here the x and y are positional arguments, and Sum and Verbose are
-named arguments.
+%% \begin{center}
+%% \begin{minipage}{0.8 \textwidth}
+%% \begin{verbatim}
+%% f[x, y, Sum -> True, Verbose -> True]
+%% \end{verbatim}
+%% \end{minipage}
+%% \end{center}
+%% Here the x and y are positional arguments, and Sum and Verbose are
+%% named arguments.
 
 \section{Data structures}
 
@@ -190,24 +197,33 @@ Calculation structures are the core of the Kranc system.  A Calculation
 structure has the following form:
 
 \begin{center}
-\begin{minipage}{0.8 \textwidth}
-\begin{verbatim}
-{
-  Name -> name,
-  Schedule -> schedulestring,
-  Shorthands -> shorthandlist,
-  CollectList -> collectlist,
-  Equations -> equationlist
-}
-\end{verbatim}
-\end{minipage}
+\begin{tabularx}{\tablewidth}{|l|X|X|l|}
+  \hline
+  \bf Key & \bf Type & \bf Description & \bf Default\\
+  \hline
+  Name & String & The name of the calculation & (none) \\
+
+  Equations & List of rules & The assignments that this calculation will perform & \{\} \\
+  Schedule & List of Strings & Cactus schedule specifications & Automatic \\
+  Shorthands & List of Symbols & Temporary variables which will be used in this calculation & \{\} \\
+  CollectList & List of Symbols & Variables which will be used by Collect in Simplify & \{\} \\
+  Where &  Everywhere / Interior / Boundary & Which part of the grid this calculation will be performed on & Everywhere \\
+  NoSimplify & True/False & Whether to disable simplification of the equations for this calculation & False \\
+  ConditionalOnTextuals & List of Strings & Conditional expressions to be inserted in the Cactus schedule.ccl & \{\} \\
+  DeclarationIncludes & List of Strings & Cactus include files to use in this thorn & \{\} \\
+  \hline
+\end{tabularx}
 \end{center}
 
-The {\it Shorthands} and {\it CollectList} entries are optional.
+Only the {\it Name} key is required; all the others take default
+values if omitted.
 
-{\it name} is a string which will be used as the function name in
-Cactus, as well as the base of the filename of the source file
-implementing the calculation in the generated thorn.  For example, 
+\subsubsection{Name}
+
+The name of a calculation is a string which will be used as the
+function name in Cactus, as well as the base of the filename of the
+source file implementing the calculation in the generated thorn.  For
+example,
 
 \begin{center}
 \begin{minipage}{0.8 \textwidth}
@@ -217,7 +233,9 @@ Name -> "wave_calc_rhs"
 \end{minipage}
 \end{center}
 
-{\it schedulestring} is a Cactus schedule specification describing
+\subsubsection{Schedule}
+
+This is a Cactus schedule specification describing
 when in the simulation the calculation will be performed.  At its
 simplest, it can be given as one of the following:
 \begin{itemize}
@@ -227,9 +245,16 @@ simplest, it can be given as one of the following:
 \end{itemize}
 so that the calculation is performed in either the initial data time
 bin, the schedule group for calculating right hand sides of evolution
-equations, or the analysis time bin.
+equations, or the analysis time bin.  This is given as a list to allow
+the calculation to be scheduled at multiple points.  Omitting the
+schedule information causes Kranc to schedule the calculation
+automatically.  Currently, this is used for analysis quantities which
+are scheduled in \verb|MoL_PseudoEvolution| and have boundary
+conditions applied after them.
 
-{\it shorthandlist} is a list of variables which are to be considered as
+\subsubsection{Shorthands}
+
+This is a list of variables which are to be considered as
 shorthands for the purposes of this calculation.  These are variables
 which are defined locally in the loop and are not grid functions
 defined over the whole grid.  They are used as temporary intermediate
@@ -244,7 +269,9 @@ Shorthands -> {a,b}
 would define two shorthands called $a$ and $b$ which can be assigned
 to and used in the equations.
 
-{\it equationlist} is a list of assignments to perform in the
+\subsubsection{Equations}
+
+The equation list is a list of assignments to perform in the
 calculation loop.  Each equation is of the form
 \begin{center}
 \begin{minipage}{0.8 \textwidth}
@@ -275,6 +302,8 @@ Note that the system is not designed to allow the same grid function
 to be set more than once in a single loop of a calculation.  This
 limitation may be removed in the future.
 
+\subsubsection{Example}
+
 The following example is taken from the Kranc implementation of the
 NOR formulation of Einstein's equations.  It is a calculation which
 describes the time evolution equation for the lapse function $\alpha$
@@ -299,7 +328,7 @@ lapseEvolveCalc =
 \end{verbatim}
 \end{minipage}
 \end{center}
-(The {\it MatricInverse} function is provided by TensorTools to
+(The {\it MatrixInverse} function is provided by TensorTools to
 generate an expression for the inverse matrix.)
 
 

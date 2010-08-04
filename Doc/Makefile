@@ -1,8 +1,9 @@
 
 LATEX = latex --interaction=nonstopmode 
+PDFLATEX = pdflatex --interaction=nonstopmode
 #-file-line-error-style
 
-default: KrancDoc.ps
+default: KrancDoc.pdf
 
 help:	
 	@echo "Type make <file>.ps to build from latex source. Can also make <file>.pdf and <file>.html"
@@ -17,7 +18,7 @@ clean:
 	dvips -o $@ $<
 
 %.html:	%.tex
-	latex2html -split 3 $<
+	htlatex $<
 
 %.pdf:	%.tex
-	pdflatex $<
+	$(PDFLATEX) $<

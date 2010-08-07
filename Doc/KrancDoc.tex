@@ -85,17 +85,16 @@ For example, Kranc makes uses of existing Cactus thorns which provide:
 computational grid.
 \item Scheduling of parts of the code based upon parameters.
 \item Standard efficient time integrators such as fourth order
-Runge-Kutta and iterative Crank-Nicolson via the {\em MoL} thorn
-written by I.~Hawke.
+  Runge-Kutta via the {\em MoL} thorn written by I.~Hawke.
 \item Mesh refinement \cite{Schnetter}; i.e., using variable resolution
 across the numerical grid, so that the computational resources are
 focused on interesting parts of the simulation.
-\item Automatic parallelization of the code to run across multiple
+\item Automatic parallelization of the code via MPI to run across multiple
 processors on a supercomputer or cluster, both to improve
 computational speed and to use larger grids than can be stored in the
 memory of a single node.
 \item Output of grid variables to permanent storage in a structured
-format.
+format, for example HDF5.
 \end{itemize}
 These tasks are completely separate from the physics and numerical
 analysis side of the problem, but are necessary in most numerical
@@ -202,14 +201,17 @@ structure has the following form:
   \bf Key & \bf Type & \bf Description & \bf Default\\
   \hline
   Name & String & The name of the calculation & (none) \\
-
   Equations & List of rules & The assignments that this calculation will perform & \{\} \\
   Schedule & List of Strings & Cactus schedule specifications & Automatic \\
   Shorthands & List of Symbols & Temporary variables which will be used in this calculation & \{\} \\
-  CollectList & List of Symbols & Variables which will be used by Collect in Simplify & \{\} \\
   Where &  Everywhere / Interior / Boundary & Which part of the grid this calculation will be performed on & Everywhere \\
+  ConditionalOnKeyword & \{String, String\} &
+    The calculation will only be performed if the parameter named by the first string has the value specified by the second string.   &  \\
+  ConditionalOnKeywords & \{\{String, String\}, \ldots \} &
+    The same as ConditionalOnKeyword, but all the parameters must have their corresponding values for the calculation to be performed.&  \\
+  ConditionalOnTextuals & List of Strings & Conditional expressions to be inserted in the Cactus schedule.ccl for the calculation to be performed. & \{\} \\
+  CollectList & List of Symbols & Variables which will be used by Collect in Simplify & \{\} \\
   NoSimplify & True/False & Whether to disable simplification of the equations for this calculation & False \\
-  ConditionalOnTextuals & List of Strings & Conditional expressions to be inserted in the Cactus schedule.ccl & \{\} \\
   DeclarationIncludes & List of Strings & Cactus include files to use in this thorn & \{\} \\
   \hline
 \end{tabularx}
@@ -222,8 +224,9 @@ values if omitted.
 
 The name of a calculation is a string which will be used as the
 function name in Cactus, as well as the base of the filename of the
-source file implementing the calculation in the generated thorn.  For
-example,
+source file implementing the calculation in the generated thorn.
+
+Example:
 
 \begin{center}
 \begin{minipage}{0.8 \textwidth}
@@ -232,42 +235,6 @@ Name -> "wave_calc_rhs"
 \end{verbatim}
 \end{minipage}
 \end{center}
-
-\subsubsection{Schedule}
-
-This is a Cactus schedule specification describing
-when in the simulation the calculation will be performed.  At its
-simplest, it can be given as one of the following:
-\begin{itemize}
-\item {\tt "at INITIAL"}
-\item {\tt "in MoL\_CalcRHS"}
-\item {\tt "at ANALYSIS"}
-\end{itemize}
-so that the calculation is performed in either the initial data time
-bin, the schedule group for calculating right hand sides of evolution
-equations, or the analysis time bin.  This is given as a list to allow
-the calculation to be scheduled at multiple points.  Omitting the
-schedule information causes Kranc to schedule the calculation
-automatically.  Currently, this is used for analysis quantities which
-are scheduled in \verb|MoL_PseudoEvolution| and have boundary
-conditions applied after them.
-
-\subsubsection{Shorthands}
-
-This is a list of variables which are to be considered as
-shorthands for the purposes of this calculation.  These are variables
-which are defined locally in the loop and are not grid functions
-defined over the whole grid.  They are used as temporary intermediate
-variables when setting more complicated grid functions.  For example,
-\begin{center}
-\begin{minipage}{0.8 \textwidth}
-\begin{verbatim}
-Shorthands -> {a,b}
-\end{verbatim}
-\end{minipage}
-\end{center}
-would define two shorthands called $a$ and $b$ which can be assigned
-to and used in the equations.
 
 \subsubsection{Equations}
 
@@ -290,19 +257,155 @@ represents a time derivative of the grid function {\it gf}; this
 should be used when the calculation is scheduled in {\tt MoL\_CalcRHS}
 for calculating the right hand sides of the evolution equations.
 
-The arrangement of the terms in the equations can have a marked effect
-on both compile time and run time.  It is often helpful to tell
+It is possible to use the same variable (either a grid function or a
+shorthand) on both the left hand side and the right hand side of an
+equation assignment.  However, in that case the variable must not be
+differentiated on the right hand side, as this would lead to a result
+which depended on the ordering of the loop over the grid points, which
+is almost certainly not what is intended.  Kranc will detect such a
+differentiation and abort with an error.  See the option
+ProhibitAssignmentToGridFunctionsRead to CreateThorn in
+Sec.\ref{sec:createthornopts} if you want to prohibit such assignments
+altogether.
+
+\subsubsection{Schedule}
+
+This is a list of Cactus schedule specifications describing when in
+the simulation the calculation will be performed.  Multiple schedule
+strings can be provided to allow the calculation to be scheduled at
+multiple points.  Omitting the schedule information causes Kranc to
+schedule the calculation automatically.  Currently, this is used for
+analysis quantities which are scheduled in \verb|MoL_PseudoEvolution|
+and have boundary conditions applied after them.
+
+Examples:
+
+\begin{center}
+\begin{minipage}{0.8 \textwidth}
+\begin{verbatim}
+Schedule -> {"at INITIAL"}
+Schedule -> {"in MoL_CalcRHS"}
+Schedule -> {"at ANALYSIS"}
+\end{verbatim}
+\end{minipage}
+\end{center}
+
+\subsubsection{Shorthands}
+
+This is a list of variables which are to be considered as shorthands
+for the purposes of this calculation.  These are temporary variables
+which are defined locally in the loop and are not grid functions
+defined over the whole grid.  They are used as intermediate variables
+when setting more complicated grid functions.  Since they are defined
+only pointwise, they cannot be differentiated.
+
+Examples:
+
+\begin{center}
+\begin{minipage}{0.8 \textwidth}
+\begin{verbatim}
+Shorthands -> {a,b}
+Shorthands -> {hInv[ua,ub], alpha, Ric[la,lb]}
+\end{verbatim}
+\end{minipage}
+\end{center}
+
+\subsubsection{Where}
+
+Different calculations need to be evaluated on different portions of
+the numerical grid.  For example, a calculation which implements a
+boundary condition needs to be performed on the boundary points only.
+A calculation which contains derivatives needs to be performed on the
+interior of the grid only.  A calculation which does not contain
+derivatives can be performed even in the ghost zones, so that a
+potentially time-consuming synchronisation can be avoided.  The Where
+option can have values of Everywhere, Interior or Boundary
+corresponding to these choices.  There is currently no check that a
+calculation containing derivatives is not performed on the entire
+grid, nor that the number of ghost zones selected by the user at run
+time is compatible with the finite differencing operator chosen.
+
+Examples:
+\begin{center}
+\begin{minipage}{0.8 \textwidth}
+\begin{verbatim}
+Where -> Everywhere
+\end{verbatim}
+\end{minipage}
+\end{center}
+
+\subsubsection{ConditionalOnKeyword}
+
+This key allows a calculation to be performed conditionally based on
+the value of a parameter set by the user at run time.  Setting
+\begin{center}
+\begin{minipage}{0.8 \textwidth}
+\begin{verbatim}
+ConditionalOnKeyword -> {<param>, <value>}
+\end{verbatim}
+\end{minipage}
+\end{center}
+where \verb|<param>| is a string naming a keyword parameter defined in
+the KeywordParameters option to CreateThorn will cause the calculation
+to be performed only if that parameter is set to \verb|<value>|.
+
+Example:
+
+\begin{center}
+\begin{minipage}{0.8 \textwidth}
+\begin{verbatim}
+ConditionalOnKeyword -> {"gauge_condition", "harmonic"}
+\end{verbatim}
+\end{minipage}
+\end{center}
+
+\subsubsection{ConditionalOnKeywords}
+
+The ConditionalOnKeywords key takes a list of
+\verb|{<param>, <value>}| pairs as described under
+ConditionalOnKeyword.  All the parameters must match for the
+calculation to be scheduled.
+
+\subsubsection{ConditionalOnTextuals}
+
+This key can be set to a string which is used verbatim in the Cactus
+schedule.ccl file.  Any valid Cactus conditional string can be used.
+
+\subsubsection{CollectList}
+
+The arrangement of the terms in the equations can have a significant
+effect on both compile time and run time.  It is often helpful to tell
 Mathematica to collect the coefficients of certain types of term,
-rather than expanding out entire expressions.  To this end, the user
-can include a {\em CollectList} entry in a calculation; this is a list
-of variables whose coefficients should be collected during
-simplification.
+rather than expanding out entire expressions.  The user can include a
+{\em CollectList} entry in a calculation; this is a list of variables
+whose coefficients should be collected during simplification.
 
-Note that the system is not designed to allow the same grid function
-to be set more than once in a single loop of a calculation.  This
-limitation may be removed in the future.
+\subsubsection{NoSimplify}
 
-\subsubsection{Example}
+Setting this option to True stops Kranc from simplifying the right
+hand sides of expressions in this calculation.  This could be used
+because the user has found a way of writing the expressions which
+leads to faster code than if Kranc's simplification is used, or
+because the expressions are so complicated that the simplification
+takes a very long time to perform.
+
+Example:
+
+\begin{center}
+\begin{minipage}{0.8 \textwidth}
+\begin{verbatim}
+NoSimplify -> True
+\end{verbatim}
+\end{minipage}
+\end{center}
+
+\subsubsection{DeclarationIncludes}
+
+This is a list of filenames which will be \verb|#include|ed in the
+generated code inside the calculation function but before the loop
+over grid points.
+
+\subsubsection{{\it Calculation Example}}
 
 The following example is taken from the Kranc implementation of the
 NOR formulation of Einstein's equations.  It is a calculation which
@@ -469,7 +572,7 @@ dot[v] -> PDstandard2nd[v,1] + Diss2nd[v]
 \end{center}
 
 A PartialDerivatives structure is given as an argument to the thorn
-generation functions.
+generation function CreateThorn.
 
 \subsection{Data structure: GroupDefinition}
 

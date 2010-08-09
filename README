@@ -1,7 +1,6 @@
 
 ========================================
     KRanc Assembles Numerical Codes
-    Version 1.0.0
 ========================================
 
 What is Kranc?
@@ -10,6 +9,9 @@ What is Kranc?
 Kranc is a set of Mathematica scripts to convert systems of time
 evolution PDEs into code for numerical simulations using the Cactus
 infrastructure.  You need Mathematica in order to use Kranc.
+
+NOTE: This README has not been updated for use with modern versions of
+Kranc and the instructions below will not work.
 
 What is here?
 -------------
@@ -22,7 +24,7 @@ Tools            Mathematica packages used in the conversion of a PDE system
                  to a numerical code
 
 Examples         Worked out examples (massive scalar field, Maxwell equations, ADM
-                 formulation of general relativity)
+                 formulation of general relativity) -- Not currently included
 
 Auxiliary        Auxiliary code required for compilation of the code produced
                  by the scripts
@@ -210,9 +212,9 @@ Contributing to Kranc
 ---------------------
 
 In order to contribute a patch to Kranc, first ensure that you are
-working with a clone of the public Kranc repository, obtained by
+working with a clone of the Kranc repository, obtained by
 
-  git clone http://www.aei.mpg.de/~ianhin/kranc.git
+  git clone http://github.com/ianhinder/kranc
 
 Commit your patches to your local working copy, preferably with each
 new feature in a separate patch, and make sure the repository is up to
@@ -230,12 +232,16 @@ which will output numbered .patch files, one per commit, to the
 current directory.  Commits which are present in your repository but
 not in the public repository you cloned from (origin) will be output.
 
-Email these to the maintainer (currently ian.hinder@aei.mpg.de) for
-review and inclusion.
+Email these to the maintainers for review and inclusion.
 
 Authors:
 --------
-Sascha Husa, Christiane Lechner
+
+Sascha Husa
+
+Christiane Lechner
+
+Ian Hinder
 
   Max Planck Institute for Gravitational Physics / Albert Einstein Institute
   Am Muehlenberg 1
@@ -243,14 +249,3 @@ Sascha Husa, Christiane Lechner
   Germany
 
   http://numrel.aei.mpg.de
-
-
-
-Ian Hinder
-  School of Mathematics
-  University of Southampton
-  Highfield
-  SO17 1BJ
-  UK
-
-  http://www.maths.soton.ac.uk/

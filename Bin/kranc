@@ -1,32 +1,38 @@
 #!/bin/bash
 
-# A shell script to run Kranc on a mathematica input file
+# Assume that this script is called from the Kranc/Bin directory
+export KRANCDIR=$(dirname $0)/..
+export KRANCVERBOSE=no
 
-INFILE=$1
+while getopts "v" flag
+do
+  case $flag in
+      "v")
+	  export KRANCVERBOSE=yes
+	  ;;
+  esac
+done
 
-if ! which math >/dev/null
+shift $(expr $OPTIND - 1)
+
+if [ $# -eq 0 ]
 then
-    echo "Cannot find math executable.  Is Mathematica on your path?"
+    echo "Usage: $0 [-v] <script>"
+    exit 1
 fi
 
-LOCALKRANCPATH="Kranc/Tools/CodeGen:Kranc/Tools/MathematicaMisc:Kranc/Tools/External"
+MMASCRIPT=$1
+shift
 
-if [ -z "$MATHPATH" ]
-then
-    MATHPATH=$LOCALKRANCPATH
+MATH_MACOS=/Applications/Mathematica.app/Contents/MacOS/MathKernel
+
+if which math >/dev/null; then
+    MATH=math
+elif [ -x $MATH_MACOS ]; then
+    MATH=$MATH_MACOS
 else
-    MATHPATH=$LOCALKRANCPATH:$MATHPATH
+    echo "Cannot find math executable.  Is Mathematica on your path?"
+    exit 1
 fi
 
-export MATHPATH
-
-math <<EOF
-
-Module[{mp, newPath},
-  mp = StringToStream[Environment["MATHPATH"]];
-  newPath = Map[ToString, ReadList[mp, Word, WordSeparators->{":"}]];
-  \$Path = Join[newPath, \$Path]];
-Needs["Errors\`"];
-exception = Catch[Get["$INFILE"], KrancError];
-PrintError[exception];
-EOF
+$MATH -run "Get[\"$KRANCDIR/Tools/MathematicaMisc/RunKranc.m\"]" $MMASCRIPT </dev/null

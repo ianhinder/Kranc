@@ -136,6 +136,112 @@ intermediate expressions which are used later in the
 calculation.  Calculations also contain additional information needed
 by the Kranc system, such as a name for the calculation.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Getting Started}
+
+\section{Tutorial for new Cactus users}
+
+This section provides a step-by-step tutorial for Kranc for people who
+have not used Cactus before.  It will lead you through downloading
+Cactus and Kranc, building one of the example Kranc thorns, compiling
+the thorn into a Cactus executable, running the executable and
+analysing the output.  People who have used Cactus before and already
+have a working setup should skip this section and use
+Sec.~\ref{sec:tutcur} instead.
+
+The first step is to create a Cactus directory.  Everything will then
+be downloaded into this directory and compiled there.
+
+\begin{verbatim}
+  mkdir Cactus
+  cd Cactus
+\end{verbatim}
+
+Download Kranc into the newly created Cactus directory:
+\begin{verbatim}
+  git clone git://github.com/ianhinder/kranc
+\end{verbatim}
+
+Download the Cactus {\em GetComponents} script and make it executable.
+This script allows you to download Cactus thorns from many different
+repositories listed in a ``ThornList''.
+\begin{verbatim}
+  wget http://www.cactuscode.org/download/GetComponents
+  chmod u+x GetComponents
+\end{verbatim}
+
+Download Cactus and several thorns specified in the Kranc example thornlist:
+\begin{verbatim}
+  ./GetComponents --root=. kranc/Auxiliary/Cactus/thornlist.th
+\end{verbatim}
+
+Configure Cactus to run on your local machine.  You will need a C
+compiler.  See the Cactus documentation for more information on this
+step if Cactus does not configure automatically on your system.
+\begin{verbatim}
+  make wave-config ThornList=kranc/Auxiliary/Cactus/thornlist.th
+\end{verbatim}
+
+Build a Cactus executable:
+\begin{verbatim}
+  make wave
+\end{verbatim}
+
+Run the Cactus executable with the example wave equation parameter file:
+\begin{verbatim}
+  cd Kranc/Examples
+  mpirun ../../exe/cactus_wave wave.par
+\end{verbatim}
+
+Analyse the output of the simulation:
+\begin{verbatim}
+  ygraph wave/phi.x.asc
+\end{verbatim}
+
+\section{Tutorial for Current Cactus Users}
+\label{sec:tutcur}
+
+Change into your Cactus directory and download the current version of Kranc:
+\begin{verbatim}
+  cd Cactus
+  git clone git://github.com/ianhinder/kranc
+\end{verbatim}
+
+Make a symbolic link from the Kranc examples to the arrangements directory:
+\begin{verbatim}
+  ln -s ../kranc/Examples arrangements/KrancExamples
+\end{verbatim}
+
+Make a symbolic link from the Kranc support arrangement into your Cactus tree:
+\begin{verbatim}
+  ln -s ../kranc/Auxiliary/Cactus/KrancNumericalTools arrangements/KrancNumericalTools
+\end{verbatim}
+
+Go into the KrancExamples arrangement and build the Wave thorn:
+\begin{verbatim}
+  cd arrangements/KrancExamples
+  ../../kranc/Bin/kranc Wave.m
+\end{verbatim}
+
+It is assumed that Mathematica is available on your path with the name
+ "math", or at the location
+ \verb|/Applications/Mathematica.app/Contents/MacOS/MathKernel| for Mac OS.
+
+You should get a thorn generated in the current directory called Wave.
+
+Add \verb|KrancExamples/Wave| and \verb|KrancNumericalTools/GenericFD| to the
+ thornlist of one of your configurations, or make one from scratch.
+
+Recompile Cactus.
+
+Run Cactus with the parameter file wave.par found in
+ \verb|arrangements/KrancExamples|.
+
+Examine the 1D output phi.x.asc and pi.x.asc.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \chapter{Using Kranc}
 
 %% \section{Types of arguments}

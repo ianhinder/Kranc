@@ -22,3 +22,5 @@ clean:
 
 %.pdf:	%.tex
 	$(PDFLATEX) $<
+	$(PDFLATEX) $<
+	$(PDFLATEX) $<

@@ -10,7 +10,7 @@ VerifyList;
 InfoMessage;
 SetDebugLevel;
 
-Quiet = 0;
+DebugQuiet = 0;
 Warnings = 1
 Terse = 2;
 Info = 3;

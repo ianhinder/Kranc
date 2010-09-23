@@ -126,7 +126,7 @@ point. Should be checked by someone competent!
 *)
 
 BeginPackage["Differencing`", {"CodeGen`", "Kranc`", "MapLookup`", 
-             "LinearAlgebra`MatrixManipulation`", "Errors`"}];
+             (* "LinearAlgebra`MatrixManipulation`", *) "Errors`"}];
 
 CreateDifferencingHeader::usage = "";
 PrecomputeDerivatives::usage = "";
@@ -500,7 +500,48 @@ RemoveDuplicateRules[l_] :=
    using m grid points before and m grid points after the centre
    point. Return an error if this is not possible. *)
 
-StandardCenteredDifferenceOperator[p_, m_, i_] :=
+StandardCenteredDifferenceOperator[p_, m_, i_] := 
+  Module[{f, h, coeffs, expansion, e1, e2, eqs, mat, vec, result, 
+    deriv, mat2, vec2, coefArrs}, 
+    coeffs = Table[Symbol["c" <> ToString[n]], {n, 1, 2 m + 1}];
+    expansion = Apply[Plus, Thread[coeffs Table[f[n h], {n, -m, +m}]]];
+    e1 = expansion /. f[n_ h] -> Series[f[n h], {h, 0, 2 m + 1}];
+    e2 = Table[Coefficient[e1, Derivative[n][f][0]], {n, 0, 2 m + 1}];
+    eqs = Table[e2[[n]] == If[n - 1 == p, 1, 0], {n, 1, 2 m + 1}];
+    coefArrs = Normal@CoefficientArrays[eqs, coeffs];
+    mat = coefArrs[[2]];
+    vec = Map[Last, eqs];
+    result = Inverse[mat].vec;
+    deriv = expansion /. Thread[coeffs -> result];
+    deriv /. {f[n_ h] -> shift[i]^n, f[h] -> shift[i], f[0] -> 1, 
+    h -> spacing[i]}];
+
+
+(* Return a difference operator approximating a derivative of order p
+   using m1 grid points before and m2 grid points after the centre
+   point. Return an error if this is not possible. *)
+
+StandardUpwindDifferenceOperator[p_, m1_, m2_, i_] := 
+  Module[{f, h, coeffs, expansion, e1, e2, eqs, mat, vec, result, deriv, coefArrs},
+    coeffs = Table[Symbol["c" <> ToString[n]], {n, 1, m1 + m2 + 1}];
+    expansion = Apply[Plus, Thread[coeffs Table[f[n h], {n, -m1, +m2}]]];
+    e1 = expansion /. f[n_ h] -> Series[f[n h], {h, 0, m1 + m2 + 1}];
+    e2 = Table[Coefficient[e1, Derivative[n][f][0]], {n, 0, m1 + m2 + 1}];
+    eqs = Table[e2[[n]] == If[n - 1 == p, 1, 0], {n, 1, m1 + m2 + 1}];
+    coefArrs = Normal@CoefficientArrays[eqs, coeffs];
+    mat = coefArrs[[2]];
+    vec = Map[Last, eqs];
+    result = Inverse[mat].vec;
+    deriv = expansion /. Thread[coeffs -> result];
+    deriv /. {f[n_ h] -> shift[i]^n, f[h]->shift[i], f[0] -> 1, h -> spacing[i]} ]; 
+
+
+(* The function LinearEquationsToMatrices is deprecated.  These
+functions test that the replacement using CoefficientArray gives the
+same answer. *)
+
+(*
+StandardCenteredDifferenceOperatorOld[p_, m_, i_] :=
   Module[{f, h, coeffs, expansion, e1, e2, eqs, mat, vec, result, deriv},
     coeffs = Table[Symbol["c" <> ToString[n]], {n, 1, 2m + 1}];
     expansion = Apply[Plus, Thread[coeffs Table[f[n h], {n, -m, +m}]]];
@@ -512,11 +553,13 @@ StandardCenteredDifferenceOperator[p_, m_, i_] :=
     deriv = expansion /. Thread[coeffs -> result];
     deriv /. {f[n_ h] -> shift[i]^n, f[h]->shift[i], f[0] -> 1, h -> spacing[i]}];
 
-(* Return a difference operator approximating a derivative of order p
-   using m1 grid points before and m2 grid points after the centre
-   point. Return an error if this is not possible. *)
+testNewOps[] :=
+  Table[Print[{p, m, i}]; 
+    StandardCenteredDifferenceOperatorOld[p, m, i] === 
+    StandardCenteredDifferenceOperator[p, m, i], 
+    {p, 1, 3}, {m, 1, 6}, {i, 1, 3}];
 
-StandardUpwindDifferenceOperator[p_, m1_, m2_, i_] := 
+StandardUpwindDifferenceOperatorOld[p_, m1_, m2_, i_] := 
   Module[{f, h, coeffs, expansion, e1, e2, eqs, mat, vec, result, deriv},
     coeffs = Table[Symbol["c" <> ToString[n]], {n, 1, m1 + m2 + 1}];
     expansion = Apply[Plus, Thread[coeffs Table[f[n h], {n, -m1, +m2}]]];
@@ -527,6 +570,15 @@ StandardUpwindDifferenceOperator[p_, m1_, m2_, i_] :=
     result = Inverse[mat].vec;
     deriv = expansion /. Thread[coeffs -> result];
     deriv /. {f[n_ h] -> shift[i]^n, f[h]->shift[i], f[0] -> 1, h -> spacing[i]} ]; 
+
+testNewUpwindOps[] :=
+  Table[Print[{p, m1, m2, i}]; 
+    StandardUpwindDifferenceOperatorOld[p, m1, m2, i] === 
+    StandardUpwindDifferenceOperator[p, m1, m2, i], 
+    {p, 1, 3}, {m1, 1, 6}, {m2, 1, 6}, {i, 1, 3}];
+
+*)
+
 
 End[];
 

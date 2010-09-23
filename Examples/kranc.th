@@ -1,0 +1,64 @@
+# Thornlist for Kranc examples
+!CRL_VERSION = 1.0
+
+!DEFINE ROOT = Cactus
+!DEFINE ARR  = $ROOT/arrangements
+
+# Cactus Flesh
+!TARGET   = $ROOT
+!TYPE     = svn
+!AUTH_URL = https://svn.cactuscode.org/flesh/trunk
+!URL      = http://svn.cactuscode.org/flesh/trunk
+!CHECKOUT = Cactus
+!NAME     = .
+
+# Cactus thorns
+!TARGET   = $ARR
+!TYPE     = svn
+!AUTH_URL = https://svn.cactuscode.org/arrangements/$1/$2/trunk
+!URL      = http://svn.cactuscode.org/arrangements/$1/$2/trunk
+!CHECKOUT =
+CactusBase/Boundary
+CactusBase/CartGrid3D
+CactusBase/CoordBase
+CactusBase/Fortran
+CactusBase/IOBasic
+CactusBase/IOUtil
+CactusBase/InitBase
+CactusBase/LocalInterp
+CactusBase/SymBase
+CactusBase/Time
+
+CactusNumerical/MoL
+CactusNumerical/Periodic
+CactusNumerical/Slab
+
+CactusUtils/NaNChecker
+
+# Additional Cactus thorns
+!TARGET   = $ARR
+!TYPE     = svn
+!AUTH_URL = https://svn.cactuscode.org/projects/$1/$2/trunk
+!URL      = http://svn.cactuscode.org/projects/$1/$2/trunk
+!CHECKOUT =
+ExternalLibraries/GSL
+
+# Carpet, the AMR driver
+!TARGET   = $ARR
+!TYPE     = git
+!URL      = git://carpetcode.dyndns.org/carpet
+!AUTH_URL = carpetgit@carpetcode.dyndns.org:carpet
+!CHECKOUT = Carpet/doc
+Carpet/Carpet
+Carpet/CarpetIOASCII
+Carpet/CarpetIOBasic
+Carpet/CarpetIOScalar
+Carpet/CarpetLib
+Carpet/CarpetReduce
+Carpet/CarpetSlab
+Carpet/LoopControl
+
+# Kranc support thorn
+KrancNumericalTools/GenericFD
+KrancExamples/Wave
+KrancExamples/SimpleWave

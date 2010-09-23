@@ -62,3 +62,4 @@ Carpet/LoopControl
 KrancNumericalTools/GenericFD
 KrancExamples/Wave
 KrancExamples/SimpleWave
+KrancExamples/EM

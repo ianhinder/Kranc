@@ -1,0 +1,113 @@
+#!/usr/bin/perl -W
+
+ActiveThorns = "
+Boundary
+Carpet
+CarpetIOASCII
+CarpetIOBasic
+CarpetIOScalar
+CarpetLib
+CarpetReduce
+CarpetSlab
+CartGrid3d
+CoordBase
+GenericFD
+IOUtil
+LoopControl
+MoL
+NanChecker
+Periodic
+EM
+Slab
+SymBase
+Time
+"
+
+#############################################################
+# Grid
+#############################################################
+
+CoordBase::domainsize                   = minmax
+
+CoordBase::xmin                         = 0
+CoordBase::ymin                         = 0
+CoordBase::zmin                         = 0
+
+CoordBase::xmax                         = 1
+CoordBase::ymax                         = 0.1
+CoordBase::zmax                         = 0.1
+
+CoordBase::dx                           = 0.05
+CoordBase::dy                           = 0.1
+CoordBase::dz                           = 0.1
+
+CoordBase::boundary_size_x_lower        = 1
+CoordBase::boundary_size_y_lower        = 1
+CoordBase::boundary_size_z_lower        = 1
+CoordBase::boundary_shiftout_x_lower    = 1
+CoordBase::boundary_shiftout_y_lower    = 1
+CoordBase::boundary_shiftout_z_lower    = 1
+
+CoordBase::boundary_size_x_upper        = 1
+CoordBase::boundary_size_y_upper        = 1
+CoordBase::boundary_size_z_upper        = 1
+CoordBase::boundary_shiftout_x_upper    = 0
+CoordBase::boundary_shiftout_y_upper    = 0
+CoordBase::boundary_shiftout_z_upper    = 0
+
+CartGrid3D::type                        = "coordbase"
+CartGrid3D::domain                      = "full"
+CartGrid3D::avoid_origin                = "no"
+
+Periodic::periodic = "yes"
+
+#############################################################
+# Carpet
+#############################################################
+
+Carpet::ghost_size                      = 1
+Carpet::domain_from_coordbase           = "yes"
+Carpet::max_refinement_levels           = 1
+#Carpet::init_each_timelevel             = "yes"
+Carpet::num_integrator_substeps         = 4
+
+#############################################################
+# Time integration
+#############################################################
+
+Cactus::terminate                     = "time"
+Cactus::cctk_final_time               = 1
+
+Time::dtfac                           = 0.5
+MethodOfLines::ode_method             = "RK4"
+MethodOfLines::MoL_Intermediate_Steps = 4
+MethodOfLines::MoL_Num_Scratch_Levels = 1
+MethodOfLines::MoL_NaN_Check          = "yes"
+
+#############################################################
+# Boundary conditions
+#############################################################
+
+EM::El_group_bound   = "none"
+EM::B_group_bound   = "none"
+
+#############################################################
+# Output
+#############################################################
+
+IO::out_dir                   = $parfile
+IO::out_fileinfo              = "all"
+
+CarpetIOBasic::outInfo_every        = 1
+CarpetIOBasic::outInfo_vars         = "EM::CEl EM::CB"
+
+CarpetIOScalar::outScalar_every = 1
+CarpetIOScalar::outScalar_vars = "EM::El1 EM::B1 EM::CEl EM::CB EM::rho"
+CarpetIOScalar::outScalar_reductions = "minimum maximum norm2"
+
+IOASCII::out1D_every          = 1
+IOASCII::out1D_x              = "yes"
+IOASCII::out1D_vars           = "EM::El2 EM::El1 EM::B1 EM::B3 EM::CEl EM::CB EM::rho"
+
+CarpetIOASCII::out_precision = 19
+CarpetIOASCII::out3D_ghosts   = "yes"

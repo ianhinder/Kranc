@@ -1,0 +1,142 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+	<title>Kranc Tutorial</title>
+        <link rel=StyleSheet href="style.css" type="text/css">
+
+</head>
+<body>
+
+
+<h1>Kranc Tutorial</h1>
+
+<p>This tutorial is in three parts.  The first part describes how to
+download and configure Cactus, and can be skipped if you are already
+familiar with Cactus and have an existing Cactus installation that you
+want to use.  The second part describes how to download and install
+Kranc into your Cactus installation, and the third part describes how
+to run the Kranc SimpleWave example.</p>
+
+<p>Prerequisites:
+<ul>
+<li>A C compiler</li>
+<li>Mathematica</li>
+</ul>
+</p>
+
+<h2>Download and install Cactus</h2>
+
+<p>The first step is to create a Cactus directory. Everything will
+then be downloaded into this directory and compiled there.
+
+<pre>
+  mkdir Cactus
+  cd Cactus
+</pre>
+
+<p>Download the Cactus <i>GetComponents</i> script and make it
+executable. This script allows you to download Cactus thorns from many
+different repositories listed in a <i>ThornList</i>.
+
+<pre>
+  wget http://www.cactuscode.org/download/GetComponents
+  chmod u+x GetComponents
+</pre>
+
+<p>Download Cactus:
+
+<pre>./GetComponents -a --root=. http://cactuscode.org/cactus.th</pre>
+
+<p>Cactus should now have been downloaded.</p>
+
+<h2>Install Kranc into your Cactus directory</h2>
+
+<p>First, download and extract the Kranc distribution:
+
+<pre>wget http://github.com/ianhinder/Kranc/tarball/master
+tar xfz Kranc.tar.gz</pre>
+
+<p>You could also use
+        <pre>$ git clone git://github.com/ianhinder/Kranc</pre></p>
+
+<p>Link Kranc into your Cactus installation:
+<pre>
+ln -s ../Kranc/Auxiliary/Cactus/KrancNumericalTools arrangements/KrancNumericalTools
+ln -s ../Kranc/Examples arrangements/KrancExamples
+</pre>
+
+<p>Kranc is now installed and ready to use.</p>
+
+<h2>Build the SimpleWave example</h2>
+
+<p>Go into the Examples directory and build the SimpleWave thorn:
+
+<pre>
+  cd Kranc/Examples
+  ../../kranc/Bin/kranc SimpleWave.m
+</pre>
+
+<p>There should be a new directory, SimpleWave, which is the Cactus
+thorn which has been newly generated from the SimpleWave.m Kranc
+script.</p>
+
+<p>Copy the example Cactus thornlist:
+<pre>cp thornlists/cactus.th thornlists/kranc.th</pre>
+
+<p>Open the thornlist in an editor and add the following lines to it:
+<pre>
+KrancNumericalTools/GenericFD
+KrancExamples/SimpleWave
+</pre></p>
+
+<p>Create a Cactus configuration called "kranc" using this thornlist:
+<pre>
+make kranc-config THORNLIST=thornlists/kranc.th
+</pre></p>
+
+<p>If a C compiler cannot be found, or there is some other error,
+consult the <a href = "http://cactuscode.org/doc">Cactus
+documentation</a> for advice on configuring Cactus for your system.
+You may have to write an <i>optionlist</i> for your system and use it
+in the "make kranc-config" line.</p>
+
+<p>Build the configuration:
+<pre>
+make kranc
+</pre>
+</p>
+
+<p>The configuration containing the Kranc-generated thorn should now
+have been built.  The executable will be exe/cactus_kranc and the
+intermediate build files will be in configs/kranc.</p>
+
+<h2>Run the SimpleWave example</h2>
+
+<p>Run Cactus with the parameter file simplewave_test.par:
+
+<pre>
+cd Kranc/Examples
+../../exe/cactus_kranc simplewave_test.par
+</pre>
+
+<p>You should see many lines of output as Cactus runs.  If the test
+finishes successfully, the final line should be "Done."</p>
+
+<p>The output will be in the directory simplewave_test.  The variable
+phi is stored as a 1D timeseries in simplewave_test/phi.x.xg.  You can
+visualise it, for example, with Mathematica.  In a notebook session,
+type</p>
+
+<pre>
+phi = Import["simplewave_test/phi.xg", "Table"];
+Manipulate[ListLinePlot[phi[[it]]], {it, 1, Length[phi], 1}]
+</pre>
+
+<p>You should see a sine wave.  Use the Manipulate slider to animate
+the display to see the different iterations of the simulation.</p>
+
+</body>
+</html>

@@ -6,30 +6,31 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 
 	<title>Kranc</title>
+        <link rel=StyleSheet href="style.css" type="text/css">
 	
-	<style type="text/css">
-		body {
-  		margin-top: 1.0em;
-  		background-color: #FFFFFF;
-		  font-family: "Helvetica,Arial,FreeSans";
-  		color: #000000;
-    }
-    #container {
-      margin: 0 auto;
-      width: 700px;
-    }
-		h1 { font-size: 3.8em; color: #1f9966; margin-bottom: 3px; }
-		h1 .small { font-size: 0.4em; }
-		h1 a { text-decoration: none }
-		h2 { font-size: 1.5em; color: #1f9966; }
-    h3 { text-align: center; color: #1f9966; }
-    a { color: #1f9966; }
-    .description { font-size: 1.2em; margin-bottom: 30px; margin-top: 30px; font-style: italic;}
-    .download { float: right; }
-		pre { background: #000; color: #fff; padding: 15px;}
-    hr { border: 0; width: 80%; border-bottom: 1px solid #aaa}
-    .footer { text-align:center; padding-top:30px; font-style: italic; }
-	</style>
+    <!--     <style type="text/css"> -->
+    <!--     	body { -->
+    <!--     	margin-top: 1.0em; -->
+    <!--     	background-color: #FFFFFF; -->
+    <!--     	  font-family: "Helvetica,Arial,FreeSans"; -->
+    <!--     	color: #000000; -->
+    <!-- } -->
+    <!-- #container { -->
+    <!--   margin: 0 auto; -->
+    <!--   width: 700px;  -->
+    <!-- } -->
+    <!--     	h1 { font-size: 3.8em; color: #1f9966; margin-bottom: 3px; } -->
+    <!--     	h1 .small { font-size: 0.4em; } -->
+    <!--     	h1 a { text-decoration: none } -->
+    <!--     	h2 { font-size: 1.5em; color: #1f9966; } -->
+    <!-- h3 { text-align: center; color: #1f9966; } -->
+    <!-- a { color: #1f9966; } -->
+    <!-- .description { font-size: 1.2em; margin-bottom: 30px; margin-top: 30px; font-style: italic;} -->
+    <!-- .download { float: right; } -->
+    <!--     	pre { background: #000; color: #fff; padding: 15px;} -->
+    <!-- hr { border: 0; width: 80%; border-bottom: 1px solid #aaa} -->
+    <!-- .footer { text-align:center; padding-top:30px; font-style: italic; } -->
+    <!--     </style> -->
 	
 </head>
 
@@ -38,34 +39,155 @@
 
   <div id="container">
 
-    <div class="download">
-      <a href="http://github.com/ianhinder/Kranc/zipball/master">
-        <img border="0" width="90" src="http://github.com/images/modules/download/zip.png"></a>
-      <a href="http://github.com/ianhinder/Kranc/tarball/master">
-        <img border="0" width="90" src="http://github.com/images/modules/download/tar.png"></a>
-    </div>
 
-    <h1><a href="http://github.com/ianhinder/Kranc">Kranc</a>
+    <h1><a href="http://github.com/ianhinder/Kranc">
+          <img src="kranc.png" alt="Kranc">
+</a>
       <!-- <span class="small">by <a href="http://github.com/ianhinder">ianhinder</a></span> --></h1>
 
     <div class="description">
-      A Mathematica package for generating code for solving time dependent partial differential equations
+      A Mathematica application for generating code for solving time
+      dependent partial differential equations
     </div>
 
-    <h2>Authors</h2>
-<p>Sascha Husa, Ian Hinder, Christiane Lechner, Erik Schnetter</p>
+
+<p>by Sascha Husa, Ian Hinder, Christiane Lechner, Erik Schnetter</p>
 
 
-    <h2>Download</h2>
-    <p>
-      You can download this project in either
-      <a href="http://github.com/ianhinder/Kranc/zipball/master">zip</a> or
-      <a href="http://github.com/ianhinder/Kranc/tarball/master">tar</a> formats.
-    </p>
-    <p>You can also clone the project with <a href="http://git-scm.com">Git</a>
-      by running:
-      <pre>$ git clone git://github.com/ianhinder/Kranc</pre>
-    </p>
+<h2>About</h2>
+<p>Kranc is a <a href =
+"http://www.wolfram.com/products/mathematica/index.html">Mathematica</a>
+application which turns a <!-- <a href = -->
+<!-- "http://en.wikipedia.org/wiki/Tensor"> -->tensorial<!-- </a> --> description of a
+time dependent <!-- <a href = -->
+<!-- "http://en.wikipedia.org/wiki/Partial_differential_equation"> -->partial
+differential equation<!-- </a> --> into a module for the <a href =
+"http://www.cactuscode.org">Cactus Computational Toolkit</a>.</p>
+
+<p>Kranc is free software distributed under the <a href =
+"http://www.gnu.org/licenses/old-licenses/gpl-2.0.html">GNU General
+Public License (GPL) (version 2)</a> for unrestricted use.  We request
+that you cite our 2006 <a href =
+"http://arxiv.org/abs/gr-qc/0404023">Kranc paper</a> if you use Kranc,
+or Kranc-generated code, in a scientific publication. Note that Kranc
+has evolved significantly since the version described in the paper,
+both in usability and functionality.</p>
+
+<!-- <div class=figureleft> -->
+<!-- <img src="waves.png"> -->
+<!-- </div> -->
+
+<a name="examples"></a>
+
+<H2>Examples and tutorials</H2>
+
+<p>We provide several example scripts which can be adapted to develop
+your own codes.  The short
+script <a href="SimpleWave.m">SimpleWave.m</a> generates a 1D wave
+equation code.  There is also a <a href =
+"tutorial.html">tutorial</a> to guide you through the process of
+downloading Kranc, installing the required components into your Cactus
+tree, and generating your first Kranc thorn.</p>
+
+<!-- <div class=figureright> -->
+<!-- <img src="books.jpg"> -->
+<!-- </div> -->
+
+<a name="documentation"></a>
+<H2>Documentation</H2>
+
+The documentation is provided in LaTeX format in the Doc directory.
+Type "make" to make the PDF version, or "make KrancDocHTML" to make
+the HTML version.
+
+<a name="download"></a>
+<h2>Download</h2>
+      <p>
+        You can download Kranc in either
+        <a href="http://github.com/ianhinder/Kranc/zipball/master">zip</a> or
+        <a href="http://github.com/ianhinder/Kranc/tarball/master">tar</a> formats.
+      </p>
+      <p>You can also clone the Kranc repository with <a href="http://git-scm.com">Git</a>
+        by running
+        <pre>$ git clone git://github.com/ianhinder/Kranc</pre>
+      </p>
+
+<!-- <div class=figureleft> -->
+<!-- <img src="articles.png"> -->
+<!-- </div> -->
+
+<a name="users"></a>
+<H2>Users and publications</H2>
+
+<p>Codes based on Kranc have been used in <a href =
+"http://www-spires.dur.ac.uk/cgi-bin/spiface/hep?c=CPHCB,174,983">16
+publications</a>, mostly in the area of <a href =
+"http://en.wikipedia.org/wiki/Numerical_Relativity">Numerical
+Relativity</a> for simulating <a href =
+"http://en.wikipedia.org/wiki/Binary_Black_Hole">binary black hole</a>
+systems.
+
+<p>Kranc has been used at
+<ul>
+<li>The <a href = "http://www.aei.mpg.de">Albert Einstein
+Institute</a></li>
+
+<li>The <a href =
+"http://www.soton.ac.uk/maths/research/applied">Applied Mathematics
+Department</a> of the <a href = "http://www.soton.ac.uk">University of
+Southampton</a></li>
+
+<li>The <a href = "http://cgwp.gravity.psu.edu">Center for
+Gravitational Wave Physics</a> at <a href =
+"http://www.psu.edu">Pennsylvania State University</a></li>
+
+<li>The <a href = "http://www.cct.lsu.edu">Center for Computational
+Technology</a> at <a href = "http://www.lsu.edu">Louisiana State
+University</a></li> </ul>
+
+<div style="float:right">
+<img src="cactus.png">
+</div>
+
+<a name="related"></a>
+<H2>Related Software</H2>
+
+<ul>
+<a name="related"></a>
+<li>
+
+<a href="http://www.cactuscode.org">Cactus</a>: Kranc generates
+modules for the Cactus Computational Toolkit, an infrastructure for
+building high performance parallel codes. These codes can run
+simulations on anything from laptops to supercomputers.
+</li>
+
+<li><a href="http://www.carpetcode.org">Carpet</a>: Carpet is a mesh
+refinement driver for Cactus.  The code generated by Kranc is fully
+compatible with Carpet, meaning that Kranc-generated code can be run
+with both fixed and adaptive mesh refinement.</li>
+
+<li><a
+href="http://www.wolfram.com/products/mathematica/index.html">Mathematica</a>:
+Mathematica is a powerful mathematics software system.  Kranc is
+written in Mathematica and requires it in order to run.  Mathematica
+is proprietary commercial software.</li>
+
+</ul>
+
+<!-- <div class=figureleft> -->
+<!-- <img src="envelope.png"> -->
+<!-- </div> -->
+
+<a name="support"></a>
+<H2>Support</H2>
+
+<p>There is a
+<a href = "http://groups.google.com/group/kranc">
+<verbatim>Kranc Google Group</verbatim></a> for discussion of Kranc.
+You do not need a Google account in order to subscribe; you can send
+and receive group posts from any email address.</p>
+
 
     <div class="footer">
       get the source code on GitHub : <a href="http://github.com/ianhinder/Kranc">ianhinder/Kranc</a>

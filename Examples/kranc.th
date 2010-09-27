@@ -63,3 +63,4 @@ KrancNumericalTools/GenericFD
 KrancExamples/Wave
 KrancExamples/SimpleWave
 KrancExamples/EM
+KrancExamples/Euler

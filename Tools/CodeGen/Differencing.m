@@ -308,7 +308,8 @@ ComponentDerivativeOperatorMacroDefinition[componentDerivOp:(name_[inds___] -> e
 (*       Print["liName == ", liName];*)
 
        rhs3 = rhs2 /. pat -> Times[liName, rest],
-(*       Print["!!!!!!!!DOES NOT MATCH!!!!!!!!!"];*)
+       ThrowError["Partial derivative operator definition ", rhs2, 
+         " does not match pattern ", pat];
        rhs3 = rhs2];
 
 (*    Print["rhs3 == ", rhs3];*)

@@ -136,6 +136,8 @@ StandardCenteredDifferenceOperator::usage = "";
 GridFunctionDerivativesInExpression::usage = "";
 DPlus::usage = "";
 DMinus::usage = "";
+DiffPlusOp::usage = "";
+DiffMinusOp::usage = "";
 DZero::usage = "";
 shift::usage = "";
 spacing::usage = "";
@@ -145,6 +147,8 @@ Begin["`Private`"];
 
 DPlus[n_] := (shift[n] - 1)/spacing[n];
 DMinus[n_] := (1 - 1/shift[n])/spacing[n];
+DiffPlusOp[n_] := (shift[n] - 1);
+DiffMinusOp[n_] := (1 - 1/shift[n]);
 DZero[n_] := (DPlus[n] + DMinus[n])/2;
 
 (*************************************************************)

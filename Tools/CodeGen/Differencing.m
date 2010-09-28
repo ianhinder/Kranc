@@ -273,8 +273,8 @@ ComponentDerivativeOperatorMacroDefinition[componentDerivOp:(name_[inds___] -> e
 
 (*    Print["rhs2 == ", FullForm[rhs2]];*)
 
-    pat = Times[spInExpr:(Power[spacing[_],_]..), (Rational[x_,y_])..., rest__];
-(*    Print["pat == ", pat//FullForm];*)
+    pat = (Times[spInExpr:(Power[spacing[_],_]...), (Rational[x_,y_])..., rest__]) | (rest__);
+    (* Print["pat == ", pat//FullForm]; *)
 
     If[MatchQ[rhs2, pat],
 (*       Print["matches!"];*)

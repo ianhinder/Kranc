@@ -38,7 +38,7 @@ exp, dx, dy, dz, idx, idy, idz}
 
 {ConditionalOnKeyword, ConditionalOnKeywords, CollectList, Interior,
 InteriorNoSync, Boundary, BoundaryWithGhosts, Where, PreDefinitions,
-AllowedSymbols, Parameters, ConditionalOnTextuals};
+AllowedSymbols, Parameters, ConditionalOnTextuals, ApplyBCs};
 
 (* Differencing.m *)
 

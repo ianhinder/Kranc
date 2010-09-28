@@ -41,7 +41,7 @@ Map[DefineTensor, {w, Frho, Fw, FEn, rho, En, p, dir, v}];
 (* Groups *)
 (**************************************************************************************)
 
-evolvedGroups = Map[CreateGroupFromTensor, {rho, w[uj], En, v[uj]}];
+evolvedGroups = Map[CreateGroupFromTensor, {rho, w[uj], En, v[uj] (* This should not be here *) }];
 nonevolvedGroups = Map[CreateGroupFromTensor, {Frho[ui], Fw[ui,uj], FEn[ui], p}];
 
 declaredGroups = Join[evolvedGroups, nonevolvedGroups];
@@ -53,10 +53,11 @@ groups = Join[declaredGroups];
 (* Initial data *)
 (**************************************************************************************)
 
-initialCalc =
+initialSineCalc =
 {
-  Name -> "euler_initial",
-  Schedule -> {"at CCTK_INITIAL"},
+  Name -> "euler_initial_sine",
+  Schedule -> {"at CCTK_INITIAL as euler_initial"},
+  ConditionalOnKeyword -> {"initial_data", "sine"},
   Equations ->
   {
     v1 -> v0,
@@ -65,7 +66,22 @@ initialCalc =
     rho -> 1 + amp Sin[2 Pi x],
     En -> 1
   }
-}
+};
+
+initialShockCalc =
+{
+  Name -> "euler_initial_shock",
+  Schedule -> {"at CCTK_INITIAL as euler_initial"},
+  ConditionalOnKeyword -> {"initial_data", "shock"},
+  Equations ->
+  {
+    v1 -> 0.5 + 0.5 UnitStep[x-0.5],
+    v2 -> 0,
+    v3 -> 0,
+    rho -> 1 + amp UnitStep[x-0.5],
+    En -> 1
+  }
+};
 
 conservedCalc =
 {
@@ -75,7 +91,7 @@ conservedCalc =
   {
     w[ui] -> rho v[ui]
   }
-}
+};
 
 (**************************************************************************************)
 (* Evolution equations *)
@@ -93,7 +109,7 @@ evolCalc =
     dot[w[uj]] -> PD[Fw[uj,ui], li],
     dot[En]    -> PD[FEn[ui],   li]
   }
-}
+};
 
 primitivesCalc =
 {
@@ -104,7 +120,7 @@ primitivesCalc =
     v[ui] -> w[ui] / rho,
     p -> 2/3 (En - 1/2 Euc[li,lj] v[ui] v[uj])
   }
-}
+};
 
 fluxCalc =
 {
@@ -116,9 +132,17 @@ fluxCalc =
     Fw[uj,ui] -> rho v[ui] v[uj] + p Euc[ui,uj],
     FEn[ui] -> v[ui] * (En + p)
   }
-}
+};
 
 realParameters = {sigma, v0, amp};
+
+keywordParameters = {
+  {
+    Name -> "initial_data",
+    Default -> "sine",
+    AllowedValues -> {"sine", "shock"}
+  }
+};
 
 (**************************************************************************************)
 (* Construct the thorn *)
@@ -126,7 +150,8 @@ realParameters = {sigma, v0, amp};
 
 calculations = 
 {
-  initialCalc,
+  initialSineCalc,
+  initialShockCalc,
   evolCalc,
   fluxCalc,
   (* pressureCalc, *)
@@ -138,4 +163,5 @@ CreateKrancThornTT[groups, ".", "Euler",
   Calculations -> calculations,
   DeclaredGroups -> declaredGroupNames,
   PartialDerivatives -> derivatives,
-  RealParameters -> realParameters];
+  RealParameters -> realParameters,
+  KeywordParameters -> keywordParameters];

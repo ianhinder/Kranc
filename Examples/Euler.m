@@ -86,7 +86,7 @@ evolCalc =
   Name -> "euler_evol",
   Schedule -> {"in MoL_CalcRHS"},
   Shorthands -> {dir[ui]},
-  (* Where -> Interior, *)
+  Where -> Interior,
   Equations -> 
   {
     dot[rho]   -> PD[Frho[ui],  li],

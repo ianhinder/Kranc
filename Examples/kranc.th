@@ -32,6 +32,9 @@ CactusBase/Time
 CactusNumerical/MoL
 CactusNumerical/Periodic
 CactusNumerical/Slab
+CactusNumerical/Dissipation
+CactusNumerical/SpaceMask
+CactusNumerical/SphericalSurface
 
 CactusUtils/NaNChecker
 
@@ -60,7 +63,4 @@ Carpet/LoopControl
 
 # Kranc support thorn
 KrancNumericalTools/GenericFD
-KrancExamples/Wave
-KrancExamples/SimpleWave
-KrancExamples/EM
-KrancExamples/Euler
+KrancHydroExamples/Euler

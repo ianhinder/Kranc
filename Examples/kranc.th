@@ -64,3 +64,5 @@ Carpet/LoopControl
 # Kranc support thorn
 KrancNumericalTools/GenericFD
 KrancHydroExamples/Euler
+KrancHydroExamples/Advect
+KrancHydroExamples/Burgers

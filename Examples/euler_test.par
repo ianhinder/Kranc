@@ -11,6 +11,7 @@ CarpetReduce
 CarpetSlab
 CartGrid3d
 CoordBase
+Dissipation
 GenericFD
 IOUtil
 LoopControl
@@ -19,6 +20,8 @@ NanChecker
 Periodic
 Euler
 Slab
+SpaceMask
+SphericalSurface
 SymBase
 Time
 "
@@ -41,16 +44,16 @@ CoordBase::dx                           = 0.05
 CoordBase::dy                           = 0.1
 CoordBase::dz                           = 0.1
 
-CoordBase::boundary_size_x_lower        = 1
-CoordBase::boundary_size_y_lower        = 1
-CoordBase::boundary_size_z_lower        = 1
+CoordBase::boundary_size_x_lower        = 2
+CoordBase::boundary_size_y_lower        = 2
+CoordBase::boundary_size_z_lower        = 2
 CoordBase::boundary_shiftout_x_lower    = 1
 CoordBase::boundary_shiftout_y_lower    = 1
 CoordBase::boundary_shiftout_z_lower    = 1
 
-CoordBase::boundary_size_x_upper        = 1
-CoordBase::boundary_size_y_upper        = 1
-CoordBase::boundary_size_z_upper        = 1
+CoordBase::boundary_size_x_upper        = 2
+CoordBase::boundary_size_y_upper        = 2
+CoordBase::boundary_size_z_upper        = 2
 CoordBase::boundary_shiftout_x_upper    = 0
 CoordBase::boundary_shiftout_y_upper    = 0
 CoordBase::boundary_shiftout_z_upper    = 0
@@ -65,7 +68,7 @@ Periodic::periodic = "yes"
 # Carpet
 #############################################################
 
-Carpet::ghost_size                      = 1
+Carpet::ghost_size                      = 2
 Carpet::domain_from_coordbase           = "yes"
 Carpet::max_refinement_levels           = 1
 #Carpet::init_each_timelevel             = "yes"
@@ -84,6 +87,13 @@ MethodOfLines::MoL_Intermediate_Steps = 4
 MethodOfLines::MoL_Num_Scratch_Levels = 1
 MethodOfLines::MoL_NaN_Check          = "yes"
 
+Dissipation::vars = "Euler::rho Euler::w_group Euler::En"
+Dissipation::order = 3
+Dissipation::epsdis = 0.1
+
+Euler::amp = 1e-8
+Euler::v0 = 1
+
 #############################################################
 # Boundary conditions
 #############################################################
@@ -91,6 +101,12 @@ MethodOfLines::MoL_NaN_Check          = "yes"
 Euler::rho_group_bound   = "none"
 Euler::w_group_bound   = "none"
 Euler::En_group_bound   = "none"
+
+Carpet::poison_new_timelevels           = yes
+Carpet::poison_value                    = 100
+CarpetLib::poison_new_memory            = yes
+CarpetLib::poison_value                 = 200
+Carpet::check_for_poison                = no
 
 #############################################################
 # Output
@@ -108,7 +124,7 @@ CarpetIOScalar::outScalar_reductions = "minimum maximum norm2"
 
 IOASCII::out1D_every          = 1
 IOASCII::out1D_x              = "yes"
-IOASCII::out1D_vars           = "Euler::rho Euler::w_group Euler::En"
+IOASCII::out1D_vars           = "Euler::rho Euler::w_group Euler::En Euler::v_group"
 
 CarpetIOASCII::out_precision = 19
 CarpetIOASCII::out3D_ghosts   = "yes"

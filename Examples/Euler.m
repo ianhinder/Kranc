@@ -17,23 +17,31 @@ derivatives =
   PDstandard4th[i_] -> StandardCenteredDifferenceOperator[1,2,i],
   PDstandard4th[i_, i_] -> StandardCenteredDifferenceOperator[2,2,i],
   PDstandard4th[i_, j_] -> StandardCenteredDifferenceOperator[1,2,i] *
-    StandardCenteredDifferenceOperator[1,2,j]
+    StandardCenteredDifferenceOperator[1,2,j],
+
+  PDonesided2nd[1] -> dir[1] (-shift[1]^(2 dir[1]) + 4 shift[1]^dir[1] - 3 )/(2 spacing[1]),
+  PDonesided2nd[2] -> dir[2] (-shift[2]^(2 dir[2]) + 4 shift[2]^dir[2] - 3 )/(2 spacing[2]),
+  PDonesided2nd[3] -> dir[3] (-shift[3]^(2 dir[3]) + 4 shift[3]^dir[3] - 3 )/(2 spacing[3]),
+
+  PDplus[i_] -> DPlus[i],
+  PDminus[i_] -> DMinus[i]
 };
 
 PD = PDstandard2nd;
+(* PD = PDminus; *)
 
 (**************************************************************************************)
 (* Tensors *)
 (**************************************************************************************)
 
 (* Register the tensor quantities with the TensorTools package *)
-Map[DefineTensor, {w, Frho, Fw, FEn, rho, En, p}];
+Map[DefineTensor, {w, Frho, Fw, FEn, rho, En, p, dir, v}];
 
 (**************************************************************************************)
 (* Groups *)
 (**************************************************************************************)
 
-evolvedGroups = Map[CreateGroupFromTensor, {rho, w[uj], En}];
+evolvedGroups = Map[CreateGroupFromTensor, {rho, w[uj], En, v[uj]}];
 nonevolvedGroups = Map[CreateGroupFromTensor, {Frho[ui], Fw[ui,uj], FEn[ui], p}];
 
 declaredGroups = Join[evolvedGroups, nonevolvedGroups];
@@ -51,11 +59,21 @@ initialCalc =
   Schedule -> {"at CCTK_INITIAL"},
   Equations ->
   {
-    rho -> 1 + 0.1 Sin[2 Pi x],
-    w1 -> 1,
-    w2 -> 0,
-    w3 -> 0,
-    En -> 0
+    v1 -> v0,
+    v2 -> 0,
+    v3 -> 0,
+    rho -> 1 + amp Sin[2 Pi x],
+    En -> 1
+  }
+}
+
+conservedCalc =
+{
+  Name -> "euler_conserved",
+  Schedule -> {"at INITIAL after euler_initial"},
+  Equations -> 
+  {
+    w[ui] -> rho v[ui]
   }
 }
 
@@ -67,37 +85,40 @@ evolCalc =
 {
   Name -> "euler_evol",
   Schedule -> {"in MoL_CalcRHS"},
+  Shorthands -> {dir[ui]},
+  (* Where -> Interior, *)
   Equations -> 
   {
-    dot[rho] -> PD[Frho[ui],li],
-    dot[w[uj]] -> PD[Fw[uj, ui],li],
-    dot[En] -> PD[FEn[ui],li]
+    dot[rho]   -> PD[Frho[ui],  li],
+    dot[w[uj]] -> PD[Fw[uj,ui], li],
+    dot[En]    -> PD[FEn[ui],   li]
+  }
+}
+
+primitivesCalc =
+{
+  Name -> "euler_primitives",
+  Schedule -> {"in MoL_PostStep after Euler_ApplyBCs"}, (* Need BCs *)
+  Equations -> 
+  {
+    v[ui] -> w[ui] / rho,
+    p -> 2/3 (En - 1/2 Euc[li,lj] v[ui] v[uj])
   }
 }
 
 fluxCalc =
 {
   Name -> "euler_flux",
-  Schedule -> {"in MoL_PostStep"},
+  Schedule -> {"in MoL_PostStep after euler_primitives"},
   Equations -> 
   {
-    Frho[ui] -> w[ui],
-    Fw[uj,ui] -> w[ui] w[uj] / rho + p Euc[ui,uj],
-    FEn[ui] -> w[ui]/rho (En + p)
+    Frho[ui] -> rho v[ui],
+    Fw[uj,ui] -> rho v[ui] v[uj] + p Euc[ui,uj],
+    FEn[ui] -> v[ui] * (En + p)
   }
 }
 
-pressureCalc =
-{
-  Name -> "euler_pressure",
-  Schedule -> {"in MoL_PostStep before euler_flux"},
-  Equations -> 
-  {
-    p -> 0
-  }
-}
-
-realParameters = {sigma};
+realParameters = {sigma, v0, amp};
 
 (**************************************************************************************)
 (* Construct the thorn *)
@@ -108,7 +129,9 @@ calculations =
   initialCalc,
   evolCalc,
   fluxCalc,
-  pressureCalc
+  (* pressureCalc, *)
+  primitivesCalc,
+  conservedCalc
 };
 
 CreateKrancThornTT[groups, ".", "Euler", 

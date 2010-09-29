@@ -24,10 +24,13 @@ derivatives =
   PDonesided2nd[3] -> dir[3] (-shift[3]^(2 dir[3]) + 4 shift[3]^dir[3] - 3 )/(2 spacing[3]),
 
   PDplus[i_] -> DPlus[i],
-  PDminus[i_] -> DMinus[i]
+  PDminus[i_] -> DMinus[i],
+  DiffPlus[i_] -> DiffPlusOp[i],
+  DiffMinus[i_] -> DiffMinusOp[i],
+  ShiftMinus[i_] -> 1/shift[i]
 };
 
-PD = PDstandard2nd;
+(* PD = PDstandard2nd; *)
 (* PD = PDminus; *)
 
 (**************************************************************************************)
@@ -35,14 +38,24 @@ PD = PDstandard2nd;
 (**************************************************************************************)
 
 (* Register the tensor quantities with the TensorTools package *)
-Map[DefineTensor, {w, Frho, Fw, FEn, rho, En, p, dir, v}];
+Map[DefineTensor, {Den, S, En, rho, v, p, DenF, DenRight, DenLeft, SF, SRight, SLeft,
+  EnF, EnRight, EnLeft, vLeft, vRight, rhoLeft, rhoRight, pLeft, pRight, vRightTemp}];
 
 (**************************************************************************************)
 (* Groups *)
 (**************************************************************************************)
 
-evolvedGroups = Map[CreateGroupFromTensor, {rho, w[uj], En, v[uj] (* This should not be here *) }];
-nonevolvedGroups = Map[CreateGroupFromTensor, {Frho[ui], Fw[ui,uj], FEn[ui], p}];
+evolvedGroups = Map[CreateGroupFromTensor, {Den, S[uj], En}];
+nonevolvedGroups = Map[CreateGroupFromTensor, 
+{
+  rho, v[uj], p,
+  DenF, DenRight, DenLeft,
+  SF[uj], SRight[uj], SLeft[uj],
+  EnF, EnRight, EnLeft,
+  rhoLeft, rhoRight,
+  vLeft[uj], vRight[uj],
+  pLeft, pRight
+}];
 
 declaredGroups = Join[evolvedGroups, nonevolvedGroups];
 declaredGroupNames = Map[First, declaredGroups];
@@ -53,20 +66,20 @@ groups = Join[declaredGroups];
 (* Initial data *)
 (**************************************************************************************)
 
-initialSineCalc =
-{
-  Name -> "euler_initial_sine",
-  Schedule -> {"at CCTK_INITIAL as euler_initial"},
-  ConditionalOnKeyword -> {"initial_data", "sine"},
-  Equations ->
-  {
-    v1 -> v0,
-    v2 -> 0,
-    v3 -> 0,
-    rho -> 1 + amp Sin[2 Pi x],
-    En -> 1
-  }
-};
+(* initialSineCalc = *)
+(* { *)
+(*   Name -> "euler_initial_sine", *)
+(*   Schedule -> {"at CCTK_INITIAL as euler_initial"}, *)
+(*   ConditionalOnKeyword -> {"initial_data", "sine"}, *)
+(*   Equations -> *)
+(*   { *)
+(*     rho -> 1 + amp Sin[2 Pi x], *)
+(*     v1 -> v0, *)
+(*     v2 -> 0, *)
+(*     v3 -> 0, *)
+(*     p -> 1 (\* Rewrite this so that we get something compatible with En = 1 *\) *)
+(*   } *)
+(* }; *)
 
 initialShockCalc =
 {
@@ -75,11 +88,11 @@ initialShockCalc =
   ConditionalOnKeyword -> {"initial_data", "shock"},
   Equations ->
   {
-    v1 -> 0.5 + 0.5 UnitStep[x-0.5],
-    v2 -> 0,
-    v3 -> 0,
-    rho -> 1 + amp UnitStep[x-0.5],
-    En -> 1
+    rho -> rhoR0 UnitStep[x-0.5] + rhoL0 (1-UnitStep[x-0.5]),
+    v[1] -> vR0 UnitStep[x-0.5] + vL0 (1-UnitStep[x-0.5]),
+    v[2] -> 0,
+    v[3] -> 0,
+    p -> pR0 UnitStep[x-0.5] + pL0 (1-UnitStep[x-0.5])
   }
 };
 
@@ -89,25 +102,24 @@ conservedCalc =
   Schedule -> {"at INITIAL after euler_initial"},
   Equations -> 
   {
-    w[ui] -> rho v[ui]
+    Den -> rho,
+    S[ui] -> rho v[ui],
+    En -> p/(gamma-1) + 1/2 rho v[ui] v[uj] Euc[li,lj]
   }
 };
 
-(**************************************************************************************)
-(* Evolution equations *)
-(**************************************************************************************)
-
-evolCalc =
+conservedFluxCalc[i_] :=
 {
-  Name -> "euler_evol",
-  Schedule -> {"in MoL_CalcRHS"},
-  Shorthands -> {dir[ui]},
-  Where -> Interior,
+  Name -> "euler_conserved_flux_" <> ToString[i],
+  Schedule -> {"in MoL_CalcRHS after euler_reconstruct_" <> ToString[i]},
   Equations -> 
   {
-    dot[rho]   -> PD[Frho[ui],  li],
-    dot[w[uj]] -> PD[Fw[uj,ui], li],
-    dot[En]    -> PD[FEn[ui],   li]
+    DenLeft -> rhoLeft,
+    DenRight -> rhoRight,
+    SLeft[ui] -> rhoLeft vLeft[ui],
+    SRight[ui] -> rhoRight vRight[ui],
+    EnLeft -> pLeft/(gamma-1) + 1/2 rhoLeft vLeft[ui] vLeft[uj] Euc[li,lj],
+    EnRight -> pRight/(gamma-1) + 1/2 rhoRight vRight[ui] vRight[uj] Euc[li,lj]
   }
 };
 
@@ -117,30 +129,137 @@ primitivesCalc =
   Schedule -> {"in MoL_PostStep after Euler_ApplyBCs"}, (* Need BCs *)
   Equations -> 
   {
-    v[ui] -> w[ui] / rho,
-    p -> 2/3 (En - 1/2 Euc[li,lj] v[ui] v[uj])
+    rho -> Den,
+    v[ui] -> S[ui] / Den,
+    p -> (gamma-1)(En - 1/2 Euc[li,lj] S[ui] S[uj]/Den)
   }
 };
 
-fluxCalc =
+
+(**************************************************************************************)
+(* Evolution equations *)
+(**************************************************************************************)
+
+(* Euler's equation is dot[u] + PD[F[ui],li] = 0
+
+   with
+
+     u = {D, S, E}
+
+   and
+
+     DF[ui] = rho v[ui]
+     SF[ui,uj] = rho v[ui] v[uj] + p Euc[ui,uj]
+     EnF[ui] = v[ui](En + p)
+
+*)
+
+eulerDenFlux[rho_, v_, p_, i_] :=
+  rho v[i];
+
+eulerSFlux[rho_, v_, p_, {i_, j_}] :=
+  rho v[i] v[j] + p Euc[i,j];
+
+eulerEnFlux[rho_, v_, p_, i_] :=
+  v[i](En + p);
+
+zeroRHSCalc[] :=
 {
-  Name -> "euler_flux",
-  Schedule -> {"in MoL_PostStep after euler_primitives"},
+  Name -> "euler_zero_rhs",
+  Schedule -> {"in MoL_CalcRHS"},
   Equations -> 
   {
-    Frho[ui] -> rho v[ui],
-    Fw[uj,ui] -> rho v[ui] v[uj] + p Euc[ui,uj],
-    FEn[ui] -> v[ui] * (En + p)
+    dot[Den] -> 0,
+    dot[S[ui]] -> 0,
+    dot[En] -> 0
   }
 };
 
-realParameters = {sigma, v0, amp};
+minmodVar[v_, i_, vLeft_, vRight_] :=
+{
+  slopeL -> DiffMinus[v, i],
+  slopeR -> DiffPlus[v, i],
+  slope -> MinMod[slopeL, slopeR],
+  vLeft -> v - 0.5 slope,
+  vRight -> v + 0.5 slope
+}
+
+reconstructCalc[i_] :=
+{
+  Name -> "euler_reconstruct_" <> ToString[i],
+  Where -> Interior,
+  Schedule -> {"in MoL_CalcRHS after " <> 
+    If[i == 1, "euler_zero_rhs", "euler_rhs_" <> ToString[i-1]]},
+  Shorthands -> {slopeL, slopeR, slope},
+  ApplyBCs -> True,
+  Equations -> 
+    Flatten[{
+      minmodVar[rho,i, rhoLeft, rhoRight],
+      Flatten[Table[
+        minmodVar[v[j], i, Symbol["vLeft"<>ToString[j]],
+                           Symbol["vRight"<>ToString[j]]], {j, 1, 3}],1],
+      minmodVar[p,i, pLeft, pRight]
+  },1]
+};
+
+fluxCalc[i_] :=
+{
+  Name -> "euler_flux_" <> ToString[i],
+  ApplyBCs -> True,
+  Where -> Interior,
+  Schedule -> {"in MoL_CalcRHS after euler_conserved_flux_" <> ToString[i]},
+  Shorthands -> {vRightTemp[ui]},
+  Equations -> 
+  {
+    vRightTemp[ui] -> ShiftMinus[vRight[ui],i],
+
+    DenF -> 1/2 (eulerDenFlux[rhoLeft, vLeft, pLeft, i] + 
+                 eulerDenFlux[ShiftMinus[rhoRight,i], 
+                              vRightTemp,
+                              ShiftMinus[pRight,i], i] + 
+                 alpha (ShiftMinus[DenRight,i] - DenLeft)),
+
+    SF[uj] -> 1/2 (eulerSFlux[rhoLeft, vLeft, pLeft, {i, uj}] + 
+                   eulerSFlux[ShiftMinus[rhoRight, i], 
+                              vRightTemp,
+                              ShiftMinus[pRight, i], {i, uj}] + 
+                   alpha (ShiftMinus[SRight[uj],i] - SLeft[uj])),
+
+    EnF -> 1/2 (eulerEnFlux[rhoLeft, vLeft, pLeft, i] + 
+               eulerEnFlux[ShiftMinus[rhoRight,i], 
+                           vRightTemp,
+                           ShiftMinus[pRight,i], i] + 
+               alpha (ShiftMinus[EnRight,i] - EnLeft))
+  }
+};
+
+rhs[i_] :=
+{
+  Name -> "euler_rhs_" <> ToString[i],
+  Schedule -> {"in MoL_CalcRHS after euler_flux_" <> ToString[i]},
+  Where -> Interior,
+  Equations -> 
+  {
+    dot[Den] -> dot[Den] - PDplus[DenF, i],
+    dot[S[uj]] -> dot[S[uj]] - PDplus[SF[uj], i],
+    dot[En] -> dot[En] - PDplus[EnF, i]
+  }
+};
+
+makeConservationCalcs[] :=
+({ zeroRHSCalc[]} ~Join~ Flatten[Table[
+  {reconstructCalc[i],
+   conservedFluxCalc[i],
+   fluxCalc[i],
+   rhs[i]}, {i, 1, 1}], 1]);
+
+realParameters = {sigma, v0, amp, rhoR0, rhoL0, vR0, vL0, pR0, pL0, gamma, alpha};
 
 keywordParameters = {
   {
     Name -> "initial_data",
-    Default -> "sine",
-    AllowedValues -> {"sine", "shock"}
+    Default -> "shock",
+    AllowedValues -> {"shock"}
   }
 };
 
@@ -150,14 +269,11 @@ keywordParameters = {
 
 calculations = 
 {
-  initialSineCalc,
   initialShockCalc,
-  evolCalc,
-  fluxCalc,
-  (* pressureCalc, *)
   primitivesCalc,
   conservedCalc
-};
+} ~Join~ makeConservationCalcs[];
+
 
 CreateKrancThornTT[groups, ".", "Euler", 
   Calculations -> calculations,

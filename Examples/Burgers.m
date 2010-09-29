@@ -83,6 +83,11 @@ initialShockCalc =
 (* Evolution equations *)
 (**************************************************************************************)
 
+(* Burger's equation is dot[u] + PD[F,x] = 0
+
+   with F[ui] = 1/2 u^2
+*)
+
 burgersFlux[u_] := 1/2 u^2;
 
 zeroRHSCalc[] :=
@@ -107,7 +112,7 @@ reconstructCalc[i_] :=
   {
     slopeL -> DiffMinus[u, i],
     slopeR -> DiffPlus[u, i],
-    slope -> IfThen[Abs[slopeL] < Abs[slopeR], slopeL, slopeR],
+    slope -> IfThen[slopeL slopeR < 0, 0, IfThen[Abs[slopeL] < Abs[slopeR], slopeL, slopeR]],
     uLeft -> u - 0.5 slope,
     uR -> u + 0.5 slope
   }
@@ -121,7 +126,7 @@ fluxCalc[f_, i_] :=
   Schedule -> {"in MoL_CalcRHS after burgers_reconstruct_" <> ToString[i]},
   Equations -> 
   {
-    uF -> 1/2 (f[uLeft] + f[ShiftMinus[uR,i]] + alpha (uLeft - ShiftMinus[uR,i]))
+    uF -> 1/2 (f[uLeft] + f[ShiftMinus[uR,i]] + alpha (ShiftMinus[uR,i] - uLeft))
   }
 };
 
@@ -132,7 +137,7 @@ rhs[i_] :=
   Where -> Interior,
   Equations -> 
   {
-    dot[u] -> dot[u] + PDplus[uF, i]
+    dot[u] -> dot[u] - PDplus[uF, i]
   }
 };
 

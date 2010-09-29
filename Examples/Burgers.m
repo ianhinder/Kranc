@@ -27,7 +27,8 @@ derivatives =
   PDplus[i_] -> DPlus[i],
 
   DiffPlus[i_] -> DiffPlusOp[i],
-  DiffMinus[i_] -> DiffMinusOp[i]
+  DiffMinus[i_] -> DiffMinusOp[i],
+  ShiftMinus[i_] -> 1/shift[i]
 };
 
 (* PD = PDstandard2nd; *)
@@ -115,10 +116,12 @@ reconstructCalc[i_] :=
 fluxCalc[f_, i_] :=
 {
   Name -> "burgers_flux_" <> ToString[i],
+  ApplyBCs -> True,
+  Where -> Interior,
   Schedule -> {"in MoL_CalcRHS after burgers_reconstruct_" <> ToString[i]},
   Equations -> 
   {
-    uF -> 1/2 (f[uLeft] + f[uR] + alpha (uLeft - uR))
+    uF -> 1/2 (f[uLeft] + f[ShiftMinus[uR,i]] + alpha (uLeft - ShiftMinus[uR,i]))
   }
 };
 

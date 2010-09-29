@@ -15,6 +15,8 @@
 /* IfThen cannot be expressed in Fortran */
 #endif
 
+#define MinMod(x, y)  ((x) * (y) < 0 ? 0 : (fabs((x)) < fabs((y)) ? (x) : (y)))
+
 #define Exp(x)        (exp(x))
 #define Log(x)        (log(x))
 

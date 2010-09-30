@@ -6,6 +6,7 @@
 #ifdef KRANC_C
 #define Abs(x)        (fabs(x))
 #define Min(x, y)     (fmin((x), (y)))
+#define Min3(x, y, z)     (fmin(fmin((x), (y)), (z)))
 #define Max(x, y)     (fmax((x), (y)))
 #define IfThen(x,y,z) ((x) ? (y) : (z))
 #else
@@ -15,7 +16,15 @@
 /* IfThen cannot be expressed in Fortran */
 #endif
 
+#ifdef KRANC_C
+#define Sign(x)       (signbit(x)?-1:+1)
+#else
+#define Sign(x)       (sgn(x))
+#endif
+
 #define MinMod(x, y)  ((x) * (y) < 0 ? 0 : (fabs((x)) < fabs((y)) ? (x) : (y)))
+
+#define VanLeer(x, y)  ((x) * (y) < 0 ? 0 : (Min3(2*fabs(x),2*fabs(y),0.5*(fabs(x)+fabs(y)))*Sign((x)+(y))))
 
 #define Exp(x)        (exp(x))
 #define Log(x)        (log(x))
@@ -31,12 +40,6 @@
 #define Sinh(x)       (sinh(x))
 #define Cosh(x)       (cosh(x))
 #define Tanh(x)       (tanh(x))
-
-#ifdef KRANC_C
-#define Sign(x)       (signbit(x)?-1:+1)
-#else
-#define Sign(x)       (sgn(x))
-#endif
 
 #ifdef KRANC_C
 #define E               M_E

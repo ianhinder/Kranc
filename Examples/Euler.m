@@ -160,7 +160,7 @@ eulerDenFlux[rho_, v_, p_, i_] :=
 eulerSFlux[rho_, v_, p_, {i_, j_}] :=
   rho v[i] v[j] + p Euc[i,j];
 
-eulerEnFlux[rho_, v_, p_, i_] :=
+eulerEnFlux[rho_, v_, p_, En_, i_] :=
   v[i](En + p);
 
 zeroRHSCalc[] :=
@@ -225,10 +225,10 @@ fluxCalc[i_] :=
                               ShiftMinus[pRight, i], {i, uj}] + 
                    alpha (ShiftMinus[SRight[uj],i] - SLeft[uj])),
 
-    EnF -> 1/2 (eulerEnFlux[rhoLeft, vLeft, pLeft, i] + 
+    EnF -> 1/2 (eulerEnFlux[rhoLeft, vLeft, pLeft, EnLeft, i] + 
                eulerEnFlux[ShiftMinus[rhoRight,i], 
                            vRightTemp,
-                           ShiftMinus[pRight,i], i] + 
+                           ShiftMinus[pRight,i], ShiftMinus[EnRight,i], i] + 
                alpha (ShiftMinus[EnRight,i] - EnLeft))
   }
 };

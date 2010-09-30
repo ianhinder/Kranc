@@ -184,6 +184,15 @@ minmodVar[v_, i_, vLeft_, vRight_] :=
   vRight -> v + 0.5 slope
 }
 
+vanLeerVar[v_, i_, vLeft_, vRight_] :=
+{
+  slopeL -> DiffMinus[v, i],
+  slopeR -> DiffPlus[v, i],
+  slope -> VanLeer[slopeL, slopeR],
+  vLeft -> v - 0.5 slope,
+  vRight -> v + 0.5 slope
+}
+
 reconstructCalc[i_] :=
 {
   Name -> "euler_reconstruct_" <> ToString[i],
@@ -194,11 +203,11 @@ reconstructCalc[i_] :=
   ApplyBCs -> True,
   Equations -> 
     Flatten[{
-      minmodVar[rho,i, rhoLeft, rhoRight],
+      vanLeerVar[rho,i, rhoLeft, rhoRight],
       Flatten[Table[
-        minmodVar[v[j], i, Symbol["vLeft"<>ToString[j]],
+        vanLeerVar[v[j], i, Symbol["vLeft"<>ToString[j]],
                            Symbol["vRight"<>ToString[j]]], {j, 1, 3}],1],
-      minmodVar[p,i, pLeft, pRight]
+      vanLeerVar[p,i, pLeft, pRight]
   },1]
 };
 

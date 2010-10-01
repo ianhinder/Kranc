@@ -125,11 +125,26 @@ keywordParameters = {
 eulerCons =
 {
   Name -> "eulerauto_cons_calc",
+
   Equations ->
   {
     flux[Den,ui] -> rho v[ui],
     flux[S[uj],ui] -> rho v[ui] v[uj] + p Euc[ui,uj],
     flux[En,ui] -> v[ui](En + p)
+  },
+
+  ConservedEquations ->
+  {
+    Den -> rho,
+    S[ui] -> rho v[ui],
+    En -> p/(gamma-1) + 1/2 rho v[ui] v[uj] Euc[li,lj]
+  },
+
+  PrimitiveEquations ->
+  {
+    rho -> Den,
+    v[ui] -> S[ui] / Den,
+    p -> (gamma-1)(En - 1/2 Euc[li,lj] S[ui] S[uj]/Den)
   }
 }
 

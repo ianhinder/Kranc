@@ -172,6 +172,17 @@ conservedCalc[calc_] :=
   Equations -> lookup[calc, ConservedEquations]
 };
 
+conservedIntercellCalc[calc_, i_] :=
+{
+  Name -> lookup[calc, Name] <> "_intercell_conserved_" <> ToString[i],
+  Schedule -> {"in MoL_CalcRHS after " <> lookup[calc, Name] <> "_reconstruct_" <> ToString[i]},
+
+  Equations ->
+    Module[{vars = Join[primitiveVars[calc], consVars[calc]]},
+      Join[lookup[calc, ConservedEquations] /. (Map[# -> leftSymbol[#] &, vars]),
+           lookup[calc, ConservedEquations] /. (Map[# -> rightSymbol[#] &, vars])]]
+};
+
 (* Given a ConservationCalculation structure, return a list of
    calculations which should be scheduled to solve that conservation
    law. *)
@@ -183,7 +194,7 @@ ProcessConservationCalculation[calc_, thornName_] :=
       Table[
         {conservedCalc[calc],
          reconstructCalc[calc, i],
-(*         conservedFluxCalc[i], *)
+         conservedIntercellCalc[calc, i],
          fluxCalc[calc, i],
          rhs[calc, i],
          primitivesCalc[calc, thornName]}, {i, 1, 1}], 1]

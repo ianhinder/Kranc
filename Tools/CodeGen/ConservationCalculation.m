@@ -43,7 +43,7 @@ zeroRHSCalc[calc_] :=
 {
   Name -> lookup[calc,Name] <> "_zero_rhs",
   Schedule -> {"in MoL_CalcRHS"},
-  Equations -> 
+  Equations ->
     (Map[First, lookup[calc, Equations]] /. {flux[v_, rest___] :> (dot[v] -> 0)})
 };
 
@@ -107,12 +107,12 @@ reconstructCalc[calc_, i_] :=
 {
   Name -> lookup[calc,Name] <> "_reconstruct_" <> ToString[i],
   Where -> Interior,
-  Schedule -> {"in MoL_CalcRHS after " <> 
-    If[i == 1, lookup[calc,Name] <> "_zero_rhs", 
+  Schedule -> {"in MoL_CalcRHS after " <>
+    If[i == 1, lookup[calc,Name] <> "_zero_rhs",
                lookup[calc,Name] <> "_rhs_" <> ToString[i-1]]},
   Shorthands -> {slopeL, slopeR, slope},
   ApplyBCs -> True,
-  Equations -> 
+  Equations ->
     Flatten[Table[minmodVar[v,i, leftSymbol[v], rightSymbol[v]],
                   {v, reconsVars[calc]}], 1]
 }
@@ -153,7 +153,7 @@ rhs[calc_, i_] :=
   Name -> lookup[calc,Name] <> "_rhs_" <> ToString[i],
   Schedule -> {"in MoL_CalcRHS after " <> lookup[calc,Name] <> "_flux_" <> ToString[i]},
   Where -> Interior,
-  Equations -> 
+  Equations ->
     Table[dot[v] -> dot[v] - PDplus[fluxSymbol[v], i], {v, consVars[calc]}]
 };
 
@@ -163,7 +163,7 @@ rhs[calc_, i_] :=
 ProcessConservationCalculation[calc_] :=
   Module[{},
   {
-    zeroRHSCalc[calc], 
+    zeroRHSCalc[calc],
     Sequence@@Flatten[
       Table[
         {reconstructCalc[calc, i],
@@ -177,10 +177,10 @@ ProcessConservationCalculation[calc_] :=
 ConservationCalculationDeclaredGroups[calc_] :=
   Module[{},
     Map[CreateGroup[
-      ToString[#]<>"_lr_group", 
-      {leftSymbol[#], rightSymbol[#]}, {}] &, lrGFs[calc]] ~Join~ 
+      ToString[#]<>"_lr_group",
+      {leftSymbol[#], rightSymbol[#]}, {}] &, lrGFs[calc]] ~Join~
     Map[CreateGroup[
-      ToString[#]<>"_flux_group", 
+      ToString[#]<>"_flux_group",
       {fluxSymbol[#]}, {}] &, consVars[calc]]];
 
 End[];

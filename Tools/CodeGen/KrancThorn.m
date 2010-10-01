@@ -27,7 +27,8 @@
 BeginPackage["KrancThorn`", {"CodeGen`", "Thorn`",
  "MapLookup`", "KrancGroups`", "Differencing`",
  "CalculationFunction`", "Errors`", "Helpers`", "CactusBoundary`",
- "TensorTools`", "Param`", "Schedule`", "Interface`", "Kranc`"}];
+ "TensorTools`", "Param`", "Schedule`", "Interface`", "Kranc`",
+ "ConservationCalculation`"}];
 
 CreateKrancThorn::usage = "Construct a Kranc thorn";
 CreateKrancThornTT::usage = "Construct a Kranc thorn using TensorTools";
@@ -93,7 +94,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     interface, evolvedGroupDefinitions, rhsGroupDefinitions, thornspec,
     allParams, boundarySources, reflectionSymmetries,
     realParamDefs, intParamDefs,
-    pDefs, useCSE},
+    pDefs, useCSE, consCalcs, consCalcsIn, consGroups},
 
     (* Parse named arguments *)
 
@@ -121,7 +122,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     extendedRealParams = OptionValue[ExtendedRealParameters];
     extendedIntParams = OptionValue[ExtendedIntParameters];
     extendedKeywordParams = OptionValue[ExtendedKeywordParameters];
-    partialDerivs = OptionValue[PartialDerivatives];
+    partialDerivs = OptionValue[PartialDerivatives] ~Join~
+      ConservationDifferencingOperators[];
     reflectionSymmetries = OptionValue[ReflectionSymmetries];
     useCSE = OptionValue[UseCSE];
 
@@ -143,6 +145,21 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     InfoMessage[Terse, "Creating startup file"];
     startup = CreateStartupFile[thornName, thornName];
+
+    consCalcsIn = Append[#,Groups -> groups]& /@
+                    OptionValue[ConservationCalculations];
+
+    (* Add in calculations to solve any conservation laws that have
+       been provided *)
+    calcs = Join[calcs,
+      consCalcs = Flatten[Map[ProcessConservationCalculation, consCalcsIn],1]];
+    Print["consCalcs = ", consCalcs];
+
+    consGroups = Union@Flatten[
+      Map[ConservationCalculationDeclaredGroups, consCalcsIn],1];
+
+    groups = Join[groups, consGroups];
+    declaredGroups = Join[declaredGroups, Map[groupName, consGroups]];
 
     (* Get the different types of group *)
     evolvedGroups = extractEvolvedGroups[declaredGroups, calcs, groups];
@@ -313,20 +330,30 @@ createKrancMoLRegister[evolvedGroupNames_, nonevolvedGroupNames_, groups_, imple
    Tensors
    -------------------------------------------------------------------------- *)
 
+(*Options[CreateKrancThornTT] = ThornOptions;*)
+
 CreateKrancThornTT[groups_, parentDirectory_, thornName_, opts___] :=
-  Module[{calcs, expCalcs, expGroups, options, derivs, expDerivs, reflectionSymmetries, declaredGroups},
+  Module[{calcs, expCalcs, expGroups, options, derivs, expDerivs, reflectionSymmetries, declaredGroups, consCalcs, expConsCalcs},
     InfoMessage[Terse, "Processing tensorial arguments"];
     calcs = lookup[{opts}, Calculations];
+    consCalcs = lookupDefault[{opts}, ConservationCalculations, {}];
     derivs = lookupDefault[{opts}, PartialDerivatives, {}];
     Map[CheckCalculationTensors, calcs];
     expCalcs = Map[makeCalculationExplicit, calcs];
+    expConsCalcs = Map[makeCalculationExplicit, consCalcs];
+
+    Print["expConsCalcs == ", expConsCalcs];
 
     InfoMessage[Info, "Group definitions:", groups];
 
     expDerivs = Flatten[Map[MakeExplicit,derivs],1];
     expGroups = Map[makeGroupExplicit, groups];
-    options = Join[DeleteCases[{opts}, Calculations -> _], {Calculations -> expCalcs}];
-    options = Join[DeleteCases[options, PartialDerivatives -> _], {PartialDerivatives -> expDerivs}];
+    options = {opts};
+    options = Join[DeleteCases[options, Calculations -> _], {Calculations -> expCalcs}];
+    options = Join[DeleteCases[options, ConservationCalculations -> _],
+      {ConservationCalculations -> expConsCalcs}];
+    options = Join[DeleteCases[options, PartialDerivatives -> _],
+      {PartialDerivatives -> expDerivs}];
 
     declaredGroups = lookupDefault[{opts}, DeclaredGroups, {}];
     evolutionTimelevels = lookupDefault[{opts}, EvolutionTimelevels, 3];

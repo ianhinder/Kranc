@@ -153,7 +153,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        been provided *)
     calcs = Join[calcs,
       consCalcs = Flatten[Map[ProcessConservationCalculation, consCalcsIn],1]];
-    Print["consCalcs = ", consCalcs];
+    (* Print["consCalcs = ", consCalcs]; *)
 
     consGroups = Union@Flatten[
       Map[ConservationCalculationDeclaredGroups, consCalcsIn],1];
@@ -341,8 +341,6 @@ CreateKrancThornTT[groups_, parentDirectory_, thornName_, opts___] :=
     Map[CheckCalculationTensors, calcs];
     expCalcs = Map[makeCalculationExplicit, calcs];
     expConsCalcs = Map[makeCalculationExplicit, consCalcs];
-
-    Print["expConsCalcs == ", expConsCalcs];
 
     InfoMessage[Info, "Group definitions:", groups];
 

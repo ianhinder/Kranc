@@ -111,7 +111,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     includeFiles = OptionValue[IncludeFiles];
     evolutionTimelevels = OptionValue[EvolutionTimelevels]; (* Redundant *)
     defaultEvolutionTimelevels = lookupDefault[{opts}, DefaultEvolutionTimelevels, evolutionTimelevels];
-    realParams = OptionValue[RealParameters];
+    realParams = OptionValue[RealParameters] ~Join~ ConservationDifferencingRealParameters[];
     intParams = OptionValue[IntParameters];
     realParamDefs = MakeFullParamDefs[realParams];
     intParamDefs = MakeFullParamDefs[intParams];

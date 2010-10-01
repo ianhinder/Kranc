@@ -117,7 +117,7 @@ reconstructCalc[calc_, i_] :=
   Shorthands -> {slopeL, slopeR, slope},
   ApplyBCs -> True,
   Equations ->
-    Flatten[Table[minmodVar[v,i, leftSymbol[v], rightSymbol[v]],
+    Flatten[Table[vanLeerVar[v,i, leftSymbol[v], rightSymbol[v]],
                   {v, primitiveVars[calc]}], 1]
 };
 

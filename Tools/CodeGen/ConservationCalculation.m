@@ -88,7 +88,7 @@ consVars[calc_] :=
   (Map[First, lookup[calc, Equations]] /. {flux[v_, rest___] :> v})
 
 (* Return the list of variables to reconstruct in a calculation *)
-reconsVars[calc_] :=
+primitiveVars[calc_] :=
   Module[{allGFs, calcSyms, gfsUsed, conserved, primitive},
     allGFs = allGroupVariables[lookup[calc, Groups]];
     calcSyms = calculationSymbols[calc];
@@ -118,7 +118,7 @@ reconstructCalc[calc_, i_] :=
   ApplyBCs -> True,
   Equations ->
     Flatten[Table[minmodVar[v,i, leftSymbol[v], rightSymbol[v]],
-                  {v, reconsVars[calc]}], 1]
+                  {v, primitiveVars[calc]}], 1]
 };
 
 replaceVars[x_, vars_, f_] :=

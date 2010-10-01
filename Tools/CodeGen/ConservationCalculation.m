@@ -28,6 +28,8 @@ DiffMinus;
 ShiftMinus;
 PDplus;
 ConservationCalculationDeclaredGroups;
+ConservationDifferencingRealParameters;
+hlleAlpha;
 
 Begin["`Private`"];
 
@@ -37,6 +39,11 @@ ConservationDifferencingOperators[] :=
   DiffMinus[i_] -> DiffMinusOp[i],
   ShiftMinus[i_] -> 1/shift[i],
   PDplus[i_] -> DPlus[i]
+};
+
+ConservationDifferencingRealParameters[] :=
+{
+  hlleAlpha
 };
 
 zeroRHSCalc[calc_] :=
@@ -115,38 +122,35 @@ reconstructCalc[calc_, i_] :=
   Equations ->
     Flatten[Table[minmodVar[v,i, leftSymbol[v], rightSymbol[v]],
                   {v, reconsVars[calc]}], 1]
-}
-
-fluxCalc[i_] :=
-{
-  Name -> "eulerauto_flux_" <> ToString[i],
-  ApplyBCs -> True,
-  Where -> Interior,
-  Schedule -> {"in MoL_CalcRHS after eulerauto_conserved_flux_" <> ToString[i]},
-  Shorthands -> {vRightTemp[ui]},
-  Equations -> 
-  {
-    vRightTemp[ui] -> ShiftMinus[vRight[ui],i],
-
-    DenF -> 1/2 (eulerDenFlux[rhoLeft, vLeft, pLeft, i] + 
-                 eulerDenFlux[ShiftMinus[rhoRight,i], 
-                              vRightTemp,
-                              ShiftMinus[pRight,i], i] + 
-                 alpha (ShiftMinus[DenRight,i] - DenLeft)),
-
-    SF[uj] -> 1/2 (eulerSFlux[rhoLeft, vLeft, pLeft, {i, uj}] + 
-                   eulerSFlux[ShiftMinus[rhoRight, i], 
-                              vRightTemp,
-                              ShiftMinus[pRight, i], {i, uj}] + 
-                   alpha (ShiftMinus[SRight[uj],i] - SLeft[uj])),
-
-    EnF -> 1/2 (eulerEnFlux[rhoLeft, vLeft, pLeft, EnLeft, i] + 
-               eulerEnFlux[ShiftMinus[rhoRight,i], 
-                           vRightTemp,
-                           ShiftMinus[pRight,i], ShiftMinus[EnRight,i], i] + 
-               alpha (ShiftMinus[EnRight,i] - EnLeft))
-  }
 };
+
+replaceVars[x_, vars_, f_] :=
+  Module[{},
+    x /. Map[(# -> f[#])&, vars]];
+
+hlle[flux[q_, j_] -> frhs_, vars_] :=
+  Module[{},
+  {
+    leftSymbol[fluxSymbol[q]] -> replaceVars[frhs, vars, leftSymbol],
+    rightSymbol[fluxSymbol[q]] -> replaceVars[frhs, vars, rightSymbol],
+    fluxSymbol[q] ->
+      1/2(leftSymbol[fluxSymbol[q]] + rightSymbol[fluxSymbol[q]] +
+          hlleAlpha(ShiftMinus[rightSymbol[q],j] - leftSymbol[q]))
+  }];
+
+fluxCalc[calc_, i_] :=
+  Module[{fluxes = Select[lookup[calc, Equations], MatchQ[#, flux[_,i]->_] &]},
+  {
+    Name -> lookup[calc,Name] <> "_flux_" <> ToString[i],
+    ApplyBCs -> True,
+    Where -> Interior,
+    Schedule -> {"in MoL_CalcRHS after " <> lookup[calc,Name] <>
+      "_conserved_flux_" <> ToString[i]},
+    Shorthands -> Join[Map[leftSymbol[fluxSymbol[#]]&, consVars[calc]],
+      Map[rightSymbol[fluxSymbol[#]]&, consVars[calc]]],
+    Equations ->
+      Flatten[Map[hlle[#,GridFunctionsInExpression[#[[2]], lookup[calc, Groups]]] &, fluxes],1]
+  }];
 
 rhs[calc_, i_] :=
 {
@@ -168,7 +172,7 @@ ProcessConservationCalculation[calc_] :=
       Table[
         {reconstructCalc[calc, i],
 (*         conservedFluxCalc[i], *)
-(*         fluxCalc[i],  *)
+         fluxCalc[calc, i],
          rhs[calc, i]}, {i, 1, 1}], 1]
   }];
 

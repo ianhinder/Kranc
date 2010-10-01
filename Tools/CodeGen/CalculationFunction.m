@@ -25,6 +25,7 @@ BeginPackage["CalculationFunction`", {"CodeGen`",
 CreateCalculationFunction::usage = "";
 VerifyCalculation::usage = "";
 calculationSymbols::usage = "";
+GridFunctionsInExpression;
 
 Begin["`Private`"];
 
@@ -564,6 +565,11 @@ equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
             gfsInLHS]],
 
       If[debugInLoop, Map[InfoVariable[GridName[#]] &, gfsInLHS], ""]}, opts]];
+
+(* Unsorted *)
+
+GridFunctionsInExpression[x_, groups_] :=
+  Union[Cases[x, _ ? (MemberQ[allGroupVariables[groups],#] &), Infinity]];
 
 End[];
 

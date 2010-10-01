@@ -94,7 +94,6 @@ scheduleCalc[calc_, groups_] :=
                       {}];
 
     applyBCs = lookupDefault[calc, ApplyBCs, False];
-    Print["applyBCs = ", applyBCs];
     userSchedule = lookupDefault[calc, Schedule, Automatic];
 
     If[userSchedule =!= Automatic && !applyBCs,

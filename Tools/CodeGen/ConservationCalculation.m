@@ -85,7 +85,7 @@ fluxSymbol[v_] :=
 
 (* Return the list of conserved variables in a calculation *)
 consVars[calc_] :=
-  (Map[First, lookup[calc, Equations]] /. {flux[v_, rest___] :> v})
+  Union[(Map[First, lookup[calc, Equations]] /. {flux[v_, rest___] :> v})]
 
 (* Return the list of variables to reconstruct in a calculation *)
 primitiveVars[calc_] :=
@@ -129,7 +129,7 @@ hlle[flux[q_, j_] -> frhs_, vars_] :=
   Module[{},
   {
     leftSymbol[fluxSymbol[q]] -> replaceVars[frhs, vars, leftSymbol],
-    rightSymbol[fluxSymbol[q]] -> replaceVars[frhs, vars, rightSymbol],
+    rightSymbol[fluxSymbol[q]] -> replaceVars[frhs, vars, Function[v,ShiftMinus[rightSymbol[v],j]]],
     fluxSymbol[q] ->
       1/2(leftSymbol[fluxSymbol[q]] + rightSymbol[fluxSymbol[q]] +
           hlleAlpha(ShiftMinus[rightSymbol[q],j] - leftSymbol[q]))

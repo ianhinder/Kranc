@@ -26,6 +26,7 @@ ConservationDifferencingOperators;
 DiffPlus;
 DiffMinus;
 ShiftMinus;
+PDplus;
 ConservationCalculationDeclaredGroups;
 
 Begin["`Private`"];
@@ -34,7 +35,8 @@ ConservationDifferencingOperators[] :=
 {
   DiffPlus[i_] -> DiffPlusOp[i],
   DiffMinus[i_] -> DiffMinusOp[i],
-  ShiftMinus[i_] -> 1/shift[i]
+  ShiftMinus[i_] -> 1/shift[i],
+  PDplus[i_] -> DPlus[i]
 };
 
 zeroRHSCalc[calc_] :=
@@ -68,6 +70,9 @@ leftSymbol[v_] :=
 
 rightSymbol[v_] :=
   Symbol["Global`" <> ToString[v] <> "Right"];
+
+fluxSymbol[v_] :=
+  Symbol["Global`" <> ToString[v] <> "Flux"];
 
 (* Return the list of conserved variables in a calculation *)
 consVars[calc_] :=
@@ -150,17 +155,13 @@ fluxCalc[i_] :=
   }
 };
 
-rhs[i_] :=
+rhs[calc_, i_] :=
 {
-  Name -> "eulerauto_rhs_" <> ToString[i],
-  Schedule -> {"in MoL_CalcRHS after eulerauto_flux_" <> ToString[i]},
+  Name -> lookup[calc,Name] <> "_rhs_" <> ToString[i],
+  Schedule -> {"in MoL_CalcRHS after " <> lookup[calc,Name] <> "_flux_" <> ToString[i]},
   Where -> Interior,
   Equations -> 
-  {
-    dot[Den] -> dot[Den] - PDplus[DenF, i],
-    dot[S[uj]] -> dot[S[uj]] - PDplus[SF[uj], i],
-    dot[En] -> dot[En] - PDplus[EnF, i]
-  }
+    Table[dot[v] -> dot[v] - PDplus[fluxSymbol[v], i], {v, consVars[calc]}]
 };
 
 (* Given a ConservationCalculation structure, return a list of
@@ -172,21 +173,22 @@ ProcessConservationCalculation[calc_] :=
     zeroRHSCalc[calc], 
     Sequence@@Flatten[
       Table[
-        {reconstructCalc[calc, i] (*,
-         conservedFluxCalc[i], 
-         fluxCalc[i], 
-         rhs[i] *) }, {i, 1, 1}], 1]
+        {reconstructCalc[calc, i],
+(*         conservedFluxCalc[i], *)
+(*         fluxCalc[i],  *)
+         rhs[calc, i]}, {i, 1, 1}], 1]
   }];
 
 (* Return all the new groups which need to be created for this
    conservation calculation *)
 ConservationCalculationDeclaredGroups[calc_] :=
   Module[{},
-    Print["CCG"];
-    Print["lrGFs = ", lrGFs[calc]];
     Map[CreateGroup[
       ToString[#]<>"_lr_group", 
-      {leftSymbol[#], rightSymbol[#]}, {}] &, lrGFs[calc]]];
+      {leftSymbol[#], rightSymbol[#]}, {}] &, lrGFs[calc]] ~Join~ 
+    Map[CreateGroup[
+      ToString[#]<>"_flux_group", 
+      {fluxSymbol[#]}, {}] &, consVars[calc]]];
 
 End[];
 

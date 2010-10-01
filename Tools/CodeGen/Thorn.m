@@ -526,12 +526,15 @@ CreateSetterSource[calcs_, debug_, useCSE_, include_, imp_,
    Symmetries Registration
    ------------------------------------------------------------------------ *)
 
-(* Symmetries registration spec = {{FullName -> "impl::GFname", 
-                                    Sym      -> {symX, symY, symZ}}, ...} *)
+(* Symmetries registration spec = {FullName -> "impl::GFname", 
+                                    Sym      -> {symX, symY, symZ}} *)
 
 SymmetriesBlock[spec_] :=
 
   Module[{i, KrancDim},
+
+  If[!MatchQ[spec, {FullName -> _String, Sym -> {_,_,_}}],
+    ThrowError["SymmetriesBlock: Expecting a symmetry registration spec but got ", spec]];
 
   KrancDim = 3;
 

@@ -96,18 +96,11 @@ reconsVars[calc_] :=
 (* Return the variables for which Left and Right GFs need to be created *)
 lrGFs[calc_] :=
   Module[{allGFs, calcSyms, gfsUsed, conserved, primitive},
-    Print["1"];
-    Print[calc];
     allGFs = allGroupVariables[lookup[calc, Groups]];
-    Print["2"];
     calcSyms = calculationSymbols[calc];
-    Print["3"];
     gfsUsed = Intersection[allGFs, calcSyms];
-    Print["4"];
     conserved = consVars[calc];
-    Print["5"];
     primitive = Complement[gfsUsed, conserved];
-    Print["6"];
     Join[primitive, conserved]];
 
 reconstructCalc[calc_, i_] :=

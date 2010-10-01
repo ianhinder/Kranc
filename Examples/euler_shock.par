@@ -101,7 +101,7 @@ Euler::vL0 = 0
 Euler::vR0 = 0
 Euler::pL0 = 1
 Euler::pR0 = 0.1
-Euler::alpha = 1
+Euler::alpha = 3
 Euler::gamma = 1.4
 Euler::initial_data = "shock"
 

@@ -30,6 +30,8 @@ PDplus;
 ConservationCalculationDeclaredGroups;
 ConservationDifferencingRealParameters;
 hlleAlpha;
+PrimitiveEquations;
+ConservedEquations;
 
 Begin["`Private`"];
 
@@ -161,19 +163,35 @@ rhs[calc_, i_] :=
     Table[dot[v] -> dot[v] - PDplus[fluxSymbol[v], i], {v, consVars[calc]}]
 };
 
+primitivesCalc[calc_, thornName_] :=
+{
+  Name -> lookup[calc, Name] <> "_primitives",
+  Schedule -> {"in MoL_PostStep after " <> thornName <>"_ApplyBCs"},
+  Equations -> lookup[calc, PrimitiveEquations]
+};
+
+conservedCalc[calc_] :=
+{
+  Name -> lookup[calc, Name] <> "_conserved",
+  Schedule -> {"at POSTINITIAL"},
+  Equations -> lookup[calc, ConservedEquations]
+};
+
 (* Given a ConservationCalculation structure, return a list of
    calculations which should be scheduled to solve that conservation
    law. *)
-ProcessConservationCalculation[calc_] :=
+ProcessConservationCalculation[calc_, thornName_] :=
   Module[{},
   {
     zeroRHSCalc[calc],
     Sequence@@Flatten[
       Table[
-        {reconstructCalc[calc, i],
+        {conservedCalc[calc],
+         reconstructCalc[calc, i],
 (*         conservedFluxCalc[i], *)
          fluxCalc[calc, i],
-         rhs[calc, i]}, {i, 1, 1}], 1]
+         rhs[calc, i],
+         primitivesCalc[calc, thornName]}, {i, 1, 1}], 1]
   }];
 
 (* Return all the new groups which need to be created for this

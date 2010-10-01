@@ -34,7 +34,7 @@ dummy;
 LoopPreIncludes, GroupImplementations, PartialDerivatives, NoSimplify,
 Boundary, Interior, InteriorNoSync, Where, AddToStencilWidth,
 Everywhere, normal1, normal2, normal3, INV, SQR, CUB, QAD, dot, pow,
-exp, dx, dy, dz, idx, idy, idz}
+exp, dx, dy, dz, idx, idy, idz, MinMod, VanLeer}
 
 {ConditionalOnKeyword, ConditionalOnKeywords, CollectList, Interior,
 InteriorNoSync, Boundary, BoundaryWithGhosts, Where, PreDefinitions,
@@ -48,6 +48,7 @@ AllowedSymbols, Parameters, ConditionalOnTextuals, ApplyBCs};
 
 ThornOptions =
  {Calculations -> {},
+  ConservationCalculations -> {},
   DeclaredGroups -> {},
   Implementation -> None,
   InheritedImplementations -> {},
@@ -91,5 +92,8 @@ Steerable, Never, Always, Recover};
 (* TensorTools.m *)
 
 {D1, D2, D3, D11, D22, D33, D21, D31, D32, D12, D13, D23, dot, Eps, Zero3}
+
+(* ConservationCalculation.m *)
+{flux, slopeL, slopeR, slope};
 
 EndPackage[];

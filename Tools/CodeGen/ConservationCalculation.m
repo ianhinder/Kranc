@@ -91,15 +91,10 @@ consVars[calc_] :=
 reconsVars[calc_] :=
   Module[{allGFs, calcSyms, gfsUsed, conserved, primitive},
     allGFs = allGroupVariables[lookup[calc, Groups]];
-    Print["allGFs = ", allGFs];
     calcSyms = calculationSymbols[calc];
-    Print["calcSyms = ", calcSyms];
     gfsUsed = Intersection[allGFs, calcSyms];
-    Print["gfsUsed = ", gfsUsed];
     conserved = consVars[calc];
-    Print["conserved = ", conserved];
     primitive = Complement[gfsUsed, conserved];
-    Print["primitive = ", primitive];
     primitive];
 
 (* Return the variables for which Left and Right GFs need to be created *)

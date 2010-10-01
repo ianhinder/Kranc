@@ -24,6 +24,7 @@ BeginPackage["CalculationFunction`", {"CodeGen`",
 
 CreateCalculationFunction::usage = "";
 VerifyCalculation::usage = "";
+calculationSymbols::usage = "";
 
 Begin["`Private`"];
 

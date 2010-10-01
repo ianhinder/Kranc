@@ -376,7 +376,9 @@ makeCalculationExplicit[calc_] :=
   mapValueMapMultiple[calc, 
     {Shorthands -> MakeExplicit, 
      CollectList -> MakeExplicit, 
-     Equations -> MakeExplicit}];
+     Equations -> MakeExplicit,
+     PrimitiveEquations -> MakeExplicit,
+     ConservedEquations -> MakeExplicit}];
 
 makeGroupExplicit[g_] :=
   Module[{variables, newVariables, newGroup},

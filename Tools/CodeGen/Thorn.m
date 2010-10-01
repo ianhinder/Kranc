@@ -548,8 +548,16 @@ SymmetriesBlock[spec_] :=
 ];
 
 (* syms is a list of rules mapping gridfunctions to their symmetry structures *)
-calcSymmetry[gf_, syms_] := 
-  gf /. syms;
+calcSymmetry[gf_, syms_] :=
+  Module[{},
+    If[mapContains[syms, gf],
+      Return[lookup[syms,gf]],
+      (* FIXME: We are defaulting to scalar symmetries if no information is
+         available.  This shouldn't happen, but I am bypassing this check
+         temporarily. *)
+      Print["WARNING: defaulting to symmetries of a scalar for "<>ToString[gf]];
+      Return[{1,1,1}]]];
+
 
 (* This function guesses the symmetries based on component names as we
    have not been given them *)

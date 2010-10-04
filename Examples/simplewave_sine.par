@@ -1,22 +1,18 @@
-#!/usr/bin/perl -W
 
 ActiveThorns = "
 Boundary
-Carpet
-CarpetIOASCII
-CarpetIOBasic
-CarpetIOScalar
-CarpetLib
-CarpetReduce
-CarpetSlab
 CartGrid3d
 CoordBase
 GenericFD
+IOASCII
 IOUtil
-LoopControl
+IOBasic
 MoL
 NanChecker
 Periodic
+PUGH
+PUGHReduce
+PUGHSlab
 SimpleWave
 Slab
 SymBase
@@ -27,49 +23,32 @@ Time
 # Grid
 #############################################################
 
-CoordBase::domainsize                   = minmax
-
-CoordBase::xmin                         = 0
-CoordBase::ymin                         = 0
-CoordBase::zmin                         = 0
-
-CoordBase::xmax                         = 1
-CoordBase::ymax                         = 0.1
-CoordBase::zmax                         = 0.1
-
-CoordBase::dx                           = 0.05
-CoordBase::dy                           = 0.1
-CoordBase::dz                           = 0.1
-
 CoordBase::boundary_size_x_lower        = 1
 CoordBase::boundary_size_y_lower        = 1
 CoordBase::boundary_size_z_lower        = 1
-CoordBase::boundary_shiftout_x_lower    = 1
-CoordBase::boundary_shiftout_y_lower    = 1
-CoordBase::boundary_shiftout_z_lower    = 1
 
 CoordBase::boundary_size_x_upper        = 1
 CoordBase::boundary_size_y_upper        = 1
 CoordBase::boundary_size_z_upper        = 1
-CoordBase::boundary_shiftout_x_upper    = 0
-CoordBase::boundary_shiftout_y_upper    = 0
-CoordBase::boundary_shiftout_z_upper    = 0
 
-CartGrid3D::type                        = "coordbase"
-CartGrid3D::domain                      = "full"
-CartGrid3D::avoid_origin                = "no"
+# Size of the grid (including boundary points)
+PUGH::global_nx = 12
+PUGH::global_ny = 3
+PUGH::global_nz = 3
+
+PUGH::ghost_size = 1
+
+CartGrid3D::type         = "byrange"
+CartGrid3D::avoid_origin = "no"
+
+CartGrid3D::xmin = -0.1
+CartGrid3D::ymin = -0.1
+CartGrid3D::zmin = -0.1
+CartGrid3D::xmax = 1
+CartGrid3D::ymax = 0.1
+CartGrid3D::zmax = 0.1
 
 Periodic::periodic = "yes"
-
-#############################################################
-# Carpet
-#############################################################
-
-Carpet::ghost_size                      = 1
-Carpet::domain_from_coordbase           = "yes"
-Carpet::max_refinement_levels           = 1
-#Carpet::init_each_timelevel             = "yes"
-Carpet::num_integrator_substeps         = 4
 
 #############################################################
 # Time integration
@@ -95,16 +74,15 @@ SimpleWave::evolved_group_bound   = "none"
 #############################################################
 
 IO::out_dir                   = $parfile
-IO::out_fileinfo              = "all"
+IO::out_fileinfo              = "none"
+IO::new_filename_scheme       = "no"
 
-CarpetIOBasic::outInfo_every        = 1
-CarpetIOBasic::outInfo_vars         = "SimpleWave::phi"
+IOBasic::outInfo_every        = 1
+IOBasic::outInfo_vars         = "SimpleWave::phi"
 
 IOASCII::out1D_every          = 1
 IOASCII::out1D_x              = "yes"
-IOASCII::out1D_y              = "yes"
-IOASCII::out1D_z              = "yes"
+IOASCII::out1D_y              = "no"
+IOASCII::out1D_z              = "no"
+IOASCII::out1D_d              = "no"
 IOASCII::out1D_vars           = "SimpleWave::phi SimpleWave::pi"
-
-CarpetIOASCII::out_precision = 19
-CarpetIOASCII::out3D_ghosts   = "yes"

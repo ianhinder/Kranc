@@ -22,8 +22,9 @@ to run the Kranc SimpleWave example.</p>
 
 <p>Prerequisites:
 <ul>
-<li>A C compiler</li>
 <li>Mathematica</li>
+<li>A C compiler</li>
+<li>A Unix-type operating system (e.g. Linux or Mac OS)
 </ul>
 </p>
 
@@ -33,8 +34,8 @@ to run the Kranc SimpleWave example.</p>
 then be downloaded into this directory and compiled there.
 
 <pre>
-  mkdir Cactus
-  cd Cactus
+mkdir Cactus
+cd Cactus
 </pre>
 
 <p>Download the Cactus <i>GetComponents</i> script and make it
@@ -42,25 +43,28 @@ executable. This script allows you to download Cactus thorns from many
 different repositories listed in a <i>ThornList</i>.
 
 <pre>
-  wget http://www.cactuscode.org/download/GetComponents
-  chmod u+x GetComponents
+wget http://www.cactuscode.org/download/GetComponents
+chmod u+x GetComponents
 </pre>
 
 <p>Download Cactus:
 
-<pre>./GetComponents -a --root=. http://cactuscode.org/cactus.th</pre>
+<pre>./GetComponents -a --root=. http://cactuscode.org/download/thorns/ComputationalToolkitBasic.th</pre>
 
-<p>Cactus should now have been downloaded.</p>
+<p>After several minutes, Cactus should have been downloaded.</p>
 
 <h2>Install Kranc into your Cactus directory</h2>
 
-<p>First, download and extract the Kranc distribution:
+<p>Download the Kranc distribution (you will need the <i>git</i>
+version control program installed):
 
-<pre>wget http://github.com/ianhinder/Kranc/tarball/master
-tar xfz Kranc.tar.gz</pre>
+<!-- <pre> -->
+<!-- wget http://github.com/ianhinder/Kranc/tarball/master -->
+<!-- tar xfz *-Kranc-*.tar.gz -->
+<!-- mv *-Kranc-* Kranc -->
+<!-- </pre> -->
 
-<p>You could also use
-        <pre>$ git clone git://github.com/ianhinder/Kranc</pre></p>
+<pre>git clone git://github.com/ianhinder/Kranc</pre></p>
 
 <p>Link Kranc into your Cactus installation:
 <pre>
@@ -72,21 +76,23 @@ ln -s ../Kranc/Examples arrangements/KrancExamples
 
 <h2>Build the SimpleWave example</h2>
 
-<p>Go into the Examples directory and build the SimpleWave thorn:
+<p>Go into the Examples directory and run Kranc to build the SimpleWave thorn:
 
 <pre>
-  cd Kranc/Examples
-  ../../kranc/Bin/kranc SimpleWave.m
+cd Kranc/Examples
+../../kranc/Bin/kranc SimpleWave.m
 </pre>
 
 <p>There should be a new directory, SimpleWave, which is the Cactus
 thorn which has been newly generated from the SimpleWave.m Kranc
 script.</p>
 
-<p>Copy the example Cactus thornlist:
-<pre>cp thornlists/cactus.th thornlists/kranc.th</pre>
+<p>Return to the Cactus directory and copy the example Cactus thornlist:
+<pre>
+cd ../..
+cp ComputationalToolkitBasic.th kranc.th</pre>
 
-<p>Open the thornlist in an editor and add the following lines to it:
+<p>Open kranc.th in an editor and add the following lines to it:
 <pre>
 KrancNumericalTools/GenericFD
 KrancExamples/SimpleWave
@@ -94,7 +100,7 @@ KrancExamples/SimpleWave
 
 <p>Create a Cactus configuration called "kranc" using this thornlist:
 <pre>
-make kranc-config THORNLIST=thornlists/kranc.th
+make kranc-config THORNLIST=kranc.th
 </pre></p>
 
 <p>If a C compiler cannot be found, or there is some other error,
@@ -125,18 +131,28 @@ cd Kranc/Examples
 <p>You should see many lines of output as Cactus runs.  If the test
 finishes successfully, the final line should be "Done."</p>
 
-<p>The output will be in the directory simplewave_test.  The variable
-phi is stored as a 1D timeseries in simplewave_test/phi.x.xg.  You can
-visualise it, for example, with Mathematica.  In a notebook session,
-type</p>
+<p>
+The output will be in the directory simplewave_test.  The variable
+phi is stored as a 1D timeseries in simplewave_test/phi.xl.  You can
+visualise it, for example, with Mathematica.  Create a new notebook
+and save it in the Examples directory (for example as "Analysis.nb").
+In the notebook, type</p>
 
 <pre>
-phi = Import["simplewave_test/phi.xg", "Table"];
-Manipulate[ListLinePlot[phi[[it]]], {it, 1, Length[phi], 1}]
+SetDirectory[NotebookDirectory[]];
+</pre>
+<pre>
+Get["../Auxiliary/Cactus/IOASCII.m"];
+</pre>
+<pre>
+MGraph[ReadIOASCII["simplewave_sine/phi.xl"]]
 </pre>
 
 <p>You should see a sine wave.  Use the Manipulate slider to animate
-the display to see the different iterations of the simulation.</p>
+the display to see the different iterations of the simulation.  The
+data file can also be read using the ygraph plotting program.</p>
+
+<div><img src="sineplot.png"></div>
 
 </body>
 </html>

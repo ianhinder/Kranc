@@ -1,0 +1,16 @@
+#!/bin/bash
+set -e
+rm -rf Kranc
+git clone .. Kranc
+cd Kranc
+git checkout -b master origin/master
+HEAD=$(git rev-parse HEAD)
+cd Doc
+make KrancDoc.html
+cd ../..
+cp Kranc/Doc/KrancDoc.html index.html
+cp Kranc/Doc/KrancDoc.css .
+cp Kranc/Doc/*.png .
+
+git add index.html KrancDoc.css *.png
+git commit -m "Updated HTML documentation from Git commit $HEAD"

@@ -20,3 +20,27 @@ pre { background: #000; color: #fff; padding: 15px;}
 .verbatim { background: #000; color: #fff; padding: 15px;}
 hr { border: 0; width: 80%; border-bottom: 1px solid #aaa}
 .footer { text-align:center; padding-top:30px; font-style: italic; }
+
+div.contentspanel
+{
+/*  background-image: url(red-texture.jpeg); */
+/*  background-color: #dddddd; */
+  color: black;
+  padding-top: 0em;
+  padding-bottom: 0em;
+  padding-left: 0em;
+  padding-right: 1em;
+  float: right;
+  margin: 0em;
+  margin-left: 0em;
+  margin-right: 0em;
+  margin-bottom: 0em;
+/*  border-width: thin;
+  border-style: solid; */
+}
+ul.contents
+{
+  list-style-type: none;
+  list-style-position: inside;
+  margin-left: 0;padding-left: 0;
+}

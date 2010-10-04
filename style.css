@@ -15,6 +15,7 @@ h1 a { text-decoration: none }
 h2 { font-size: 12pt; color: #c87137; }
 h3 { text-align: center; color: #1f9966; }
 a { color: #c87137; }
+img { border: 0px }
 .description { font-size: 1.2em; margin-bottom: 30px; margin-top: 30px; font-style: italic;}
 .download { float: right; }
 pre {/* background: #c8ae8a; color: #000000; */ padding: 6pt; padding-left:12pt}

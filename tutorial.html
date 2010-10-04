@@ -13,17 +13,19 @@
 
 <h1>Kranc Tutorial</h1>
 
-<p>This tutorial is in three parts.  The first part describes how to
+<p>This tutorial is in four parts.  The first part describes how to
 download and configure Cactus, and can be skipped if you are already
 familiar with Cactus and have an existing Cactus installation that you
 want to use.  The second part describes how to download and install
-Kranc into your Cactus installation, and the third part describes how
-to run the Kranc SimpleWave example.</p>
+Kranc into your Cactus installation. The third part describes how to
+generate the SimpleWave example thorn and compile it.  The fourth part
+describes how to run the example and analyse the output.</p>
 
 <p>Prerequisites:
 <ul>
 <li>Mathematica</li>
-<li>A C compiler</li>
+<li>A C and C++ compiler</li>
+<li>The <a href = "http://git-scm.com/">Git</a> version control system</li>
 <li>A Unix-type operating system (e.g. Linux or Mac OS)
 </ul>
 </p>
@@ -80,7 +82,7 @@ ln -s ../Kranc/Examples arrangements/KrancExamples
 
 <pre>
 cd Kranc/Examples
-../../kranc/Bin/kranc SimpleWave.m
+../../Kranc/Bin/kranc SimpleWave.m
 </pre>
 
 <p>There should be a new directory, SimpleWave, which is the Cactus
@@ -104,7 +106,7 @@ make kranc-config THORNLIST=kranc.th
 </pre></p>
 
 <p>If a C compiler cannot be found, or there is some other error,
-consult the <a href = "http://cactuscode.org/doc">Cactus
+consult the <a href = "http://cactuscode.org/documentation">Cactus
 documentation</a> for advice on configuring Cactus for your system.
 You may have to write an <i>optionlist</i> for your system and use it
 in the "make kranc-config" line.</p>

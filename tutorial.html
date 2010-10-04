@@ -123,36 +123,28 @@ intermediate build files will be in configs/kranc.</p>
 
 <h2>Run the SimpleWave example</h2>
 
-<p>Run Cactus with the parameter file simplewave_test.par:
+<p>Run Cactus with the parameter file simplewave_sine.par:
 
 <pre>
 cd Kranc/Examples
-../../exe/cactus_kranc simplewave_test.par
+../../exe/cactus_kranc simplewave_sine.par
 </pre>
 
 <p>You should see many lines of output as Cactus runs.  If the test
 finishes successfully, the final line should be "Done."</p>
 
 <p>
-The output will be in the directory simplewave_test.  The variable
-phi is stored as a 1D timeseries in simplewave_test/phi.xl.  You can
-visualise it, for example, with Mathematica.  Create a new notebook
-and save it in the Examples directory (for example as "Analysis.nb").
-In the notebook, type</p>
+The output will be in the directory simplewave_sine.  The variable phi
+is stored as a 1D timeseries in simplewave_sine/phi.xl.  The output
+file is a simple text file which can be visualised in Mathematica
+using the provided Analysis.nb notebook, or in the ygraph animation
+tool.</p>
 
-<pre>
-SetDirectory[NotebookDirectory[]];
-</pre>
-<pre>
-Get["../Auxiliary/Cactus/IOASCII.m"];
-</pre>
-<pre>
-MGraph[ReadIOASCII["simplewave_sine/phi.xl"]]
-</pre>
+<p>To visualise the output in Mathematica, open the notebook
+"Analysis.nb" and choose Evaluation -> Evaluate Notebook.</p>
 
 <p>You should see a sine wave.  Use the Manipulate slider to animate
-the display to see the different iterations of the simulation.  The
-data file can also be read using the ygraph plotting program.</p>
+the display to see the different iterations of the simulation.</p>
 
 <div><img src="sineplot.png"></div>
 

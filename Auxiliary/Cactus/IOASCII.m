@@ -12,8 +12,12 @@ ReadIOASCII[file_] :=
   data2 = Select[SplitBy[data1, Length[#] == 0 &], #[[1]] != {} &];
   data3 = Map[{First[#][[3]], Drop[#, 1]} &, data2]];
 
-MGraph[file_] :=
+MGraph[file_String] :=
  Module[{data = ReadIOASCII[file]},
+  MGraph[data]];
+
+MGraph[data_List] :=
+ Module[{},
   Manipulate[
    ListLinePlot[data[[it, 2]], PlotLabel -> data[[it, 1]]], {{it,1,"it"}, 1, Length[data], 1}]];
 

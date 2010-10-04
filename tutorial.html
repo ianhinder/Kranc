@@ -70,8 +70,10 @@ version control program installed):
 
 <p>Link Kranc into your Cactus installation:
 <pre>
-ln -s ../Kranc/Auxiliary/Cactus/KrancNumericalTools arrangements/KrancNumericalTools
-ln -s ../Kranc/Examples arrangements/KrancExamples
+cd arrangements
+ln -s ../Kranc/Auxiliary/Cactus/KrancNumericalTools KrancNumericalTools
+ln -s ../Kranc/Examples KrancExamples
+cd ..
 </pre>
 
 <p>Kranc is now installed and ready to use.</p>

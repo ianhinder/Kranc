@@ -1,0 +1,1258 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  
+  "http://www.w3.org/TR/html4/loose.dtd">  
+<html > 
+<head><title>Kranc User Guide</title> 
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"> 
+<meta name="generator" content="TeX4ht (http://www.cse.ohio-state.edu/~gurari/TeX4ht/)"> 
+<meta name="originator" content="TeX4ht (http://www.cse.ohio-state.edu/~gurari/TeX4ht/)"> 
+<!-- html --> 
+<meta name="src" content="KrancDoc.tex"> 
+<meta name="date" content="2010-10-04 16:07:00"> 
+<link rel="stylesheet" type="text/css" href="KrancDoc.css"> 
+</head><body 
+>
+<div class="maketitle">
+
+
+<h2 class="titleHead">Kranc User Guide</h2>
+ <div class="author" ><span 
+class="cmr-12">Sascha Husa and Ian Hinder</span></div>
+<br />
+<div class="date" ><span 
+class="cmr-12">October 4, 2010</span></div>
+
+</div>
+
+<h2 class="likechapterHead"><a 
+ id="x1-1000"></a>Contents</h2> <div class="tableofcontents">
+<span class="chapterToc" >1 <a 
+href="#x1-20001" id="QQ2-1-2">Introduction</a></span>
+<br />&#x00A0;<span class="sectionToc" >1.1 <a 
+href="#x1-30001.1" id="QQ2-1-3">Kranc</a></span>
+<br />&#x00A0;<span class="sectionToc" >1.2 <a 
+href="#x1-40001.2" id="QQ2-1-4">Cactus</a></span>
+<br />&#x00A0;<span class="sectionToc" >1.3 <a 
+href="#x1-50001.3" id="QQ2-1-5">Overview of the Kranc system</a></span>
+<br /><span class="chapterToc" >2 <a 
+href="#x1-60002" id="QQ2-1-6">Getting Started</a></span>
+<br />&#x00A0;<span class="sectionToc" >2.1 <a 
+href="#x1-70002.1" id="QQ2-1-7">Tutorial for new Cactus users</a></span>
+<br />&#x00A0;<span class="sectionToc" >2.2 <a 
+href="#x1-80002.2" id="QQ2-1-8">Tutorial for Current Cactus Users</a></span>
+<br /><span class="chapterToc" >3 <a 
+href="#x1-90003" id="QQ2-1-9">Using Kranc</a></span>
+<br />&#x00A0;<span class="sectionToc" >3.1 <a 
+href="#x1-100003.1" id="QQ2-1-10">Data structures</a></span>
+<br />&#x00A0;&#x00A0;<span class="subsectionToc" >3.1.1 <a 
+href="#x1-110003.1.1" id="QQ2-1-11">Data structure: Calculation</a></span>
+<br />&#x00A0;&#x00A0;<span class="subsectionToc" >3.1.2 <a 
+href="#x1-240003.1.2" id="QQ2-1-24">Data structure: PartialDerivatives</a></span>
+<br />&#x00A0;&#x00A0;<span class="subsectionToc" >3.1.3 <a 
+href="#x1-250003.1.3" id="QQ2-1-25">Data structure: GroupDefinition</a></span>
+<br />&#x00A0;<span class="sectionToc" >3.2 <a 
+href="#x1-260003.2" id="QQ2-1-26">TensorTools</a></span>
+<br />&#x00A0;&#x00A0;<span class="subsectionToc" >3.2.1 <a 
+href="#x1-270003.2.1" id="QQ2-1-27">Representation of tensor quantities</a></span>
+<br />&#x00A0;&#x00A0;<span class="subsectionToc" >3.2.2 <a 
+href="#x1-280003.2.2" id="QQ2-1-28">Expansion of tensorial expressions into components</a></span>
+<br />&#x00A0;<span class="sectionToc" >3.3 <a 
+href="#x1-290003.3" id="QQ2-1-29">Creating a Kranc thorn</a></span>
+<br /><span class="appendixToc" >A <a 
+href="#x1-32000A" id="QQ2-1-32">Kranc internal design</a></span>
+<br />&#x00A0;&#x00A0;<span class="subsectionToc" >A.0.1 <a 
+href="#x1-33000A.0.1" id="QQ2-1-34">Package: CodeGen</a></span>
+<br />&#x00A0;&#x00A0;<span class="subsectionToc" >A.0.2 <a 
+href="#x1-34000A.0.2" id="QQ2-1-35">Package: Thorn</a></span>
+</div>
+
+<h2 class="chapterHead"><span class="titlemark">Chapter&#x00A0;1</span><br /><a 
+ id="x1-20001"></a>Introduction</h2>
+<h3 class="sectionHead"><span class="titlemark">1.1   </span> <a 
+ id="x1-30001.1"></a>Kranc</h3>
+<!--l. 49--><p class="noindent" >Kranc is a suite of Mathematica-based computer-algebra packages, which comprise a toolbox to
+convert certain (tensorial) systems of partial differential evolution equations to parallelized C
+code for solving initial boundary value problems. Kranc can be used as a rapid prototyping
+system for physicists or mathematicians handling complicated systems of partial differential
+equations, but through integration into the Cactus computational toolkit it is also possible
+to produce efficient parallelized production codes. Our work is motivated by the field of
+numerical relativity, where Kranc is used as a research tool by the authors. The initial
+version of Kranc was described in <span class="cite">[<span 
+class="cmbx-10">?</span>]</span>, and subsequent enhancements in <span class="cite">[<span 
+class="cmbx-10">?</span>]</span>. The user-visible
+portion of Kranc has subsequently been redesigned. The material in this document is drawn
+from these two sources, and has been updated to be consistent with the current version of
+Kranc.
+<!--l. 65--><p class="noindent" >
+<h3 class="sectionHead"><span class="titlemark">1.2   </span> <a 
+ id="x1-40001.2"></a>Cactus</h3>
+<!--l. 67--><p class="noindent" >The <span 
+class="cmti-10">Cactus Computational Toolkit </span>is an open-source problem solving environment originally developed
+in the numerical relativity community. It is arranged as a central <span 
+class="cmti-10">flesh </span>and a collection of modules
+called <span 
+class="cmti-10">thorns </span>which all communicate with the flesh. Many thorns are provided, and the
+user writes additional thorns in C or Fortran which solve their particular physics problem.
+Cactus is particularly suited to the numerical solution of time dependent partial differential
+equations.
+<!--l. 76--><p class="noindent" >Kranc is concerned with taking an abstract mathematical description of a system of PDEs and
+producing working computer code. It does this by generating Cactus thorns, allowing use of all the
+infrastructure provided by Cactus.
+<!--l. 81--><p class="noindent" >For example, Kranc makes uses of existing Cactus thorns which provide:
+     <ul class="itemize1">
+     <li class="itemize">Parameter file parsing.
+     </li>
+     <li class="itemize">Memory management for variables associated with the computational grid.
+     </li>
+     <li class="itemize">Scheduling of parts of the code based upon parameters.
+
+     </li>
+     <li class="itemize">Standard efficient time integrators such as fourth order Runge-Kutta via the <span 
+class="cmti-10">MoL </span>thorn
+     written by I.&#x00A0;Hawke.
+     </li>
+     <li class="itemize">Mesh refinement <span class="cite">[<span 
+class="cmbx-10">?</span>]</span>; i.e., using variable resolution across the numerical grid, so that the
+     computational resources are focused on interesting parts of the simulation.
+     </li>
+     <li class="itemize">Automatic parallelization of the code via MPI to run across multiple processors on a
+     supercomputer or cluster, both to improve computational speed and to use larger grids
+     than can be stored in the memory of a single node.
+     </li>
+     <li class="itemize">Output of grid variables to permanent storage in a structured format, for example HDF5.</li></ul>
+<!--l. 99--><p class="noindent" >These tasks are completely separate from the physics and numerical analysis side of the problem, but
+are necessary in most numerical codes.
+<!--l. 103--><p class="noindent" >
+<h3 class="sectionHead"><span class="titlemark">1.3   </span> <a 
+ id="x1-50001.3"></a>Overview of the Kranc system</h3>
+<!--l. 105--><p class="noindent" >Kranc provides a Mathematica function called <span 
+class="cmti-10">CreateThorn</span>. The user must construct arguments and
+data structures for this function describing the thorn they wish to create. Kranc generates code and
+Cactus CCL files for:
+     <ul class="itemize1">
+     <li class="itemize">Declaring the grid functions which the simulation will use;
+     </li>
+     <li class="itemize">Registering the grid functions for the evolved variables with the MoL thorn;
+     </li>
+     <li class="itemize">Computing the right hand sides of evolution equations so that the time integrator can
+     compute the evolved variables at the next time step;
+     </li>
+     <li class="itemize">Computing  finite  differences,  both  using  built-in  definitions  of  standard  centred  finite
+     differencing operators, as well as allowing the user to create customised operators;
+     </li>
+     <li class="itemize">Performing a user-specified calculation at each point of the grid.</li></ul>
+
+<!--l. 123--><p class="noindent" >User-specified calculations will typically set certain grid variables as functions of others, and can be
+used for various purposes including making a change of variables or computing intermediate or analysis
+quantities from evolved variables.
+<!--l. 128--><p class="noindent" >The most important data structure in Kranc is a <span 
+class="cmti-10">Calculation </span>structure. It encapsulates the idea of
+assigning new values to grid functions in a loop over grid points based upon evaluating expressions
+involving other grid functions. Calculations contain lists of assignment statements for different grid
+functions, and these are evaluated at each point on the grid. Calculations can also contain temporary
+variables called <span 
+class="cmti-10">shorthands </span>into which are placed intermediate expressions which are used later in the
+calculation. Calculations also contain additional information needed by the Kranc system, such as a
+name for the calculation.
+
+<h2 class="chapterHead"><span class="titlemark">Chapter&#x00A0;2</span><br /><a 
+ id="x1-60002"></a>Getting Started</h2>
+<h3 class="sectionHead"><span class="titlemark">2.1   </span> <a 
+ id="x1-70002.1"></a>Tutorial for new Cactus users</h3>
+<!--l. 145--><p class="noindent" >This section provides a step-by-step tutorial for Kranc for people who have not used Cactus before. It
+will lead you through downloading Cactus and Kranc, building one of the example Kranc thorns,
+compiling the thorn into a Cactus executable, running the executable and analysing the output. People
+who have used Cactus before and already have a working setup should skip this section and use
+Sec.&#x00A0;<a 
+href="#x1-80002.2">2.2<!--tex4ht:ref: sec:tutcur --></a> instead.
+<!--l. 153--><p class="noindent" >The first step is to create a Cactus directory. Everything will then be downloaded into this directory
+and compiled there.
+
+<div class="verbatim" id="verbatim-1">
+&#x00A0;&#x00A0;mkdir&#x00A0;Cactus
+&#x00A0;<br />&#x00A0;&#x00A0;cd&#x00A0;Cactus
+</div>
+<!--l. 159--><p class="nopar" >
+<!--l. 161--><p class="noindent" >Download Kranc into the newly created Cactus directory:
+
+<div class="verbatim" id="verbatim-2">
+&#x00A0;&#x00A0;git&#x00A0;clone&#x00A0;git://github.com/ianhinder/kranc
+</div>
+<!--l. 164--><p class="nopar" >
+<!--l. 166--><p class="noindent" >Download the Cactus <span 
+class="cmti-10">GetComponents </span>script and make it executable. This script allows you to
+download Cactus thorns from many different repositories listed in a &#8220;ThornList&#8221;.
+
+<div class="verbatim" id="verbatim-3">
+&#x00A0;&#x00A0;wget&#x00A0;http://www.cactuscode.org/download/GetComponents
+&#x00A0;<br />&#x00A0;&#x00A0;chmod&#x00A0;u+x&#x00A0;GetComponents
+</div>
+<!--l. 172--><p class="nopar" >
+<!--l. 174--><p class="noindent" >Download Cactus and several thorns specified in the Kranc example thornlist:
+
+<div class="verbatim" id="verbatim-4">
+&#x00A0;&#x00A0;./GetComponents&#x00A0;--root=.&#x00A0;kranc/Auxiliary/Cactus/thornlist.th
+</div>
+<!--l. 177--><p class="nopar" >
+<!--l. 179--><p class="noindent" >Configure Cactus to run on your local machine. You will need a C compiler. See the Cactus
+documentation for more information on this step if Cactus does not configure automatically on your
+system.
+
+<div class="verbatim" id="verbatim-5">
+&#x00A0;&#x00A0;make&#x00A0;wave-config&#x00A0;ThornList=kranc/Auxiliary/Cactus/thornlist.th
+</div>
+<!--l. 184--><p class="nopar" >
+<!--l. 186--><p class="noindent" >Build a Cactus executable:
+
+<div class="verbatim" id="verbatim-6">
+&#x00A0;&#x00A0;make&#x00A0;wave
+</div>
+<!--l. 189--><p class="nopar" >
+<!--l. 191--><p class="noindent" >Run the Cactus executable with the example wave equation parameter file:
+
+<div class="verbatim" id="verbatim-7">
+&#x00A0;&#x00A0;cd&#x00A0;Kranc/Examples
+&#x00A0;<br />&#x00A0;&#x00A0;mpirun&#x00A0;../../exe/cactus_wave&#x00A0;wave.par
+</div>
+<!--l. 195--><p class="nopar" >
+<!--l. 197--><p class="noindent" >Analyse the output of the simulation:
+
+<div class="verbatim" id="verbatim-8">
+&#x00A0;&#x00A0;ygraph&#x00A0;wave/phi.x.asc
+</div>
+<!--l. 200--><p class="nopar" >
+<!--l. 202--><p class="noindent" >
+<h3 class="sectionHead"><span class="titlemark">2.2   </span> <a 
+ id="x1-80002.2"></a>Tutorial for Current Cactus Users</h3>
+<!--l. 205--><p class="noindent" >Change into your Cactus directory and download the current version of Kranc:
+
+<div class="verbatim" id="verbatim-9">
+&#x00A0;&#x00A0;cd&#x00A0;Cactus
+&#x00A0;<br />&#x00A0;&#x00A0;git&#x00A0;clone&#x00A0;git://github.com/ianhinder/kranc
+</div>
+<!--l. 209--><p class="nopar" >
+<!--l. 211--><p class="noindent" >Make a symbolic link from the Kranc examples to the arrangements directory:
+
+<div class="verbatim" id="verbatim-10">
+&#x00A0;&#x00A0;ln&#x00A0;-s&#x00A0;../kranc/Examples&#x00A0;arrangements/KrancExamples
+</div>
+<!--l. 214--><p class="nopar" >
+<!--l. 216--><p class="noindent" >Make a symbolic link from the Kranc support arrangement into your Cactus tree:
+
+<div class="verbatim" id="verbatim-11">
+&#x00A0;&#x00A0;ln&#x00A0;-s&#x00A0;../kranc/Auxiliary/Cactus/KrancNumericalTools&#x00A0;arrangements/KrancNumericalTools
+</div>
+<!--l. 219--><p class="nopar" >
+<!--l. 221--><p class="noindent" >Go into the KrancExamples arrangement and build the Wave thorn:
+
+<div class="verbatim" id="verbatim-12">
+&#x00A0;&#x00A0;cd&#x00A0;arrangements/KrancExamples
+&#x00A0;<br />&#x00A0;&#x00A0;../../kranc/Bin/kranc&#x00A0;Wave.m
+</div>
+<!--l. 225--><p class="nopar" >
+<!--l. 227--><p class="noindent" >It is assumed that Mathematica is available on your path with the name &#8221;math&#8221;, or at
+the location <span class="obeylines-h"><span class="verb"><span 
+class="cmtt-10">/Applications/Mathematica.app/Contents/MacOS/MathKernel</span></span></span> for Mac
+OS.
+<!--l. 231--><p class="noindent" >You should get a thorn generated in the current directory called Wave.
+<!--l. 233--><p class="noindent" >Add <span class="obeylines-h"><span class="verb"><span 
+class="cmtt-10">KrancExamples/Wave</span></span></span> and <span class="obeylines-h"><span class="verb"><span 
+class="cmtt-10">KrancNumericalTools/GenericFD</span></span></span> to the thornlist of one of your
+configurations, or make one from scratch.
+<!--l. 236--><p class="noindent" >Recompile Cactus.
+<!--l. 238--><p class="noindent" >Run Cactus with the parameter file wave.par found in <span class="obeylines-h"><span class="verb"><span 
+class="cmtt-10">arrangements/KrancExamples</span></span></span>.
+<!--l. 241--><p class="noindent" >Examine the 1D output phi.x.asc and pi.x.asc.
+
+<h2 class="chapterHead"><span class="titlemark">Chapter&#x00A0;3</span><br /><a 
+ id="x1-90003"></a>Using Kranc</h2>
+<h3 class="sectionHead"><span class="titlemark">3.1   </span> <a 
+ id="x1-100003.1"></a>Data structures</h3>
+<!--l. 273--><p class="noindent" >The user needs to pass information to Kranc in a structured way. Mathematica does not have the
+concept of a C++ class or a C structure, in which collections of named objects are grouped together for
+ease of manipulation. Instead, we have defined a <span 
+class="cmti-10">Kranc structure </span>as a list of rules of the
+form <span 
+class="cmti-10">key </span><span 
+class="cmtt-10">-&#x003E; </span><span 
+class="cmti-10">value</span>. We have chosen to use the Mathematica rule symbol &#8220;<span 
+class="cmtt-10">-&#x003E;</span>&#8221; for syntactic
+convenience.
+<!--l. 281--><p class="noindent" >For example, one might describe a person using a &#8220;Person&#8221; structure as follows:
+<div class="center" 
+>
+<!--l. 284--><p class="noindent" >
+<div class="minipage"><div class="verbatim" id="verbatim-13">
+alice&#x00A0;=&#x00A0;{Name&#x00A0;-&#x003E;&#x00A0;"Alice",
+&#x00A0;<br />&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;Age&#x00A0;-&#x003E;&#x00A0;20,
+&#x00A0;<br />&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;Gender&#x00A0;-&#x003E;&#x00A0;Female}
+</div>
+<!--l. 290--><p class="nopar" ></div></div>
+<!--l. 294--><p class="noindent" >Based on this concept a number of data structures have been defined which will be used to describe the
+thorn to construct. Each of these data structures is introduced below.
+<!--l. 299--><p class="noindent" >
+<h4 class="subsectionHead"><span class="titlemark">3.1.1   </span> <a 
+ id="x1-110003.1.1"></a>Data structure: Calculation</h4>
+<!--l. 301--><p class="noindent" >Calculation structures are the core of the Kranc system. A Calculation structure has the following
+form:
+<div class="center" 
+>
+<!--l. 304--><p class="noindent" >
+
+ <table id="TBL-4" class="tabular" 
+cellspacing="0" cellpadding="0" rules="groups" 
+><colgroup id="TBL-4-1g"><col 
+id="TBL-4-1"></colgroup><colgroup id="TBL-4-2g"><col 
+id="TBL-4-2"></colgroup><colgroup id="TBL-4-3g"><col 
+id="TBL-4-3"></colgroup><colgroup id="TBL-4-4g"><col 
+id="TBL-4-4"></colgroup><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-4-1-"><td  style="white-space:nowrap; text-align:left;" id="TBL-4-1-1"  
+class="td11"> <span 
+class="cmbx-10">Key                       </span></td><td  style="white-space:wrap; text-align:left;" id="TBL-4-1-2"  
+class="td11"> <!--l. 323--><p class="noindent" ><span 
+class="cmbx-10">Type</span>                 </td><td  style="white-space:wrap; text-align:left;" id="TBL-4-1-3"  
+class="td11"> <!--l. 323--><p class="noindent" ><span 
+class="cmbx-10">Description</span>         </td><td  style="white-space:nowrap; text-align:left;" id="TBL-4-1-4"  
+class="td11"> <span 
+class="cmbx-10">Default     </span></td>
+</tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-4-2-"><td  style="white-space:nowrap; text-align:left;" id="TBL-4-2-1"  
+class="td11"> Name                          </td><td  style="white-space:wrap; text-align:left;" id="TBL-4-2-2"  
+class="td11"> <!--l. 323--><p class="noindent" >String                   </td><td  style="white-space:wrap; text-align:left;" id="TBL-4-2-3"  
+class="td11"> <!--l. 323--><p class="noindent" >The  name  of  the
+  calculation             </td><td  style="white-space:nowrap; text-align:left;" id="TBL-4-2-4"  
+class="td11"> (none)         </td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-4-3-"><td  style="white-space:nowrap; text-align:left;" id="TBL-4-3-1"  
+class="td11"> Equations                     </td><td  style="white-space:wrap; text-align:left;" id="TBL-4-3-2"  
+class="td11"> <!--l. 323--><p class="noindent" >List of rules           </td><td  style="white-space:wrap; text-align:left;" id="TBL-4-3-3"  
+class="td11"> <!--l. 323--><p class="noindent" >The     assignments
+  that
+  this calculation will
+  perform                 </td><td  style="white-space:nowrap; text-align:left;" id="TBL-4-3-4"  
+class="td11"> <span 
+class="cmsy-10">{}      </span></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-4-4-"><td  style="white-space:nowrap; text-align:left;" id="TBL-4-4-1"  
+class="td11"> Schedule                       </td><td  style="white-space:wrap; text-align:left;" id="TBL-4-4-2"  
+class="td11"> <!--l. 323--><p class="noindent" >List of Strings        </td><td  style="white-space:wrap; text-align:left;" id="TBL-4-4-3"  
+class="td11"> <!--l. 323--><p class="noindent" >Cactus     schedule
+  specifications          </td><td  style="white-space:nowrap; text-align:left;" id="TBL-4-4-4"  
+class="td11"> Automatic   </td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-4-5-"><td  style="white-space:nowrap; text-align:left;" id="TBL-4-5-1"  
+class="td11"> Shorthands                   </td><td  style="white-space:wrap; text-align:left;" id="TBL-4-5-2"  
+class="td11"> <!--l. 323--><p class="noindent" >List of Symbols       </td><td  style="white-space:wrap; text-align:left;" id="TBL-4-5-3"  
+class="td11"> <!--l. 323--><p class="noindent" >Temporary
+  variables which will
+  be   used   in   this
+  calculation             </td><td  style="white-space:nowrap; text-align:left;" id="TBL-4-5-4"  
+class="td11"> <span 
+class="cmsy-10">{}      </span></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-4-6-"><td  style="white-space:nowrap; text-align:left;" id="TBL-4-6-1"  
+class="td11"> Where                         </td><td  style="white-space:wrap; text-align:left;" id="TBL-4-6-2"  
+class="td11"> <!--l. 323--><p class="noindent" >Everywhere         /
+  Interior              /
+  Boundary              </td><td  style="white-space:wrap; text-align:left;" id="TBL-4-6-3"  
+class="td11"> <!--l. 323--><p class="noindent" >Which  part  of  the
+  grid
+  this calculation will
+  be performed on      </td><td  style="white-space:nowrap; text-align:left;" id="TBL-4-6-4"  
+class="td11"> Everywhere  </td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-4-7-"><td  style="white-space:nowrap; text-align:left;" id="TBL-4-7-1"  
+class="td11"> ConditionalOnKeyword   </td><td  style="white-space:wrap; text-align:left;" id="TBL-4-7-2"  
+class="td11"> <!--l. 323--><p class="noindent" ><span 
+class="cmsy-10">{</span>String, String<span 
+class="cmsy-10">}</span>   </td><td  style="white-space:wrap; text-align:left;" id="TBL-4-7-3"  
+class="td11"> <!--l. 323--><p class="noindent" >The calculation will
+  only  be  performed
+  if   the   parameter
+  named by the first
+  string has the value
+  specified   by   the
+  second string.         </td><td  style="white-space:nowrap; text-align:left;" id="TBL-4-7-4"  
+class="td11">            </td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-4-8-"><td  style="white-space:nowrap; text-align:left;" id="TBL-4-8-1"  
+class="td11"> ConditionalOnKeywords  </td><td  style="white-space:wrap; text-align:left;" id="TBL-4-8-2"  
+class="td11"> <!--l. 323--><p class="noindent" ><span 
+class="cmsy-10">{{</span>String,   String<span 
+class="cmsy-10">}</span>,
+  &#x2026;<span 
+class="cmsy-10">}</span>           </td><td  style="white-space:wrap; text-align:left;" id="TBL-4-8-3"  
+class="td11"> <!--l. 323--><p class="noindent" >The     same     as
+  ConditionalOnKeyword,
+  but       all       the
+  parameters
+  must   have   their
+  corresponding
+  values     for     the
+  calculation   to   be
+  performed.             </td><td  style="white-space:nowrap; text-align:left;" id="TBL-4-8-4"  
+class="td11">            </td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-4-9-"><td  style="white-space:nowrap; text-align:left;" id="TBL-4-9-1"  
+class="td11"> ConditionalOnTextuals   </td><td  style="white-space:wrap; text-align:left;" id="TBL-4-9-2"  
+class="td11"> <!--l. 323--><p class="noindent" >List of Strings        </td><td  style="white-space:wrap; text-align:left;" id="TBL-4-9-3"  
+class="td11"> <!--l. 323--><p class="noindent" >Conditional
+  expressions        to
+  be  inserted  in  the
+  Cactus schedule.ccl
+  for  the  calculation
+  to be performed.     </td><td  style="white-space:nowrap; text-align:left;" id="TBL-4-9-4"  
+class="td11"> <span 
+class="cmsy-10">{}      </span></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-4-10-"><td  style="white-space:nowrap; text-align:left;" id="TBL-4-10-1"  
+class="td11"> CollectList                    </td><td  style="white-space:wrap; text-align:left;" id="TBL-4-10-2"  
+class="td11"> <!--l. 323--><p class="noindent" >List of Symbols       </td><td  style="white-space:wrap; text-align:left;" id="TBL-4-10-3"  
+class="td11"> <!--l. 323--><p class="noindent" >Variables      which
+  will   be   used   by
+  Collect in Simplify   </td><td  style="white-space:nowrap; text-align:left;" id="TBL-4-10-4"  
+class="td11"> <span 
+class="cmsy-10">{}      </span></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-4-11-"><td  style="white-space:nowrap; text-align:left;" id="TBL-4-11-1"  
+class="td11"> NoSimplify                   </td><td  style="white-space:wrap; text-align:left;" id="TBL-4-11-2"  
+class="td11"> <!--l. 323--><p class="noindent" >True/False             </td><td  style="white-space:wrap; text-align:left;" id="TBL-4-11-3"  
+class="td11"> <!--l. 323--><p class="noindent" >Whether to disable
+  simplification
+  of the equations for
+  this calculation       </td><td  style="white-space:nowrap; text-align:left;" id="TBL-4-11-4"  
+class="td11"> False           </td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-4-12-"><td  style="white-space:nowrap; text-align:left;" id="TBL-4-12-1"  
+class="td11"> DeclarationIncludes        </td><td  style="white-space:wrap; text-align:left;" id="TBL-4-12-2"  
+class="td11"> <!--l. 323--><p class="noindent" >List of Strings        </td><td  style="white-space:wrap; text-align:left;" id="TBL-4-12-3"  
+class="td11"> <!--l. 323--><p class="noindent" >Cactus include files
+  to use in this thorn  </td><td  style="white-space:nowrap; text-align:left;" id="TBL-4-12-4"  
+class="td11"> <span 
+class="cmsy-10">{}      </span></td>
+</tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-4-13-"><td  style="white-space:nowrap; text-align:left;" id="TBL-4-13-1"  
+class="td11">                       </td>
+</tr></table>
+
+</div>
+<!--l. 326--><p class="noindent" >Only the <span 
+class="cmti-10">Name </span>key is required; all the others take default values if omitted.
+<!--l. 329--><p class="noindent" >
+<h5 class="subsubsectionHead"><a 
+ id="x1-120003.1.1"></a>Name</h5>
+<!--l. 331--><p class="noindent" >The name of a calculation is a string which will be used as the function name in Cactus, as well as
+the base of the filename of the source file implementing the calculation in the generated
+thorn.
+<!--l. 335--><p class="noindent" >Example:
+<div class="center" 
+>
+<!--l. 337--><p class="noindent" >
+<div class="minipage"><div class="verbatim" id="verbatim-14">
+Name&#x00A0;-&#x003E;&#x00A0;"wave_calc_rhs"
+</div>
+<!--l. 341--><p class="nopar" ></div></div>
+<!--l. 345--><p class="noindent" >
+<h5 class="subsubsectionHead"><a 
+ id="x1-130003.1.1"></a>Equations</h5>
+<!--l. 347--><p class="noindent" >The equation list is a list of assignments to perform in the calculation loop. Each equation is of the
+form
+<div class="center" 
+>
+<!--l. 349--><p class="noindent" >
+<div class="minipage"><div class="verbatim" id="verbatim-15">
+variable&#x00A0;-&#x003E;&#x00A0;expression
+</div>
+<!--l. 353--><p class="nopar" ></div></div>
+
+<!--l. 356--><p class="noindent" >When the calculation is performed, for each point in the grid, <span 
+class="cmti-10">expression </span>is evaluated and placed into
+the grid function <span 
+class="cmti-10">variable</span>. Here <span 
+class="cmti-10">expression </span>may contain partial derivatives of grid functions which have
+been defined in a PartialDerivatives structure. <span 
+class="cmti-10">variable </span>may be either a grid function or a shorthand.
+Using the notation <span 
+class="cmtt-10">dot[</span><span 
+class="cmti-10">gf</span><span 
+class="cmtt-10">] </span>for <span 
+class="cmti-10">variable </span>represents a time derivative of the grid function <span 
+class="cmti-10">gf</span>; this should
+be used when the calculation is scheduled in <span 
+class="cmtt-10">MoL</span><span 
+class="cmtt-10">_CalcRHS </span>for calculating the right hand sides of the
+evolution equations.
+<!--l. 366--><p class="noindent" >It is possible to use the same variable (either a grid function or a shorthand) on both the left
+hand side and the right hand side of an equation assignment. However, in that case the
+variable must not be differentiated on the right hand side, as this would lead to a result which
+depended on the ordering of the loop over the grid points, which is almost certainly not what is
+intended. Kranc will detect such a differentiation and abort with an error. See the option
+ProhibitAssignmentToGridFunctionsRead to CreateThorn in Sec.<span 
+class="cmbx-10">??</span> if you want to prohibit such
+assignments altogether.
+<!--l. 377--><p class="noindent" >
+<h5 class="subsubsectionHead"><a 
+ id="x1-140003.1.1"></a>Schedule</h5>
+<!--l. 379--><p class="noindent" >This is a list of Cactus schedule specifications describing when in the simulation the calculation will
+be performed. Multiple schedule strings can be provided to allow the calculation to be
+scheduled at multiple points. Omitting the schedule information causes Kranc to schedule the
+calculation automatically. Currently, this is used for analysis quantities which are scheduled in
+<span class="obeylines-h"><span class="verb"><span 
+class="cmtt-10">MoL_PseudoEvolution</span></span></span> and have boundary conditions applied after them.
+<!--l. 387--><p class="noindent" >Examples:
+<div class="center" 
+>
+<!--l. 389--><p class="noindent" >
+<div class="minipage"><div class="verbatim" id="verbatim-16">
+Schedule&#x00A0;-&#x003E;&#x00A0;{"at&#x00A0;INITIAL"}
+&#x00A0;<br />Schedule&#x00A0;-&#x003E;&#x00A0;{"in&#x00A0;MoL_CalcRHS"}
+&#x00A0;<br />Schedule&#x00A0;-&#x003E;&#x00A0;{"at&#x00A0;ANALYSIS"}
+</div>
+<!--l. 395--><p class="nopar" ></div></div>
+
+<!--l. 399--><p class="noindent" >
+<h5 class="subsubsectionHead"><a 
+ id="x1-150003.1.1"></a>Shorthands</h5>
+<!--l. 401--><p class="noindent" >This is a list of variables which are to be considered as shorthands for the purposes of this
+calculation. These are temporary variables which are defined locally in the loop and are not grid
+functions defined over the whole grid. They are used as intermediate variables when setting
+more complicated grid functions. Since they are defined only pointwise, they cannot be
+differentiated.
+<!--l. 408--><p class="noindent" >Examples:
+<div class="center" 
+>
+<!--l. 410--><p class="noindent" >
+<div class="minipage"><div class="verbatim" id="verbatim-17">
+Shorthands&#x00A0;-&#x003E;&#x00A0;{a,b}
+&#x00A0;<br />Shorthands&#x00A0;-&#x003E;&#x00A0;{hInv[ua,ub],&#x00A0;alpha,&#x00A0;Ric[la,lb]}
+</div>
+<!--l. 415--><p class="nopar" ></div></div>
+<!--l. 419--><p class="noindent" >
+<h5 class="subsubsectionHead"><a 
+ id="x1-160003.1.1"></a>Where</h5>
+<!--l. 421--><p class="noindent" >Different calculations need to be evaluated on different portions of the numerical grid. For example, a
+calculation which implements a boundary condition needs to be performed on the boundary points
+only. A calculation which contains derivatives needs to be performed on the interior of the grid only. A
+calculation which does not contain derivatives can be performed even in the ghost zones, so that a
+potentially time-consuming synchronisation can be avoided. The Where option can have values of
+Everywhere, Interior or Boundary corresponding to these choices. There is currently no check that a
+calculation containing derivatives is not performed on the entire grid, nor that the number of ghost
+zones selected by the user at run time is compatible with the finite differencing operator
+chosen.
+<!--l. 434--><p class="noindent" >Examples:
+<div class="center" 
+>
+<!--l. 435--><p class="noindent" >
+
+<div class="minipage"><div class="verbatim" id="verbatim-18">
+Where&#x00A0;-&#x003E;&#x00A0;Everywhere
+</div>
+<!--l. 439--><p class="nopar" ></div></div>
+<!--l. 443--><p class="noindent" >
+<h5 class="subsubsectionHead"><a 
+ id="x1-170003.1.1"></a>ConditionalOnKeyword</h5>
+<!--l. 445--><p class="noindent" >This key allows a calculation to be performed conditionally based on the value of a parameter set by
+the user at run time. Setting
+<div class="center" 
+>
+<!--l. 447--><p class="noindent" >
+<div class="minipage"><div class="verbatim" id="verbatim-19">
+ConditionalOnKeyword&#x00A0;-&#x003E;&#x00A0;{&#x003C;param&#x003E;,&#x00A0;&#x003C;value&#x003E;}
+</div>
+<!--l. 451--><p class="nopar" ></div></div>
+<!--l. 454--><p class="noindent" >where <span class="obeylines-h"><span class="verb"><span 
+class="cmtt-10">&#x003C;param&#x003E;</span></span></span> is a string naming a keyword parameter defined in the KeywordParameters option to
+CreateThorn will cause the calculation to be performed only if that parameter is set to
+<span class="obeylines-h"><span class="verb"><span 
+class="cmtt-10">&#x003C;value&#x003E;</span></span></span>.
+<!--l. 458--><p class="noindent" >Example:
+<div class="center" 
+>
+<!--l. 460--><p class="noindent" >
+<div class="minipage"><div class="verbatim" id="verbatim-20">
+ConditionalOnKeyword&#x00A0;-&#x003E;&#x00A0;{"gauge_condition",&#x00A0;"harmonic"}
+</div>
+<!--l. 464--><p class="nopar" ></div></div>
+
+<!--l. 468--><p class="noindent" >
+<h5 class="subsubsectionHead"><a 
+ id="x1-180003.1.1"></a>ConditionalOnKeywords</h5>
+<!--l. 470--><p class="noindent" >The ConditionalOnKeywords key takes a list of <span class="obeylines-h"><span class="verb"><span 
+class="cmtt-10">{&#x003C;param&#x003E;,</span><span 
+class="cmtt-10">&#x00A0;&#x003C;value&#x003E;}</span></span></span> pairs as described
+under ConditionalOnKeyword. All the parameters must match for the calculation to be
+scheduled.
+<!--l. 475--><p class="noindent" >
+<h5 class="subsubsectionHead"><a 
+ id="x1-190003.1.1"></a>ConditionalOnTextuals</h5>
+<!--l. 477--><p class="noindent" >This key can be set to a string which is used verbatim in the Cactus schedule.ccl file. Any valid Cactus
+conditional string can be used.
+<!--l. 480--><p class="noindent" >
+<h5 class="subsubsectionHead"><a 
+ id="x1-200003.1.1"></a>CollectList</h5>
+<!--l. 482--><p class="noindent" >The arrangement of the terms in the equations can have a significant effect on both compile time and
+run time. It is often helpful to tell Mathematica to collect the coefficients of certain types of
+term, rather than expanding out entire expressions. The user can include a <span 
+class="cmti-10">CollectList</span>
+entry in a calculation; this is a list of variables whose coefficients should be collected during
+simplification.
+<!--l. 489--><p class="noindent" >
+<h5 class="subsubsectionHead"><a 
+ id="x1-210003.1.1"></a>NoSimplify</h5>
+<!--l. 491--><p class="noindent" >Setting this option to True stops Kranc from simplifying the right hand sides of expressions in this
+calculation. This could be used because the user has found a way of writing the expressions which leads
+to faster code than if Kranc&#8217;s simplification is used, or because the expressions are so complicated that
+the simplification takes a very long time to perform.
+<!--l. 498--><p class="noindent" >Example:
+<div class="center" 
+>
+<!--l. 500--><p class="noindent" >
+
+<div class="minipage"><div class="verbatim" id="verbatim-21">
+NoSimplify&#x00A0;-&#x003E;&#x00A0;True
+</div>
+<!--l. 504--><p class="nopar" ></div></div>
+<!--l. 508--><p class="noindent" >
+<h5 class="subsubsectionHead"><a 
+ id="x1-220003.1.1"></a>DeclarationIncludes</h5>
+<!--l. 510--><p class="noindent" >This is a list of filenames which will be <span class="obeylines-h"><span class="verb"><span 
+class="cmtt-10">#include</span></span></span>ed in the generated code inside the calculation
+function but before the loop over grid points.
+<!--l. 514--><p class="noindent" >
+<h5 class="subsubsectionHead"><a 
+ id="x1-230003.1.1"></a><span 
+class="cmti-10">Calculation Example</span></h5>
+<!--l. 516--><p class="noindent" >The following example is taken from the Kranc implementation of the NOR formulation of
+Einstein&#8217;s equations. It is a calculation which describes the time evolution equation for the
+lapse function <span 
+class="cmmi-10">&#x03B1; </span>in <span 
+class="cmti-10">harmonic slicing</span>. It uses the TensorTools package to represent tensorial
+quantities.
+<div class="center" 
+>
+<!--l. 522--><p class="noindent" >
+
+<div class="minipage"><div class="verbatim" id="verbatim-22">
+lapseEvolveCalc&#x00A0;=
+&#x00A0;<br />{
+&#x00A0;<br />&#x00A0;&#x00A0;Name&#x00A0;-&#x003E;&#x00A0;"nor_harmonic_slicing",
+&#x00A0;<br />&#x00A0;&#x00A0;Schedule&#x00A0;-&#x003E;&#x00A0;{"in&#x00A0;MoL_CalcRHS"},
+&#x00A0;<br />&#x00A0;&#x00A0;Shorthands&#x00A0;-&#x003E;&#x00A0;{trK,&#x00A0;hInv[ua,ub]},
+&#x00A0;<br />&#x00A0;&#x00A0;Equations&#x00A0;-&#x003E;
+&#x00A0;<br />&#x00A0;&#x00A0;{
+&#x00A0;<br />&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;hInv[ua,ub]&#x00A0;-&#x003E;&#x00A0;MatrixInverse[h[ua,ub]],
+&#x00A0;<br />&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;trK&#x00A0;-&#x003E;&#x00A0;K[la,lb]&#x00A0;hInv[ua,ub],
+&#x00A0;<br />&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;dot[alpha]&#x00A0;-&#x003E;&#x00A0;alpha^2&#x00A0;trK
+&#x00A0;<br />&#x00A0;&#x00A0;}
+&#x00A0;<br />};
+</div>
+<!--l. 537--><p class="nopar" ></div></div>
+<!--l. 540--><p class="noindent" >(The <span 
+class="cmti-10">MatrixInverse </span>function is provided by TensorTools to generate an expression for the inverse
+matrix.)
+<!--l. 545--><p class="noindent" >
+<h4 class="subsectionHead"><span class="titlemark">3.1.2   </span> <a 
+ id="x1-240003.1.2"></a>Data structure: PartialDerivatives</h4>
+<!--l. 547--><p class="noindent" >The user can define partial derivative operators and associated finite difference approximations of these
+operators. This allows different discretizations of the PDE system.
+<!--l. 551--><p class="noindent" >A finite difference operator maps grid functions to grid functions. We restrict to those operators which
+are polynomials in <span 
+class="cmti-10">shift </span>operators. In one dimension, the shift operator <span 
+class="cmmi-10">E</span><sub><span 
+class="cmr-7">+</span></sub> is defined as
+<div class="eqnarray">
+<center class="math-display" >
+<img 
+src="KrancDoc0x.png" alt="E  v &#x2261; v                                   (3.1)
+  + j   j+1
+" class="math-display" ></center>
+</div>It is clear that <div class="eqnarray">
+
+<center class="math-display" >
+<img 
+src="KrancDoc1x.png" alt="(E+)nvj = vj+n                              (3.2)
+" class="math-display" ></center>
+</div>and negative powers <span 
+class="cmmi-10">n </span>take on the obvious meaning. In three dimensions, there is one shift operator for
+each dimension: <div class="eqnarray">
+<center class="math-display" >
+<img 
+src="KrancDoc2x.png" alt="E+1vj &#x2261; vj+(100)   E+2vj &#x2261; vj+(010)  E+3vj &#x2261; vj+(001)            (3.3)
+" class="math-display" ></center>
+</div>where here <span 
+class="cmmi-10">j </span>= <span 
+class="cmmi-10">j</span><sub><span 
+class="cmr-7">1</span></sub><span 
+class="cmmi-10">j</span><sub><span 
+class="cmr-7">2</span></sub><span 
+class="cmmi-10">j</span><sub><span 
+class="cmr-7">3</span></sub> is a multi-index.
+<!--l. 570--><p class="noindent" >The PartialDerivatives structure is a list of definitions of partial derivative operators in terms of finite
+difference approximations:
+<div class="center" 
+>
+<!--l. 573--><p class="noindent" >
+<div class="minipage"><!--l. 576--><p class="noindent" ><span 
+class="cmsy-10">{ </span><span 
+class="cmti-10">name</span><span 
+class="cmtt-10">[i</span><span 
+class="cmtt-10">_, j</span><span 
+class="cmtt-10">_, </span><span 
+class="cmtt-10">&#x2026;] -&#x003E; </span><span 
+class="cmti-10">defn</span><span 
+class="cmtt-10">, ... </span><span 
+class="cmsy-10">}</span>
+</div></div>
+<!--l. 581--><p class="noindent" >where <span 
+class="cmti-10">name </span>is the name for the partial derivative, and <span 
+class="cmti-10">defn </span>is an algebraic expression in shift operators
+representing the difference operator. The shift operator <span 
+class="cmmi-10">E</span><sub><span 
+class="cmr-7">+</span><span 
+class="cmmi-7">i</span></sub> is written as <span 
+class="cmtt-10">shift[i]</span>. The
+form <span 
+class="cmtt-10">spacing[i] </span>can be used in <span 
+class="cmti-10">defn </span>to represent the grid spacing in the <span 
+class="cmmi-10">i </span>direction. The
+parameters <span 
+class="cmtt-10">i, j, </span><span 
+class="cmtt-10">&#x2026; </span>are used in <span 
+class="cmti-10">defn </span>to represent the direction of differentiation for the first,
+second, etc. derivatives. Partial derivatives with the same name but a different number
+of arguments (i.e., for first and second derivatives) are allowed in the PartialDerivatives
+structure.
+
+<!--l. 592--><p class="noindent" >Since the definitions of the difference operators are written in terms of Mathematica expressions,
+higher level operators can be constructed from <span 
+class="cmtt-10">shift </span>and <span 
+class="cmtt-10">spacing</span>. For example, Kranc
+predefines
+<div class="center" 
+>
+<!--l. 596--><p class="noindent" >
+<div class="minipage"><div class="verbatim" id="verbatim-23">
+DPlus[n_]&#x00A0;&#x00A0;:=&#x00A0;(shift[n]&#x00A0;-&#x00A0;1)/spacing[n];
+&#x00A0;<br />DMinus[n_]&#x00A0;:=&#x00A0;(1&#x00A0;-&#x00A0;1/shift[n])/spacing[n];
+&#x00A0;<br />DZero[n_]&#x00A0;&#x00A0;:=&#x00A0;(DPlus[n]&#x00A0;+&#x00A0;DMinus[n])/2;
+</div>
+<!--l. 602--><p class="nopar" ></div></div>
+<!--l. 606--><p class="noindent" >As an example, we give here a PartialDerivatives structure containing the definition of the standard
+second order accurate difference operators, as well as the <span 
+class="cmmi-10">D</span><sub><span 
+class="cmr-7">0</span></sub><sup><span 
+class="cmr-7">2</span></sup> discretization.
+<div class="center" 
+>
+<!--l. 610--><p class="noindent" >
+<div class="minipage"><div class="verbatim" id="verbatim-24">
+derivs&#x00A0;=&#x00A0;{
+&#x00A0;<br />&#x00A0;&#x00A0;PDstandard2nd[i_]&#x00A0;-&#x003E;&#x00A0;DZero[i],
+&#x00A0;<br />&#x00A0;&#x00A0;PDstandard2nd[i_,&#x00A0;j_]&#x00A0;-&#x003E;&#x00A0;DPlus[i]&#x00A0;DMinus[j],
+&#x00A0;<br />&#x00A0;&#x00A0;PDzero2nd[i_]&#x00A0;-&#x003E;&#x00A0;DZero[i],
+&#x00A0;<br />&#x00A0;&#x00A0;PDzero2nd[i_,&#x00A0;j_]&#x00A0;-&#x003E;&#x00A0;DZero[i]&#x00A0;DZero[j]
+&#x00A0;<br />}
+</div>
+<!--l. 619--><p class="nopar" ></div></div>
+<!--l. 623--><p class="noindent" >In a calculation, a partial derivative is written in the form
+<div class="center" 
+>
+<!--l. 625--><p class="noindent" >
+
+<div class="minipage"><!--l. 628--><p class="noindent" ><span 
+class="cmti-10">name</span><span 
+class="cmtt-10">[</span><span 
+class="cmti-10">gridfunction</span><span 
+class="cmtt-10">, i, j, </span><span 
+class="cmtt-10">&#x2026;]</span>
+</div></div>
+<!--l. 633--><p class="noindent" >For example, a one dimensional advection equation <span 
+class="cmmi-10">&#x2202;</span><sub><span 
+class="cmmi-7">t</span></sub><span 
+class="cmmi-10">u </span>= <span 
+class="cmmi-10">&#x2202;</span><sub><span 
+class="cmmi-7">x</span></sub><span 
+class="cmmi-10">u </span>with semidiscrete form <span 
+class="cmmi-10">&#x2202;</span><sub><span 
+class="cmmi-7">t</span></sub><span 
+class="cmmi-10">v</span><sub><span 
+class="cmmi-7">j</span></sub> = <span 
+class="cmmi-10">D</span><sub><span 
+class="cmr-7">01</span></sub><span 
+class="cmmi-10">v</span><sub><span 
+class="cmmi-7">j</span></sub>
+could be described as
+<div class="center" 
+>
+<!--l. 637--><p class="noindent" >
+<div class="minipage"><!--l. 640--><p class="noindent" ><span 
+class="cmtt-10">dot[v] -&#x003E; PDstandard2nd[v,1]</span>
+</div></div>
+<!--l. 645--><p class="noindent" >The PartialDerivatives structure can also be used to define operators for artificial dissipation. Given a
+semidiscrete scheme <div class="eqnarray">
+<center class="math-display" >
+<img 
+src="KrancDoc3x.png" alt="&#x2202;tv(t)j = Fj(v(t);t)                             (3.4)
+" class="math-display" ></center>
+</div>we can add Kreiss-Oliger style artificial dissipation by modifying the scheme to read <div class="eqnarray">
+<center class="math-display" >
+<img 
+src="KrancDoc4x.png" alt="                    &#x2211;
+&#x2202;tvj(t) = Fj(v(t);t)- &#x03C3;  h3i(D+iDi )2vj                    (3.5)
+                     i
+" class="math-display" ></center>
+</div>
+<!--l. 656--><p class="noindent" >We define a differencing operator <span 
+class="cmtt-10">Diss2nd </span>in the PartialDerivatives structure with no directional
+arguments
+
+<div class="center" 
+>
+<!--l. 659--><p class="noindent" >
+<div class="minipage"><div class="verbatim" id="verbatim-25">
+Diss2nd[]&#x00A0;-&#x003E;&#x00A0;-&#x00A0;sigma&#x00A0;Sum[spacing[i]^3&#x00A0;(DPlus[i]&#x00A0;DMinus[i])^2,
+&#x00A0;<br />&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;&#x00A0;{i,&#x00A0;1,&#x00A0;3}]
+</div>
+<!--l. 664--><p class="nopar" ></div></div>
+<!--l. 668--><p class="noindent" >using the standard Mathematica function for summations. An evolution equation representing the
+advection equation with dissipation could then be written as
+<div class="center" 
+>
+<!--l. 672--><p class="noindent" >
+<div class="minipage"><div class="verbatim" id="verbatim-26">
+dot[v]&#x00A0;-&#x003E;&#x00A0;PDstandard2nd[v,1]&#x00A0;+&#x00A0;Diss2nd[v]
+</div>
+<!--l. 676--><p class="nopar" ></div></div>
+<!--l. 680--><p class="noindent" >A PartialDerivatives structure is given as an argument to the thorn generation function
+CreateThorn.
+<!--l. 683--><p class="noindent" >
+<h4 class="subsectionHead"><span class="titlemark">3.1.3   </span> <a 
+ id="x1-250003.1.3"></a>Data structure: GroupDefinition</h4>
+<!--l. 685--><p class="noindent" >A <span 
+class="cmtt-10">GroupDefinition </span>structure lists the grid functions that are members of a specific Cactus group. A
+list of such structures should be supplied to CreateThorn function so that Kranc can determine which
+group each grid function belongs to.
+<!--l. 690--><p class="noindent" >The form of a GroupDefinition structure is
+<div class="center" 
+>
+<!--l. 691--><p class="noindent" >
+
+<div class="minipage"><!--l. 694--><p class="noindent" ><span 
+class="cmsy-10">{</span><span 
+class="cmti-10">groupname</span><span 
+class="cmtt-10">, </span><span 
+class="cmsy-10">{</span><span 
+class="cmti-10">variable1, variable2, </span><span 
+class="cmti-10">&#x2026;</span><span 
+class="cmsy-10">}}</span>
+</div></div>
+<!--l. 698--><p class="noindent" ><span 
+class="cmti-10">groupname </span>is a string, and the <span 
+class="cmti-10">variables </span>are symbols. For example,
+<div class="center" 
+>
+<!--l. 700--><p class="noindent" >
+<div class="minipage"><!--l. 703--><p class="noindent" ><span 
+class="cmsy-10">{</span><span 
+class="cmtt-10">"sol", </span><span 
+class="cmsy-10">{</span><span 
+class="cmtt-10">phi, pi</span><span 
+class="cmsy-10">}}</span>
+</div></div>
+<!--l. 707--><p class="noindent" >would represent a group called <span 
+class="cmtt-10">sol </span>with variables <span 
+class="cmtt-10">phi </span>and <span 
+class="cmtt-10">pi</span>.
+<!--l. 710--><p class="noindent" >The group name can be prefixed with the name of the Cactus implementation that provides the group
+followed by two colons (e.g.&#x00A0;&#8220;ADMBase::metric&#8221;).
+<!--l. 716--><p class="noindent" >
+<h3 class="sectionHead"><span class="titlemark">3.2   </span> <a 
+ id="x1-260003.2"></a>TensorTools</h3>
+<!--l. 718--><p class="noindent" >The TensorTools package was written specifically for the Kranc system, though it is in no way tied to
+it. It is necessary to perform certain operations on tensorial quantities, and there was no free software
+available which met the requirements.
+<!--l. 741--><p class="noindent" >
+<h4 class="subsectionHead"><span class="titlemark">3.2.1   </span> <a 
+ id="x1-270003.2.1"></a>Representation of tensor quantities</h4>
+<!--l. 743--><p class="noindent" >Tensorial expressions are entered in the same syntax as is used by MathTensor, a commercial tensor
+manipulation package which can be used instead of TensorTools. An abstract tensor consists of a <span 
+class="cmti-10">kernel</span>
+and an arbitrary number of abstract <span 
+class="cmti-10">indices</span>, each of which can be <span 
+class="cmti-10">upper </span>or <span 
+class="cmti-10">lower</span>. Abstract indices are
+alphabetical characters (a-z, A-Z) prefixed with either an l or a u depending on whether
+the index is considered to be lower or upper. The tensor is written using square brackets
+as
+<div class="center" 
+>
+<!--l. 751--><p class="noindent" >
+<!--l. 753--><p class="noindent" ><span 
+class="cmtt-10">kernel [ indices separated by commas ]</span>
+</div>
+
+<!--l. 757--><p class="noindent" >For example, <span 
+class="cmmi-10">T</span><sub><span 
+class="cmmi-7">a</span></sub><sup> <span 
+class="cmmi-7">b</span></sup> would be written as <span 
+class="cmtt-10">T[la,ub]</span>. There is no automatic index raising or lowering with
+any metric. Entering a tensorial expression causes it to be displayed in standard mathematical
+notation:
+<div class="center" 
+>
+<!--l. 762--><p class="noindent" >
+<div class="tabular"> <table id="TBL-5" class="tabular" 
+cellspacing="0" cellpadding="0"  
+><colgroup id="TBL-5-1g"><col 
+id="TBL-5-1"><col 
+id="TBL-5-2"></colgroup><tr  
+ style="vertical-align:baseline;" id="TBL-5-1-"><td  style="white-space:nowrap; text-align:right;" id="TBL-5-1-1"  
+class="td11"> <span 
+class="cmtt-10">In :=  </span></td><td  style="white-space:nowrap; text-align:left;" id="TBL-5-1-2"  
+class="td11"> <span 
+class="cmtt-10">T[la,lb]</span>                                               </td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-5-2-"><td  style="white-space:nowrap; text-align:right;" id="TBL-5-2-1"  
+class="td11">         </td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-5-3-"><td  style="white-space:nowrap; text-align:right;" id="TBL-5-3-1"  
+class="td11">  <span 
+class="cmtt-10">Out =  </span></td><td  style="white-space:nowrap; text-align:left;" id="TBL-5-3-2"  
+class="td11"> <span 
+class="cmmi-10">T</span><sub><span 
+class="cmmi-7">ab</span></sub>                                                                                    </td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-5-4-"><td  style="white-space:nowrap; text-align:right;" id="TBL-5-4-1"  
+class="td11">         </td>
+</tr></table></div></div>
+<!--l. 764--><p class="noindent" >Internally, tensors are represented as <span 
+class="cmtt-10">Tensor[</span><span 
+class="cmti-10">kernel</span><span 
+class="cmtt-10">, TensorIndex[</span><span 
+class="cmti-10">label</span><span 
+class="cmtt-10">, </span><span 
+class="cmti-10">type</span><span 
+class="cmtt-10">], ...] </span>where <span 
+class="cmti-10">label </span>is
+the alphabetical index, and <span 
+class="cmti-10">type </span>is either &#8220;u&#8221; or &#8220;l&#8221; depending on the position of the index. This
+representation helps in pattern matching, and allows TensorTools to identify whether a certain object is
+a tensor or not.
+<!--l. 771--><p class="noindent" >
+<h4 class="subsectionHead"><span class="titlemark">3.2.2   </span> <a 
+ id="x1-280003.2.2"></a>Expansion of tensorial expressions into components</h4>
+<!--l. 773--><p class="noindent" >As an example, the TensorTools function <span 
+class="cmtt-10">MakeExplicit </span>converts an expression containing abstract
+tensors into a list of component expressions:
+<div class="center" 
+>
+<!--l. 776--><p class="noindent" >
+<div class="tabular"> <table id="TBL-6" class="tabular" 
+cellspacing="0" cellpadding="0"  
+><colgroup id="TBL-6-1g"><col 
+id="TBL-6-1"><col 
+id="TBL-6-2"></colgroup><tr  
+ style="vertical-align:baseline;" id="TBL-6-1-"><td  style="white-space:nowrap; text-align:right;" id="TBL-6-1-1"  
+class="td11"> <span 
+class="cmtt-10">In :=  </span></td><td  style="white-space:nowrap; text-align:left;" id="TBL-6-1-2"  
+class="td11"> <span 
+class="cmtt-10">MakeExplicit[T[la, lb]g[ub, uc]]</span>                                                 </td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-6-2-"><td  style="white-space:nowrap; text-align:right;" id="TBL-6-2-1"  
+class="td11">         </td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-6-3-"><td  style="white-space:nowrap; text-align:right;" id="TBL-6-3-1"  
+class="td11">  <span 
+class="cmtt-10">Out =  </span></td><td  style="white-space:nowrap; text-align:left;" id="TBL-6-3-2"  
+class="td11"> <!--tex4ht:inline--><div class="tabular"> <table id="TBL-7" class="tabular" 
+cellspacing="0" cellpadding="0"  
+><colgroup id="TBL-7-1g"><col 
+id="TBL-7-1"><col 
+id="TBL-7-2"><col 
+id="TBL-7-3"></colgroup><tr  
+ style="vertical-align:baseline;" id="TBL-7-1-"><td  style="white-space:nowrap; text-align:right;" id="TBL-7-1-1"  
+class="td11"><span 
+class="cmsy-10">{</span></td><td  style="white-space:nowrap; text-align:left;" id="TBL-7-1-2"  
+class="td11">g11 T11</td><td  style="white-space:nowrap; text-align:left;" id="TBL-7-1-3"  
+class="td11">+ g21 T12 + g31 T13, g12 T11 + g22 T12 + g32 T13,</td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-7-2-"><td  style="white-space:nowrap; text-align:right;" id="TBL-7-2-1"  
+class="td11">  </td><td  style="white-space:nowrap; text-align:left;" id="TBL-7-2-2"  
+class="td11">g13 T11</td><td  style="white-space:nowrap; text-align:left;" id="TBL-7-2-3"  
+class="td11">+ g23 T12 + g33 T13, g11 T21 + g21 T22 + g31 T23,</td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-7-3-"><td  style="white-space:nowrap; text-align:right;" id="TBL-7-3-1"  
+class="td11">  </td><td  style="white-space:nowrap; text-align:left;" id="TBL-7-3-2"  
+class="td11">g12 T21</td><td  style="white-space:nowrap; text-align:left;" id="TBL-7-3-3"  
+class="td11">+ g22 T22 + g32 T23, g13 T21 + g23 T22 + g33 T23,</td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-7-4-"><td  style="white-space:nowrap; text-align:right;" id="TBL-7-4-1"  
+class="td11">  </td><td  style="white-space:nowrap; text-align:left;" id="TBL-7-4-2"  
+class="td11">g11 T31</td><td  style="white-space:nowrap; text-align:left;" id="TBL-7-4-3"  
+class="td11">+ g21 T32 + g31 T33, g12 T31 + g22 T32 + g32 T33,</td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-7-5-"><td  style="white-space:nowrap; text-align:right;" id="TBL-7-5-1"  
+class="td11">  </td><td  style="white-space:nowrap; text-align:left;" id="TBL-7-5-2"  
+class="td11">g13 T31</td><td  style="white-space:nowrap; text-align:left;" id="TBL-7-5-3"  
+class="td11">+ g23 T32 + g33 T33<span 
+class="cmsy-10">}                  </span></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-7-6-"><td  style="white-space:nowrap; text-align:right;" id="TBL-7-6-1"  
+class="td11">  </td></tr></table>                                                                            </div> </td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-6-4-"><td  style="white-space:nowrap; text-align:right;" id="TBL-6-4-1"  
+class="td11">         </td>
+</tr></table></div></div>
+<!--l. 790--><p class="noindent" >Note here that there is no distinction made between upper and lower indices in the component form.
+TensorTools was written mainly for automated code generation rather than symbolic manipulation;
+different kernels should be used for the different forms if this is a problem.
+
+<!--l. 875--><p class="noindent" >
+<h3 class="sectionHead"><span class="titlemark">3.3   </span> <a 
+ id="x1-290003.3"></a>Creating a Kranc thorn</h3>
+<!--l. 877--><p class="noindent" >Prototype: CreateThorn[groups, directory, thornName, namedArgs]<br 
+class="newline" />
+<!--l. 879--><p class="noindent" >Note that if you want to use TensorTools tensors in calculations, you must call the CreateThornTT
+function instead of this one. It takes the same arguments, but they can be tensorial in
+nature.
+<!--l. 883--><p class="noindent" >
+<h5 class="subsubsectionHead"><a 
+ id="x1-300003.3"></a>Positional Arguments</h5>
+<div class="center" 
+>
+<!--l. 885--><p class="noindent" >
+ <table id="TBL-10" class="tabular" 
+cellspacing="0" cellpadding="0" rules="groups" 
+><colgroup id="TBL-10-1g"><col 
+id="TBL-10-1"></colgroup><colgroup id="TBL-10-2g"><col 
+id="TBL-10-2"></colgroup><colgroup id="TBL-10-3g"><col 
+id="TBL-10-3"></colgroup><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-10-1-"><td  style="white-space:nowrap; text-align:left;" id="TBL-10-1-1"  
+class="td11"> <span 
+class="cmbx-10">Argument  </span></td><td  style="white-space:nowrap; text-align:left;" id="TBL-10-1-2"  
+class="td11"> <span 
+class="cmbx-10">Type                                 </span></td><td  style="white-space:wrap; text-align:left;" id="TBL-10-1-3"  
+class="td11"> <!--l. 895--><p class="noindent" ><span 
+class="cmbx-10">Description</span>                         </td>
+</tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-10-2-"><td  style="white-space:nowrap; text-align:left;" id="TBL-10-2-1"  
+class="td11"> groups         </td><td  style="white-space:nowrap; text-align:left;" id="TBL-10-2-2"  
+class="td11"> list of GroupDefinition structures  </td><td  style="white-space:wrap; text-align:left;" id="TBL-10-2-3"  
+class="td11"> <!--l. 895--><p class="noindent" >These define what groups each grid
+  function is a member of.               </td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-10-3-"><td  style="white-space:nowrap; text-align:left;" id="TBL-10-3-1"  
+class="td11"> directory      </td><td  style="white-space:nowrap; text-align:left;" id="TBL-10-3-2"  
+class="td11"> string                                      </td><td  style="white-space:wrap; text-align:left;" id="TBL-10-3-3"  
+class="td11"> <!--l. 895--><p class="noindent" >What directory to create the thorn
+  in. Usually &#8221;.&#8221;.                           </td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-10-4-"><td  style="white-space:nowrap; text-align:left;" id="TBL-10-4-1"  
+class="td11"> thornName   </td><td  style="white-space:nowrap; text-align:left;" id="TBL-10-4-2"  
+class="td11"> string                                      </td><td  style="white-space:wrap; text-align:left;" id="TBL-10-4-3"  
+class="td11"> <!--l. 895--><p class="noindent" >The name to give the thorn.         </td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-10-5-"><td  style="white-space:nowrap; text-align:left;" id="TBL-10-5-1"  
+class="td11"> namedArgs   </td><td  style="white-space:nowrap; text-align:left;" id="TBL-10-5-2"  
+class="td11"> Rule                                        </td><td  style="white-space:wrap; text-align:left;" id="TBL-10-5-3"  
+class="td11"> <!--l. 895--><p class="noindent" >The named arguments (see below)  </td>
+</tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-10-6-"><td  style="white-space:nowrap; text-align:left;" id="TBL-10-6-1"  
+class="td11">             </td>
+</tr></table></div>
+<!--l. 898--><p class="noindent" >
+<h5 class="subsubsectionHead"><a 
+ id="x1-310003.3"></a>Named Arguments</h5>
+<div class="center" 
+>
+<!--l. 900--><p class="noindent" >
+
+ <table id="TBL-13" class="tabular" 
+cellspacing="0" cellpadding="0" rules="groups" 
+><colgroup id="TBL-13-1g"><col 
+id="TBL-13-1"></colgroup><colgroup id="TBL-13-2g"><col 
+id="TBL-13-2"></colgroup><colgroup id="TBL-13-3g"><col 
+id="TBL-13-3"></colgroup><colgroup id="TBL-13-4g"><col 
+id="TBL-13-4"></colgroup><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-13-1-"><td  style="white-space:nowrap; text-align:left;" id="TBL-13-1-1"  
+class="td11"> <span 
+class="cmbx-10">Argument                 </span></td><td  style="white-space:wrap; text-align:left;" id="TBL-13-1-2"  
+class="td11"> <!--l. 925--><p class="noindent" ><span 
+class="cmbx-10">Type</span>                  </td><td  style="white-space:wrap; text-align:left;" id="TBL-13-1-3"  
+class="td11"> <!--l. 925--><p class="noindent" ><span 
+class="cmbx-10">Description</span>          </td><td  style="white-space:nowrap; text-align:left;" id="TBL-13-1-4"  
+class="td11"> <span 
+class="cmbx-10">Default  </span></td>
+</tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-13-2-"><td  style="white-space:nowrap; text-align:left;" id="TBL-13-2-1"  
+class="td11"> Calculations                   </td><td  style="white-space:wrap; text-align:left;" id="TBL-13-2-2"  
+class="td11"> <!--l. 925--><p class="noindent" >list   of   Calculation
+  structures               </td><td  style="white-space:wrap; text-align:left;" id="TBL-13-2-3"  
+class="td11"> <!--l. 925--><p class="noindent" >The  calculations  to
+  perform                  </td><td  style="white-space:nowrap; text-align:left;" id="TBL-13-2-4"  
+class="td11"> <span 
+class="cmsy-10">{}    </span></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-13-3-"><td  style="white-space:nowrap; text-align:left;" id="TBL-13-3-1"  
+class="td11"> DeclaredGroups               </td><td  style="white-space:wrap; text-align:left;" id="TBL-13-3-2"  
+class="td11"> <!--l. 925--><p class="noindent" >list of strings           </td><td  style="white-space:wrap; text-align:left;" id="TBL-13-3-3"  
+class="td11"> <!--l. 925--><p class="noindent" >The             names
+  of groups present in
+  the             <span 
+class="cmtt-10">groups</span>
+ argument which are
+  to   be   created   as
+  new  groups  by  this
+  thorn.                    </td><td  style="white-space:nowrap; text-align:left;" id="TBL-13-3-4"  
+class="td11"> <span 
+class="cmsy-10">{}    </span></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-13-4-"><td  style="white-space:nowrap; text-align:left;" id="TBL-13-4-1"  
+class="td11"> PartialDerivatives            </td><td  style="white-space:wrap; text-align:left;" id="TBL-13-4-2"  
+class="td11"> <!--l. 925--><p class="noindent" >a  PartialDerivatives
+  structure                 </td><td  style="white-space:wrap; text-align:left;" id="TBL-13-4-3"  
+class="td11"> <!--l. 925--><p class="noindent" >The             partial
+  derivative
+  definitions  that  are
+  used  in  this  thorn
+  (optional).               </td><td  style="white-space:nowrap; text-align:left;" id="TBL-13-4-4"  
+class="td11"> <span 
+class="cmsy-10">{}    </span></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-13-5-"><td  style="white-space:nowrap; text-align:left;" id="TBL-13-5-1"  
+class="td11"> RealParameters               </td><td  style="white-space:wrap; text-align:left;" id="TBL-13-5-2"  
+class="td11"> <!--l. 925--><p class="noindent" >list of strings           </td><td  style="white-space:wrap; text-align:left;" id="TBL-13-5-3"  
+class="td11"> <!--l. 925--><p class="noindent" >A list of real-valued
+  parameters that this
+  thorn will define and
+  use.
+  They will all default
+  to zero. (optional)     </td><td  style="white-space:nowrap; text-align:left;" id="TBL-13-5-4"  
+class="td11"> <span 
+class="cmsy-10">{}    </span></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-13-6-"><td  style="white-space:nowrap; text-align:left;" id="TBL-13-6-1"  
+class="td11"> IntParameters                 </td><td  style="white-space:wrap; text-align:left;" id="TBL-13-6-2"  
+class="td11"> <!--l. 925--><p class="noindent" >list of strings           </td><td  style="white-space:wrap; text-align:left;" id="TBL-13-6-3"  
+class="td11"> <!--l. 925--><p class="noindent" >A
+  list of integer-valued
+  parameters that this
+  thorn will define and
+  use.
+  They will all default
+  to zero. (optional)     </td><td  style="white-space:nowrap; text-align:left;" id="TBL-13-6-4"  
+class="td11"> <span 
+class="cmsy-10">{}    </span></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-13-7-"><td  style="white-space:nowrap; text-align:left;" id="TBL-13-7-1"  
+class="td11"> KeywordParameters         </td><td  style="white-space:wrap; text-align:left;" id="TBL-13-7-2"  
+class="td11"> <!--l. 925--><p class="noindent" >list                    of
+  KeywordParameterDefinition
+  structures               </td><td  style="white-space:wrap; text-align:left;" id="TBL-13-7-3"  
+class="td11"> <!--l. 925--><p class="noindent" >A  list  of  parameter
+  definition structures
+  for  all  the  keyword
+  parameters    which
+  this thorn will define
+  and use. (optional)    </td><td  style="white-space:nowrap; text-align:left;" id="TBL-13-7-4"  
+class="td11"> <span 
+class="cmsy-10">{}    </span></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-13-8-"><td  style="white-space:nowrap; text-align:left;" id="TBL-13-8-1"  
+class="td11"> InheritedImplementations  </td><td  style="white-space:wrap; text-align:left;" id="TBL-13-8-2"  
+class="td11"> <!--l. 925--><p class="noindent" >list of strings           </td><td  style="white-space:wrap; text-align:left;" id="TBL-13-8-3"  
+class="td11"> <!--l. 925--><p class="noindent" >A     list     of     all
+  the implementations
+  which this thorn will
+  inherit from. This is
+  necessary
+  to use grid functions
+  provided   by   these
+  implementations.
+  (optional)               </td><td  style="white-space:nowrap; text-align:left;" id="TBL-13-8-4"  
+class="td11"> <span 
+class="cmsy-10">{}    </span></td>
+</tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-13-9-"><td  style="white-space:nowrap; text-align:left;" id="TBL-13-9-1"  
+class="td11">                        </td>
+</tr></table></div>
+
+
+<a 
+ id="x1-31001r9"></a>
+<h2 class="appendixHead"><span class="titlemark">Appendix&#x00A0;A</span><br /><a 
+ id="x1-32000A"></a>Kranc internal design</h2>
+<!--l. 935--><p class="noindent" >Kranc is composed of several Mathematica packages. Each of these human readable scripts performs a
+distinct function. The diagram in Figure <a 
+href="#x1-32000A">A<!--tex4ht:ref: fig:kranc_design --></a> illustrates the relationships between the Kranc packages
+KrancThorns, TensorTools, CodeGen, Thorn and MapLookup, which are described in the following
+subsections. <hr class="figure"><div class="figure" 
+>
+
+<a 
+ id="x1-320011"></a>
+
+<br /> <div class="caption" 
+><span class="id">Figure&#x00A0;A.1: </span><span  
+class="content">Relationships between Kranc packages: Each block represents a package, with the
+main functions it provides indicated with square brackets. An arrow indicates that one package
+calls functions from another</span></div><!--tex4ht:label?: x1-320011 -->
+
+<!--l. 949--><p class="noindent" ></div><hr class="endfigure">
+<!--l. 950--><p class="noindent" >Separating the different logically independent components of Kranc into different packages promotes
+code reuse. For example, none of the thorn generation packages need to know anything about tensors,
+and none of the packages other than CodeGen need to know the programming language in which the
+thorn is being generated (C or Fortran). We have chosen to define several types of thorn (setter,
+evaluator, <span 
+class="cmti-10">etc.</span>) but the mechanics of producing a thorn implemented in Thorn and CodeGen are
+completely independent of this decision.
+<h4 class="subsectionHead"><span class="titlemark">A.0.1   </span> <a 
+ id="x1-33000A.0.1"></a>Package: CodeGen</h4>
+<!--l. 961--><p class="noindent" >During the development of the Kranc system, we explored two different approaches to generating
+Cactus files using Mathematica as a programming language. Initially, a very straightforward system
+was used whereby C statements were included almost verbatim in the Mathematica script and output
+directly to the thorn source file. This approach has two main deficiencies:
+     <ul class="itemize1">
+     <li class="itemize">The same block of text might be used in several places in the code. When a bug is fixed in
+     one place, it must be fixed in all.
+     </li>
+     <li class="itemize">It is not easy to alter the language that is produced. For example, it is difficult to output
+     both C and Fortran.
+     </li>
+     <li class="itemize">The syntax in the Mathematica source file is ugly, with lots of string concatenation, making
+     it difficult to read and edit.</li></ul>
+<!--l. 976--><p class="noindent" >The CodeGen package provides functions to solve these problems. To address the first problem,
+Mathematica functions are used to represent each block of code. This allows the block to be customized
+by giving the function arguments. By making this abstraction, it became very easy to change between
+outputting C and Fortran.
+<!--l. 982--><p class="noindent" >Fundamental to the system is the notion of a <span 
+class="cmti-10">block</span>; in Mathematica terms this can be either a string or
+a list of blocks (this definition is recursive). All the CodeGen functions return blocks, and the lists are
+all flattened and the strings concatenated when the final source file is generated. This is because it is
+syntactically easier in the Mathematica source file to write a sequence of statements as a list than to
+concatenate strings.
+<!--l. 990--><p class="noindent" >Many programming constructs are naturally block-structured; for example, C <span 
+class="cmtt-10">for </span>loops need braces
+after the block of code to loop over. For this reason, it was decided that CodeGen functions could
+take as arguments any blocks of code which needed to be inserted on the inside of such a
+structure.
+
+<!--l. 996--><p class="noindent" >
+<h4 class="subsectionHead"><span class="titlemark">A.0.2   </span> <a 
+ id="x1-34000A.0.2"></a>Package: Thorn</h4>
+<!--l. 998--><p class="noindent" >The Thorn package is used by all the different thorn generators to construct the final Cactus thorn. It
+takes care of the mechanics of writing files to storage and parsing the Kranc structures necessary for
+writing parameter configuration files, grid function definitions etc.
+ 
+</body></html> 
+
+
+

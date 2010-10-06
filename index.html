@@ -1,84 +1,41 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
         "http://www.w3.org/TR/html4/strict.dtd">
 
-<!-- <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" -->
-<!-- 	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"> -->
-
 <html>
 <head>
-	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-
-	<title>Kranc</title>
-        <link rel="StyleSheet" href="style.css" type="text/css">
-	
-    <!--     <style type="text/css"> -->
-    <!--     	body { -->
-    <!--     	margin-top: 1.0em; -->
-    <!--     	background-color: #FFFFFF; -->
-    <!--     	  font-family: "Helvetica,Arial,FreeSans"; -->
-    <!--     	color: #000000; -->
-    <!-- } -->
-    <!-- #container { -->
-    <!--   margin: 0 auto; -->
-    <!--   width: 700px;  -->
-    <!-- } -->
-    <!--     	h1 { font-size: 3.8em; color: #1f9966; margin-bottom: 3px; } -->
-    <!--     	h1 .small { font-size: 0.4em; } -->
-    <!--     	h1 a { text-decoration: none } -->
-    <!--     	h2 { font-size: 1.5em; color: #1f9966; } -->
-    <!-- h3 { text-align: center; color: #1f9966; } -->
-    <!-- a { color: #1f9966; } -->
-    <!-- .description { font-size: 1.2em; margin-bottom: 30px; margin-top: 30px; font-style: italic;} -->
-    <!-- .download { float: right; } -->
-    <!--     	pre { background: #000; color: #fff; padding: 15px;} -->
-    <!-- hr { border: 0; width: 80%; border-bottom: 1px solid #aaa} -->
-    <!-- .footer { text-align:center; padding-top:30px; font-style: italic; } -->
-    <!--     </style> -->
-	
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Kranc</title>
+<link rel="StyleSheet" href="style.css" type="text/css">
 </head>
-
+  
 <body>
-  <!-- <a href="http://github.com/ianhinder/Kranc"><img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub" /></a> -->
-
-
-  <div id="container">
-
-
-    <h1><a href="http://github.com/ianhinder/Kranc">
-          <img src="kranc.png" alt="Kranc" style="text-align:center">
-</a>
-      <!-- <span class="small">by <a href="http://github.com/ianhinder">ianhinder</a></span> --></h1>
-
-    <div class="description" style="text-align:center">
-      A Mathematica application for generating code for solving time
-      dependent partial differential equations
-    </div>
-
-
+<div id="container">
+<h1><a href="http://github.com/ianhinder/Kranc">
+<img src="kranc.png" alt="Kranc" style="text-align:center">
+</a></h1>
+<div class="description" style="text-align:center">
+  A Mathematica application for generating code for solving time
+  dependent partial differential equations
+</div>
 <p style="text-align:center">by Sascha Husa, Ian Hinder, Christiane Lechner, Erik Schnetter</p>
 
 <div class=contentspanel>
-<!-- <h2>Contents</h2> -->
-<ul class=contents>
-<li><a href = "#about">About</a></li>
-<li><a href = "#examples">Examples</a></li>
-<li><a href = "#documentation">Documentation</a></li>
-<li><a href = "#download">Download</a></li>
-<li><a href = "#users">Users</a></li>
-<li><a href = "#related">Related</a></li>
-<li><a href = "#support">Support</a></li>
-</ul>
+  <ul class=contents>
+    <li><a href = "#about">About</a></li>
+    <li><a href = "#examples">Examples</a></li>
+    <li><a href = "#documentation">Documentation</a></li>
+    <li><a href = "#download">Download</a></li>
+    <li><a href = "#users">Users</a></li>
+    <li><a href = "#related">Related</a></li>
+    <li><a href = "#support">Support</a></li>
+  </ul>
 </div>
-
 
 <h2>About</h2>
 <p>Kranc is a <a href =
 "http://www.wolfram.com/products/mathematica/index.html">Mathematica</a>
-application which turns a <!-- <a href = -->
-<!-- "http://en.wikipedia.org/wiki/Tensor"> -->tensorial<!-- </a> --> description of a
-time dependent <!-- <a href = -->
-<!-- "http://en.wikipedia.org/wiki/Partial_differential_equation"> -->partial
-differential equation<!-- </a> --> into a module for the <a href =
+application which turns a tensorial description of a time dependent
+partial differential equation into a module for the <a href =
 "http://cactuscode.org">Cactus Computational Toolkit</a>.</p>
 
 <p>Kranc is free software distributed under the <a href =
@@ -90,33 +47,24 @@ or Kranc-generated code, in a scientific publication. Note that Kranc
 has evolved significantly since the version described in the paper,
 both in usability and functionality.</p>
 
-<!-- <div class=figureleft> -->
-<!-- <img src="waves.png"> -->
-<!-- </div> -->
-
 <a name="examples"></a>
-
 <H2>Examples and tutorials</H2>
 
 <p>We provide several example scripts which can be adapted to develop
 your own codes.  The short
 script <a href="SimpleWave.m">SimpleWave.m</a> generates a 1D wave
-equation code.  There is also a <a href =
-"tutorial.html">tutorial</a> to guide you through the process of
-downloading Kranc, installing the required components into your Cactus
-tree, and generating your first Kranc thorn.</p>
-
-<!-- <div class=figureright> -->
-<!-- <img src="books.jpg"> -->
-<!-- </div> -->
+equation code.  There is also a <a href = "tutorial.html">tutorial</a>
+to guide you through the process of downloading Kranc, installing the
+required components into your Cactus tree, and generating your first
+Kranc thorn.</p>
 
 <a name="documentation"></a>
 <H2>Documentation</H2>
 
-<p>There is online <a href = "doc">HTML documentation for
-Kranc</a>.  This is also available in the Doc directory of Kranc in
-LaTeX format.  Type "make KrancDoc.pdf" to make the PDF version, or
-"make KrancDoc.html" to make the HTML version.</p>
+<p>There is online <a href = "doc">HTML documentation for Kranc</a>.
+This is also available in the Doc directory of Kranc in LaTeX format.
+Type "make KrancDoc.pdf" to make the PDF version, or "make
+KrancDoc.html" to make the HTML version.</p>
 
 <a name="download"></a>
 <h2>Download</h2>
@@ -124,10 +72,6 @@ LaTeX format.  Type "make KrancDoc.pdf" to make the PDF version, or
 <pre>
 $ git clone git://github.com/ianhinder/Kranc
 </pre>
-
-<!-- <div class=figureleft> -->
-<!-- <img src="articles.png"> -->
-<!-- </div> -->
 
 <a name="users"></a>
 <H2>Users and publications</H2>
@@ -174,13 +118,10 @@ University</a></li> </ul>
 
 <a name="related"></a>
 <ul>
-<li>
-
-<a href="http://cactuscode.org">Cactus</a>: Kranc generates
+<li><a href="http://cactuscode.org">Cactus</a>: Kranc generates
 modules for the Cactus Computational Toolkit, an infrastructure for
 building high performance parallel codes. These codes can run
-simulations on anything from laptops to supercomputers.
-</li>
+simulations on anything from laptops to supercomputers.</li>
 
 <li><a href="http://carpetcode.org">Carpet</a>: Carpet is a mesh
 refinement driver for Cactus.  The code generated by Kranc is fully
@@ -198,10 +139,6 @@ written in Mathematica and requires it in order to run.  Mathematica
 is proprietary commercial software.</li>
 
 </ul>
-
-<!-- <div class=figureleft> -->
-<!-- <img src="envelope.png"> -->
-<!-- </div> -->
 
 <a name="support"></a>
 <H2>Support</H2>

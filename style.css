@@ -9,7 +9,7 @@ body {
     margin: 2em;
 /*    width: 700px;  */
 }
-h1 { font-size: 3.8em; color: #c87137; margin-bottom: 3px; }
+h1 { font-size: 3.8em; color: #c87137; margin-bottom: 3px; text-align: center;}
 h1 .small { font-size: 0.4em; }
 h1 a { text-decoration: none }
 h2 { font-size: 12pt; color: #c87137; }
@@ -22,6 +22,7 @@ pre {/* background: #c8ae8a; color: #000000; */ padding: 6pt; padding-left:12pt}
 .verbatim { background: #000; color: #fff; padding: 15px;  }
 hr { border: 0; width: 80%; border-bottom: 1px solid #aaa}
 .footer { text-align:center; padding-top:30px; font-style: italic; }
+
 
 div.contentspanel
 {

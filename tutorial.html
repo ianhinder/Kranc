@@ -1,11 +1,12 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+        "http://www.w3.org/TR/html4/strict.dtd">
+
+<html>
 <head>
-	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 
 	<title>Kranc Tutorial</title>
-        <link rel=StyleSheet href="style.css" type="text/css">
+        <link rel="StyleSheet" href="style.css" type="text/css">
 
 </head>
 <body>
@@ -21,7 +22,7 @@ Kranc into your Cactus installation. The third part describes how to
 generate the SimpleWave example thorn and compile it.  The fourth part
 describes how to run the example and analyse the output.</p>
 
-<p>Prerequisites:
+<p>Prerequisites:</p>
 <ul>
 <li>Mathematica</li>
 <li>A C and C++ compiler</li>
@@ -29,7 +30,6 @@ describes how to run the example and analyse the output.</p>
 <li>The <a href = "http://subversion.apache.org/">Subversion</a> version control system</li>
 <li>A Unix-type operating system (e.g. Linux or Mac OS)
 </ul>
-</p>
 
 <h2>Download and install Cactus</h2>
 
@@ -59,7 +59,7 @@ chmod u+x GetComponents
 <h2>Install Kranc into your Cactus directory</h2>
 
 <p>Download the Kranc distribution (you will need the <i>git</i>
-version control program installed):
+version control program installed):</p>
 
 <!-- <pre> -->
 <!-- wget http://github.com/ianhinder/Kranc/tarball/master -->
@@ -67,9 +67,9 @@ version control program installed):
 <!-- mv *-Kranc-* Kranc -->
 <!-- </pre> -->
 
-<pre>git clone git://github.com/ianhinder/Kranc</pre></p>
+<pre>git clone git://github.com/ianhinder/Kranc</pre>
 
-<p>Link Kranc into your Cactus installation:
+<p>Link Kranc into your Cactus installation:</p>
 <pre>
 ln -s ../Kranc/Auxiliary/Cactus/KrancNumericalTools arrangements/KrancNumericalTools
 ln -s ../Kranc/Examples arrangements/KrancExamples
@@ -79,7 +79,7 @@ ln -s ../Kranc/Examples arrangements/KrancExamples
 
 <h2>Build the SimpleWave example</h2>
 
-<p>Go into the Examples directory and run Kranc to build the SimpleWave thorn:
+<p>Go into the Examples directory and run Kranc to build the SimpleWave thorn:</p>
 
 <pre>
 cd Kranc/Examples
@@ -90,21 +90,21 @@ cd Kranc/Examples
 thorn which has been newly generated from the SimpleWave.m Kranc
 script.</p>
 
-<p>Return to the Cactus directory and copy the example Cactus thornlist:
+<p>Return to the Cactus directory and copy the example Cactus thornlist:</p>
 <pre>
 cd ../..
 cp ComputationalToolkitBasic.th kranc.th</pre>
 
-<p>Open kranc.th in an editor and add the following lines to it:
+<p>Open kranc.th in an editor and add the following lines to it:</p>
 <pre>
 KrancNumericalTools/GenericFD
 KrancExamples/SimpleWave
-</pre></p>
+</pre>
 
-<p>Create a Cactus configuration called "kranc" using this thornlist:
+<p>Create a Cactus configuration called "kranc" using this thornlist:</p>
 <pre>
 make kranc-config THORNLIST=kranc.th
-</pre></p>
+</pre>
 
 <p>If a C compiler cannot be found, or there is some other error,
 consult the <a href = "http://cactuscode.org/documentation">Cactus
@@ -112,11 +112,10 @@ documentation</a> for advice on configuring Cactus for your system.
 You may have to write an <i>optionlist</i> for your system and use it
 in the "make kranc-config" line.</p>
 
-<p>Build the configuration:
+<p>Build the configuration:</p>
 <pre>
 make kranc
 </pre>
-</p>
 
 <p>The configuration containing the Kranc-generated thorn should now
 have been built.  The executable will be exe/cactus_kranc and the
@@ -124,7 +123,7 @@ intermediate build files will be in configs/kranc.</p>
 
 <h2>Run the SimpleWave example</h2>
 
-<p>Run Cactus with the parameter file simplewave_sine.par:
+<p>Run Cactus with the parameter file simplewave_sine.par:</p>
 
 <pre>
 cd Kranc/Examples
@@ -148,7 +147,7 @@ animation tool.</p>
 <p>You should see a sine wave.  Use the Manipulate slider to animate
 the display to see the different iterations of the simulation.</p>
 
-<div><img src="sineplot.png"></div>
+<div><img src="sineplot.png" alt="Plot of sine wave"></div>
 
 </body>
 </html>

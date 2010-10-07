@@ -22,7 +22,7 @@
 <div class=contentspanel>
   <ul class=contents>
     <li><a href = "#about">About</a></li>
-    <li><a href = "#examples">Examples</a></li>
+    <li><a href = "#features">Features</a></li>
     <li><a href = "#documentation">Documentation</a></li>
     <li><a href = "#download">Download</a></li>
     <li><a href = "#users">Users</a></li>
@@ -51,24 +51,47 @@ or Kranc-generated code, in a scientific publication. Note that Kranc
 has evolved significantly since the version described in the paper,
 both in usability and functionality.</p>
 
-<a name="examples"></a>
-<H2>Examples and tutorials</H2>
+<a name="features"></a>
+<H2>Features</H2>
 
-<p>We provide several example scripts which can be adapted to develop
-your own codes.  The short
-script <a href="SimpleWave.m">SimpleWave.m</a> generates a 1D wave
-equation code.  There is also a <a href = "tutorial.html">tutorial</a>
-to guide you through the process of downloading Kranc, installing the
-required components into your Cactus tree, and generating your first
-Kranc thorn.</p>
+<p>Kranc</p>
+<ul>
+<li>solves time evolution problems using arbitrary order finite
+differencing;</li>
+<li>can be used with the PUGH (unigrid) or <a href =
+"http://carpetcode.org">Carpet</a> (adaptive mesh refinement) drivers
+for Cactus;</li>
+<li>generates high performance parallel codes suitable for use on
+supercomputers;</li>
+<li>supports OpenMP for use on modern multicore workstations or
+supercomputers;</li>
+<li>generates code with several optimisations (such as
+common-subexpression elimination) developed over many years of
+production use in HPC applications</li>
+<li>generates code that has a flat structure meaning that for
+complicated evolution systems, the generated code is long but still
+readable;</li>
+<li>can generate code for the <a href =
+"http://llamacode.org">Llama</a> multipatch system;</li>
+</ul>
 
 <a name="documentation"></a>
 <H2>Documentation</H2>
+
+<p>We provide several example scripts which can be adapted to develop
+your own codes.  The short
+script <a href="SimpleWave.m">SimpleWave.m</a> generates a wave
+equation code.  There is also a <a href = "tutorial.html">tutorial</a>
+to guide you through the process of downloading Cactus and Kranc,
+installing Kranc into Cactus, and generating your first Kranc
+thorn.</p>
 
 <p>There is online <a href = "doc">HTML documentation for Kranc</a>.
 This is also available in the Doc directory of Kranc in LaTeX format.
 Type "make KrancDoc.pdf" to make the PDF version, or "make
 KrancDoc.html" to make the HTML version.</p>
+
+
 
 <a name="download"></a>
 <h2>Download</h2>

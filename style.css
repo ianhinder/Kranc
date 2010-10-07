@@ -45,5 +45,5 @@ ul.contents
 {
   list-style-type: none;
   list-style-position: inside;
-  margin-left: 0;padding-left: 0;
+  margin-left: 2em;padding-left: 0;
 }

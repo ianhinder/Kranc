@@ -69,7 +69,7 @@ GetScheduledGroups[thornName_] :=
  {Name          -> "ApplyBCs",
   Language      -> "None", (* groups do not have a language *)
   SchedulePoint -> "as " <> thornName <> "_ApplyBCs in MoL_PostStep "
-                   <> " after " <> boundariesName[thornName], 
+                   <> "after " <> boundariesName[thornName], 
   Comment       -> "Apply boundary conditions "
                    <> "controlled by thorn Boundary"
  }

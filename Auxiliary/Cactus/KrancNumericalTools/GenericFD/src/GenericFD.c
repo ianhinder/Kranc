@@ -69,8 +69,12 @@ int GenericFD_GetBoundaryWidth(cGH const * restrict const cctkGH)
 
   if (CCTK_IsFunctionAliased ("MultiPatch_GetBoundarySpecification")) {
     int const map = MultiPatch_GetMap (cctkGH);
+    /* This doesn't make sense in level mode */
     if (map < 0)
-      CCTK_WARN(0, "Could not determine current map");
+    {
+//      CCTK_WARN(1, "Could not determine current map");
+      return 0;
+    }
     ierr = MultiPatch_GetBoundarySpecification
       (map, 6, nboundaryzones, is_internal, is_staggered, shiftout);
     if (ierr != 0)

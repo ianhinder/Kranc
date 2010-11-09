@@ -72,14 +72,16 @@ krancParamStructExtended[definition_, type_] :=
      AllowedValues -> Map[{Value -> #, Description -> ""} &, allowedValues]}];
 
 krancKeywordParamStruct[struct_] :=
-{
-  Name -> lookup[struct, Name],
-  Type -> "KEYWORD",
-  Default -> lookup[struct, Default],
-  Description -> lookupDefault[struct, Description, lookup[struct, Name]],
-  Visibility -> lookupDefault[struct, Visibility, "private"],
-  AllowedValues -> Map[{Value -> #, Description -> #} &, lookup[struct, AllowedValues]]
-};
+  Join[
+  {Name -> lookup[struct, Name],
+   Type -> "KEYWORD",
+   Default -> lookup[struct, Default],
+   Description -> lookupDefault[struct, Description, lookup[struct, Name]],
+   Visibility -> lookupDefault[struct, Visibility, "private"]},
+  If[mapContains[struct, Steerable],
+    {Steerable -> lookup[struct, Steerable]},
+    {}],
+  {AllowedValues -> Map[{Value -> #, Description -> #} &, lookup[struct, AllowedValues]]}];
 
 MakeFullParamDefs[params_] :=
   Module[{p},

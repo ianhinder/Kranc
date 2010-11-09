@@ -108,8 +108,9 @@ createBoundTypeParam[groupOrGF_, def_] := {
         {Value -> "radiative", Description -> "Radiation boundary condition"},
         {Value -> "scalar",    Description -> "Dirichlet boundary condition"},
         {Value -> "newrad",    Description -> "Improved radiative boundary condition"},
-        {Value -> "skip",      Description -> "skip boundary condition code"}
-}};
+        {Value -> "skip",      Description -> "skip boundary condition code"}},
+                 Steerable -> Always
+};
 
 
 createBoundSpeedParam[groupOrGF_] := {
@@ -119,7 +120,8 @@ createBoundSpeedParam[groupOrGF_] := {
                  Description   ->  "characteristic speed at boundary",
                  Visibility    ->  "private",
                  AllowedValues ->  {{Value -> "0:*" ,
-                      Description -> "outgoing characteristic speed > 0"}}
+                      Description -> "outgoing characteristic speed > 0"}},
+                 Steerable -> Always
 };
 
 createBoundLimitParam[groupOrGF_] := {
@@ -129,7 +131,8 @@ createBoundLimitParam[groupOrGF_] := {
                  Description   ->  "limit value for r -> infinity",
                  Visibility    ->  "private",
                  AllowedValues ->  {{Value -> "*:*" ,
-                      Description -> "value of limit value is unrestricted"}}
+                      Description -> "value of limit value is unrestricted"}},
+                 Steerable -> Always
 };
 
 createBoundScalarParam[groupOrGF_] := {
@@ -139,7 +142,8 @@ createBoundScalarParam[groupOrGF_] := {
                  Description   ->  "Dirichlet boundary value",
                  Visibility    ->  "private",
                  AllowedValues ->  {{Value -> "*:*" ,
-                      Description -> "unrestricted"}}
+                      Description -> "unrestricted"}},
+                 Steerable -> Always
 };
 
 GetParameters[evolvedGFs_, evolvedGroups_] :=

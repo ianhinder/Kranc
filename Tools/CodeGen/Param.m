@@ -146,7 +146,8 @@ CreateKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_,
       Visibility -> "restricted",
       AccumulatorBase -> "MethodofLines::MoL_Num_Evolved_Vars",
       AllowedValues -> {{Value -> ToString[nEvolved] <> ":" <> ToString[nEvolved] , 
-                         Description -> "Number of evolved variables used by this thorn"}}
+                         Description -> "Number of evolved variables used by this thorn"}},
+      Steerable -> Recover
     };
 
     (*
@@ -171,7 +172,8 @@ CreateKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_,
       Description -> "Number of active timelevels",
       Visibility -> "restricted",
       AllowedValues -> {{Value -> ToString[0] <> ":" <> ToString[evolutionTimelevels],
-                         Description -> ""}}
+                         Description -> ""}},
+      Steerable -> Recover
     };
 
     rhsTimelevelsParam =
@@ -182,7 +184,8 @@ CreateKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_,
       Description -> "Number of active RHS timelevels",
       Visibility -> "restricted",
       AllowedValues -> {{Value -> ToString[0] <> ":" <> ToString[evolutionTimelevels],
-                         Description -> ""}}
+                         Description -> ""}},
+      Steerable -> Recover
     };
 
     genericfdStruct =
@@ -193,10 +196,10 @@ CreateKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_,
     };
 
     realStructs = Map[krancParamStruct[#, "CCTK_REAL", False] &, reals];
-    verboseStruct = krancParamStruct[{Name -> "verbose", Default -> 0}, "CCTK_INT", False];
+    verboseStruct = krancParamStruct[{Name -> "verbose", Default -> 0, Steerable -> Always}, "CCTK_INT", False];
     intStructs = Map[krancParamStruct[#, "CCTK_INT", False] &, ints];
-    calcEveryStructs = Map[krancParamStruct[{Name -> lookup[#, Name] <> "_calc_every", Default -> 1}, "CCTK_INT", False] &, calcs];
-    calcOffsetStructs = Map[krancParamStruct[{Name -> lookup[#, Name] <> "_calc_offset", Default -> 0}, "CCTK_INT", False] &, calcs];
+    calcEveryStructs = Map[krancParamStruct[{Name -> lookup[#, Name] <> "_calc_every", Default -> 1, Steerable -> Always}, "CCTK_INT", False] &, calcs];
+    calcOffsetStructs = Map[krancParamStruct[{Name -> lookup[#, Name] <> "_calc_offset", Default -> 0, Steerable -> Always}, "CCTK_INT", False] &, calcs];
     keywordStructs = Map[krancKeywordParamStruct, keywords];
 
     allInherited = Join[inheritedReals, inheritedInts, inheritedKeywords];

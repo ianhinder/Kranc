@@ -476,11 +476,12 @@ CreateSchedule[globalStorageGroups_, scheduledGroups_, scheduledFunctions_] :=
 calculationMacros[] :=
   CommentedBlock["Define macros used in calculations",
     Map[{"#define ", #, "\n"} &,
-       {"INITVALUE  (42)",
-        "INV(x) ((1.0) / (x))"   ,        
-        "SQR(x) ((x) * (x))"   ,        
-        "CUB(x) ((x) * (x) * (x))"   , 
-        "QAD(x) ((x) * (x) * (x) * (x))"}]];
+       {"INITVALUE (42)",
+        "INV(x) (fdiv(ToReal(1.0),x))",
+        "SQR(x) (fmul(x,x))",
+        "CUB(x) (x*SQR(x))",
+        "QAD(x) (SQR(SQR(x)))"
+       }]];
 
 (* Given a list of Calculation structures as defined above, create a
    CodeGen representation of a source file that defines a function for
@@ -508,7 +509,7 @@ CreateSetterSource[calcs_, debug_, useCSE_, include_, imp_,
       ],
 
    Map[IncludeFile, Join[{"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h",
-                     (*"precomputations.h",*) "GenericFD.h", "Differencing.h", "Vectors.hh"}, include,
+                     (*"precomputations.h",*) "GenericFD.h", "Vectors.hh", "Differencing.h"}, include,
                          If[OptionValue[UseLoopControl], {"loopcontrol.h"}, {}]]],
    calculationMacros[],
 
@@ -738,10 +739,10 @@ CreateMoLBoundariesSource[spec_] :=
      "if (CCTK_EQUALS(" <> boundpar <> ", \"none\"  ) ||\n",
      "    CCTK_EQUALS(" <> boundpar <> ", \"static\") ||\n",
      "    CCTK_EQUALS(" <> boundpar <> ", \"flat\"  ) ||\n",
-     "    CCTK_EQUALS(" <> boundpar <> ", \"zero\"  ) ) \n",
+     "    CCTK_EQUALS(" <> boundpar <> ", \"zero\"  ) )\n",
      "{\n",
 
-     "  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, 1, -1, \n",
+     "  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, boundary_width, -1,\n",
      "                    \"" <> fullgroupname <> "\", " <> boundpar <> ");\n",
 
      "  if (ierr < 0)\n",
@@ -760,10 +761,10 @@ CreateMoLBoundariesSource[spec_] :=
      "if (CCTK_EQUALS(" <> boundpar <> ", \"none\"  ) ||\n",
      "    CCTK_EQUALS(" <> boundpar <> ", \"static\") ||\n",
      "    CCTK_EQUALS(" <> boundpar <> ", \"flat\"  ) ||\n",
-     "    CCTK_EQUALS(" <> boundpar <> ", \"zero\"  ) ) \n",
+     "    CCTK_EQUALS(" <> boundpar <> ", \"zero\"  ) )\n",
      "{\n",
 
-     "  ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1, \n",
+     "  ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, boundary_width, -1,\n",
      "                    \"" <> fullgfname <> "\", " <> boundpar <> ");\n",
 
      "  if (ierr < 0)\n",
@@ -796,7 +797,7 @@ CreateMoLBoundariesSource[spec_] :=
       "     CCTK_WARN(0, \"could not set SPEED value in table!\");\n",
 
       "\n",
-      "  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, 1, "<>myhandle<>", \n",
+      "  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, boundary_width, "<>myhandle<>", \n",
       "                    \"" <> fullgroupname <> "\", \"Radiation\");\n\n",
 
       "  if (ierr < 0)\n",
@@ -830,7 +831,7 @@ CreateMoLBoundariesSource[spec_] :=
       "      CCTK_WARN(0, \"could not set SPEED value in table!\");\n",
 
       "\n",
-      "  ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, "<>myhandle<>", \n",
+      "  ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, boundary_width, "<>myhandle<>", \n",
       "                    \"" <> fullgfname <> "\", \"Radiation\");\n\n",
 
       "  if (ierr < 0)\n",
@@ -859,7 +860,7 @@ CreateMoLBoundariesSource[spec_] :=
       "      CCTK_WARN(0, \"could not set SCALAR value in table!\");\n",
 
       "\n",
-      "  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, 1, "<>myhandle<>", \n",
+      "  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, boundary_width, "<>myhandle<>", \n",
       "                    \"" <> fullgroupname <> "\", \"scalar\");\n\n",
 
       "  if (ierr < 0)\n",
@@ -889,7 +890,7 @@ CreateMoLBoundariesSource[spec_] :=
       "    CCTK_WARN(0, \"could not set SCALAR value in table!\");\n",
 
       "\n",
-      "  ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, "<>myhandle<>", \n",
+      "  ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, boundary_width, "<>myhandle<>", \n",
       "                    \"" <> fullgfname <> "\", \"scalar\");\n\n",
 
       "  if (ierr < 0)\n",

@@ -178,7 +178,7 @@ localName[x_] :=
 
 definePreDefinitions[pDefs_] :=
   CommentedBlock["Initialize predefined quantities",
-    Map[DeclareAssignVariable["CCTK_REAL", #[[1]], #[[2]]] &, pDefs]];
+    Map[DeclareAssignVariable["CCTK_REAL_VEC", #[[1]], #[[2]]] &, pDefs]];
 
 (* --------------------------------------------------------------------------
    Equations
@@ -326,7 +326,7 @@ Options[CreateCalculationFunction] = ThornOptions;
 
 CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
   Module[{gfs, allSymbols, knownSymbols,
-          shorts, eqs, parameters,
+          shorts, eqs, parameters, parameterRules,
           functionName, dsUsed, groups, pddefs, cleancalc, eqLoop, where,
           addToStencilWidth, pDefs, haveCondTextuals, condTextuals},
 
@@ -366,9 +366,13 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
 
     If[!lookupDefault[cleancalc, NoSimplify, False],
        InfoMessage[InfoFull, "Simplifying equations", eqs];
-       eqs = Simplify[eqs, {r>0}]]];
+       eqs = Simplify[eqs, {r>=0}]]];
 
   InfoMessage[InfoFull, "Equations:"];
+
+  (* Wrap parameters with ToReal *)
+  parameterRules = Map[(#->ToReal[#])&, parameters];
+  eqs = eqs /. parameterRules;
 
   Map[printEq, eqs];
 
@@ -537,7 +541,7 @@ equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
 
     GenericGridLoop[functionName,
     {
-      DeclareDerivatives[defsWithoutShorts, eqsOrdered],
+      (* DeclareDerivatives[defsWithoutShorts, eqsOrdered], *)
 
       CommentedBlock["Assign local copies of grid functions",
         Map[DeclareMaybeAssignVariableInLoop[
@@ -558,6 +562,22 @@ equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
         Map[InfoVariable[#[[1]]] &, (eqs2 /. localMap)],
         ""],
 
+      CommentedBlock["If necessary, store only partial vectors after the first iteration",
+        ConditionalOnParameterTextual["CCTK_REAL_VEC_SIZE > 1 && i<lc_imin",
+          {
+            DeclareAssignVariable["int", "elt_count", "lc_imin-i"],
+            Map[StoreHighPartialVariableInLoop[GridName[#], localName[#], "elt_count"] &,
+                gfsInLHS],
+            "continue;\n"
+          }]],
+      CommentedBlock["If necessary, store only partial vectors after the last iteration",
+        ConditionalOnParameterTextual["CCTK_REAL_VEC_SIZE > 1 && i+CCTK_REAL_VEC_SIZE > lc_imax",
+          {
+            DeclareAssignVariable["int", "elt_count", "lc_imax-i"],
+            Map[StoreLowPartialVariableInLoop[GridName[#], localName[#], "elt_count"] &,
+                gfsInLHS],
+            "break;\n"
+          }]],
       CommentedBlock["Copy local copies back to grid functions",
         Map[StoreVariableInLoop[GridName[#], localName[#]] &,
             gfsInLHS]],

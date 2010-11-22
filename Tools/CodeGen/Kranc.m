@@ -22,7 +22,11 @@ BeginPackage["Kranc`"];
 
 (* CodeGen.m *)
 
-{INV, SQR, CUB, QAD, exp, pow, fmax, fmin, dx, dy, dz, khalf, kthird, ktwothird, kfourthird, keightthird};
+{INV, SQR, CUB, QAD, IfThen, ToReal, sqrt, exp, pow, fmax, fmin,
+ fmadd, fmsub, fnmadd, fnmsub, fneg, fadd, fsub, fmul, fdiv,
+ kfabs, kfmax, kfmin, ksqrt, kexp, klog, kpow,
+ dir1, dir2, dir3, dx, dy, dz,
+ khalf, kthird, ktwothird, kfourthird, keightthird};
 
 (* Helpers.m *)
 

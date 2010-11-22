@@ -60,14 +60,16 @@ DeclareAssignVariable::usage = "DeclareAssignVariable[type_, dest_, src_] return
   "that declares and sets a constant variable of given name and type.";
 AssignVariableInLoop::usage = "AssignVariableInLoop[dest_, src_] returns a block of code " <>
   "that assigns 'src' to 'dest'.";
+StoreVariableInLoop::usage = "StoreVariableInLoop[dest_, src_] returns a block of code " <>
+  "that assigns 'src' to 'dest'.";
 DeclareAssignVariableInLoop::usage = "DeclareAssignVariableInLoop[type_, dest_, src_] returns a block of code " <>
   "that assigns 'src' to 'dest'.";
 MaybeAssignVariableInLoop::usage = "MaybeAssignVariableInLoop[dest_, src_, cond_] returns a block of code " <>
   "that assigns 'src' to 'dest'.";
 DeclareMaybeAssignVariableInLoop::usage = "DeclareMaybeAssignVariableInLoop[type_, dest_, src_, cond_] returns a block of code " <>
   "that assigns 'src' to 'dest'.";
-DeclareVariablesInLoopVectorised::usage = "";
-AssignVariablesInLoopVectorised::usage = "";
+UNUSEDDeclareVariablesInLoopVectorised::usage = "";
+UNUSEDAssignVariablesInLoopVectorised::usage = "";
 TestForNaN::usage = "TestForNaN[expr_] returns a block of code " <>
   "that tests 'expr' for nan.";
 CommentedBlock::usage = "CommentedBlock[comment, block] returns a block consisting " <>
@@ -129,11 +131,11 @@ Quote::usage = "Quote[x] returns x surrounded by quotes";
 Begin["`Private`"];
 
 SOURCELANGUAGE =  "C";
-SOURCESUFFIX   = ".c";
+SOURCESUFFIX   = ".cc";
 
 setSourceSuffix[lang_] :=
 If[ (lang == "C"),
-  SOURCESUFFIX = ".c";
+  SOURCESUFFIX = ".cc";
 ,
   SOURCESUFFIX = ".F90";
 ];
@@ -146,7 +148,7 @@ If[ (lang == "C" || lang == "Fortran"),
   InfoMessage[Terse, "User set source language to " <> lang],
 
   SOURCELANGUAGE = "C";
-  setSourceSuffix[".c"];
+  setSourceSuffix[".cc"];
   InfoMessage[Terse, "Setting Source Language to C"];
 ];
 
@@ -280,21 +282,24 @@ AssignVariableInLoop[dest_, src_] :=
    TestForNaN[dest]};
 *)
 
+StoreVariableInLoop[dest_, src_] :=
+  {"vec_store_nta(", dest, ",", src, ")", EOL[]};
+
 DeclareAssignVariableInLoop[type_, dest_, src_] :=
-  {type, " const ", dest, " = ", src, EOL[]};
+  {type, " const ", dest, " = vec_load(", src, ")", EOL[]};
 
 MaybeAssignVariableInLoop[dest_, src_, cond_] :=
   If [cond,
-      {dest, " = useMatter ? ", src, " : 0.0", EOL[]},
-      {dest, " = ", src, EOL[]}];
+      {dest, " = useMatter ? vec_load(", src, ") : 0.0", EOL[]},
+      {dest, " = vec_load(", src, ")", EOL[]}];
 
 DeclareMaybeAssignVariableInLoop[type_, dest_, src_, mmaCond_, codeCond_] :=
   If [mmaCond,
-      {type, "  ", dest, " = (", codeCond, ") ? (", src, ") : 0.0", EOL[]},
-      {type, "  ", dest, " = ", src, EOL[]}];
+      {type, "  ", dest, " = (", codeCond, ") ? vec_load(", src, ") : 0.0", EOL[]},
+      {type, "  ", dest, " = vec_load(", src, ")", EOL[]}];
 
 (* TODO: move these into OpenMP loop *)
-DeclareVariablesInLoopVectorised[dests_, temps_, srcs_] :=
+UNUSEDDeclareVariablesInLoopVectorised[dests_, temps_, srcs_] :=
   {
    {"#undef LC_PRELOOP_STATEMENTS", "\n"},
    {"#define LC_PRELOOP_STATEMENTS", " \\\n"},
@@ -307,7 +312,7 @@ DeclareVariablesInLoopVectorised[dests_, temps_, srcs_] :=
    {"\n"}
   };
 
-AssignVariablesInLoopVectorised[dests_, temps_, srcs_] :=
+UNUSEDAssignVariablesInLoopVectorised[dests_, temps_, srcs_] :=
   {
    {"{\n"},
    {"  if (i < GFD_imin || i >= GFD_imax) {\n"},
@@ -334,7 +339,7 @@ AssignVariablesInLoopVectorised[dests_, temps_, srcs_] :=
    {"}\n"}
   };
 
-AssignVariableInLoopsVectorised[dest_, temp_, src_] :=
+UNUSEDAssignVariableInLoopsVectorised[dest_, temp_, src_] :=
   {"GFD_save_and_store(", dest, ",", "index", ",", "&", temp, ",", src, ")", EOL[]};
 
 TestForNaN[expr_] :=
@@ -406,7 +411,7 @@ defineSubroutine[name_, args_, contents_] :=
 
 defineSubroutineC[name_, args_, contents_] :=
   SeparatedBlock[
-    {"void ", name, "(", args, ")", "\n",
+    {"extern \"C\" void ", name, "(", args, ")", "\n",
      CBlock[contents]}];
 
 defineSubroutineF[name_, args_, contents_] :=
@@ -663,6 +668,7 @@ GenericGridLoopUsingLoopControl[functionName_, block_] :=
              block
           }
         ],
+        "i += CCTK_REAL_VEC_SIZE-1;\n",
         "}\n",
         "LC_ENDLOOP3 (", functionName, ");\n"
       }

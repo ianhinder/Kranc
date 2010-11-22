@@ -229,7 +229,7 @@ simpCollect[collectList_, eqrhs_, localvar_, debug_] :=
 assignVariableFromExpression[dest_, expr_, declare_] :=
   Module[{tSym, type, cleanExpr, code},
     tSym = Unique[];
-    type = If[StringMatchQ[ToString[dest], "dir*"], "int", "CCTK_REAL"];
+    type = If[StringMatchQ[ToString[dest], "dir*"], "int", "CCTK_REAL_VEC"];
     cleanExpr = ReplacePowers[expr] /. Kranc`t -> tSym;
 
     If[SOURCELANGUAGE == "C",
@@ -400,7 +400,7 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
        "Calculation is:", cleancalc]];
 
   {
-  DefineFunction[bodyFunctionName, "void", "cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const min[3], int const max[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[]",
+  DefineFunction[bodyFunctionName, "static void", "cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const min[3], int const max[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[]",
   {
     "DECLARE_CCTK_ARGUMENTS;\n",
     "DECLARE_CCTK_PARAMETERS;\n\n",
@@ -541,7 +541,7 @@ equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
 
       CommentedBlock["Assign local copies of grid functions",
         Map[DeclareMaybeAssignVariableInLoop[
-              "CCTK_REAL", localName[#], GridName[#],
+              "CCTK_REAL_VEC", localName[#], GridName[#],
               StringMatchQ[ToString[GridName[#]], "eT" ~~ _ ~~ _ ~~ "[" ~~ __ ~~ "]"],
                 "*stress_energy_state"] &,
             gfsInRHS]],
@@ -559,7 +559,7 @@ equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
         ""],
 
       CommentedBlock["Copy local copies back to grid functions",
-        Map[AssignVariableInLoop[GridName[#], localName[#]] &,
+        Map[StoreVariableInLoop[GridName[#], localName[#]] &,
             gfsInLHS]],
 
       If[debugInLoop, Map[InfoVariable[GridName[#]] &, gfsInLHS], ""]}, opts]];

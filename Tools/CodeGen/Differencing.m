@@ -208,7 +208,7 @@ ReplaceDerivatives[derivOps_, expr_, precompute_] :=
 
 PrecomputeDerivative[d:pd_[gf_, inds___]] :=
   Module[{},
-    DeclareAssignVariable["CCTK_REAL", GridFunctionDerivativeName[d], evaluateDerivative[d]]];
+    DeclareAssignVariable["CCTK_REAL_VEC", GridFunctionDerivativeName[d], evaluateDerivative[d]]];
 
 evaluateDerivative[d:pd_[gf_, inds___]] :=
   Module[{macroname},
@@ -216,7 +216,7 @@ evaluateDerivative[d:pd_[gf_, inds___]] :=
     Return[ToString[macroName] <> "(" <> ToString[gf] <> ", i, j, k)"]];
 
 DeclareDerivative[d:pd_[gf_, inds___]] :=
-  DeclareVariable[GridFunctionDerivativeName[d], "// CCTK_REAL"];
+  DeclareVariable[GridFunctionDerivativeName[d], "// CCTK_REAL_VEC"];
 
 
 (*************************************************************)
@@ -404,10 +404,10 @@ DifferenceGFTerm[op_, i_, j_, k_] :=
       "(int)(" <> ToString[CFormHideStrings[j+ny]] <> ")," <>
       "(int)(" <> ToString[CFormHideStrings[k+nz]] <> "))]",
 *)
-    remaining "(u)[index" <>
+    remaining "vec_loadu((u)[index" <>
       "+di*(" <> ToString[CFormHideStrings[nx]] <> ")" <>
       "+dj*(" <> ToString[CFormHideStrings[ny]] <> ")" <>
-      "+dk*(" <> ToString[CFormHideStrings[nz]] <> ")]",
+      "+dk*(" <> ToString[CFormHideStrings[nz]] <> ")])",
 (*
     remaining "(u)[CCTK_GFINDEX3D(cctkGH,floor((" <>
       ToString[CFormHideStrings[i+nx]] <> ")+0.5),floor((" <>

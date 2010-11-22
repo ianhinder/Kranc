@@ -508,7 +508,7 @@ CreateSetterSource[calcs_, debug_, useCSE_, include_, imp_,
       ],
 
    Map[IncludeFile, Join[{"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h",
-                     (*"precomputations.h",*) "GenericFD.h", "Differencing.h"}, include,
+                     (*"precomputations.h",*) "GenericFD.h", "Differencing.h", "Vectors.hh"}, include,
                          If[OptionValue[UseLoopControl], {"loopcontrol.h"}, {}]]],
    calculationMacros[],
 

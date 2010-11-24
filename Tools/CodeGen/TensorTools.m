@@ -265,7 +265,7 @@ DefineTensor[T_] :=
       HoldForm[T[is]];*)
 
     T[is:((TensorIndex[_,_] | _Integer) ..)] := Tensor[T, is];
-    TensorAttributes[T] = {TensorWeight -> 1, Symmetries -> {}};
+    TensorAttributes[T] = {TensorWeight -> 0, Symmetries -> {}};
     T];
 
 (* -------------------------------------------------------------------------- 

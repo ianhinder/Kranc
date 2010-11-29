@@ -217,10 +217,10 @@ IndexIsLower[TensorIndex[_, "u"]] := False;
    -------------------------------------------------------------------------- *)
 
 Format[TensorIndex[label_, "u"], OutputForm] :=
-  Superscript[null,label];
+  "u"<>ToString[label];
 
 Format[TensorIndex[label_, "l"], OutputForm] :=
-  Subscript[null,label];
+  "l"<>ToString[label];
 
 Format[TensorIndex[label_, "u"], StandardForm] :=
   Superscript[null,label];

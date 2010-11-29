@@ -105,7 +105,7 @@ importerCalc =
 evolveEquations =
 {
   dot[phi] -> pi,
-  dot[pi]  -> PD[phi,li,ui]
+  dot[pi]  -> PD[phi,li,lj] Euc[ui,uj]
 }
 
 evolveCalc = 

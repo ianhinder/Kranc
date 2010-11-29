@@ -1235,10 +1235,11 @@ CheckTensors[x_, y_] :=
       ];
 
 CheckTensors[t:Tensor[k_, is__]] :=
-  Module[{},
+  Module[{is2},
 (*    Print["CheckTensors: Tensor: ", t];*)
-    If[!(Union[{is}] === Sort[{is}]),
-       ThrowError["Tensor has repeated indices: ", t, {is}]];
+    is2 = Select[{is}, !NumericQ[#]&];
+    If[!(Union[is2] === Sort[is2]),
+       ThrowError["Tensor has repeated indices: ", t, is2]];
     True];
 
 CheckTensors[t:f_[TensorIndex[__]..]] :=

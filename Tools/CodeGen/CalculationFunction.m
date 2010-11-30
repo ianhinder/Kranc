@@ -157,6 +157,23 @@ removeUnusedShorthands[calc_] :=
       removeUnusedShorthands[newCalc],
       newCalc]];
 
+(* Return all the groups that are used in a given calculation *)
+groupsInCalculation[calc_, imp_] :=
+  Module[{groups,gfs,eqs,gfsUsed, groupNames},
+    groups = lookup[calc, Groups];
+    gfs = allGroupVariables[groups];
+    eqs = lookup[calc, Equations];
+    gfsUsed = Union[Cases[eqs, _ ? (MemberQ[gfs,#] &), Infinity]];
+    groupNames = containingGroups[gfsUsed, groups];
+    Map[qualifyGroupName[#, imp] &, groupNames]];
+
+CheckGroupStorage[groupNames_, calcName_] :=
+  Module[{},
+    {"\nconst char *groups[] = {",
+    Riffle[Map[Quote,groupNames], ","],
+    "};\n",
+    "GenericFD_AssertGroupStorage(cctkGH, ", Quote[calcName],", ", Length[groupNames], ", groups);\n"}];
+
 (* --------------------------------------------------------------------------
    Variables
    -------------------------------------------------------------------------- *)
@@ -324,7 +341,7 @@ pdCanonicalOrdering[name_[inds___] -> x_] :=
 
 Options[CreateCalculationFunction] = ThornOptions;
 
-CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
+CreateCalculationFunction[calc_, debug_, useCSE_, imp_, opts:OptionsPattern[]] :=
   Module[{gfs, allSymbols, knownSymbols,
           shorts, eqs, parameters,
           functionName, dsUsed, groups, pddefs, cleancalc, eqLoop, where,
@@ -412,6 +429,8 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
 
     ConditionalOnParameterTextual["cctk_iteration % " <> functionName <> "_calc_every != " <>
       functionName <> "_calc_offset", "return;\n"],
+
+    CheckGroupStorage[groupsInCalculation[cleancalc, imp], functionName],
 
     If[haveCondTextuals, Map[ConditionalOnParameterTextual["!(" <> # <> ")", "return;\n"] &,condTextuals], {}],
 

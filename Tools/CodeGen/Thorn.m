@@ -517,7 +517,7 @@ CreateSetterSource[calcs_, debug_, useCSE_, include_, imp_,
 
    CalculationBoundariesFunction[First[calcs], imp],
 
-   Map[CreateCalculationFunction[# , debug, useCSE, opts] &,
+   Map[CreateCalculationFunction[# , debug, useCSE, imp, opts] &,
        calcs]}];
 
 

@@ -95,10 +95,10 @@ GetScheduledFunctions[thornName_, evolvedGroups_] :=
   }
 };
 
-createBoundTypeParam[groupOrGF_] := {
+createBoundTypeParam[groupOrGF_, def_] := {
                  Name          ->  ToString@groupOrGF <> "_bound",
                  Type          ->  "KEYWORD",
-                 Default       ->  "skip",
+                 Default       ->  def,
                  Description   ->  "Boundary condition to implement",
                  Visibility    ->  "private",
                  AllowedValues ->  {
@@ -143,8 +143,8 @@ createBoundScalarParam[groupOrGF_] := {
 };
 
 GetParameters[evolvedGFs_, evolvedGroups_] :=
-  Join[Map[createBoundTypeParam, evolvedGFs],
-       Map[createBoundTypeParam, Map[unqualifiedGroupName,evolvedGroups]],
+  Join[Map[createBoundTypeParam[#,"skip"] &, evolvedGFs],
+       Map[createBoundTypeParam[#,"none"] &, Map[unqualifiedGroupName,evolvedGroups]],
 
        Map[createBoundSpeedParam, evolvedGFs],
        Map[createBoundSpeedParam, Map[unqualifiedGroupName,evolvedGroups]], 

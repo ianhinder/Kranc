@@ -168,11 +168,14 @@ groupsInCalculation[calc_, imp_] :=
     Map[qualifyGroupName[#, imp] &, groupNames]];
 
 CheckGroupStorage[groupNames_, calcName_] :=
-  Module[{},
+  Module[{ignoreGroups, groupsNames2},
+    ignoreGroups = {"TmunuBase::stress_energy_scalar", "TmunuBase::stress_energy_vector",
+      "TmunuBase::stress_energy_tensor"};
+    groupNames2 = Select[groupNames, !MemberQ[ignoreGroups, #] &];
     {"\nconst char *groups[] = {",
-    Riffle[Map[Quote,groupNames], ","],
+    Riffle[Map[Quote,groupNames2], ","],
     "};\n",
-    "GenericFD_AssertGroupStorage(cctkGH, ", Quote[calcName],", ", Length[groupNames], ", groups);\n"}];
+    "GenericFD_AssertGroupStorage(cctkGH, ", Quote[calcName],", ", Length[groupNames2], ", groups);\n"}];
 
 (* --------------------------------------------------------------------------
    Variables

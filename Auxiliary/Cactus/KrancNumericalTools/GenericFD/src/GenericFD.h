@@ -28,8 +28,16 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include "cctk.h"
+
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#ifdef __cplusplus
+#  ifdef CCTK_CXX_RESTRICT
+#    define restrict CCTK_CXX_RESTRICT
+#  endif
 #endif
 
 #ifndef NOPRECOMPUTE

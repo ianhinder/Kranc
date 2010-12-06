@@ -1,46 +1,28 @@
-// Vectorise using IBM's Altivec
+// Vectorise using Intel's or AMD's SSE2
 
 
 
-#include <altivec.h>
+#include <emmintrin.h>
 
 // Vector type corresponding to CCTK_REAL
 struct CCTK_REAL_VEC {
-  // The underlying scalar and vector types
+  // Underlying scalar and vector types
   typedef double S;
-  typedef vector double V;
+  typedef __m128d V;
+  
+  // Payload
   V v;
-  union vec_mask {
-    S elts[2];
-    V v;
-  };
   
-  // Set a vector from scalars
-#if 0
-  // IBM
-  inline CCTK_REAL_VEC(S const a, S const b) { v[0]=a; v[1]=b; }
-#endif
-#if 0
-  inline CCTK_REAL_VEC(S const a, S const b):
-    v(vec_mergel(vec_splats(a), vec_splats(b))) { }
-#endif
-  inline CCTK_REAL_VEC(S const a, S const b)
-  {
-    vec_mask x;
-    x.elts[0] = a;
-    x.elts[1] = b;
-    v = x.v;
-  }
-  
-  // Set a vector from a scalar, replicating the scalar
-  // Note: Could also use vec_xlds instead
-  inline CCTK_REAL_VEC(S const a): v(vec_splats(a)) { }
+  // Empty constructur
+  inline CCTK_REAL_VEC() { }
   
   // Convert from and to the underlying vector type
   inline CCTK_REAL_VEC(V const v_): v(v_) { }
   inline operator V const() const { return v; }
   
-  inline CCTK_REAL_VEC() { }
+  // Convert from the underlying scalar type
+  inline CCTK_REAL_VEC(S const& a): v(_mm_set1_pd(a)) { }
+  inline CCTK_REAL_VEC(int const& a): v(_mm_set1_pd(S(a))) { }
   
   // Copy constructor
   inline CCTK_REAL_VEC(CCTK_REAL_VEC const& x): v(x) { }
@@ -53,27 +35,21 @@ int const CCTK_REAL_VEC_SIZE = sizeof(CCTK_REAL_VEC) / sizeof(CCTK_REAL);
 
 
 // Create vectors, extract vector elements
-DEFINE_FUNCTION_R_V(vec_set1,CCTK_REAL_VEC(a))
-DEFINE_FUNCTION_RR_V(vec_set,CCTK_REAL_VEC(a,b))
+
+DEFINE_FUNCTION_R_V(vec_set1,_mm_set1_pd(a))
+DEFINE_FUNCTION_RR_V(vec_set,_mm_set_pd(b,a))
 
 // Get a scalar from the vector
-#if 0
-// IBM
-DEFINE_FUNCTION_V_R(vec_elt0,x.v[0])
-DEFINE_FUNCTION_V_R(vec_elt1,x.v[1])
+#if defined(__PGI) && defined (__amd64__)
+// _mm_cvtsd_f64 does not exist on PGI compilers
+// DEFINE_FUNCTION_V_R(vec_elt0,({ CCTK_REAL a; _mm_store_sd(&a,x); a; }))
+// DEFINE_FUNCTION_V_R(vec_elt0,(*(CCTK_REAL const*)&x))
+// This generates the fastest code with PGI compilers
+DEFINE_FUNCTION_V_R(vec_elt0,({ CCTK_REAL a; asm ("" : "=x" (a) : "0" (x)); a; }))
+#else
+DEFINE_FUNCTION_V_R(vec_elt0,_mm_cvtsd_f64(x)) // this is a no-op
 #endif
-static inline CCTK_REAL vec_elt0(CCTK_REAL_VEC const x)
-{
-  CCTK_REAL_VEC::vec_mask x1;
-  x1.v = x;
-  return x1.elts[0];
-}
-static inline CCTK_REAL vec_elt1(CCTK_REAL_VEC const x)
-{
-  CCTK_REAL_VEC::vec_mask x1;
-  x1.v = x;
-  return x1.elts[1];
-}
+DEFINE_FUNCTION_V_R(vec_elt1,vec_elt0(_mm_unpackhi_pd(x,x)))
 
 
 
@@ -81,12 +57,8 @@ static inline CCTK_REAL vec_elt1(CCTK_REAL_VEC const x)
 
 // Load a vector from memory (aligned and unaligned); this loads from
 // a reference to a scalar
-DEFINE_FUNCTION_PR_V(vec_load,p)
-#if 0
-// IBM
-DEFINE_FUNCTION_PR_V(vec_loadu,vec_xld2(0,const_cast<CCTK_REAL*>(&p)))
-#endif
-DEFINE_FUNCTION_PR_V(vec_loadu,p)
+DEFINE_FUNCTION_PR_V(vec_load,_mm_load_pd(&p))
+DEFINE_FUNCTION_PR_V(vec_loadu,_mm_loadu_pd(&p))
 
 // Load a vector from memory that may or may not be aligned, as
 // decided by the offset off and the vector size
@@ -118,10 +90,13 @@ CCTK_REAL_VEC vec_loadu_maybe_impl3<0,0,0> (CCTK_REAL const& p)
 
 // Store a vector to memory (aligned and non-temporal); this stores to
 // a reference to a scalar
-DEFINE_FUNCTION_PRV(vec_store,*(CCTK_REAL_VEC::V*)&p=x)
-DEFINE_FUNCTION_PRV(vec_storeu,*(CCTK_REAL_VEC::V*)&p=x)
-// TODO: Use stvxl instruction?
-DEFINE_FUNCTION_PRV(vec_store_nta,*(CCTK_REAL_VEC::V*)&p=x)
+DEFINE_FUNCTION_PRV(vec_store,_mm_store_pd(&p,x))
+DEFINE_FUNCTION_PRV(vec_storeu,_mm_storeu_pd(&p,x))
+#if defined(KRANC_CACHE)
+DEFINE_FUNCTION_PRV(vec_store_nta,_mm_stream_pd(&p,x))
+#else
+DEFINE_FUNCTION_PRV(vec_store_nta,_mm_store_pd(&p,x))
+#endif
 
 // Store a lower or higher partial vector (aligned and non-temporal);
 // the non-temporal hint is probably ignored
@@ -129,7 +104,7 @@ static inline
 void vec_store_nta_partial_lo (CCTK_REAL& p, CCTK_REAL_VEC const x, int const n)
 {
   switch (n) {
-  case 1: p=vec_elt0(x); break;
+  case 1: _mm_storel_pd(&p,x); break;
   default: assert(0);
   }
 }
@@ -137,7 +112,7 @@ static inline
 void vec_store_nta_partial_hi (CCTK_REAL& p, CCTK_REAL_VEC const x, int const n)
 {
   switch (n) {
-  case 1: (&p)[1]=vec_elt1(x); break;
+  case 1: _mm_storeh_pd((&p)+1,x); break;
   default: assert(0);
   }
 }
@@ -146,24 +121,22 @@ void vec_store_nta_partial_hi (CCTK_REAL& p, CCTK_REAL_VEC const x, int const n)
 
 // Functions and operators
 
-// Other Altivec functions are:
-//    nabs: -abs a
-//    madd msub nmadd nmsub: [+-]a*b[+-]c
-
 // Single-argument operators
 #if 0
 DEFINE_FUNCTION_V_V(operator+,x)
-DEFINE_FUNCTION_V_V(operator-,vec_neg(x))
+static CCTK_REAL_VEC const vec_neg_mask =
+  (CCTK_REAL_VEC::V)(__m128i) { 0x8000000000000000ULL, 0x8000000000000000ULL };
+DEFINE_FUNCTION_V_V(operator-,_mm_xor_pd(x,vec_neg_mask))
 #endif
 DEFINE_FUNCTION_V_V(operator+,+x.v)
 DEFINE_FUNCTION_V_V(operator-,-x.v)
 
 // Double-argument operators, both vectors
 #if 0
-DEFINE_FUNCTION_VV_V(operator+,vec_add(x,y))
-DEFINE_FUNCTION_VV_V(operator-,vec_sub(x,y))
-DEFINE_FUNCTION_VV_V(operator*,vec_mul(x,y))
-DEFINE_FUNCTION_VV_V(operator/,vec_div(x,y))
+DEFINE_FUNCTION_VV_V(operator+,_mm_add_pd(x,y))
+DEFINE_FUNCTION_VV_V(operator-,_mm_sub_pd(x,y))
+DEFINE_FUNCTION_VV_V(operator*,_mm_mul_pd(x,y))
+DEFINE_FUNCTION_VV_V(operator/,_mm_div_pd(x,y))
 #endif
 DEFINE_FUNCTION_VV_V(operator+,x.v+y.v)
 DEFINE_FUNCTION_VV_V(operator-,x.v-y.v)
@@ -182,31 +155,47 @@ DEFINE_FUNCTION_RV_V(operator-,vec_set1(a)-x)
 DEFINE_FUNCTION_RV_V(operator*,vec_set1(a)*x)
 DEFINE_FUNCTION_RV_V(operator/,vec_set1(a)/x)
 
-// Triple-argument operators, all vectors
-#undef fmadd
-#undef fmsub
-#undef fnmadd
-#undef fnmsub
-DEFINE_FUNCTION_VVV_V(fmadd,vec_madd(x.v,y.v,z.v))
-DEFINE_FUNCTION_VVV_V(fmsub,vec_msub(x.v,y.v,z.v))
-DEFINE_FUNCTION_VVV_V(fnmadd,vec_nmadd(x.v,y.v,z.v))
-DEFINE_FUNCTION_VVV_V(fnmsub,vec_nmsub(x.v,y.v,z.v))
-
 // Cheap functions
-DEFINE_FUNCTION_V_V(fabs,vec_abs(x.v))
-DEFINE_FUNCTION_VV_V(fmax,vec_max(x.v,y.v))
-DEFINE_FUNCTION_VV_V(fmin,vec_min(x.v,y.v))
+#if defined(__PGI) && defined (__amd64__)
+// The PGI compiler does not understand __m128d literals
+static union {
+  CCTK_REAL_VEC::S s[CCTK_REAL_VEC_SIZE];
+  CCTK_REAL_VEC::V v;
+} vec_fabs_mask_impl = { 0x7fffffffffffffffULL, 0x7fffffffffffffffULL };
+#  define vec_fabs_mask (vec_fabs_mask_impl.v)
+#else
+static CCTK_REAL_VEC const vec_fabs_mask =
+  (CCTK_REAL_VEC::V)(__m128i) { 0x7fffffffffffffffULL, 0x7fffffffffffffffULL };
+#endif
+DEFINE_FUNCTION_V_V(fabs,_mm_and_pd(x,vec_fabs_mask))
+DEFINE_FUNCTION_VV_V(fmax,_mm_max_pd(x,y))
+DEFINE_FUNCTION_VV_V(fmin,_mm_min_pd(x,y))
+DEFINE_FUNCTION_V_V(sqrt,_mm_sqrt_pd(x))
 
 // Expensive functions
 DEFINE_FUNCTION_V_V(exp,vec_set(exp(vec_elt0(x)),exp(vec_elt1(x))))
 DEFINE_FUNCTION_V_V(log,vec_set(log(vec_elt0(x)),log(vec_elt1(x))))
 DEFINE_FUNCTION_VR_V(pow,vec_set(pow(vec_elt0(x),a),pow(vec_elt1(x),a)))
-DEFINE_FUNCTION_V_V(sqrt,vec_set(sqrt(vec_elt0(x)),sqrt(vec_elt1(x))))
 
 
 
 #undef Sign
 #define Sign(x) (42)
 
-#undef ToReal
-#define ToReal(x) (vec_set1(x))
+// #undef ToReal
+// #define ToReal(x) vec_set1(x)
+
+#if defined(__PGI) && defined (__amd64__)
+// Special case for PGI 9.0.4 to avoid an internal compiler error
+#undef IfThen
+static inline
+CCTK_REAL_VEC IfThen (bool const cond, CCTK_REAL_VEC const x, CCTK_REAL_VEC const y)
+{
+  union {
+    __m128i vi;
+    CCTK_REAL_VEC::V v;
+  } mask;
+  mask.vi = _mm_set1_epi64x(-(long long)cond);
+  return _mm_or_pd(_mm_and_pd(x.v, mask.v), _mm_andnot_pd(mask.v, y.v));
+}
+#endif

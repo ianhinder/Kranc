@@ -327,7 +327,7 @@ ComponentDerivativeOperatorMacroDefinition[componentDerivOp:(name_[inds___] -> e
     {pDefs, FlattenBlock[{
       "#ifndef KRANC_DIFF_FUNCTIONS\n",
        (* default, differencing operators are macros *)
-      "#  define ", macroName, "(u) ", "(fmul(", liName, ",", rhs, "))\n",
+      "#  define ", macroName, "(u) ", "(kmul(", liName, ",", rhs, "))\n",
       "#else\n",
        (* new, differencing operators are static functions *)
       "#  define ", macroName, "(u) ", "(", liName, "*", macroName, "_impl((u),dj,dk))\n",
@@ -395,11 +395,12 @@ DifferenceGFTerm[op_, i_, j_, k_] :=
       "(int)(" <> ToString[CFormHideStrings[k+nz]] <> "))]",
 *)
 (*
-    remaining "vec_loadu_maybe(" <> ToString[CFormHideStrings[nx]] <> "," <>
-      "(u)[index" <>
-     "+di*(" <> ToString[CFormHideStrings[nx]] <> ")" <>
-     "+dj*(" <> ToString[CFormHideStrings[ny]] <> ")" <>
-     "+dk*(" <> ToString[CFormHideStrings[nz]] <> ")])",
+    remaining "vec_loadu_maybe" <>
+      "(" <> ToString[CFormHideStrings[nx]] <> "," <>
+             "(u)[index" <>
+                  "+di*(" <> ToString[CFormHideStrings[nx]] <> ")" <>
+                  "+dj*(" <> ToString[CFormHideStrings[ny]] <> ")" <>
+                  "+dk*(" <> ToString[CFormHideStrings[nz]] <> ")])",
 *)
 (*
     remaining "vec_loadu_maybe(" <> ToString[CFormHideStrings[nx]] <> "," <>
@@ -415,9 +416,10 @@ DifferenceGFTerm[op_, i_, j_, k_] :=
       "+dj*(" <> ToString[CFormHideStrings[ny]] <> ")" <>
       "+dk*(" <> ToString[CFormHideStrings[nz]] <> ")])",
 (*
-    remaining "vec_loadu(u[(" <> ToString[CFormHideStrings[nx]] <> ")" <>
-                      "+dj*(" <> ToString[CFormHideStrings[ny]] <> ")" <>
-                      "+dk*(" <> ToString[CFormHideStrings[nz]] <> ")])",
+    remaining "vec_loadu" <>
+      "(u[(" <> ToString[CFormHideStrings[nx]] <> ")" <>
+                "+dj*(" <> ToString[CFormHideStrings[ny]] <> ")" <>
+                "+dk*(" <> ToString[CFormHideStrings[nz]] <> ")])",
 *)
 (*
     remaining "(u)[CCTK_GFINDEX3D(cctkGH,floor((" <>

@@ -169,7 +169,7 @@ GetSources[evolvedGroups_, groups_, implementation_, thornName_] :=
       ExcisionGFs -> evolvedGFs
     };
 
-    Return[{{Filename -> "Boundaries.c", 
+    Return[{{Filename -> "Boundaries.cc", 
              Contents -> CreateMoLBoundariesSource[boundarySpec]}}]];
 
 End[];

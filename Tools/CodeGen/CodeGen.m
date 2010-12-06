@@ -395,7 +395,7 @@ defineSubroutineF[name_, args_, contents_] :=
 
 (* This is a Cactus-callable function *)
 DefineCCTKFunction[name_, type_, contents_] :=
-  DefineFunction[name, type, "CCTK_ARGUMENTS", 
+  DefineFunction[name, "extern \"C\" " <> type, "CCTK_ARGUMENTS", 
     {
       "DECLARE_CCTK_ARGUMENTS;\n",
       "DECLARE_CCTK_PARAMETERS;\n\n",

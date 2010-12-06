@@ -228,7 +228,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     (* Makefile *)
     InfoMessage[Terse, "Creating make file"];
-    make = CreateMakefile[Join[{"Startup.c", "RegisterMoL.c", "RegisterSymmetries.c"}, calcFilenames, 
+    make = CreateMakefile[Join[{"Startup.cc", "RegisterMoL.cc", "RegisterSymmetries.cc"}, calcFilenames, 
       Map[lookup[#, Filename] &, boundarySources]]];
 
     (* Put all the above together and generate the Cactus thorn *)
@@ -240,9 +240,9 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
                  Param         -> param,
                  Makefile      -> make,
                  Sources       -> Join[{
-                  {Filename -> "Startup.c", Contents -> startup}, 
-                  {Filename -> "RegisterMoL.c", Contents -> molregister},
-                  {Filename -> "RegisterSymmetries.c", Contents -> symregister},
+                  {Filename -> "Startup.cc", Contents -> startup}, 
+                  {Filename -> "RegisterMoL.cc", Contents -> molregister},
+                  {Filename -> "RegisterSymmetries.cc", Contents -> symregister},
                   {Filename -> "Differencing.h", Contents -> diffHeader}},
                   MapThread[{Filename -> #1, Contents -> #2} &, 
                             {calcFilenames, calcSources}], boundarySources]};

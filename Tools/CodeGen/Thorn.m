@@ -1333,7 +1333,7 @@ CreateStartupFile[thornName_, bannerText_] :=
   tmp = {whoWhen["C"],
 
    IncludeFile["cctk.h"],
-   DefineFunction[thornName <> "_Startup", "int", "void",
+   DefineFunction[thornName <> "_Startup", "extern \"C\" int", "void",
      {DefineVariable["banner", "const char *", Quote[bannerText]],
       "CCTK_RegisterBanner(banner);\n",
       "return 0;\n"}]};
@@ -1347,7 +1347,7 @@ CreateStartupFile[thornName_, bannerText_] :=
    Thorn creation
    ------------------------------------------------------------------------ *)
 
-(* source = {Filename -> "MoLRegister.c", Contents -> "#include ..."} *)
+(* source = {Filename -> "MoLRegister.cc", Contents -> "#include ..."} *)
 
 (* thorn = {Name -> "ClassicADMMolEvolve", Directory -> "ClassicADM",
             Interface -> i, Schedule -> s, Param -> p, Makefile -> m, 

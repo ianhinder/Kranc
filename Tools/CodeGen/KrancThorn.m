@@ -126,6 +126,9 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     useCSE = OptionValue[UseCSE];
 
     coordGroup = {"grid::coordinates", {Kranc`x,Kranc`y,Kranc`z,Kranc`r}};
+
+    CheckGroups[groupsOrig];
+
     groups = Join[groupsOrig, {coordGroup}];
     includeFiles = Join[includeFiles, {"GenericFD.h", "Symmetry.h", "sbp_calc_coeffs.h"}];
 

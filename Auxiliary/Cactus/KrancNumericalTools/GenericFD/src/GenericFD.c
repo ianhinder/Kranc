@@ -97,20 +97,6 @@ int GenericFD_GetBoundaryWidth(cGH const * restrict const cctkGH)
   return bw;
 }
 
-/* int GenericFD_BoundaryWidthTable(cGH const * restrict const cctkGH) */
-/* { */
-/*   int nboundaryzones[6]; */
-/*   GenericFD_GetBoundaryWidth(cctkGH, nboundaryzones); */
-
-/*   int table = Util_TableCreate(0); */
-/*   if (table < 0) CCTK_WARN(0, "Could not create table"); */
-
-/*   if (Util_TableSetIntArray(table, 6, nboundaryzones, "BOUNDARY_WIDTH") < 0) */
-/*     CCTK_WARN(0, "Could not set table"); */
-/*   return table; */
-/* } */
-
-
 /* Return the array indices in imin and imax for looping over the
    interior of the grid. imin is the index of the first grid point.
    imax is the index of the last grid point plus 1.  So a loop over

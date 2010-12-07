@@ -189,11 +189,7 @@ CreateKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_,
     {
       Name -> "GenericFD",
       UsedParameters -> 
-        {{Name -> "stencil_width",    Type -> "CCTK_INT"},
-         {Name -> "stencil_width_x",  Type -> "CCTK_INT"},
-         {Name -> "stencil_width_y",  Type -> "CCTK_INT"},
-         {Name -> "stencil_width_z",  Type -> "CCTK_INT"},
-         {Name -> "boundary_width",   Type -> "CCTK_INT"}}
+        {}
     };
 
     realStructs = Map[krancParamStruct[#, "CCTK_REAL", False] &, reals];

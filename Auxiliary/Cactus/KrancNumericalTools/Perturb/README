@@ -1,5 +1,0 @@
-
-Purpose of the thorn:
-
-This thorn adds a perturbation to grid variables at initial data and/or
-boundaries, in the style of Denis' noise thorn.

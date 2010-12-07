@@ -1,8 +1,0 @@
-# file produced by user shusa, 31/3/2004
-# Produced with Mathematica Version 5.0 for Linux (June 9, 2003)
-
-# Mathematica script written by Ian Hinder and Sascha Husa
-
-# $Id$
-
-SRCS = Startup.c Ceiling.F90 selectGFs.c

@@ -325,6 +325,7 @@ CreateKrancThornTT[groups_, parentDirectory_, thornName_, opts___] :=
     expCalcs = Map[makeCalculationExplicit, calcs];
 
     InfoMessage[Info, "Group definitions:", groups];
+    VerifyGroups[groups];
 
     expDerivs = Flatten[Map[MakeExplicit,derivs],1];
     expGroups = Map[makeGroupExplicit, groups];

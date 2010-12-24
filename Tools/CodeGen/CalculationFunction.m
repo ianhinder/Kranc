@@ -249,7 +249,7 @@ simpCollect[collectList_, eqrhs_, localvar_, debug_] :=
 assignVariableFromExpression[dest_, expr_, declare_] :=
   Module[{tSym, type, cleanExpr, code},
     tSym = Unique[];
-    type = If[StringMatchQ[ToString[dest], "dir*"], "int", "CCTK_REAL_VEC"];
+    type = If[StringMatchQ[ToString[dest], "dir*"], "ptrdiff_t", "CCTK_REAL_VEC"];
     cleanExpr = ReplacePowers[expr] /. Kranc`t -> tSym;
 
     If[SOURCELANGUAGE == "C",
@@ -587,7 +587,7 @@ equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
       CommentedBlock["If necessary, store only partial vectors after the first iteration",
         ConditionalOnParameterTextual["CCTK_REAL_VEC_SIZE > 1 && i<lc_imin",
           {
-            DeclareAssignVariable["int", "elt_count", "lc_imin-i"],
+            DeclareAssignVariable["ptrdiff_t", "elt_count", "lc_imin-i"],
             Map[StoreHighPartialVariableInLoop[GridName[#], localName[#], "elt_count"] &,
                 gfsInLHS],
             "continue;\n"
@@ -595,7 +595,7 @@ equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
       CommentedBlock["If necessary, store only partial vectors after the last iteration",
         ConditionalOnParameterTextual["CCTK_REAL_VEC_SIZE > 1 && i+CCTK_REAL_VEC_SIZE > lc_imax",
           {
-            DeclareAssignVariable["int", "elt_count", "lc_imax-i"],
+            DeclareAssignVariable["ptrdiff_t", "elt_count", "lc_imax-i"],
             Map[StoreLowPartialVariableInLoop[GridName[#], localName[#], "elt_count"] &,
                 gfsInLHS],
             "break;\n"

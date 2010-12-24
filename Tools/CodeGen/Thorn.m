@@ -480,7 +480,7 @@ calculationMacros[] :=
          {"INITVALUE (42)",
           "INV(x) (kdiv(ToReal(1.0),x))",
           "SQR(x) (kmul(x,x))",
-          "CUB(x) (x*SQR(x))",
+          "CUB(x) (kmul(x,SQR(x)))",
           "QAD(x) (SQR(SQR(x)))"
          }]];
 

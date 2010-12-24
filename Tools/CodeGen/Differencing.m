@@ -168,7 +168,7 @@ CreateDifferencingHeader[derivOps_, zeroDims_] :=
     pDefs = Union[Flatten[Map[First, mDefPairs]]];
     expressions = Flatten[Map[#[[2]]&, mDefPairs]];
 
-    {pDefs,Map[{#, "\n"} &, expressions]}];
+    {pDefs, Map[{#, "\n"} &, expressions]}];
 
 ordergfds[_[v1_,___], _[v2_,___]] := 
   Order[v1,v2] != -1;
@@ -323,6 +323,7 @@ ComponentDerivativeOperatorMacroDefinition[componentDerivOp:(name_[inds___] -> e
     Print[""];*)
 
     rhs = CFormHideStrings[ReplacePowers[rhs /. spacings]];
+    (* Print["rhs=",FullForm[rhs]]; *)
     (* {pDefs, FlattenBlock[{"#define ", macroName, "(u,i,j,k) ", "(", rhs, ")"}]} *)
     {pDefs, FlattenBlock[{
       "#ifndef KRANC_DIFF_FUNCTIONS\n",
@@ -330,8 +331,13 @@ ComponentDerivativeOperatorMacroDefinition[componentDerivOp:(name_[inds___] -> e
       "#  define ", macroName, "(u) ", "(kmul(", liName, ",", rhs, "))\n",
       "#else\n",
        (* new, differencing operators are static functions *)
-      "#  define ", macroName, "(u) ", "(", liName, "*", macroName, "_impl((u),dj,dk))\n",
-      "static CCTK_REAL_VEC ", macroName, "_impl(CCTK_REAL const* restrict const u, int const dj, int const dk) ", "{ return ", rhs, "; }\n",
+      "#  define ", macroName, "(u) ", "(kmul(", liName, ",", macroName, "_impl((u),dj,dk)))\n",
+      "#include \"vectors.h\"\n",
+      "static CCTK_REAL_VEC ", macroName, "_impl(CCTK_REAL const* restrict const u, ptrdiff_t const dj, ptrdiff_t const dk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_PURE CCTK_ATTRIBUTE_UNUSED;\n",
+      "static CCTK_REAL_VEC ", macroName, "_impl(CCTK_REAL const* restrict const u, ptrdiff_t const dj, ptrdiff_t const dk)\n",
+      If[StringMatchQ[rhs, RegularExpression[".*\\bdir\\d\\b.*"]],
+         { "{ return ToReal(1e30); /* ERROR */ }\n" },
+         { "{ return ", rhs, "; }\n" }],
       "#endif\n"
     }]}];
 

@@ -420,17 +420,17 @@ DeclareFDVariables[] :=
                                               {khalf,kthird,ktwothird,kfourthird,keightthird},
                                               {"hdxi", "hdyi", "hdzi"}}],
      "\n"},
-    {Map[DeclareVariables[#, "int"] &, {{"di", "dj", "dk"}}],
+    {Map[DeclareVariables[#, "ptrdiff_t"] &, {{"di", "dj", "dk"}}],
      "\n"}];
 *)
   CommentedBlock["Declare finite differencing variables", {}];
 
 InitialiseFDSpacingVariablesC[] := 
   {
-    (* DeclareAssignVariable["int", "di", "CCTK_GFINDEX3D(cctkGH,1,0,0) - CCTK_GFINDEX3D(cctkGH,0,0,0)"], *)
-    DeclareAssignVariable["int", "di", "1"],
-    DeclareAssignVariable["int", "dj", "CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0)"],
-    DeclareAssignVariable["int", "dk", "CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0)"],
+    (* DeclareAssignVariable["ptrdiff_t", "di", "CCTK_GFINDEX3D(cctkGH,1,0,0) - CCTK_GFINDEX3D(cctkGH,0,0,0)"], *)
+    DeclareAssignVariable["ptrdiff_t", "di", "1"],
+    DeclareAssignVariable["ptrdiff_t", "dj", "CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0)"],
+    DeclareAssignVariable["ptrdiff_t", "dk", "CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0)"],
     DeclareAssignVariable["CCTK_REAL_VEC", "dx", "ToReal(CCTK_DELTA_SPACE(0))"],
     DeclareAssignVariable["CCTK_REAL_VEC", "dy", "ToReal(CCTK_DELTA_SPACE(1))"],
     DeclareAssignVariable["CCTK_REAL_VEC", "dz", "ToReal(CCTK_DELTA_SPACE(2))"]
@@ -630,7 +630,7 @@ GenericGridLoopUsingLoopControl[functionName_, block_] :=
           {
              (* DeclareVariable["index", "// int"], *)
              (* DeclareAssignVariable["int", "index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"], *)
-             DeclareAssignVariable["int", "index", "di*i + dj*j + dk*k"],
+             DeclareAssignVariable["ptrdiff_t", "index", "di*i + dj*j + dk*k"],
              block
           }
         ],
@@ -1063,7 +1063,7 @@ CSE[code_] := Module[
     (* Turn CDeclare statements into "faked" declarations *)
     stmts7 = stmts6
       //. CDeclare[var_]
-          :> "CCTK_REAL const " <>
+          :> "const " <>
              StringReplace[ToString[var], __ ~~ "`" -> ""];
     If [DebugCSE, Print["stmts7\n", stmts7, "\nendstmts7\n"]];
     

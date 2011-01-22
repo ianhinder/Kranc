@@ -206,7 +206,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     (* Write the differencing header file *)
     InfoMessage[Terse, "Creating differencing header file"];
-    {pDefs, diffHeader} = CreateDifferencingHeader[partialDerivs, OptionValue[ZeroDimensions]];
+    {pDefs, diffHeader} = CreateDifferencingHeader[partialDerivs, OptionValue[ZeroDimensions], OptionValue[UseVectors]];
 
     (* Add the predefinitions into the calcs *)
     calcs = Map[Join[#, {PreDefinitions -> pDefs}] &, calcs];

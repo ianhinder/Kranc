@@ -610,7 +610,7 @@ Options[GenericGridLoop] = ThornOptions;
 
 GenericGridLoop[functionName_, block_, opts:OptionsPattern[]] :=
   If[OptionValue[UseLoopControl],
-    GenericGridLoopUsingLoopControl[functionName, block],
+    GenericGridLoopUsingLoopControl[functionName, block, OptionValue[UseVectors]],
     GenericGridLoopTraditional[block]];
 
 GenericGridLoopTraditional[block_] :=
@@ -628,15 +628,15 @@ GenericGridLoopTraditional[block_] :=
        }
         ]]]];
 
-GenericGridLoopUsingLoopControl[functionName_, block_] :=
+GenericGridLoopUsingLoopControl[functionName_, block_, vectorise_] :=
   If[SOURCELANGUAGE == "C",  
     CommentedBlock["Loop over the grid points",
       {
         "#pragma omp parallel\n",
-        "LC_LOOP3VEC (", functionName, ",\n",
-        "             i,j,k, min[0],min[1],min[2], max[0],max[1],max[2],\n",
-        "             cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],\n",
-        "             CCTK_REAL_VEC_SIZE)\n",
+        If[vectorise, "LC_LOOP3VEC", "LC_LOOP3"] <> " (", functionName, ",\n",
+        "  i,j,k, min[0],min[1],min[2], max[0],max[1],max[2],\n",
+        "  cctk_lsh[0],cctk_lsh[1],cctk_lsh[2]", If[vectorise, {",\n",
+        "  CCTK_REAL_VEC_SIZE"},""] <> ")\n",
         "{\n",
         indentBlock[
           {
@@ -647,7 +647,7 @@ GenericGridLoopUsingLoopControl[functionName_, block_] :=
           }
         ],
         "}\n",
-        "LC_ENDLOOP3VEC (", functionName, ");\n"
+        If[vectorise, "LC_ENDLOOP3VEC", "LC_ENDLOOP3"] <> " (", functionName, ");\n"
       }
     ],
     ""

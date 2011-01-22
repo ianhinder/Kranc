@@ -251,12 +251,12 @@ DefineTensor[T_] :=
 
     Format[Tensor[T, is:((TensorIndex[_,_] | _Integer) ..) ], StandardForm] := 
       PrecedenceForm[
-        SequenceForm[T,is],
+        SequenceForm[T,"[",Sequence@@Riffle[{is},","],"]"],
         10000];
 
     Format[Tensor[T, is:((TensorIndex[_,_] | _Integer) ..) ], OutputForm] := 
       PrecedenceForm[
-        SequenceForm[T,is],
+        SequenceForm[T,"[",Sequence@@Riffle[{is},","],"]"],
         10000];
 
 (* Cannot get InputForm to work *)

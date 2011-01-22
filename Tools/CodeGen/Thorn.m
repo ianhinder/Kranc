@@ -749,7 +749,7 @@ CreateMoLBoundariesSource[spec_] :=
      "    CCTK_EQUALS(" <> boundpar <> ", \"zero\"  ) )\n",
      "{\n",
 
-     "  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, boundary_width, -1,\n",
+     "  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, 1, -1,\n",
      "                    \"" <> fullgroupname <> "\", " <> boundpar <> ");\n",
 
      "  if (ierr < 0)\n",
@@ -771,7 +771,7 @@ CreateMoLBoundariesSource[spec_] :=
      "    CCTK_EQUALS(" <> boundpar <> ", \"zero\"  ) )\n",
      "{\n",
 
-     "  ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, boundary_width, -1,\n",
+     "  ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1,\n",
      "                    \"" <> fullgfname <> "\", " <> boundpar <> ");\n",
 
      "  if (ierr < 0)\n",
@@ -804,7 +804,7 @@ CreateMoLBoundariesSource[spec_] :=
       "     CCTK_WARN(0, \"could not set SPEED value in table!\");\n",
 
       "\n",
-      "  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, boundary_width, "<>myhandle<>", \n",
+      "  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, 1, "<>myhandle<>", \n",
       "                    \"" <> fullgroupname <> "\", \"Radiation\");\n\n",
 
       "  if (ierr < 0)\n",
@@ -838,7 +838,7 @@ CreateMoLBoundariesSource[spec_] :=
       "      CCTK_WARN(0, \"could not set SPEED value in table!\");\n",
 
       "\n",
-      "  ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, boundary_width, "<>myhandle<>", \n",
+      "  ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, "<>myhandle<>", \n",
       "                    \"" <> fullgfname <> "\", \"Radiation\");\n\n",
 
       "  if (ierr < 0)\n",
@@ -867,7 +867,7 @@ CreateMoLBoundariesSource[spec_] :=
       "      CCTK_WARN(0, \"could not set SCALAR value in table!\");\n",
 
       "\n",
-      "  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, boundary_width, "<>myhandle<>", \n",
+      "  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, 1, "<>myhandle<>", \n",
       "                    \"" <> fullgroupname <> "\", \"scalar\");\n\n",
 
       "  if (ierr < 0)\n",
@@ -897,7 +897,7 @@ CreateMoLBoundariesSource[spec_] :=
       "    CCTK_WARN(0, \"could not set SCALAR value in table!\");\n",
 
       "\n",
-      "  ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, boundary_width, "<>myhandle<>", \n",
+      "  ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, "<>myhandle<>", \n",
       "                    \"" <> fullgfname <> "\", \"scalar\");\n\n",
 
       "  if (ierr < 0)\n",

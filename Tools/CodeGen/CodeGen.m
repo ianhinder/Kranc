@@ -129,6 +129,8 @@ GenericGridLoop::usage = "";
 NameRoot::usage = "";
 PartitionVarList::usage = "";
 Quote::usage = "Quote[x] returns x surrounded by quotes";
+DataType::usage = "DataType[] returns a string for the grid function data type (e.g. CCTK_REAL)";
+SetDataType::usage = "SetDataType[type] sets a string for the grid function data type (e.g. CCTK_REAL)";
 
 Begin["`Private`"];
 
@@ -153,6 +155,14 @@ If[ (lang == "C" || lang == "Fortran"),
   setSourceSuffix[".cc"];
   InfoMessage[Terse, "Setting Source Language to C"];
 ];
+
+SetDataType[type_String] :=
+  dataType = type;
+
+DataType[] :=
+  If[dataType === Symbol["datatype"],
+    Throw["DataType: Have not set a data type"],
+    dataType];
 
 (* Code generation utilities; not specific to any language *)
 
@@ -431,9 +441,9 @@ InitialiseFDSpacingVariablesC[] :=
     DeclareAssignVariable["ptrdiff_t", "di", "1"],
     DeclareAssignVariable["ptrdiff_t", "dj", "CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0)"],
     DeclareAssignVariable["ptrdiff_t", "dk", "CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0)"],
-    DeclareAssignVariable["CCTK_REAL_VEC", "dx", "ToReal(CCTK_DELTA_SPACE(0))"],
-    DeclareAssignVariable["CCTK_REAL_VEC", "dy", "ToReal(CCTK_DELTA_SPACE(1))"],
-    DeclareAssignVariable["CCTK_REAL_VEC", "dz", "ToReal(CCTK_DELTA_SPACE(2))"]
+    DeclareAssignVariable[DataType[], "dx", "ToReal(CCTK_DELTA_SPACE(0))"],
+    DeclareAssignVariable[DataType[], "dy", "ToReal(CCTK_DELTA_SPACE(1))"],
+    DeclareAssignVariable[DataType[], "dz", "ToReal(CCTK_DELTA_SPACE(2))"]
   };
 
 InitialiseFDSpacingVariablesFortran[] := 
@@ -450,17 +460,17 @@ InitialiseFDVariables[] :=
        InitialiseFDSpacingVariablesFortran[],
        InitialiseFDSpacingVariablesC[]],
     
-    DeclareAssignVariable["CCTK_REAL_VEC", "dxi", "INV(dx)"],
-    DeclareAssignVariable["CCTK_REAL_VEC", "dyi", "INV(dy)"],
-    DeclareAssignVariable["CCTK_REAL_VEC", "dzi", "INV(dz)"],
-    DeclareAssignVariable["CCTK_REAL_VEC", "khalf", "ToReal(0.5)"],
-    DeclareAssignVariable["CCTK_REAL_VEC", "kthird", "ToReal(1.0/3.0)"],
-    DeclareAssignVariable["CCTK_REAL_VEC", "ktwothird", "ToReal(2.0/3.0)"],
-    DeclareAssignVariable["CCTK_REAL_VEC", "kfourthird", "ToReal(4.0/3.0)"],
-    DeclareAssignVariable["CCTK_REAL_VEC", "keightthird", "ToReal(8.0/3.0)"],
-    DeclareAssignVariable["CCTK_REAL_VEC", "hdxi", "kmul(ToReal(0.5), dxi)"],
-    DeclareAssignVariable["CCTK_REAL_VEC", "hdyi", "kmul(ToReal(0.5), dyi)"],
-    DeclareAssignVariable["CCTK_REAL_VEC", "hdzi", "kmul(ToReal(0.5), dzi)"]}];
+    DeclareAssignVariable[DataType[], "dxi", "INV(dx)"],
+    DeclareAssignVariable[DataType[], "dyi", "INV(dy)"],
+    DeclareAssignVariable[DataType[], "dzi", "INV(dz)"],
+    DeclareAssignVariable[DataType[], "khalf", "ToReal(0.5)"],
+    DeclareAssignVariable[DataType[], "kthird", "ToReal(1.0/3.0)"],
+    DeclareAssignVariable[DataType[], "ktwothird", "ToReal(2.0/3.0)"],
+    DeclareAssignVariable[DataType[], "kfourthird", "ToReal(4.0/3.0)"],
+    DeclareAssignVariable[DataType[], "keightthird", "ToReal(8.0/3.0)"],
+    DeclareAssignVariable[DataType[], "hdxi", "kmul(ToReal(0.5), dxi)"],
+    DeclareAssignVariable[DataType[], "hdyi", "kmul(ToReal(0.5), dyi)"],
+    DeclareAssignVariable[DataType[], "hdzi", "kmul(ToReal(0.5), dzi)"]}];
 
 GridName[x_] := If[SOURCELANGUAGE == "C",
                    ToExpression[ToString[x] <> "[index]"],

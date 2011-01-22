@@ -206,7 +206,7 @@ ReplaceDerivatives[derivOps_, expr_, precompute_] :=
 
 PrecomputeDerivative[d:pd_[gf_, inds___]] :=
   Module[{},
-    DeclareAssignVariable["CCTK_REAL_VEC", GridFunctionDerivativeName[d], evaluateDerivative[d]]];
+    DeclareAssignVariable[DataType[], GridFunctionDerivativeName[d], evaluateDerivative[d]]];
 
 evaluateDerivative[d:pd_[gf_, inds___]] :=
   Module[{macroname},

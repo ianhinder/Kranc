@@ -198,7 +198,7 @@ localName[x_] :=
 
 definePreDefinitions[pDefs_] :=
   CommentedBlock["Initialize predefined quantities",
-    Map[DeclareAssignVariable["CCTK_REAL_VEC", #[[1]], #[[2]]] &, pDefs]];
+    Map[DeclareAssignVariable[DataType[], #[[1]], #[[2]]] &, pDefs]];
 
 (* --------------------------------------------------------------------------
    Equations
@@ -249,7 +249,7 @@ simpCollect[collectList_, eqrhs_, localvar_, debug_] :=
 assignVariableFromExpression[dest_, expr_, declare_, vectorise_] :=
   Module[{tSym, type, cleanExpr, code},
     tSym = Unique[];
-    type = If[StringMatchQ[ToString[dest], "dir*"], "ptrdiff_t", "CCTK_REAL_VEC"];
+    type = If[StringMatchQ[ToString[dest], "dir*"], "ptrdiff_t", DataType[]];
     cleanExpr = ReplacePowers[expr, vectorise] /. Kranc`t -> tSym;
 
     If[SOURCELANGUAGE == "C",
@@ -361,6 +361,8 @@ CreateCalculationFunction[calc_, debug_, useCSE_, imp_, opts:OptionsPattern[]] :
   addToStencilWidth = lookupDefault[cleancalc, AddToStencilWidth, 0];
   pDefs = lookup[cleancalc, PreDefinitions];
   haveCondTextuals = mapContains[cleancalc, ConditionalOnTextuals];
+
+  SetDataType[If[OptionValue[UseVectors],"CCTK_REAL_VEC", "CCTK_REAL"]];
 
   VerifyCalculation[cleancalc];
 
@@ -567,7 +569,7 @@ equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
 
       CommentedBlock["Assign local copies of grid functions",
         Map[DeclareMaybeAssignVariableInLoop[
-              "CCTK_REAL_VEC", localName[#], GridName[#],
+              DataType[], localName[#], GridName[#],
               StringMatchQ[ToString[GridName[#]], "eT" ~~ _ ~~ _ ~~ "[" ~~ __ ~~ "]"],
                 "*stress_energy_state"] &,
             gfsInRHS]],

@@ -760,10 +760,81 @@ insertFile[name_] :=
     Close[istream];
     contents];
 
+vectorise[expr_] :=
+  Module[{isNotMinusOneQ, isNotTimesMinusOneQ, fmaRules, isNotKneg, arithRules, undoRules},
+    (* FMA (fused multiply-add) instructions *)
+    (* Note that -x is represented as Times[-1, x] *)
+    isNotMinusOneQ[n_] := ! (IntegerQ[n] && n == -1);
+    isNotTimesMinusOneQ[n_] := ! MatchQ[n,- _];
+    fmaRules = {
+      + (xx_? isNotMinusOneQ) (yy_? isNotMinusOneQ) + (zz_? isNotTimesMinusOneQ) :> kmadd [xx,yy,zz],
+      + (xx_? isNotMinusOneQ) (yy_? isNotMinusOneQ) - (zz_? isNotTimesMinusOneQ) :> kmsub [xx,yy,zz],
+      - (xx_? isNotMinusOneQ) (yy_? isNotMinusOneQ) + (zz_? isNotTimesMinusOneQ) :> knmadd[xx,yy,zz],
+      - (xx_? isNotMinusOneQ) (yy_? isNotMinusOneQ) - (zz_? isNotTimesMinusOneQ) :> knmsub[xx,yy,zz],
+      + (xx_? isNotMinusOneQ) (yy_ + 1) -> kmadd [xx, yy, xx],
+      + (xx_? isNotMinusOneQ) (yy_ - 1) -> kmsub [xx, yy, xx],
+      - (xx_? isNotMinusOneQ) (yy_ + 1) -> knmadd[xx, yy, xx],
+      - (xx_? isNotMinusOneQ) (yy_ - 1) -> knmsub[xx, yy, xx],
+      kmadd[xx_, - yy_, zz_] -> knmsub[xx,yy,zz],
+      kmsub[xx_, - yy_, zz_] -> knmadd[xx,yy,zz]
+    };
+    expr = expr //. fmaRules;
+
+    (* Constants *)
+    expr = expr /. xx_Integer/; xx!=-1 :> ToReal[xx];
+    expr = expr /. xx_Real -> ToReal[xx];
+    expr = expr /. - ToReal[xx_] -> ToReal[- xx];
+    expr = expr /. ToReal[xx_] + ToReal[yy_] -> ToReal[xx + yy];
+    expr = expr /. ToReal[xx_] * ToReal[yy_] -> ToReal[xx * yy];
+    expr = expr /. pow[xx_, ToReal[power_]] -> pow[xx, power];
+    expr = expr /. ToReal[xx_] == ToReal[yy_] -> ToReal[xx == yy];
+    expr = expr /. ToReal[xx_] != ToReal[yy_] -> ToReal[xx != yy];
+    (* keep the conditional expression a scalar *)
+    expr = expr /. IfThen[ToReal[xx_], yy_, zz_] -> IfThen[xx, yy, zz];
+
+    (* Replace all operators and functions *)
+    (* kneg, kadd, ksub, kmul, kdiv *)
+    (* TODO: optimise fabs etc. with regard to fmadd etc. as well *)
+    isNotKneg[n_] := ! MatchQ[n,kneg[_]];
+    arithRules = {
+      - xx_ -> kneg[xx],
+      xx_ * yy_ -> kmul[xx,yy],
+      xx_ / yy_ -> kdiv[xx,yy],
+      xx_ + yy_ -> kadd[xx,yy],
+      xx_ - yy_ -> ksub[xx,yy],
+      kmul[-1,xx_]                     -> kneg[xx],
+      kadd[xx_,kneg[yy_]]              -> ksub[xx,yy],
+      kadd[kneg[xx_],(yy_? isNotKneg)] :> ksub[yy,xx],
+      Abs[xx_]      -> kfabs[xx],
+      Log[xx_]      -> klog[xx],
+      fabs[xx_]     -> kfabs[xx],
+      fmax[xx_,yy_] -> kfmax[xx,yy],
+      fmin[xx_,yy_] -> kfmin[xx,yy],
+      sqrt[xx_]     -> ksqrt[xx],
+      exp[xx_]      -> kexp[xx],
+      log[xx_]      -> klog[xx],
+      pow[xx_,yy_]  -> kpow[xx,yy],
+      kfabs[kneg[xx_]]  -> kfabs[xx],
+      kfnabs[kneg[xx_]] -> kfnabs[xx],
+      kneg[kfabs[xx_]]  -> kfnabs[xx]
+    };
+    expr = expr //. arithRules;
+
+    (* Undo some transformations *)
+    undoRules = {
+      IfThen[kmul[xx_, yy_], aa_, bb_] -> IfThen[xx*yy, aa, bb],
+      IfThen[kmul[xx_, yy_] != zz_, aa_, bb_] -> IfThen[xx*yy!=zz, aa, bb],
+      ToReal[kneg[xx_]] -> ToReal[-xx],
+      ToReal[kmul[xx_, yy_]] -> ToReal[xx*yy],
+      kpow[xx_, kneg[power_]] -> kpow[xx, -power]
+    };
+    expr = expr //. undoRules;
+    Return[expr]];
+
 (* Take an expression x and replace occurrences of Powers with the C
 macros SQR, CUB, QAD *)
-ReplacePowers[expr_] :=
-  Module[{rhs, fmaRules, arithRules},
+ReplacePowers[expr_, vectorise_:False] :=
+  Module[{rhs},
     rhs = expr /. Power[xx_, -1] -> INV[xx];
 
     If[SOURCELANGUAGE == "C",
@@ -816,73 +887,8 @@ ReplacePowers[expr_] :=
 
              rhs = rhs /. Power[xx_, power_] -> pow[xx, power];
 
-             (* FMA (fused multiply-add) instructions *)
-             (* Note that -x is represented as Times[-1, x] *)
-             isNotMinusOneQ[n_] := ! (IntegerQ[n] && n == -1);
-             isNotTimesMinusOneQ[n_] := ! MatchQ[n,- _];
-             fmaRules = {
-               + (xx_? isNotMinusOneQ) (yy_? isNotMinusOneQ) + (zz_? isNotTimesMinusOneQ) :> kmadd [xx,yy,zz],
-               + (xx_? isNotMinusOneQ) (yy_? isNotMinusOneQ) - (zz_? isNotTimesMinusOneQ) :> kmsub [xx,yy,zz],
-               - (xx_? isNotMinusOneQ) (yy_? isNotMinusOneQ) + (zz_? isNotTimesMinusOneQ) :> knmadd[xx,yy,zz],
-               - (xx_? isNotMinusOneQ) (yy_? isNotMinusOneQ) - (zz_? isNotTimesMinusOneQ) :> knmsub[xx,yy,zz],
-               + (xx_? isNotMinusOneQ) (yy_ + 1) -> kmadd [xx, yy, xx],
-               + (xx_? isNotMinusOneQ) (yy_ - 1) -> kmsub [xx, yy, xx],
-               - (xx_? isNotMinusOneQ) (yy_ + 1) -> knmadd[xx, yy, xx],
-               - (xx_? isNotMinusOneQ) (yy_ - 1) -> knmsub[xx, yy, xx],
-               kmadd[xx_, - yy_, zz_] -> knmsub[xx,yy,zz],
-               kmsub[xx_, - yy_, zz_] -> knmadd[xx,yy,zz]
-             };
-             rhs = rhs //. fmaRules;
-
-             (* Constants *)
-             rhs = rhs /. xx_Integer/; xx!=-1 :> ToReal[xx];
-             rhs = rhs /. xx_Real -> ToReal[xx];
-             rhs = rhs /. - ToReal[xx_] -> ToReal[- xx];
-             rhs = rhs /. ToReal[xx_] + ToReal[yy_] -> ToReal[xx + yy];
-             rhs = rhs /. ToReal[xx_] * ToReal[yy_] -> ToReal[xx * yy];
-             rhs = rhs /. pow[xx_, ToReal[power_]] -> pow[xx, power];
-             rhs = rhs /. ToReal[xx_] == ToReal[yy_] -> ToReal[xx == yy];
-             rhs = rhs /. ToReal[xx_] != ToReal[yy_] -> ToReal[xx != yy];
-             (* keep the conditional expression a scalar *)
-             rhs = rhs /. IfThen[ToReal[xx_], yy_, zz_] -> IfThen[xx, yy, zz];
-
-             (* Replace all operators and functions *)
-             (* kneg, kadd, ksub, kmul, kdiv *)
-             (* TODO: optimise fabs etc. with regard to fmadd etc. as well *)
-             isNotKneg[n_] := ! MatchQ[n,kneg[_]];
-             arithRules = {
-               - xx_ -> kneg[xx],
-               xx_ * yy_ -> kmul[xx,yy],
-               xx_ / yy_ -> kdiv[xx,yy],
-               xx_ + yy_ -> kadd[xx,yy],
-               xx_ - yy_ -> ksub[xx,yy],
-               kmul[-1,xx_]                     -> kneg[xx],
-               kadd[xx_,kneg[yy_]]              -> ksub[xx,yy],
-               kadd[kneg[xx_],(yy_? isNotKneg)] :> ksub[yy,xx],
-               Abs[xx_]      -> kfabs[xx],
-               Log[xx_]      -> klog[xx],
-               fabs[xx_]     -> kfabs[xx],
-               fmax[xx_,yy_] -> kfmax[xx,yy],
-               fmin[xx_,yy_] -> kfmin[xx,yy],
-               sqrt[xx_]     -> ksqrt[xx],
-               exp[xx_]      -> kexp[xx],
-               log[xx_]      -> klog[xx],
-               pow[xx_,yy_]  -> kpow[xx,yy],
-               kfabs[kneg[xx_]]  -> kfabs[xx],
-               kfnabs[kneg[xx_]] -> kfnabs[xx],
-               kneg[kfabs[xx_]]  -> kfnabs[xx]
-             };
-             rhs = rhs //. arithRules;
-             
-             (* Undo some transformations *)
-             undoRules = {
-               IfThen[kmul[xx_, yy_], aa_, bb_] -> IfThen[xx*yy, aa, bb],
-               IfThen[kmul[xx_, yy_] != zz_, aa_, bb_] -> IfThen[xx*yy!=zz, aa, bb],
-               ToReal[kneg[xx_]] -> ToReal[-xx],
-               ToReal[kmul[xx_, yy_]] -> ToReal[xx*yy],
-               kpow[xx_, kneg[power_]] -> kpow[xx, -power]
-             };
-             rhs = rhs //. undoRules;
+             If[vectorise === True,
+              rhs = vectorise[rhs]];
            ],
 
            rhs = rhs /. Power[xx_, power_] -> xx^power

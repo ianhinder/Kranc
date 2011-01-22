@@ -246,11 +246,11 @@ simpCollect[collectList_, eqrhs_, localvar_, debug_] :=
     all];
 
 (* Return a CodeGen block which assigns dest by evaluating expr *)
-assignVariableFromExpression[dest_, expr_, declare_] :=
+assignVariableFromExpression[dest_, expr_, declare_, vectorise_] :=
   Module[{tSym, type, cleanExpr, code},
     tSym = Unique[];
     type = If[StringMatchQ[ToString[dest], "dir*"], "ptrdiff_t", "CCTK_REAL_VEC"];
-    cleanExpr = ReplacePowers[expr] /. Kranc`t -> tSym;
+    cleanExpr = ReplacePowers[expr, vectorise] /. Kranc`t -> tSym;
 
     If[SOURCELANGUAGE == "C",
       code = If[declare, type <> " ", ""] <> ToString[dest] <> " = " <>
@@ -558,7 +558,7 @@ equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
     declare = markFirst[First /@ eqsReplaced, Map[localName, gfsInRHS]];
 
     calcCode =
-      MapThread[{assignVariableFromExpression[#1[[1]], #1[[2]], #2], "\n"} &,
+      MapThread[{assignVariableFromExpression[#1[[1]], #1[[2]], #2, OptionValue[UseVectors]], "\n"} &,
        {eqsReplaced, declare}];
 
     GenericGridLoop[functionName,

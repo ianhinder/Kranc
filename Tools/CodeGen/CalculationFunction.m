@@ -571,7 +571,7 @@ equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
         Map[DeclareMaybeAssignVariableInLoop[
               DataType[], localName[#], GridName[#],
               StringMatchQ[ToString[GridName[#]], "eT" ~~ _ ~~ _ ~~ "[" ~~ __ ~~ "]"],
-                "*stress_energy_state"] &,
+                "*stress_energy_state", OptionValue[UseVectors]] &,
             gfsInRHS]],
 
       CommentedBlock["Include user supplied include files",
@@ -586,24 +586,25 @@ equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
         Map[InfoVariable[#[[1]]] &, (eqs2 /. localMap)],
         ""],
 
-      CommentedBlock["If necessary, store only partial vectors after the first iteration",
-        ConditionalOnParameterTextual["CCTK_REAL_VEC_SIZE > 1 && i<lc_imin",
-          {
-            DeclareAssignVariable["ptrdiff_t", "elt_count", "lc_imin-i"],
-            Map[StoreHighPartialVariableInLoop[GridName[#], localName[#], "elt_count"] &,
-                gfsInLHS],
-            "continue;\n"
-          }]],
-      CommentedBlock["If necessary, store only partial vectors after the last iteration",
-        ConditionalOnParameterTextual["CCTK_REAL_VEC_SIZE > 1 && i+CCTK_REAL_VEC_SIZE > lc_imax",
-          {
-            DeclareAssignVariable["ptrdiff_t", "elt_count", "lc_imax-i"],
-            Map[StoreLowPartialVariableInLoop[GridName[#], localName[#], "elt_count"] &,
-                gfsInLHS],
-            "break;\n"
-          }]],
+      If[OptionValue[UseVectors], {
+        CommentedBlock["If necessary, store only partial vectors after the first iteration",
+          ConditionalOnParameterTextual["CCTK_REAL_VEC_SIZE > 1 && i<lc_imin",
+            {
+              DeclareAssignVariable["ptrdiff_t", "elt_count", "lc_imin-i"],
+              Map[StoreHighPartialVariableInLoop[GridName[#], localName[#], "elt_count"] &,
+                  gfsInLHS],
+              "continue;\n"
+            }]],
+        CommentedBlock["If necessary, store only partial vectors after the last iteration",
+          ConditionalOnParameterTextual["CCTK_REAL_VEC_SIZE > 1 && i+CCTK_REAL_VEC_SIZE > lc_imax",
+            {
+              DeclareAssignVariable["ptrdiff_t", "elt_count", "lc_imax-i"],
+              Map[StoreLowPartialVariableInLoop[GridName[#], localName[#], "elt_count"] &,
+                  gfsInLHS],
+              "break;\n"
+            }]]}, {}],
       CommentedBlock["Copy local copies back to grid functions",
-        Map[StoreVariableInLoop[GridName[#], localName[#]] &,
+        Map[(If[OptionValue[UseVectors], StoreVariableInLoop, AssignVariableInLoop][GridName[#], localName[#]]) &,
             gfsInLHS]],
 
       If[debugInLoop, Map[InfoVariable[GridName[#]] &, gfsInLHS], ""]}, opts]];

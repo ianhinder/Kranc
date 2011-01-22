@@ -311,10 +311,12 @@ MaybeAssignVariableInLoop[dest_, src_, cond_] :=
       {dest, " = useMatter ? vec_load(", src, ") : ToReal(0.0)", EOL[]},
       {dest, " = vec_load(", src, ")", EOL[]}];
 
-DeclareMaybeAssignVariableInLoop[type_, dest_, src_, mmaCond_, codeCond_] :=
-  If [mmaCond,
-      {type, " ", dest, " = (", codeCond, ") ? vec_load(", src, ") : ToReal(0.0)", EOL[]},
-      {type, " ", dest, " = vec_load(", src, ")", EOL[]}];
+DeclareMaybeAssignVariableInLoop[type_, dest_, src_, mmaCond_, codeCond_, vectorise_:False] :=
+  Module[{loader},
+    loader[x_] := If[vectorise, {"vec_load(", x, ")"}, x];
+    If [mmaCond,
+        {type, " ", dest, " = (", codeCond, ") ? ", loader[src], " : ToReal(0.0)", EOL[]},
+        {type, " ", dest, " = ", loader[src], EOL[]}]];
 
 TestForNaN[expr_] :=
   {"if (isnan(", expr, ")) {\n",

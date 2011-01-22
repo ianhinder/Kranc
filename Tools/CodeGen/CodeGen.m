@@ -456,7 +456,7 @@ InitialiseFDSpacingVariablesFortran[] :=
   }
 
 
-InitialiseFDVariables[] :=
+InitialiseFDVariables[vectorise_] :=
   CommentedBlock["Initialise finite differencing variables",
   { If[SOURCELANGUAGE == "Fortran",
        InitialiseFDSpacingVariablesFortran[],
@@ -465,14 +465,23 @@ InitialiseFDVariables[] :=
     DeclareAssignVariable[DataType[], "dxi", "INV(dx)"],
     DeclareAssignVariable[DataType[], "dyi", "INV(dy)"],
     DeclareAssignVariable[DataType[], "dzi", "INV(dz)"],
-    DeclareAssignVariable[DataType[], "khalf", "ToReal(0.5)"],
-    DeclareAssignVariable[DataType[], "kthird", "ToReal(1.0/3.0)"],
-    DeclareAssignVariable[DataType[], "ktwothird", "ToReal(2.0/3.0)"],
-    DeclareAssignVariable[DataType[], "kfourthird", "ToReal(4.0/3.0)"],
-    DeclareAssignVariable[DataType[], "keightthird", "ToReal(8.0/3.0)"],
-    DeclareAssignVariable[DataType[], "hdxi", "kmul(ToReal(0.5), dxi)"],
-    DeclareAssignVariable[DataType[], "hdyi", "kmul(ToReal(0.5), dyi)"],
-    DeclareAssignVariable[DataType[], "hdzi", "kmul(ToReal(0.5), dzi)"]}];
+    If[vectorise,
+     {DeclareAssignVariable[DataType[], "khalf", "ToReal(0.5)"],
+      DeclareAssignVariable[DataType[], "kthird", "ToReal(1.0/3.0)"],
+      DeclareAssignVariable[DataType[], "ktwothird", "ToReal(2.0/3.0)"],
+      DeclareAssignVariable[DataType[], "kfourthird", "ToReal(4.0/3.0)"],
+      DeclareAssignVariable[DataType[], "keightthird", "ToReal(8.0/3.0)"],
+      DeclareAssignVariable[DataType[], "hdxi", "kmul(ToReal(0.5), dxi)"],
+      DeclareAssignVariable[DataType[], "hdyi", "kmul(ToReal(0.5), dyi)"],
+      DeclareAssignVariable[DataType[], "hdzi", "kmul(ToReal(0.5), dzi)"]},
+     {DeclareAssignVariable[DataType[], "khalf", "0.5"],
+      DeclareAssignVariable[DataType[], "kthird", "1/3.0"],
+      DeclareAssignVariable[DataType[], "ktwothird", "2.0/3.0"],
+      DeclareAssignVariable[DataType[], "kfourthird", "4.0/3.0"],
+      DeclareAssignVariable[DataType[], "keightthird", "8.0/3.0"],
+      DeclareAssignVariable[DataType[], "hdxi", "0.5 * dxi"],
+      DeclareAssignVariable[DataType[], "hdyi", "0.5 * dyi"],
+      DeclareAssignVariable[DataType[], "hdzi", "0.5 * dzi"]}]}];
 
 GridName[x_] := If[SOURCELANGUAGE == "C",
                    ToExpression[ToString[x] <> "[index]"],

@@ -446,7 +446,7 @@ CreateCalculationFunction[calc_, debug_, useCSE_, imp_, opts:OptionsPattern[]] :
     CommentedBlock["Include user-supplied include files",
       Map[IncludeFile, lookupDefault[cleancalc, DeclarationIncludes, {}]]],
 
-    InitialiseFDVariables[],
+    InitialiseFDVariables[OptionValue[UseVectors]],
     definePreDefinitions[pDefs],
 
     If[Cases[{pddefs}, SBPDerivative[_], Infinity] != {},

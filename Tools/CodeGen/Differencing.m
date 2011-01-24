@@ -306,7 +306,7 @@ ComponentDerivativeOperatorMacroDefinition[componentDerivOp:(name_[inds___] -> e
 (*       Print["liName == ", liName];*)
 
        (* rhs = rhs /. pat -> Times[liName, rest], *)
-       rhs = (rhs /. pat -> Times[liName, rest]) / liName,
+       rhs = (rhs /. pat -> Times[liName, rest]) / If[vectorise, liName, 1], (* horrible *)
 (*       Print["!!!!!!!!DOES NOT MATCH!!!!!!!!!"];*)
        rhs = rhs];
 
@@ -344,7 +344,6 @@ ComponentDerivativeOperatorMacroDefinition[componentDerivOp:(name_[inds___] -> e
     }]},
 
     {pDefs, FlattenBlock[{"#define ", macroName, "(u) ", "(", rhs, ")"}]}];
-    Print["finalDef = ", finalDef];
     finalDef
 ];
 
@@ -431,8 +430,8 @@ DifferenceGFTerm[op_, i_, j_, k_, vectorise_] :=
       "+dj*(" <> ToString[CFormHideStrings[ny]] <> ")" <>
       "+dk*(" <> ToString[CFormHideStrings[nz]] <> ")])",
 
-    remaining "(u)[index" <>
-      "+di*(" <> ToString[CFormHideStrings[nx]] <> ")" <>
+    remaining "(u)[" <>
+      "di*(" <> ToString[CFormHideStrings[nx]] <> ")" <>
       "+dj*(" <> ToString[CFormHideStrings[ny]] <> ")" <>
       "+dk*(" <> ToString[CFormHideStrings[nz]] <> ")]"],
 

@@ -781,8 +781,10 @@ insertFile[name_] :=
     Close[istream];
     contents];
 
-vectorise[expr_] :=
-  Module[{isNotMinusOneQ, isNotTimesMinusOneQ, fmaRules, isNotKneg, arithRules, undoRules},
+vectoriseExpression[exprp_] :=
+  Module[{isNotMinusOneQ, isNotTimesMinusOneQ, fmaRules, isNotKneg, arithRules, undoRules, expr},
+    expr = exprp;
+
     (* FMA (fused multiply-add) instructions *)
     (* Note that -x is represented as Times[-1, x] *)
     isNotMinusOneQ[n_] := ! (IntegerQ[n] && n == -1);
@@ -854,7 +856,7 @@ vectorise[expr_] :=
 
 (* Take an expression x and replace occurrences of Powers with the C
 macros SQR, CUB, QAD *)
-ReplacePowers[expr_, vectorise_:False] :=
+ReplacePowers[expr_, vectorise_] :=
   Module[{rhs},
     rhs = expr /. Power[xx_, -1] -> INV[xx];
 
@@ -909,7 +911,7 @@ ReplacePowers[expr_, vectorise_:False] :=
              rhs = rhs /. Power[xx_, power_] -> pow[xx, power];
 
              If[vectorise === True,
-              rhs = vectorise[rhs]];
+              rhs = vectoriseExpression[rhs]];
            ],
 
            rhs = rhs /. Power[xx_, power_] -> xx^power

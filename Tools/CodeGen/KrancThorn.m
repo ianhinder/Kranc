@@ -179,7 +179,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
       inheritedRealParams, inheritedIntParams, inheritedKeywordParams,
       extendedRealParams, extendedIntParams, extendedKeywordParams,
       evolutionTimelevels, defaultEvolutionTimelevels,
-      calcs];
+      calcs, opts];
 
     (* Construct the schedule file *)
     InfoMessage[Terse, "Creating schedule file"];

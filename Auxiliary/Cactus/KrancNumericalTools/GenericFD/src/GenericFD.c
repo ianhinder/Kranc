@@ -508,3 +508,39 @@ void GenericFD_AssertGroupStorage(cGH const * restrict const cctkGH, const char 
     }
   }
 }
+
+/* Return a list of pointers to the members of a named group */
+void GenericFD_GroupDataPointers(cGH const * restrict const cctkGH, const char *group_name,
+                                 int nvars, CCTK_REAL **ptrs)
+{
+  int group_index, status;
+  cGroup  group_info;
+
+  group_index = CCTK_GroupIndex(group_name);
+  if (group_index < 0)
+    CCTK_VWarn(CCTK_WARN_ABORT,   __LINE__, __FILE__, CCTK_THORNSTRING,
+               "Error return %d trying to get group index for group \'%s\'",
+               group_index,
+               group_name);
+
+  status = CCTK_GroupData(group_index, &group_info);
+  if (status < 0)
+    CCTK_VWarn(CCTK_WARN_ABORT,   __LINE__, __FILE__, CCTK_THORNSTRING,
+               "Error return %d trying to get info for group \'%s\'",
+               status,
+               group_name);
+
+  if (group_info.numvars != nvars)
+  {
+    CCTK_VWarn(CCTK_WARN_ABORT,   __LINE__, __FILE__, CCTK_THORNSTRING,
+               "Group \'%s\' has %d variables but %d were expected",
+               group_name, group_info.numvars, nvars);
+  }
+
+  int v1 = CCTK_FirstVarIndex(group_name);
+
+  for (int v = 0; v < nvars; v++)
+  {
+    ptrs[v] = (CCTK_REAL *) CCTK_VarDataPtrI(cctkGH, 0 /* timelevel */, v1+v);
+  }
+}

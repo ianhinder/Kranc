@@ -30,3 +30,15 @@ CCTK_INT  boundary_width "width of boundary (fix later to use Cactus boundary ca
 {
   -1:* :: "Any integer"
 } 1
+
+restricted:
+CCTK_STRING jacobian_group "Name of group containing Jacobian" STEERABLE=RECOVER
+{
+  "" :: "String of the form <implementation>::<groupname>"
+} ""
+
+restricted:
+CCTK_STRING jacobian_derivative_group "Name of group containing Jacobian derivative" STEERABLE=RECOVER
+{
+  "" :: "String of the form <implementation>::<groupname>"
+} ""

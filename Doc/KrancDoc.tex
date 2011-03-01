@@ -3,6 +3,7 @@
 \usepackage{tabularx}
 \usepackage{graphicx}
 \usepackage{alltt}
+\usepackage{hyperref}
 
 \addtolength{\oddsidemargin}{-0.25in}
 \addtolength{\textwidth}{1in}
@@ -243,6 +244,7 @@ by the Kranc system, such as a name for the calculation.
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \chapter{Using Kranc}
+\label{chp:usingkranc}
 
 %% \section{Types of arguments}
 
@@ -925,6 +927,101 @@ same arguments, but they can be tensorial in nature.
 \end{tabularx}
 \end{center}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Additional Features}
+
+In addition to the basic functionality described in Chapter
+\ref{chp:usingkranc}, Kranc provides a number of additional features.
+Each of these features can be used independently, and are typically
+enabled by an option of the form \verb|Use* -> True| in the call to
+\verb|CreateThorn|.
+
+\section{Jacobians}
+
+Kranc allows the user to relate finite differencing operators to
+partial derivatives via an arbitrary user-defined Jacobian
+transformation provided in a grid function.  This feature is enabled
+by setting \verb|UseJacobian -> True| in the options to \verb|CreateThorn| or
+\verb|CreateThornTT|.
+
+Kranc does not provide the Jacobian grid function; it might be
+provided by an external infrastructure (for example for multi-block
+schemes), or could be provided easily in the user's thorn, or another
+Kranc-generated thorn.  Wherever the Jacobian is provided, it must
+adhere to the following conventions.  There should be one Cactus group
+for the components of the Jacobian matrix and another for the
+components of its first spatial derivative (this is necessary for
+systems containing second spatial derivatives).  The components should
+be real-valued grid functions declared in a similar manner to the
+following:
+
+\begin{verbatim}
+CCTK_REAL jac type=GF timelevels=1
+{
+  J11, J12, J13, J21, J22, J23, J31, J32, J33
+} "Jacobian of the coordinate transformation"
+
+CCTK_REALd djac type=GF timelevels=1
+{
+  dJ111, dJ112, dJ113, dJ122, dJ123, dJ133,
+  dJ211, dJ212, dJ213, dJ222, dJ223, dJ233,
+  dJ311, dJ312, dJ313, dJ322, dJ323, dJ333,
+} "Derivative of the Jacobian"
+\end{verbatim}
+
+The names of the groups and variables are not important, but the order
+of the variables within the groups is critical.
+
+The GenericFD thorn provides two parameters, \verb|jacobian_group| and
+\verb|jacobian_derivative_group| which should be set by the user in their
+parameter file to the names of the Jacobian and Jacobian derivative
+groups.  With the above Jacobian definition, provided by a thorn with
+implementation \verb|MyCoordTransform| the user would set
+
+\begin{verbatim}
+GenericFD::jacobian = "MyCoordTransform::jac"
+GenericFD::jacobian_derivative = "MyCoordTransform::djac"
+\end{verbatim}
+
+The partial derivatives, associated with certain finite difference
+operators, specified in the user's calculation, will then be
+multiplied by the Jacobian.  If the user specifies the following,
+
+\begin{center}
+\begin{minipage}{0.8 \textwidth}
+\begin{verbatim}
+derivs = {
+  PDstandard2nd[i_] -> DZero[i]}
+
+...
+
+dot[v] -> PDstandard2nd[v,1]
+\end{verbatim}
+\end{minipage}
+\end{center}
+
+the code that will actually be generated will be
+
+\begin{center}
+\begin{minipage}{0.8 \textwidth}
+\begin{verbatim}
+dot[v] -> J11 PDstandard2nd[v,1] + J21 PDstandard2nd[v,2]
+          + J31 PDstandard2nd[v,3]
+\end{verbatim}
+\end{minipage}
+\end{center}
+
+Note:
+
+\begin{itemize}
+\item The Jacobian multiplication introduces an additional performance
+  cost to the simulation, so it should not be enabled unless
+  necessary.
+\item It is currently not possible to generate a thorn which applies
+  the Jacobians optionally based on a run-time parameter or depending
+  on the current Carpet map.  This is planned for the future.
+\end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -73,7 +73,8 @@ ThornOptions =
   UseVectors -> False,
   ProhibitAssignmentToGridFunctionsRead -> False,
   IncludeFiles -> {},
-  CSE -> False};
+  CSE -> False,
+  UseJacobian -> False};
 
 (* Thorn.m *)
 

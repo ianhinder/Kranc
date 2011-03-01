@@ -18,7 +18,7 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-BeginPackage["Param`", {"Thorn`", "Errors`", "Helpers`", "MapLookup`", "KrancGroups`", "Kranc`"}];
+BeginPackage["Param`", {"Thorn`", "Errors`", "Helpers`", "MapLookup`", "KrancGroups`", "Kranc`", "Jacobian`"}];
 
 CreateKrancParam;
 MakeFullParamDefs;
@@ -118,12 +118,13 @@ extendParameters[imp_, reals_, ints_, keywords_] :=
       Return[{Name -> imp, ExtendedParameters -> Join[realStructs, intStructs, keywordStructs]}],
       Return[{}]]];
 
+Options[CreateKrancParam] = ThornOptions;
 CreateKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_, 
   reals_, ints_, keywords_,
   inheritedReals_, inheritedInts_, inheritedKeywords_,
   extendedReals_, extendedInts_, extendedKeywords_,
   evolutionTimelevels_, defaultEvolutionTimelevels_,
-  calcs_] :=
+  calcs_, opts:OptionsPattern[]] :=
   Module[{nEvolved, evolvedMoLParam, evolvedGFs,
     (*constrainedMoLParam,*) genericfdStruct, realStructs, intStructs,
     allInherited, allExtended, implementationNames, molImplementation,
@@ -194,7 +195,7 @@ CreateKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_,
     {
       Name -> "GenericFD",
       UsedParameters -> 
-        {}
+        If[OptionValue[UseJacobian], JacobianGenericFDParameters[], {}]
     };
 
     realStructs = Map[krancParamStruct[#, "CCTK_REAL", False] &, reals];

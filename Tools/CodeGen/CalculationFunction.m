@@ -20,7 +20,7 @@
 
 BeginPackage["CalculationFunction`", {"CodeGen`",
   "MapLookup`", "KrancGroups`", "Differencing`", "Errors`",
-  "Helpers`", "Kranc`", "Optimize`"}];
+  "Helpers`", "Kranc`", "Optimize`", "Jacobian`"}];
 
 CreateCalculationFunction::usage = "";
 VerifyCalculation::usage = "";
@@ -344,11 +344,13 @@ pdCanonicalOrdering[name_[inds___] -> x_] :=
 
 Options[CreateCalculationFunction] = ThornOptions;
 
-CreateCalculationFunction[calc_, debug_, imp_, opts:OptionsPattern[]] :=
+CreateCalculationFunction[calcp_, debug_, imp_, opts:OptionsPattern[]] :=
   Module[{gfs, allSymbols, knownSymbols,
           shorts, eqs, parameters, parameterRules,
           functionName, dsUsed, groups, pddefs, cleancalc, eqLoop, where,
-          addToStencilWidth, pDefs, haveCondTextuals, condTextuals},
+          addToStencilWidth, pDefs, haveCondTextuals, condTextuals, calc},
+
+  calc = If[OptionValue[UseJacobian], InsertJacobian[calcp, opts], calcp];
 
   cleancalc = removeUnusedShorthands[calc];
   If[OptionValue[CSE],
@@ -359,6 +361,7 @@ CreateCalculationFunction[calc_, debug_, imp_, opts:OptionsPattern[]] :=
   eqs    = lookup[cleancalc, Equations];
   parameters = lookupDefault[cleancalc, Parameters, {}];
   groups = lookup[cleancalc, Groups];
+  If[OptionValue[UseJacobian], groups = Join[groups, JacobianGroups[]]];
   pddefs = lookupDefault[cleancalc, PartialDerivatives, {}];
   where = lookupDefault[cleancalc, Where, Everywhere];
   addToStencilWidth = lookupDefault[cleancalc, AddToStencilWidth, 0];
@@ -420,7 +423,8 @@ CreateCalculationFunction[calc_, debug_, imp_, opts:OptionsPattern[]] :=
   allSymbols = calculationSymbols[cleancalc];
   knownSymbols = Join[lookupDefault[cleancalc, AllowedSymbols, {}], gfs, shorts, parameters,
     {dx,dy,dz,idx,idy,idz,t, Pi, E, Symbol["i"], Symbol["j"], Symbol["k"], normal1, normal2,
-    normal3, tangentA1, tangentA2, tangentA3, tangentB1, tangentB2, tangentB3}];
+    normal3, tangentA1, tangentA2, tangentA3, tangentB1, tangentB2, tangentB3},
+    If[OptionValue[UseJacobian], JacobianSymbols[], {}]];
 
   unknownSymbols = Complement[allSymbols, knownSymbols];
 
@@ -451,6 +455,8 @@ CreateCalculationFunction[calc_, debug_, imp_, opts:OptionsPattern[]] :=
 
     InitialiseFDVariables[OptionValue[UseVectors]],
     definePreDefinitions[pDefs],
+
+    If[OptionValue[UseJacobian], CreateJacobianVariables[], {}],
 
     If[Cases[{pddefs}, SBPDerivative[_], Infinity] != {},
       CommentedBlock["Compute Summation By Parts derivatives",

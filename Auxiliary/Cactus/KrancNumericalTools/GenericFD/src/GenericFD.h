@@ -152,6 +152,8 @@ void GenericFD_LoopOverBoundary(cGH const * restrict cctkGH, Kranc_Calculation c
 void GenericFD_LoopOverBoundaryWithGhosts(cGH const * restrict cctkGH, Kranc_Calculation calc);
 void GenericFD_LoopOverInterior(cGH const * restrict cctkGH, Kranc_Calculation calc);
 
+void GenericFD_GroupDataPointers(cGH const * restrict const cctkGH, const char *group_name,
+                                 int nvars, CCTK_REAL **ptrs);
 
 
 #ifdef __cplusplus

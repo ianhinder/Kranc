@@ -93,7 +93,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     interface, evolvedGroupDefinitions, rhsGroupDefinitions, thornspec,
     allParams, boundarySources, reflectionSymmetries,
     realParamDefs, intParamDefs,
-    pDefs, useCSE},
+    pDefs},
 
     (* Parse named arguments *)
 
@@ -123,7 +123,6 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     extendedKeywordParams = OptionValue[ExtendedKeywordParameters];
     partialDerivs = OptionValue[PartialDerivatives];
     reflectionSymmetries = OptionValue[ReflectionSymmetries];
-    useCSE = OptionValue[UseCSE];
 
     coordGroup = {"grid::coordinates", {Kranc`x,Kranc`y,Kranc`z,Kranc`r}};
 
@@ -223,7 +222,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     InfoMessage[Terse, "Creating calculation source files"];
     calcSources = Map[CreateSetterSource[
       {Join[#, {Parameters -> allParams, PartialDerivatives -> partialDerivs}]},
-      False, useCSE, {}, implementation, opts] &, calcs];
+      False, {}, implementation, opts] &, calcs];
     calcFilenames = Map[lookup[#, Name] <> ext &, calcs];
 
     (* Makefile *)

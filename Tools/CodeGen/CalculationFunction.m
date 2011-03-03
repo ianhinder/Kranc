@@ -20,7 +20,7 @@
 
 BeginPackage["CalculationFunction`", {"CodeGen`",
   "MapLookup`", "KrancGroups`", "Differencing`", "Errors`",
-  "Helpers`", "Kranc`"}];
+  "Helpers`", "Kranc`", "Optimize`"}];
 
 CreateCalculationFunction::usage = "";
 VerifyCalculation::usage = "";
@@ -344,13 +344,16 @@ pdCanonicalOrdering[name_[inds___] -> x_] :=
 
 Options[CreateCalculationFunction] = ThornOptions;
 
-CreateCalculationFunction[calc_, debug_, useCSE_, imp_, opts:OptionsPattern[]] :=
+CreateCalculationFunction[calc_, debug_, imp_, opts:OptionsPattern[]] :=
   Module[{gfs, allSymbols, knownSymbols,
           shorts, eqs, parameters, parameterRules,
           functionName, dsUsed, groups, pddefs, cleancalc, eqLoop, where,
           addToStencilWidth, pDefs, haveCondTextuals, condTextuals},
 
   cleancalc = removeUnusedShorthands[calc];
+  If[OptionValue[CSE],
+    cleancalc = EliminateCommonSubexpressions[cleancalc, opts]];
+
   shorts = lookupDefault[cleancalc, Shorthands, {}];
 
   eqs    = lookup[cleancalc, Equations];
@@ -457,7 +460,7 @@ CreateCalculationFunction[calc_, debug_, useCSE_, imp_, opts:OptionsPattern[]] :
     If[gfs != {},
       {
 	eqLoop = equationLoop[eqs, cleancalc, gfs, shorts, {}, groups,
-          pddefs, where, addToStencilWidth, useCSE, opts]},
+          pddefs, where, addToStencilWidth, opts]},
 
        ConditionalOnParameterTextual["verbose > 1",
          "CCTK_VInfo(CCTK_THORNSTRING,\"Leaving " <> bodyFunctionName <> "\");\n"],
@@ -490,7 +493,7 @@ CreateCalculationFunction[calc_, debug_, useCSE_, imp_, opts:OptionsPattern[]] :
 Options[equationLoop] = ThornOptions;
 
 equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
-             where_, addToStencilWidth_, useCSE_,
+             where_, addToStencilWidth_,
              opts:OptionsPattern[]] :=
   Module[{rhss, lhss, gfsInRHS, gfsInLHS, gfsOnlyInRHS, localGFs,
           localMap, eqs2, derivSwitch, code, functionName, calcCode,
@@ -546,9 +549,6 @@ equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
     (* Replace grid functions with their local forms *)
     eqsReplaced = eqs2 /. localMap;
 
-    If[useCSE,
-      eqsReplaced = CSE[eqsReplaced]];
-
     (* Construct a list, corresponding to the list of equations,
        marking those which need their LHS variables declared.  We
        declare variables at the same time as assigning to them as it
@@ -557,7 +557,7 @@ equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
        functions which appear in the RHSs have been declared and set
        already (DeclareMaybeAssignVariableInLoop below), so assignments
        to these do not generate declarations here. *)
-    declare = markFirst[First /@ eqsReplaced, Map[localName, gfsInRHS]];
+    declare = Block[{$RecursionLimit=Infinity},markFirst[First /@ eqsReplaced, Map[localName, gfsInRHS]]];
 
     calcCode =
       MapThread[{assignVariableFromExpression[#1[[1]], #1[[2]], #2, OptionValue[UseVectors]], "\n"} &,

@@ -494,7 +494,7 @@ calculationMacros[vectorise_] :=
 
 Options[CreateSetterSource] = ThornOptions;
 
-CreateSetterSource[calcs_, debug_, useCSE_, include_, imp_,
+CreateSetterSource[calcs_, debug_, include_, imp_,
   opts:OptionsPattern[]] :=
   Module[{},
 
@@ -525,7 +525,7 @@ CreateSetterSource[calcs_, debug_, useCSE_, include_, imp_,
 
    CalculationBoundariesFunction[First[calcs], imp],
 
-   Map[CreateCalculationFunction[# , debug, useCSE, imp, opts] &,
+   Map[CreateCalculationFunction[# , debug, imp, opts] &,
        calcs]}];
 
 

@@ -71,9 +71,9 @@ ThornOptions =
   ZeroDimensions -> {},
   UseLoopControl -> False,
   UseVectors -> False,
-  UseCSE -> False,
   ProhibitAssignmentToGridFunctionsRead -> False,
-  IncludeFiles -> {}};
+  IncludeFiles -> {},
+  CSE -> False};
 
 (* Thorn.m *)
 

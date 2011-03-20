@@ -18,16 +18,18 @@
 *)
 
 BeginPackage["xTensorKranc`", {"xAct`xTensor`", "xAct`xCore`","xAct`xCoba`"}];
-xTensorReflectionSymmetriesOfTensor::usage = "Produce a list of reflection symmetries of a tensor.";
 
 
-xTensorMakeExplicit::usage = "xTensorMakeExplicit[expr] converts an expression x containing abstract indices into one containing components instead."
+CreateGroupFromTensor::usage = "";
+ReflectionSymmetriesOfTensor::usage = "Produce a list of reflection symmetries of a tensor.";
+MakeExplicit::usage = "xTensorMakeExplicit[expr] converts an expression x containing abstract indices into one containing components instead."
 IncludeCharacter::usage = "IncludeCharacter is an option for makeExplicit which specifies whether the character should also be included in the generated variable names."
 TensorCharacterString::usage = "TensorCharacterString[tensor[inds]] returns a string consisting of a sequence of U's and D's representing the character of tensor."
 Begin["`Private`"];
 
-TensorCharacterString[t_Symbol?xTensorQ[inds___]] := If[UpIndexQ[#],"U","D"]&/@{inds};
-TensorCharacterString[cd_Symbol?CovDQ[inds___]] := If[UpIndexQ[#],"U","D"]&/@{inds};
+(* FIXME: Add support for ManualCartesian attribute *)
+TensorCharacterString[t_Symbol?xTensorQ[]] := "Scalar";
+TensorCharacterString[t_Symbol?xTensorQ[inds___]] := StringJoin[If[UpIndexQ[#],"U","D"]&/@{inds}];
 
 Options[makeExplicit] = {IncludeCharacter -> False};
 SetAttributes[makeExplicit, Listable];
@@ -60,8 +62,8 @@ makeExplicit[cd_?CovDQ[ind_][expr_], OptionsPattern[]] := Module[{indexNumbers,c
   SymbolJoin["d",indexString,makeExplicit[expr]]
 ];
 
-Options[xTensorMakeExplicit] = Options[makeExplicit];
-xTensorMakeExplicit[x_, opts:OptionsPattern[makeExplicit]] :=
+Options[MakeExplicit] = Options[makeExplicit];
+MakeExplicit[x_, opts:OptionsPattern[makeExplicit]] :=
   Module[{eqs, options},
 
   eqs = ComponentArray[TraceBasisDummy[x]];
@@ -72,18 +74,53 @@ xTensorMakeExplicit[x_, opts:OptionsPattern[makeExplicit]] :=
   ]
 ];
 
-xTensorReflectionSymmetriesOfTensor[t_Symbol?xTensorQ[inds__],b_] :=
-  Module[{components, componentIndices, counts},
+(* Compute the reflection symmetries of a tensor *)
+ReflectionSymmetriesOfTensor[t_Symbol?xTensorQ[inds__], b_] :=
+  Module[{cinds, components, componentIndices, counts},
+    (* Get the compoent indices of the basis *)
+    cinds = CNumbersOf[b, VBundleOfBasis[b]];
+
+    (* Get a list of components of the tensor t in the basis b *)
     components = Flatten[ComponentArray[ToBasis[b][t[inds]]]];
-    componentIndices = Map[IndicesOf[b][#]&,components];
-    counts = Map[{Count[#,{0,-b}],Count[#,{1,-b}],Count[#,{2,-b}]}&,componentIndices];
+
+    (* Get the indices of each component *)
+    componentIndices = Map[IndicesOf[b], components];
+
+
+    (* Count the number of instances of each basis index. *)
+    countInds[expr_, basis_, cinds_] := Map[(Count[expr,{#,basis}]+Count[expr,{#,-basis}])&, cinds];
+    counts = Map[countInds[#, b, cinds]&, componentIndices];
+
+    (* For each instance, multiply by -1 *)
     Thread[components -> (-1)^counts]
 ];
 
-xTensorReflectionSymmetriesOfTensor[t_Symbol?xTensorQ[],b_] := {}
+ReflectionSymmetriesOfTensor[t_Symbol?xTensorQ[],b_] := {};
 
-(* FIXME: Implement this properly *)
-TensorAttributes[t_Symbol?xTensorQ[inds___]] = {TensorWeight -> 1, Symmetries -> {}};
+(* FIXME: Implement this fully *)
+GetTensorAttribute[t_Symbol?xTensorQ[inds___], TensorWeight] := WeightOfTensor[t];
+
+CreateGroupFromTensor[t_Symbol?xTensorQ[inds__], b_] := Module[{tCharString, nInds, tags, vars, group},
+  InfoMessage[InfoFull, "Creating group from tensor with kernel " <> SymbolName[t] <> " and indices " <> ToString[{inds}]];
+
+  (* Get a string representing the character of the tensor *)
+  tCharString = TensorCharacterString[t[inds]];
+  InfoMessage[InfoFull, "Tensor character string: ", tCharString];
+
+  (* Check if the tensor is symmetric *)
+  nInds = Length[SlotsOfTensor[t]];
+  If[SymmetryGroupOfTensor[t] == StrongGenSet[Range[nInds],GenSet[Cycles[Range[nInds]]]], 
+        tCharString = tCharString <> "_sym"];
+
+  (* FIXME: Add tensorspecial, cartesianreflectionparities  and tensorparity *)
+  tags = {"tensortypealias" -> tCharString, "tensorweight" -> GetTensorAttribute[t, TensorWeight]};
+
+  vars = If[nInds == 0, {t}, {t[inds]}];
+  group = CreateGroup[SymbolName[t] <> "_group", vars, {Tags -> tags}];
+  Return[group]
+];
+
+CheckTensors[expr_] := Validate[expr];
 
 End[];
 EndPackage[];

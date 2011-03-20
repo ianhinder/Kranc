@@ -1,0 +1,61 @@
+(* Content-type: application/mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 7.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       145,          7]
+NotebookDataLength[      1395,         52]
+NotebookOptionsPosition[      1075,         37]
+NotebookOutlinePosition[      1415,         52]
+CellTagsIndexPosition[      1372,         49]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"SetDirectory", "[", 
+   RowBox[{"NotebookDirectory", "[", "]"}], "]"}], ";"}]], "Input",
+ CellChangeTimes->{{3.4951847946945972`*^9, 3.4951848185680017`*^9}}],
+
+Cell[BoxData[
+ RowBox[{"Get", "[", "\"\<../Auxiliary/Cactus/IOASCII.m\>\"", "]"}]], "Input",\
+
+ CellChangeTimes->{{3.49518480029657*^9, 3.4951848005403*^9}}],
+
+Cell[BoxData[
+ RowBox[{"MGraph", "[", 
+  RowBox[{"ReadIOASCII", "[", "\"\<simplewave_sine/phi.xl\>\"", "]"}], 
+  "]"}]], "Input",
+ CellChangeTimes->{3.49518480818021*^9}]
+},
+WindowSize->{640, 750},
+WindowMargins->{{36, Automatic}, {Automatic, 84}},
+FrontEndVersion->"7.0 for Mac OS X x86 (32-bit) (February 18, 2009)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[545, 20, 193, 4, 27, "Input"],
+Cell[741, 26, 157, 3, 27, "Input"],
+Cell[901, 31, 170, 4, 27, "Input"]
+}
+]
+*)
+
+(* End of internal cache information *)

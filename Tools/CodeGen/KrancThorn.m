@@ -92,7 +92,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     interface, evolvedGroupDefinitions, rhsGroupDefinitions, thornspec,
     allParams, boundarySources, reflectionSymmetries,
     realParamDefs, intParamDefs,
-    pDefs, useCSE},
+    pDefs},
 
     (* Parse named arguments *)
 
@@ -122,9 +122,11 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     extendedKeywordParams = OptionValue[ExtendedKeywordParameters];
     partialDerivs = OptionValue[PartialDerivatives];
     reflectionSymmetries = OptionValue[ReflectionSymmetries];
-    useCSE = OptionValue[UseCSE];
 
     coordGroup = {"grid::coordinates", {Kranc`x,Kranc`y,Kranc`z,Kranc`r}};
+
+    CheckGroups[groupsOrig];
+
     groups = Join[groupsOrig, {coordGroup}];
     includeFiles = Join[includeFiles, {"GenericFD.h", "Symmetry.h", "sbp_calc_coeffs.h"}];
 
@@ -202,7 +204,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     (* Write the differencing header file *)
     InfoMessage[Terse, "Creating differencing header file"];
-    {pDefs, diffHeader} = CreateDifferencingHeader[partialDerivs, OptionValue[ZeroDimensions]];
+    {pDefs, diffHeader} = CreateDifferencingHeader[partialDerivs, OptionValue[ZeroDimensions], OptionValue[UseVectors]];
 
     (* Add the predefinitions into the calcs *)
     calcs = Map[Join[#, {PreDefinitions -> pDefs}] &, calcs];
@@ -219,12 +221,12 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     InfoMessage[Terse, "Creating calculation source files"];
     calcSources = Map[CreateSetterSource[
       {Join[#, {Parameters -> allParams, PartialDerivatives -> partialDerivs}]},
-      False, useCSE, {}, implementation, opts] &, calcs];
+      False, {}, implementation, opts] &, calcs];
     calcFilenames = Map[lookup[#, Name] <> ext &, calcs];
 
     (* Makefile *)
     InfoMessage[Terse, "Creating make file"];
-    make = CreateMakefile[Join[{"Startup.c", "RegisterMoL.c", "RegisterSymmetries.c"}, calcFilenames, 
+    make = CreateMakefile[Join[{"Startup.cc", "RegisterMoL.cc", "RegisterSymmetries.cc"}, calcFilenames, 
       Map[lookup[#, Filename] &, boundarySources]]];
 
     (* Put all the above together and generate the Cactus thorn *)
@@ -236,9 +238,9 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
                  Param         -> param,
                  Makefile      -> make,
                  Sources       -> Join[{
-                  {Filename -> "Startup.c", Contents -> startup}, 
-                  {Filename -> "RegisterMoL.c", Contents -> molregister},
-                  {Filename -> "RegisterSymmetries.c", Contents -> symregister},
+                  {Filename -> "Startup.cc", Contents -> startup}, 
+                  {Filename -> "RegisterMoL.cc", Contents -> molregister},
+                  {Filename -> "RegisterSymmetries.cc", Contents -> symregister},
                   {Filename -> "Differencing.h", Contents -> diffHeader}},
                   MapThread[{Filename -> #1, Contents -> #2} &, 
                             {calcFilenames, calcSources}], boundarySources]};

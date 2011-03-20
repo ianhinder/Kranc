@@ -220,7 +220,8 @@ Options[CreateConfiguration] = ThornOptions;
 CreateConfiguration[opts:OptionsPattern[]] :=
   {whoWhen["CCL"],
    "REQUIRES GenericFD\n",
-   If[OptionValue[UseLoopControl], "REQUIRES LoopControl\n", {}]
+   If[OptionValue[UseLoopControl], "REQUIRES LoopControl\n", {}],
+   If[OptionValue[UseVectors], "REQUIRES Vectors\n", {}]
   };
 
 (* ------------------------------------------------------------------------ 
@@ -473,14 +474,19 @@ CreateSchedule[globalStorageGroups_, scheduledGroups_, scheduledFunctions_] :=
          optional LoopPreIncludes     -> {include file list},
 	          Equations           -> {{K11_rhs -> 2 A K11, ...}...}} *)
 
-calculationMacros[] :=
+calculationMacros[vectorise_] :=
   CommentedBlock["Define macros used in calculations",
-    Map[{"#define ", #, "\n"} &,
-       {"INITVALUE  (42)",
-        "INV(x) ((1.0) / (x))"   ,        
-        "SQR(x) ((x) * (x))"   ,        
-        "CUB(x) ((x) * (x) * (x))"   , 
-        "QAD(x) ((x) * (x) * (x) * (x))"}]];
+      Map[{"#define ", #, "\n"} &,
+         {"INITVALUE (42)",
+          "QAD(x) (SQR(SQR(x)))"} ~Join~
+          If[vectorise,
+           {"INV(x) (kdiv(ToReal(1.0),x))",
+            "SQR(x) (kmul(x,x))",
+            "CUB(x) (kmul(x,SQR(x)))"},
+           {"INV(x) ((1.0) / (x))",
+            "SQR(x) ((x) * (x))",
+            "CUB(x) ((x) * (x) * (x))"}]
+         ]];
 
 (* Given a list of Calculation structures as defined above, create a
    CodeGen representation of a source file that defines a function for
@@ -488,7 +494,7 @@ calculationMacros[] :=
 
 Options[CreateSetterSource] = ThornOptions;
 
-CreateSetterSource[calcs_, debug_, useCSE_, include_, imp_,
+CreateSetterSource[calcs_, debug_, include_, imp_,
   opts:OptionsPattern[]] :=
   Module[{},
 
@@ -508,16 +514,18 @@ CreateSetterSource[calcs_, debug_, useCSE_, include_, imp_,
       ],
 
    Map[IncludeFile, Join[{"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h",
-                     (*"precomputations.h",*) "GenericFD.h", "Differencing.h"}, include,
-                         If[OptionValue[UseLoopControl], {"loopcontrol.h"}, {}]]],
-   calculationMacros[],
+                         (*"precomputations.h",*) "GenericFD.h", "Differencing.h"},
+                         include,
+                         If[OptionValue[UseLoopControl], {"loopcontrol.h"}, {}],
+                         If[OptionValue[UseVectors], {"vectors.h"}, {}]]],
+   calculationMacros[OptionValue[UseVectors]],
 
    (* For each function structure passed, create the function and
       insert it *)
 
    CalculationBoundariesFunction[First[calcs], imp],
 
-   Map[CreateCalculationFunction[# , debug, useCSE, opts] &,
+   Map[CreateCalculationFunction[# , debug, imp, opts] &,
        calcs]}];
 
 
@@ -738,10 +746,10 @@ CreateMoLBoundariesSource[spec_] :=
      "if (CCTK_EQUALS(" <> boundpar <> ", \"none\"  ) ||\n",
      "    CCTK_EQUALS(" <> boundpar <> ", \"static\") ||\n",
      "    CCTK_EQUALS(" <> boundpar <> ", \"flat\"  ) ||\n",
-     "    CCTK_EQUALS(" <> boundpar <> ", \"zero\"  ) ) \n",
+     "    CCTK_EQUALS(" <> boundpar <> ", \"zero\"  ) )\n",
      "{\n",
 
-     "  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, 1, -1, \n",
+     "  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, 1, -1,\n",
      "                    \"" <> fullgroupname <> "\", " <> boundpar <> ");\n",
 
      "  if (ierr < 0)\n",
@@ -760,10 +768,10 @@ CreateMoLBoundariesSource[spec_] :=
      "if (CCTK_EQUALS(" <> boundpar <> ", \"none\"  ) ||\n",
      "    CCTK_EQUALS(" <> boundpar <> ", \"static\") ||\n",
      "    CCTK_EQUALS(" <> boundpar <> ", \"flat\"  ) ||\n",
-     "    CCTK_EQUALS(" <> boundpar <> ", \"zero\"  ) ) \n",
+     "    CCTK_EQUALS(" <> boundpar <> ", \"zero\"  ) )\n",
      "{\n",
 
-     "  ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1, \n",
+     "  ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1,\n",
      "                    \"" <> fullgfname <> "\", " <> boundpar <> ");\n",
 
      "  if (ierr < 0)\n",
@@ -1329,7 +1337,7 @@ CreateStartupFile[thornName_, bannerText_] :=
   tmp = {whoWhen["C"],
 
    IncludeFile["cctk.h"],
-   DefineFunction[thornName <> "_Startup", "int", "void",
+   DefineFunction[thornName <> "_Startup", "extern \"C\" int", "void",
      {DefineVariable["banner", "const char *", Quote[bannerText]],
       "CCTK_RegisterBanner(banner);\n",
       "return 0;\n"}]};
@@ -1343,7 +1351,7 @@ CreateStartupFile[thornName_, bannerText_] :=
    Thorn creation
    ------------------------------------------------------------------------ *)
 
-(* source = {Filename -> "MoLRegister.c", Contents -> "#include ..."} *)
+(* source = {Filename -> "MoLRegister.cc", Contents -> "#include ..."} *)
 
 (* thorn = {Name -> "ClassicADMMolEvolve", Directory -> "ClassicADM",
             Interface -> i, Schedule -> s, Param -> p, Makefile -> m, 

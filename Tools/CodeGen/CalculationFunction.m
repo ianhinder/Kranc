@@ -20,7 +20,7 @@
 
 BeginPackage["CalculationFunction`", {"CodeGen`",
   "MapLookup`", "KrancGroups`", "Differencing`", "Errors`",
-  "Helpers`", "Kranc`"}];
+  "Helpers`", "Kranc`", "Optimize`"}];
 
 CreateCalculationFunction::usage = "";
 VerifyCalculation::usage = "";
@@ -157,6 +157,26 @@ removeUnusedShorthands[calc_] :=
       removeUnusedShorthands[newCalc],
       newCalc]];
 
+(* Return all the groups that are used in a given calculation *)
+groupsInCalculation[calc_, imp_] :=
+  Module[{groups,gfs,eqs,gfsUsed, groupNames},
+    groups = lookup[calc, Groups];
+    gfs = allGroupVariables[groups];
+    eqs = lookup[calc, Equations];
+    gfsUsed = Union[Cases[eqs, _ ? (MemberQ[gfs,#] &), Infinity]];
+    groupNames = containingGroups[gfsUsed, groups];
+    Map[qualifyGroupName[#, imp] &, groupNames]];
+
+CheckGroupStorage[groupNames_, calcName_] :=
+  Module[{ignoreGroups, groupsNames2},
+    ignoreGroups = {"TmunuBase::stress_energy_scalar", "TmunuBase::stress_energy_vector",
+      "TmunuBase::stress_energy_tensor"};
+    groupNames2 = Select[groupNames, !MemberQ[ignoreGroups, #] &];
+    {"\nconst char *groups[] = {",
+    Riffle[Map[Quote,groupNames2], ","],
+    "};\n",
+    "GenericFD_AssertGroupStorage(cctkGH, ", Quote[calcName],", ", Length[groupNames2], ", groups);\n"}];
+
 (* --------------------------------------------------------------------------
    Variables
    -------------------------------------------------------------------------- *)
@@ -178,7 +198,7 @@ localName[x_] :=
 
 definePreDefinitions[pDefs_] :=
   CommentedBlock["Initialize predefined quantities",
-    Map[DeclareAssignVariable["CCTK_REAL", #[[1]], #[[2]]] &, pDefs]];
+    Map[DeclareAssignVariable[DataType[], #[[1]], #[[2]]] &, pDefs]];
 
 (* --------------------------------------------------------------------------
    Equations
@@ -226,11 +246,11 @@ simpCollect[collectList_, eqrhs_, localvar_, debug_] :=
     all];
 
 (* Return a CodeGen block which assigns dest by evaluating expr *)
-assignVariableFromExpression[dest_, expr_, declare_] :=
+assignVariableFromExpression[dest_, expr_, declare_, vectorise_] :=
   Module[{tSym, type, cleanExpr, code},
     tSym = Unique[];
-    type = If[StringMatchQ[ToString[dest], "dir*"], "int", "CCTK_REAL"];
-    cleanExpr = ReplacePowers[expr] /. Kranc`t -> tSym;
+    type = If[StringMatchQ[ToString[dest], "dir*"], "ptrdiff_t", DataType[]];
+    cleanExpr = ReplacePowers[expr, vectorise] /. Kranc`t -> tSym;
 
     If[SOURCELANGUAGE == "C",
       code = If[declare, type <> " ", ""] <> ToString[dest] <> " = " <>
@@ -324,13 +344,16 @@ pdCanonicalOrdering[name_[inds___] -> x_] :=
 
 Options[CreateCalculationFunction] = ThornOptions;
 
-CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
+CreateCalculationFunction[calc_, debug_, imp_, opts:OptionsPattern[]] :=
   Module[{gfs, allSymbols, knownSymbols,
-          shorts, eqs, parameters,
+          shorts, eqs, parameters, parameterRules,
           functionName, dsUsed, groups, pddefs, cleancalc, eqLoop, where,
           addToStencilWidth, pDefs, haveCondTextuals, condTextuals},
 
   cleancalc = removeUnusedShorthands[calc];
+  If[OptionValue[CSE],
+    cleancalc = EliminateCommonSubexpressions[cleancalc, opts]];
+
   shorts = lookupDefault[cleancalc, Shorthands, {}];
 
   eqs    = lookup[cleancalc, Equations];
@@ -341,6 +364,8 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
   addToStencilWidth = lookupDefault[cleancalc, AddToStencilWidth, 0];
   pDefs = lookup[cleancalc, PreDefinitions];
   haveCondTextuals = mapContains[cleancalc, ConditionalOnTextuals];
+
+  SetDataType[If[OptionValue[UseVectors],"CCTK_REAL_VEC", "CCTK_REAL"]];
 
   VerifyCalculation[cleancalc];
 
@@ -366,9 +391,13 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
 
     If[!lookupDefault[cleancalc, NoSimplify, False],
        InfoMessage[InfoFull, "Simplifying equations", eqs];
-       eqs = Simplify[eqs, {r>0}]]];
+       eqs = Simplify[eqs, {r>=0}]]];
 
   InfoMessage[InfoFull, "Equations:"];
+
+  (* Wrap parameters with ToReal *)
+  parameterRules = Map[(#->ToReal[#])&, parameters];
+  eqs = eqs /. parameterRules;
 
   Map[printEq, eqs];
 
@@ -400,7 +429,7 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
        "Calculation is:", cleancalc]];
 
   {
-  DefineFunction[bodyFunctionName, "void", "cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const min[3], int const max[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[]",
+  DefineFunction[bodyFunctionName, "static void", "cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const min[3], int const max[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[]",
   {
     "DECLARE_CCTK_ARGUMENTS;\n",
     "DECLARE_CCTK_PARAMETERS;\n\n",
@@ -413,12 +442,14 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
     ConditionalOnParameterTextual["cctk_iteration % " <> functionName <> "_calc_every != " <>
       functionName <> "_calc_offset", "return;\n"],
 
+    CheckGroupStorage[groupsInCalculation[cleancalc, imp], functionName],
+
     If[haveCondTextuals, Map[ConditionalOnParameterTextual["!(" <> # <> ")", "return;\n"] &,condTextuals], {}],
 
     CommentedBlock["Include user-supplied include files",
       Map[IncludeFile, lookupDefault[cleancalc, DeclarationIncludes, {}]]],
 
-    InitialiseFDVariables[],
+    InitialiseFDVariables[OptionValue[UseVectors]],
     definePreDefinitions[pDefs],
 
     If[Cases[{pddefs}, SBPDerivative[_], Infinity] != {},
@@ -429,7 +460,7 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
     If[gfs != {},
       {
 	eqLoop = equationLoop[eqs, cleancalc, gfs, shorts, {}, groups,
-          pddefs, where, addToStencilWidth, useCSE, opts]},
+          pddefs, where, addToStencilWidth, opts]},
 
        ConditionalOnParameterTextual["verbose > 1",
          "CCTK_VInfo(CCTK_THORNSTRING,\"Leaving " <> bodyFunctionName <> "\");\n"],
@@ -462,7 +493,7 @@ CreateCalculationFunction[calc_, debug_, useCSE_, opts:OptionsPattern[]] :=
 Options[equationLoop] = ThornOptions;
 
 equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
-             where_, addToStencilWidth_, useCSE_,
+             where_, addToStencilWidth_,
              opts:OptionsPattern[]] :=
   Module[{rhss, lhss, gfsInRHS, gfsInLHS, gfsOnlyInRHS, localGFs,
           localMap, eqs2, derivSwitch, code, functionName, calcCode,
@@ -518,9 +549,6 @@ equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
     (* Replace grid functions with their local forms *)
     eqsReplaced = eqs2 /. localMap;
 
-    If[useCSE,
-      eqsReplaced = CSE[eqsReplaced]];
-
     (* Construct a list, corresponding to the list of equations,
        marking those which need their LHS variables declared.  We
        declare variables at the same time as assigning to them as it
@@ -529,21 +557,21 @@ equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
        functions which appear in the RHSs have been declared and set
        already (DeclareMaybeAssignVariableInLoop below), so assignments
        to these do not generate declarations here. *)
-    declare = markFirst[First /@ eqsReplaced, Map[localName, gfsInRHS]];
+    declare = Block[{$RecursionLimit=Infinity},markFirst[First /@ eqsReplaced, Map[localName, gfsInRHS]]];
 
     calcCode =
-      MapThread[{assignVariableFromExpression[#1[[1]], #1[[2]], #2], "\n"} &,
+      MapThread[{assignVariableFromExpression[#1[[1]], #1[[2]], #2, OptionValue[UseVectors]], "\n"} &,
        {eqsReplaced, declare}];
 
     GenericGridLoop[functionName,
     {
-      DeclareDerivatives[defsWithoutShorts, eqsOrdered],
+      (* DeclareDerivatives[defsWithoutShorts, eqsOrdered], *)
 
       CommentedBlock["Assign local copies of grid functions",
         Map[DeclareMaybeAssignVariableInLoop[
-              "CCTK_REAL", localName[#], GridName[#],
+              DataType[], localName[#], GridName[#],
               StringMatchQ[ToString[GridName[#]], "eT" ~~ _ ~~ _ ~~ "[" ~~ __ ~~ "]"],
-                "*stress_energy_state"] &,
+                "*stress_energy_state", OptionValue[UseVectors]] &,
             gfsInRHS]],
 
       CommentedBlock["Include user supplied include files",
@@ -558,8 +586,25 @@ equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
         Map[InfoVariable[#[[1]]] &, (eqs2 /. localMap)],
         ""],
 
+      If[OptionValue[UseVectors], {
+        CommentedBlock["If necessary, store only partial vectors after the first iteration",
+          ConditionalOnParameterTextual["CCTK_REAL_VEC_SIZE > 1 && i<lc_imin",
+            {
+              DeclareAssignVariable["ptrdiff_t", "elt_count", "lc_imin-i"],
+              Map[StoreHighPartialVariableInLoop[GridName[#], localName[#], "elt_count"] &,
+                  gfsInLHS],
+              "continue;\n"
+            }]],
+        CommentedBlock["If necessary, store only partial vectors after the last iteration",
+          ConditionalOnParameterTextual["CCTK_REAL_VEC_SIZE > 1 && i+CCTK_REAL_VEC_SIZE > lc_imax",
+            {
+              DeclareAssignVariable["ptrdiff_t", "elt_count", "lc_imax-i"],
+              Map[StoreLowPartialVariableInLoop[GridName[#], localName[#], "elt_count"] &,
+                  gfsInLHS],
+              "break;\n"
+            }]]}, {}],
       CommentedBlock["Copy local copies back to grid functions",
-        Map[AssignVariableInLoop[GridName[#], localName[#]] &,
+        Map[(If[OptionValue[UseVectors], StoreVariableInLoop, AssignVariableInLoop][GridName[#], localName[#]]) &,
             gfsInLHS]],
 
       If[debugInLoop, Map[InfoVariable[GridName[#]] &, gfsInLHS], ""]}, opts]];

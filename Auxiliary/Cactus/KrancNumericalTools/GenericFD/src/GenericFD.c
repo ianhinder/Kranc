@@ -69,8 +69,12 @@ int GenericFD_GetBoundaryWidth(cGH const * restrict const cctkGH)
 
   if (CCTK_IsFunctionAliased ("MultiPatch_GetBoundarySpecification")) {
     int const map = MultiPatch_GetMap (cctkGH);
+    /* This doesn't make sense in level mode */
     if (map < 0)
-      CCTK_WARN(0, "Could not determine current map");
+    {
+//      CCTK_WARN(1, "Could not determine current map");
+      return 0;
+    }
     ierr = MultiPatch_GetBoundarySpecification
       (map, 6, nboundaryzones, is_internal, is_staggered, shiftout);
     if (ierr != 0)
@@ -92,20 +96,6 @@ int GenericFD_GetBoundaryWidth(cGH const * restrict const cctkGH)
 
   return bw;
 }
-
-/* int GenericFD_BoundaryWidthTable(cGH const * restrict const cctkGH) */
-/* { */
-/*   int nboundaryzones[6]; */
-/*   GenericFD_GetBoundaryWidth(cctkGH, nboundaryzones); */
-
-/*   int table = Util_TableCreate(0); */
-/*   if (table < 0) CCTK_WARN(0, "Could not create table"); */
-
-/*   if (Util_TableSetIntArray(table, 6, nboundaryzones, "BOUNDARY_WIDTH") < 0) */
-/*     CCTK_WARN(0, "Could not set table"); */
-/*   return table; */
-/* } */
-
 
 /* Return the array indices in imin and imax for looping over the
    interior of the grid. imin is the index of the first grid point.
@@ -498,4 +488,23 @@ void GenericFD_PenaltyPrim2Char(cGH const * restrict const cctkGH, int const dir
   free(all_vars);
   
   return;
+}
+
+void GenericFD_AssertGroupStorage(cGH const * restrict const cctkGH, const char *calc,
+                                  int ngroups, const char *group_names[ngroups])
+{
+  for (int i = 0; i < ngroups; i++)
+  {
+    int result = CCTK_QueryGroupStorage(cctkGH, group_names[i]);
+    if (result == 0)
+    {
+      CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                 "Error in %s: Group \"%s\" does not have storage", calc, group_names[i]);
+    }
+    else if (result < 0)
+    {
+      CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                 "Error in %s: Invalid group name \"%s\"", calc, group_names[i]);
+    }
+  }
 }

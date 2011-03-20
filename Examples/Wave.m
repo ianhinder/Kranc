@@ -36,10 +36,10 @@ zerodims = {};
 PD = PDstandard2nd;
 PDnorm = PDplus;
 
-evolvedGroup = {"evolved", {phi, pi}};
-normGroup    = {"norms",   {VL2, VDP, EL2}};
-exactGroup   = {"exact",   {phiExact, piExact}};
-errorGroup   = {"errors",  {phiError, piError}};
+evolvedGroup = {"evolved", {phi, pi}, Timelevels -> 3};
+normGroup    = {"norms",   {VL2, VDP, EL2}, Timelevels -> 3};
+exactGroup   = {"exact",   {phiExact, piExact}, Timelevels -> 3};
+errorGroup   = {"errors",  {phiError, piError}, Timelevels -> 3};
 
 groups = {evolvedGroup, normGroup, exactGroup, errorGroup};
 
@@ -105,7 +105,7 @@ importerCalc =
 evolveEquations =
 {
   dot[phi] -> pi,
-  dot[pi]  -> PD[phi,li,ui]
+  dot[pi]  -> PD[phi,li,lj] Euc[ui,uj]
 }
 
 evolveCalc = 

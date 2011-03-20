@@ -22,7 +22,11 @@ BeginPackage["Kranc`"];
 
 (* CodeGen.m *)
 
-{INV, SQR, CUB, QAD, exp, pow, fmax, fmin, dx, dy, dz, khalf, kthird, ktwothird, kfourthird, keightthird};
+{INV, SQR, CUB, QAD, IfThen, ToReal, sqrt, exp, pow, fmax, fmin,
+ kmadd, kmsub, knmadd, knmsub, kpos, kneg, kadd, ksub, kmul, kdiv,
+ kfabs, kfmax, kfmin, ksqrt, kexp, klog, kpow,
+ dir1, dir2, dir3, dx, dy, dz,
+ khalf, kthird, ktwothird, kfourthird, keightthird};
 
 (* Helpers.m *)
 
@@ -66,9 +70,10 @@ ThornOptions =
   ReflectionSymmetries -> {},
   ZeroDimensions -> {},
   UseLoopControl -> False,
-  UseCSE -> False,
+  UseVectors -> False,
   ProhibitAssignmentToGridFunctionsRead -> False,
-  IncludeFiles -> {}};
+  IncludeFiles -> {},
+  CSE -> False};
 
 (* Thorn.m *)
 

@@ -1,0 +1,82 @@
+#!/bin/bash
+
+function usage()
+{
+    cat <<EOF
+Usage: thorn-branch <command>
+
+Available commands are:
+
+    init   Set up a new <branch>_thorns branch in the current repository.
+           Currently only Git repositories are supported, and there
+           must be at least one commit in the repository.
+
+    push   Clone a temporary copy of the current branch, run "make" in
+           it, and commit the contents of the resulting thorns
+           directory to the <branch>_thorns branch.  Push this branch
+           and the current branch to origin.
+
+EOF
+
+}
+
+set -e
+
+if [ $# = 0 ]; then
+    usage
+    exit 1
+fi
+
+command="$1"
+
+case "$command" in
+    "help")
+        usage
+        ;;
+
+    "push")
+        BRANCH=$(git branch|grep '^\*'|awk '{print $2}')
+        if [ -r ${BRANCH}_thorns ]; then
+            echo "Existing directory ${BRANCH}_thorns: please remove before running thorn-branch init"
+            exit 1
+        fi
+        if [ -r ${BRANCH} ]; then
+            echo "Existing directory ${BRANCH}: please remove before running thorn-branch init"
+            exit 1
+        fi
+        git fetch origin
+        git branch -f ${BRANCH}_thorns remotes/origin/${BRANCH}_thorns
+        git clone -b ${BRANCH} . ${BRANCH}
+        make -C ${BRANCH}
+        git clone -b ${BRANCH}_thorns . ${BRANCH}_thorns
+        rsync -av --exclude=".git/*" --delete ${BRANCH}/thorns/ ${BRANCH}_thorns/
+        git --git-dir ${PWD}/${BRANCH}_thorns/.git --work-tree ${PWD}/${BRANCH}_thorns add --all
+        if git --git-dir ${PWD}/${BRANCH}_thorns/.git --work-tree ${PWD}/${BRANCH}_thorns commit -a -m "Updated from source"; then
+            true
+        fi
+        git fetch ${BRANCH}_thorns "${BRANCH}_thorns:${BRANCH}_thorns"
+        git push origin ${BRANCH} && git push origin ${BRANCH}_thorns
+        rm -rf ${BRANCH} ${BRANCH}_thorns
+        ;;
+    
+    "init")
+        BRANCH=$(git branch|grep '^\*'|awk '{print $2}')
+        if [ -r ${BRANCH}_thorns ]; then
+            echo "Existing directory ${BRANCH}_thorns: please remove before running thorn-branch init"
+            exit 1
+        fi
+        git clone -b ${BRANCH} . ${BRANCH}_thorns
+        git --git-dir ${PWD}/${BRANCH}_thorns/.git --work-tree ${PWD}/${BRANCH}_thorns symbolic-ref HEAD refs/heads/master_thorns
+        rm ${BRANCH}_thorns/.git/index
+        git --git-dir ${PWD}/${BRANCH}_thorns/.git --work-tree ${PWD}/${BRANCH}_thorns clean -fdxq
+        echo "This is the initial commit" > ${PWD}/${BRANCH}_thorns/README
+        git --git-dir ${PWD}/${BRANCH}_thorns/.git --work-tree ${PWD}/${BRANCH}_thorns add ${PWD}/${BRANCH}_thorns/README
+        git --git-dir ${PWD}/${BRANCH}_thorns/.git --work-tree ${PWD}/${BRANCH}_thorns commit -a -m "Initial thorns commit"
+        git fetch ${BRANCH}_thorns "${BRANCH}_thorns:${BRANCH}_thorns"
+        rm -rf ${BRANCH}_thorns
+        ;;
+    
+    *)
+        echo "thorn-branch: Command \'$command\' not recognised"
+        exit 1
+esac

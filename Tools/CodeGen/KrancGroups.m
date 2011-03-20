@@ -52,6 +52,7 @@ AddGroupExtra;
 GroupTimelevels;
 allGroupVariables;
 NonevolvedTimelevels;
+CheckGroups;
 
 Begin["`Private`"];
 
@@ -244,6 +245,18 @@ qualifyGFName[gfname_, allgroups_, defaultImp_] :=
 
 allGroupVariables[groups_] :=
   Flatten[Map[groupVariables, groups], 1];
+
+CheckGroups[groups_] :=
+  Module[{vs, names},
+(*    If[!MatchQ[{_String, {_Symbol ...}, {_Symbol -> _} ...}],
+        ThrowError["Groups structure should be of the form {name, {vars, ...}, extras}"]]; *)
+
+    vs = Map[ToString, Union[Flatten[Map[groupVariables, groups]]]];
+    names = Map[groupName, groups];
+
+    If[(int = Intersection[vs,names]) =!= {},
+      ThrowError["Variable names and group names must be distinct.  Group names which are also variable names:", int]];
+  ];
 
 End[];
 

@@ -26,7 +26,7 @@
 (* Generate Cactus Thorns from a high-level interface  *)
 (****************************************************************************)
 
-BeginPackage["KrancTensor`", {"KrancThorn`", "MapLookup`", "KrancGroups`", "Kranc`", "TensorTools`"}];
+BeginPackage["KrancTensor`", {"Errors`", "KrancThorn`", "MapLookup`", "KrancGroups`", "Kranc`", "TensorTools`"}];
 
 CreateKrancThornTT::usage = "Construct a Kranc thorn using TensorTools";
 CreateGroupFromTensor::usage = "";

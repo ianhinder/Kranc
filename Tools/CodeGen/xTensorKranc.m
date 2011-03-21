@@ -17,7 +17,7 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307
 *)
 
-BeginPackage["xTensorKranc`", {"Kranc`", "xAct`xTensor`", "xAct`xCore`", "xAct`xCoba`"}];
+BeginPackage["xTensorKranc`", {"Differencing`", "Kranc`", "KrancGroups`", "xAct`xTensor`", "xAct`xCore`", "xAct`xCoba`"}];
 
 CreateGroupFromTensor::usage = "";
 ReflectionSymmetries::usage = "Produce a list of reflection symmetries of a tensor.";
@@ -34,35 +34,34 @@ TensorCharacterString[t_Symbol?xTensorQ[inds___]] := StringJoin[If[UpIndexQ[#],"
 Options[makeExplicit] = {IncludeCharacter -> False};
 SetAttributes[makeExplicit, Listable];
 e : makeExplicit[_Plus, opts:OptionsPattern[]] := Distribute[Unevaluated[e]];
-makeExplicit[x_Times, opts:OptionsPattern[]] :=Map[makeExplicit[#, opts]&, x];
+makeExplicit[x_Times, opts:OptionsPattern[]] := Map[makeExplicit[#, opts]&, x];
 makeExplicit[Power[x_,p_], opts:OptionsPattern[]] := Power[makeExplicit[x, opts],p];
-makeExplicit[x_?NumericQ, OptionsPattern[]] := x;
-makeExplicit[x_, {}] := makeExplicit[x];
-makeExplicit[t_Symbol?xTensorQ[inds___], OptionsPattern[]] := Module[{indexNumbers,character,indexString},
+makeExplicit[x_?NumericQ, opts:OptionsPattern[]] := x;
+makeExplicit[x_, {}, opts:OptionsPattern[]] := makeExplicit[x];
+makeExplicit[t_Symbol?xTensorQ[inds___], opts:OptionsPattern[]] := Module[{indexNumbers,character,indexString},
   indexNumbers=First/@{inds};
   
   If[OptionValue[IncludeCharacter],
     character = TensorCharacterString[t[inds]];
     indexString = StringJoin[character,ToString/@indexNumbers],
-
     indexString = StringJoin[ToString/@indexNumbers]
   ];
   SymbolJoin[PrintAs[t],Sequence@@indexString]
 ];
 
-makeExplicit[cd_?CovDQ[ind_][expr_], OptionsPattern[]] := Module[{indexNumbers,character,indexString},
+makeExplicit[x_, opts:OptionsPattern[]] := x;
+
+makeExplicit[(cd_?CovDQ)[ind_][expr_], opts:OptionsPattern[]] := Module[{indexNumbers},
   indexNumbers=First/@{ind};
 
-  If[OptionValue[IncludeCharacter],
-    character = TensorCharacterString[cd[ind]];
-    indexString = StringJoin[character,ToString/@indexNumbers],
-
-    indexString = StringJoin[ToString/@indexNumbers]
-  ];
-  SymbolJoin["d",indexString,makeExplicit[expr]]
+  Global`PDstandard2nd[makeExplicit[expr, opts], Sequence@@indexNumbers]
 ];
 
 Options[ExpandComponents] = Options[ExpandComponents];
+
+ExpandComponents[x_Rule, opts:OptionsPattern[makeExplicit]] := Thread[ExpandComponents[x[[1]], opts] -> ExpandComponents[x[[2]], opts]];
+ExpandComponents[dot[x_], opts:OptionsPattern[makeExplicit]] := dot/@ExpandComponents[x, opts];
+ExpandComponents[x_List, opts:OptionsPattern[makeExplicit]] := Flatten[Map[ExpandComponents[#, opts]&, x], 1];
 ExpandComponents[x_, opts:OptionsPattern[makeExplicit]] :=
   Module[{eqs, options},
 
@@ -74,9 +73,10 @@ ExpandComponents[x_, opts:OptionsPattern[makeExplicit]] :=
   ]
 ];
 
+
 (* Compute the reflection symmetries of a tensor *)
-ReflectionSymmetries[t_Symbol?xTensorQ[inds__], b_] :=
-  Module[{cnums, components, componentIndices, counts},
+ReflectionSymmetries[t_Symbol?xTensorQ[inds__]] :=
+  Module[{b=Global`Euclidean, cnums, components, componentIndices, counts},
     (* Get the compoent indices of the basis *)
     cnums = CNumbersOf[b, VBundleOfBasis[b]];
 
@@ -86,19 +86,19 @@ ReflectionSymmetries[t_Symbol?xTensorQ[inds__], b_] :=
     (* Get the indices of each component *)
     componentIndices = Map[IndicesOf[b], components];
 
-
     (* Count the number of instances of each basis index. *)
     countInds[expr_, basis_, cinds_] := Map[(Count[expr,{#,basis}]+Count[expr,{#,-basis}])&, cinds];
     counts = Map[countInds[#, b, cnums]&, componentIndices];
 
     (* For each instance, multiply by -1 *)
-    Thread[components -> (-1)^counts]
+    Thread[ExpandComponents[t[inds]] -> (-1)^counts]
 ];
 
-ReflectionSymmetries[t_Symbol?xTensorQ[], b_] := {};
+ReflectionSymmetries[t_Symbol?xTensorQ[]] := t -> {1,1,1};
+ReflectionSymmetries[t_] := t -> {1, 1, 1};
 
 (* FIXME: Implement this fully *)
-GetTensorAttribute[t_Symbol?xTensorQ[inds___], TensorWeight] := WeightOfTensor[t];
+GetTensorAttribute[t_Symbol?xTensorQ, TensorWeight] := WeightOfTensor[t];
 
 CreateGroupFromTensor[t_Symbol?xTensorQ[inds__]] := Module[{tCharString, nInds, tags, vars, group},
   InfoMessage[InfoFull, "Creating group from tensor with kernel " <> SymbolName[t] <> " and indices " <> ToString[{inds}]];
@@ -120,7 +120,7 @@ CreateGroupFromTensor[t_Symbol?xTensorQ[inds__]] := Module[{tCharString, nInds, 
   Return[group]
 ];
 
-ReflectionSymmetries[x___]:= Throw["ReflectionSymmetriesOfTensor error: "<>ToString[x]];
+ReflectionSymmetries[x___]:= Throw["ReflectionSymmetries error: "<>ToString[x]];
 CreateGroupFromTensor[x___]:= Throw["CreateGroupFromTensor error: "<>ToString[x]];
 
 CheckTensors[expr_] := Validate[expr];

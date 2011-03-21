@@ -17,14 +17,14 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307
 *)
 
-BeginPackage["xTensorKranc`", {"xAct`xTensor`", "xAct`xCore`","xAct`xCoba`"}];
-
+BeginPackage["xTensorKranc`", {"Kranc`", "xAct`xTensor`", "xAct`xCore`", "xAct`xCoba`"}];
 
 CreateGroupFromTensor::usage = "";
-ReflectionSymmetriesOfTensor::usage = "Produce a list of reflection symmetries of a tensor.";
-MakeExplicit::usage = "xTensorMakeExplicit[expr] converts an expression x containing abstract indices into one containing components instead."
+ReflectionSymmetries::usage = "Produce a list of reflection symmetries of a tensor.";
+ExpandComponents::usage = "ExpandComponents[expr] converts an expression x containing abstract indices into one containing components instead."
 IncludeCharacter::usage = "IncludeCharacter is an option for makeExplicit which specifies whether the character should also be included in the generated variable names."
 TensorCharacterString::usage = "TensorCharacterString[tensor[inds]] returns a string consisting of a sequence of U's and D's representing the character of tensor."
+
 Begin["`Private`"];
 
 (* FIXME: Add support for ManualCartesian attribute *)
@@ -62,8 +62,8 @@ makeExplicit[cd_?CovDQ[ind_][expr_], OptionsPattern[]] := Module[{indexNumbers,c
   SymbolJoin["d",indexString,makeExplicit[expr]]
 ];
 
-Options[MakeExplicit] = Options[makeExplicit];
-MakeExplicit[x_, opts:OptionsPattern[makeExplicit]] :=
+Options[ExpandComponents] = Options[ExpandComponents];
+ExpandComponents[x_, opts:OptionsPattern[makeExplicit]] :=
   Module[{eqs, options},
 
   eqs = ComponentArray[TraceBasisDummy[x]];
@@ -75,10 +75,10 @@ MakeExplicit[x_, opts:OptionsPattern[makeExplicit]] :=
 ];
 
 (* Compute the reflection symmetries of a tensor *)
-ReflectionSymmetriesOfTensor[t_Symbol?xTensorQ[inds__], b_] :=
-  Module[{cinds, components, componentIndices, counts},
+ReflectionSymmetries[t_Symbol?xTensorQ[inds__], b_] :=
+  Module[{cnums, components, componentIndices, counts},
     (* Get the compoent indices of the basis *)
-    cinds = CNumbersOf[b, VBundleOfBasis[b]];
+    cnums = CNumbersOf[b, VBundleOfBasis[b]];
 
     (* Get a list of components of the tensor t in the basis b *)
     components = Flatten[ComponentArray[ToBasis[b][t[inds]]]];
@@ -89,18 +89,18 @@ ReflectionSymmetriesOfTensor[t_Symbol?xTensorQ[inds__], b_] :=
 
     (* Count the number of instances of each basis index. *)
     countInds[expr_, basis_, cinds_] := Map[(Count[expr,{#,basis}]+Count[expr,{#,-basis}])&, cinds];
-    counts = Map[countInds[#, b, cinds]&, componentIndices];
+    counts = Map[countInds[#, b, cnums]&, componentIndices];
 
     (* For each instance, multiply by -1 *)
     Thread[components -> (-1)^counts]
 ];
 
-ReflectionSymmetriesOfTensor[t_Symbol?xTensorQ[],b_] := {};
+ReflectionSymmetries[t_Symbol?xTensorQ[], b_] := {};
 
 (* FIXME: Implement this fully *)
 GetTensorAttribute[t_Symbol?xTensorQ[inds___], TensorWeight] := WeightOfTensor[t];
 
-CreateGroupFromTensor[t_Symbol?xTensorQ[inds__], b_] := Module[{tCharString, nInds, tags, vars, group},
+CreateGroupFromTensor[t_Symbol?xTensorQ[inds__]] := Module[{tCharString, nInds, tags, vars, group},
   InfoMessage[InfoFull, "Creating group from tensor with kernel " <> SymbolName[t] <> " and indices " <> ToString[{inds}]];
 
   (* Get a string representing the character of the tensor *)
@@ -119,6 +119,9 @@ CreateGroupFromTensor[t_Symbol?xTensorQ[inds__], b_] := Module[{tCharString, nIn
   group = CreateGroup[SymbolName[t] <> "_group", vars, {Tags -> tags}];
   Return[group]
 ];
+
+ReflectionSymmetries[x___]:= Throw["ReflectionSymmetriesOfTensor error: "<>ToString[x]];
+CreateGroupFromTensor[x___]:= Throw["CreateGroupFromTensor error: "<>ToString[x]];
 
 CheckTensors[expr_] := Validate[expr];
 

@@ -21,7 +21,7 @@
 
 $KrancTensorPackage="xTensorKranc`";
 Get["KrancTensor`"];
-Get["GeneralRelativity`LoadMetric`"];
+Get["Metrics`LoadMetric`"];
 $DefInfoQ=False;
 $CVVerbose=False;
 $PrePrint=ScreenDollarIndices;

@@ -28,7 +28,7 @@
 BeginPackage["KrancThorn`", {"CodeGen`", "Thorn`",
  "MapLookup`", "KrancGroups`", "Differencing`",
  "CalculationFunction`", "Errors`", "Helpers`", "CactusBoundary`",
- "Param`", "Schedule`", "Interface`", "Kranc`"}];
+ "KrancTensor`", "Param`", "Schedule`", "Interface`", "Kranc`"}];
 
 CreateKrancThorn::usage = "Construct a Kranc thorn";
 

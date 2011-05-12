@@ -62,8 +62,10 @@ CreateKrancThornTT[groups_, parentDirectory_, thornName_, opts___] :=
     InfoMessage[Info, "Reflection symmetries: ", reflectionSymmetries];
 
     InfoMessage[Terse, "Creating (component-based) Kranc thorn"];
-    CreateKrancThorn[expGroups, parentDirectory, thornName, Apply[Sequence, options], 
-      ReflectionSymmetries -> reflectionSymmetries]];
+
+    (* It is necessary to include the KrancThorn context here due to some annoying Needs[] dependency issue *)
+    KrancThorn`CreateKrancThorn[expGroups, parentDirectory, thornName,
+      Apply[Sequence, options], ReflectionSymmetries -> reflectionSymmetries]];
 
 computeReflectionSymmetries[declaredGroups_, groups_] :=
   Module[{variables, syms},

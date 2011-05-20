@@ -221,7 +221,7 @@ printEq[eq_] :=
     split[ x_ + y___] := { x, " + ..."};
     split[-x_ + y___] := {-x, " + ..."};
     split[ x_       ] := { x, ""};
-    rhsSplit = split[Expand@ReplacePowers@rhs];
+    rhsSplit = split[Expand@ReplacePowers[rhs,False]];
     rhsString = ToString@CForm[rhsSplit[[1]]] <> rhsSplit[[2]];
     InfoMessage[InfoFull, " " <> ToString@lhs <> " -> " <> rhsString]];
 

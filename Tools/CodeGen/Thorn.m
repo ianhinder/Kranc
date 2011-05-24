@@ -509,7 +509,8 @@ CreateSetterSource[calcs_, debug_, include_, imp_,
          {IncludeSystemFile["assert.h"],
           IncludeSystemFile["math.h"],
           IncludeSystemFile["stdio.h"],
-          IncludeSystemFile["stdlib.h"]},
+          IncludeSystemFile["stdlib.h"],
+          IncludeSystemFile["string.h"]},
          {"\n"}
       ],
 

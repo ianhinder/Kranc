@@ -73,7 +73,7 @@ CreateKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_, groups_,
 
   Module[{registerEvolved, (*registerConstrained,*)
     nonevolvedGroupStructures, evolvedGroupStructures, rhsGroupStructures,
-    groupStructures, interface},
+    groupStructures, interface, getMap},
     VerifyGroupNames[nonevolvedGroups];
     VerifyGroupNames[evolvedGroups];
     VerifyGroupNames[rhsGroups];
@@ -105,6 +105,13 @@ CreateKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_, groups_,
       ArgString -> "CCTK_POINTER_TO_CONST IN cctkGH, CCTK_INT IN dir, CCTK_INT IN nsize, CCTK_INT OUT ARRAY imin, CCTK_INT OUT ARRAY imax, CCTK_REAL OUT ARRAY q, CCTK_INT IN table_handle"
     };
 
+    getMap = 
+    {
+      Name -> "MultiPatch_GetMap",
+      Type -> "CCTK_INT",
+      ArgString -> "CCTK_POINTER_TO_CONST IN cctkGH"
+    };
+
 
     (* For each group declared in this thorn, we need an entry in the
         interface file.  Each evolved group needs an associated rhs
@@ -131,7 +138,7 @@ CreateKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_, groups_,
            If[OptionValue[UseVectors], {"vectors.h"}, {}]],
       groupStructures,
       UsesFunctions ->
-        Join[{registerEvolved, (*registerConstrained,*) diffCoeff}, 
+        Join[{registerEvolved, (*registerConstrained,*) diffCoeff, getMap}, 
              CactusBoundary`GetUsedFunctions[]]];
     Return[interface]];
 

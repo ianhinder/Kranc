@@ -276,6 +276,34 @@ assignVariableFromExpression[dest_, expr_, declare_, vectorise_] :=
 
     {code}];
 
+(* This and assignVariableFromExpression should be combined *)
+generateCodeFromExpression[expr_, vectorise_] :=
+  Module[{tSym, type, cleanExpr, code},
+    tSym = Unique[];
+    cleanExpr = ReplacePowers[expr, vectorise] /. Kranc`t -> tSym;
+
+    If[SOURCELANGUAGE == "C",
+      code =
+        ToString[cleanExpr, CForm,         PageWidth -> Infinity],
+      code = ToString[cleanExpr, FortranForm, PageWidth -> 120]];
+
+    If[SOURCELANGUAGE != "C",
+      code = StringReplace[code, "\n  "      -> " &\n"];
+      code = StringReplace[code, "   -  "    -> " &  "];
+      code = StringReplace[code, ".eq."      -> " = "];
+      code = StringReplace[code, "=        " -> "="];
+      code = StringReplace[code, "\\"        -> ""];
+      code = StringReplace[code, "(index)"   -> "(i,j,k)"]];
+
+    code = StringReplace[code, "normal1"     -> "normal[0]"];
+    code = StringReplace[code, "normal2"     -> "normal[1]"];
+    code = StringReplace[code, "normal3"     -> "normal[2]"];
+    code = StringReplace[code, "BesselJ"-> "gsl_sf_bessel_Jn"];
+    code = StringReplace[code, ToString@tSym -> "cctk_time"];
+    code = StringReplace[code, "\"" -> ""];
+
+    {code}];
+
 (* --------------------------------------------------------------------------
    Shorthands
    -------------------------------------------------------------------------- *)
@@ -504,7 +532,8 @@ equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
   Module[{rhss, lhss, gfsInRHS, gfsInLHS, gfsOnlyInRHS, localGFs,
           localMap, eqs2, derivSwitch, code, functionName, calcCode,
           loopFunction, gfsInBoth, gfsDifferentiated,
-          gfsDifferentiatedAndOnLHS, declare, eqsReplaced},
+          gfsDifferentiatedAndOnLHS, declare, eqsReplaced,
+          generateEquationsCode},
 
     rhss = Map[#[[2]] &, eqs];
     lhss = Map[#[[1]] &, eqs];
@@ -565,10 +594,42 @@ equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
        to these do not generate declarations here. *)
     declare = Block[{$RecursionLimit=Infinity},markFirst[First /@ eqsReplaced, Map[localName, gfsInRHS]]];
 
-    calcCode =
-      MapThread[{assignVariableFromExpression[#1[[1]], #1[[2]], #2, OptionValue[UseVectors]], "\n"} &,
-       {eqsReplaced, declare}];
+    (* Generate the code for the equations, factoring out any
+       sequential IfThen statements with the same condition.  Try to
+       declare variables as they are assigned, but it is only possible
+       to do this outside all if(){} statements. "declare2" is a list
+       of booleans indicating if the LHS variables should be declared
+       as they are assigned.  *)
+    generateEquationsCode[eqs2_, declare2_] :=
+      Module[{ifs, ind, cond, num, preDeclare},
+        ifs = Position[eqs2, _ -> IfThen[__], {1}];
+        If[Length[ifs] <= 1,
+          Riffle[MapThread[assignVariableFromExpression[#1[[1]], #1[[2]], #2, OptionValue[UseVectors]] &,
+            {eqs2, declare2}],"\n"],
+        (* else *)
+          ind = ifs[[1,1]];
+          If[ind > 1,
+            {generateEquationsCode[Take[eqs2, ind-1], Take[declare2, ind-1]], "\n",
+             generateEquationsCode[Drop[eqs2, ind-1], Drop[declare2, ind-1]]},
+          (* else *)
+            cond = eqs2[[1,2,1]];
+            num = LengthWhile[eqs2, MatchQ[#, _ -> IfThen[cond, _, _]] &];
+            If[num == 1,
+              {generateEquationsCode[Take[eqs2,1], Take[declare2,1]], "\n",
+               generateEquationsCode[Drop[eqs2,1], Drop[declare2,1]]},
+            (* else *)
+              e1 = Take[eqs2, num];
+              e2 = Drop[eqs2, num];
+              preDeclare = #[[2,1]] & /@ Select[MapThread[List, {Take[declare2,num], e1}], #[[1]] &];
+              {Map[DeclareVariableNoInit[#, DataType[]] &, Complement[Union[preDeclare], localName/@gfsInRHS]], {"\n"},
+              {Conditional[generateCodeFromExpression[cond, OptionValue[UseVectors]],
+                generateEquationsCode[Map[#[[1]] -> #[[2,2]]&, e1], ConstantArray[False, Length[e1]]],
+                generateEquationsCode[Map[#[[1]] -> #[[2,3]]&, e1], ConstantArray[False, Length[e1]]]],
+              "\n",
+              generateEquationsCode[e2,Drop[declare2,Length[e1]]]}}]]]];
 
+    calcCode = generateEquationsCode[eqsReplaced, declare];
+      
     GenericGridLoop[functionName,
     {
       (* DeclareDerivatives[defsWithoutShorts, eqsOrdered], *)

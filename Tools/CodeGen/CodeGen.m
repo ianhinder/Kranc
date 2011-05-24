@@ -43,6 +43,9 @@ IncludeSystemFile::usage = "IncludeFile[name] returns a block of code" <>
 DeclareVariable::usage = "DeclareVariable[name, type] returns a block of code " <>
   "that declares a variable of given name and type.  'name' and 'type' should be " <>
   "strings.";
+DeclareVariableNoInit::usage = "DeclareVariableNoInit[name, type] returns a block of code " <>
+  "that declares a variable of given name and type without initialising it.  'name' and 'type' should be " <>
+  "strings.";
 DeclareVariables::usage = "DeclareVariables[names, type] returns a block of code " <>
   "that declares a list of variables of given name and type.  'names' should be a list" <>
   " of strings and 'type' should be a string string.";
@@ -130,6 +133,7 @@ PartitionVarList::usage = "";
 Quote::usage = "Quote[x] returns x surrounded by quotes";
 DataType::usage = "DataType[] returns a string for the grid function data type (e.g. CCTK_REAL)";
 SetDataType::usage = "SetDataType[type] sets a string for the grid function data type (e.g. CCTK_REAL)";
+Conditional;
 
 Begin["`Private`"];
 
@@ -244,6 +248,12 @@ IncludeSystemFile[filename_] :=
 DeclareVariable[name_, type_] :=
 If[SOURCELANGUAGE == "C",
   {type, " ",    name, " = INITVALUE" <> EOL[]},
+  {type, " :: ", name, EOL[]} (* no value init here to avoid implicit SAVE attribute *)
+  ];
+
+DeclareVariableNoInit[name_, type_] :=
+If[SOURCELANGUAGE == "C",
+  {type, " ",    name, EOL[]},
   {type, " :: ", name, EOL[]} (* no value init here to avoid implicit SAVE attribute *)
   ];
 
@@ -748,12 +758,16 @@ BoundaryWithGhostsLoop[block_] :=
       ]}
      ]]]};
 
-conditional[condition_, block_] :=
+Conditional[condition_, block_] :=
  {"if (", condition, ")\n",
   CBlock[block]};
 
+Conditional[condition_, block1_, block2_] :=
+ {"if (", condition, ")\n",
+  CBlock[block1], "else\n", CBlock[block2]};
+
 onceInGridLoop[block_] :=
-  conditional["i == 5 && j == 5 && k == 5",
+  Conditional["i == 5 && j == 5 && k == 5",
               block];
 
 InfoVariable[name_] :=

@@ -18,7 +18,7 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-BeginPackage["Jacobian`", {"Errors`", "Helpers`", "Kranc`", "Differencing`", "MapLookup`", "CodeGen`"}];
+BeginPackage["Jacobian`", {"Errors`", "Helpers`", "Kranc`", "Differencing`", "MapLookup`", "CodeGen`", "KrancGroups`"}];
 
 JacobianQ;
 InsertJacobian;
@@ -26,6 +26,8 @@ CreateJacobianVariables;
 JacobianGenericFDParameters;
 JacobianSymbols;
 JacobianGroups;
+JacobianCheckGroups;
+JacobianConditionalGridFunctions;
 
 Begin["`Private`"];
 
@@ -88,17 +90,17 @@ CommentedBlock["Jacobian variable pointers",
    "  CCTK_WARN (1, \"GenericFD::jacobian_group and GenericFD::jacobian_derivative_group must both be set to valid group names\");\n",
    "}\n\n",
    "CCTK_REAL *jacobian_ptrs[9];\n",
-   "GenericFD_GroupDataPointers(cctkGH, jacobian_group,\n",
-   "                            9, jacobian_ptrs);\n",
+   "if (use_jacobian) GenericFD_GroupDataPointers(cctkGH, jacobian_group,\n",
+   "                                              9, jacobian_ptrs);\n",
     "\n",
-    Table[{"CCTK_REAL *J",i,j," = jacobian_ptrs[",(i-1)*3+j-1,"];\n"},{i,1,3},{j,1,3}],
+    Table[{"CCTK_REAL *J",i,j," = use_jacobian ? jacobian_ptrs[",(i-1)*3+j-1,"] : 0;\n"},{i,1,3},{j,1,3}],
    "\n",
    "CCTK_REAL *jacobian_derivative_ptrs[18];\n",
-   "GenericFD_GroupDataPointers(cctkGH, jacobian_derivative_group,\n",
-   "                            18, jacobian_derivative_ptrs);\n",
+   "if (use_jacobian) GenericFD_GroupDataPointers(cctkGH, jacobian_derivative_group,\n",
+   "                                              18, jacobian_derivative_ptrs);\n",
     "\n",
     Module[{syms = Flatten[Table[{"dJ",i,j,k},{i,1,3},{j,1,3},{k,j,3}],2]},
-      MapIndexed[{"CCTK_REAL *", #1, " = jacobian_derivative_ptrs[", #2-1, "];\n"} &, syms]]}];
+      MapIndexed[{"CCTK_REAL *", #1, " = use_jacobian ? jacobian_derivative_ptrs[", #2-1, "] : 0;\n"} &, syms]]}];
 
 (* List of symbols which should be allowed in a calculation *)
 JacobianSymbols[] :=
@@ -120,7 +122,18 @@ JacobianGroups[] :=
    {"unknown::unknown",  {Global`dJ111, Global`dJ112, Global`dJ113, Global`dJ122, Global`dJ123, Global`dJ133,
                                Global`dJ211, Global`dJ212, Global`dJ213, Global`dJ222, Global`dJ223, Global`dJ233,
                                Global`dJ311, Global`dJ312, Global`dJ313, Global`dJ322, Global`dJ323, Global`dJ333}}};
-  
+
+JacobianCheckGroups[groups_] :=
+  Module[{int},
+    int = Intersection[allGroupVariables[groups], allGroupVariables[JacobianGroups[]]];
+    If[int =!= {},
+      Throw["Error: Some group variables conflict with reserved Jacobian variable names: " <> ToString[int]]]];
+
+(* These gridfunctions are only given local variable copies if the use_jacobian variable is true *)
+JacobianConditionalGridFunctions[] :=
+  {("dJ" ~~ DigitCharacter ~~ DigitCharacter ~~ DigitCharacter) | ("J" ~~ DigitCharacter ~~ DigitCharacter),
+   "use_jacobian",
+   None};
 
 End[];
 

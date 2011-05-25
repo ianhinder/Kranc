@@ -28,7 +28,7 @@
 BeginPackage["KrancThorn`", {"CodeGen`", "Thorn`",
  "MapLookup`", "KrancGroups`", "Differencing`",
  "CalculationFunction`", "Errors`", "Helpers`", "CactusBoundary`",
- "KrancTensor`", "Param`", "Schedule`", "Interface`", "Kranc`"}];
+ "KrancTensor`", "Param`", "Schedule`", "Interface`", "Kranc`", "Jacobian`"}];
 
 CreateKrancThorn::usage = "Construct a Kranc thorn";
 
@@ -141,6 +141,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     VerifyString[thornName];
     VerifyString[implementation];
     VerifyGroupNames[declaredGroups];
+
+    If[OptionValue[UseJacobian], JacobianCheckGroups[groups]];
 
     InfoMessage[Terse, "Creating startup file"];
     startup = CreateStartupFile[thornName, thornName];

@@ -939,11 +939,14 @@ enabled by an option of the form \verb|Use* -> True| in the call to
 
 \section{Jacobians}
 
-Kranc allows the user to relate finite differencing operators to
-partial derivatives via an arbitrary user-defined Jacobian
-transformation provided in a grid function.  This feature is enabled
-by setting \verb|UseJacobian -> True| in the options to \verb|CreateThorn| or
-\verb|CreateThornTT|.
+Kranc allows the user to apply an arbitrary user-defined Jacobian
+transformation (provided in a grid function) to all derivatives.  This
+feature is enabled by setting \verb|UseJacobian -> True| in the
+options to \verb|CreateThorn| or \verb|CreateThornTT|.  This can be
+used to generate codes which work with multi-block schemes.  The use
+of the Jacobian is determined at run time, so a single code can be
+generated which will work both with and without a Jacobian being
+present.
 
 Kranc does not provide the Jacobian grid function; it might be
 provided by an external infrastructure (for example for multi-block
@@ -1018,9 +1021,16 @@ Note:
 \item The Jacobian multiplication introduces an additional performance
   cost to the simulation, so it should not be enabled unless
   necessary.
-\item It is currently not possible to generate a thorn which applies
-  the Jacobians optionally based on a run-time parameter or depending
-  on the current Carpet map.  This is planned for the future.
+\item If the Jacobian parameters are left unset, the partial
+  derivatives will not be multiplied by any Jacobian, and the
+  performance will be only slightly worse than if UseJacobian was not
+  set and the Jacobian code was not generated (the extra cost comes
+  from the use of run-time conditionals).
+\item The parameter \verb|GenericFD::jacobian_identity_map| can be
+  used with multi-block systems to prevent the use of the Jacobian on
+  one of the maps.  Set this parameter to the map number (e.g.~0)
+  where the Jacobian should not be applied.  This can lead to a
+  significant performance improvement.
 \end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

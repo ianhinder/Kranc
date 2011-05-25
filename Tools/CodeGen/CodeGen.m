@@ -296,8 +296,10 @@ AssignVariable[dest_, src_] :=
 DeclareAssignVariable[type_, dest_, src_] :=
   {type, " const ", dest, " = ", src, EOL[]};
 
-AssignVariableInLoop[dest_, src_] :=
-  {dest, " = ", src, EOL[]};
+AssignVariableInLoop[dest_, src_, vectorise_:False] :=
+  Module[{loader},
+    loader[x_] := If[vectorise, {"vec_load(", x, ")"}, x];
+    {dest, " = ", loader[src], EOL[]}];
 (*
   {dest, " = ", src, EOL[],
    TestForNaN[dest]};

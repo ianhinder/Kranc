@@ -630,16 +630,42 @@ equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
 
     calcCode = generateEquationsCode[eqsReplaced, declare];
       
+
+    assignLocalGridFunctions[gs_, useVectors_, useJacobian_] :=
+      Module[{conds, varPatterns, varsInConds, simpleVars, code},
+        conds =
+          {{"eT" ~~ _ ~~ _, "*stress_energy_state", "ToReal(0.0)"}}; (* This should be passed as an option *)
+        If[useJacobian,
+          conds = Append[conds, JacobianConditionalGridFunctions[]]];
+
+        varPatterns = Map[First, conds];
+        varsInConds = Map[Function[pattern, Select[gs,StringMatchQ[ToString[#], pattern] &]], varPatterns];
+        simpleVars = Complement[gs, Flatten[varsInConds]];
+        code = {"\n",
+         Map[DeclareMaybeAssignVariableInLoop[
+              DataType[], localName[#], GridName[#],
+              False,"", useVectors] &, simpleVars],
+         {"\n",
+         Riffle[
+           MapThread[
+             If[Length[#2] > 0,
+               {DeclareVariables[localName/@#2, DataType[]],"\n",
+                Conditional[#1,
+                  Table[AssignVariableInLoop[localName[var], GridName[var], useVectors], {var, #2}],
+                  Sequence@@If[#3 =!= None, {Table[AssignVariableInLoop[localName[var], #3, useVectors], {var, #2}]}, {}]]},
+               (* else *)
+               {}] &,
+             {Map[#[[2]]&, conds], varsInConds, Map[#[[3]]&, conds]}], "\n"]}};
+         code
+      ];
+
+
     GenericGridLoop[functionName,
     {
       (* DeclareDerivatives[defsWithoutShorts, eqsOrdered], *)
 
       CommentedBlock["Assign local copies of grid functions",
-        Map[DeclareMaybeAssignVariableInLoop[
-              DataType[], localName[#], GridName[#],
-              StringMatchQ[ToString[GridName[#]], "eT" ~~ _ ~~ _ ~~ "[" ~~ __ ~~ "]"],
-                "*stress_energy_state", OptionValue[UseVectors]] &,
-            gfsInRHS]],
+        assignLocalGridFunctions[gfsInRHS, OptionValue[UseVectors], OptionValue[UseJacobian]]],
 
       CommentedBlock["Include user supplied include files",
         Map[IncludeFile, incs]],

@@ -209,7 +209,7 @@ void GenericFD_GetBoundaryInfo(cGH const * restrict const cctkGH,
 	imin[dir] = npoints;
 	break;
       case 1: /* Upper boundary */
-	imax[dir] = cctk_lssh[CCTK_LSSH_IDX(0,dir)] - npoints;
+	imax[dir] = CCTK_LSSH(0,dir) - npoints;
 	break;
       default:
 	CCTK_WARN(0, "internal error");
@@ -229,7 +229,7 @@ void GenericFD_LoopOverEverything(cGH const * restrict const cctkGH, Kranc_Calcu
   CCTK_REAL  tangentA[] = {0,0,0};
   CCTK_REAL  tangentB[] = {0,0,0};
   int   bmin[] = {0,0,0};
-  int   bmax[] = {cctk_lssh[CCTK_LSSH_IDX(0,0)],cctk_lssh[CCTK_LSSH_IDX(0,1)],cctk_lssh[CCTK_LSSH_IDX(0,2)]};
+  int   bmax[] = {CCTK_LSSH(0,0),CCTK_LSSH(0,1),CCTK_LSSH(0,2)};
 
   calc(cctkGH, dir, face, normal, tangentA, tangentB, bmin, bmax, 0, NULL);
   return;
@@ -291,7 +291,7 @@ void GenericFD_LoopOverBoundary(cGH const * restrict const cctkGH, Kranc_Calcula
             break;
           case +1:
             bmin[d] = imax[d];
-            bmax[d] = cctk_lssh[CCTK_LSSH_IDX(0,d)];
+            bmax[d] = CCTK_LSSH(0,d);
             have_bnd = 1;
             all_physbnd = all_physbnd && is_physbnd[2*d+1];
             break;
@@ -384,7 +384,7 @@ void GenericFD_LoopOverBoundaryWithGhosts(cGH const * restrict const cctkGH, Kra
             break;
           case +1:
             bmin[d] = imax[d];
-            bmax[d] = cctk_lssh[CCTK_LSSH_IDX(0,d)];
+            bmax[d] = CCTK_LSSH(0,d);
             have_bnd = 1;
             have_physbnd = have_physbnd || is_physbnd[2*d+1];
             break;
@@ -464,7 +464,7 @@ void GenericFD_PenaltyPrim2Char(cGH const * restrict const cctkGH, int const dir
   CCTK_REAL  tangentA[] = {0,0,0};
   CCTK_REAL  tangentB[] = {0,0,0};
   int   bmin[] = {0,0,0};
-  int   bmax[] = {cctk_lssh[CCTK_LSSH_IDX(0,0)],cctk_lssh[CCTK_LSSH_IDX(0,1)],cctk_lssh[CCTK_LSSH_IDX(0,2)]};
+  int   bmax[] = {cctk_lsh[0],cctk_lsh[1],cctk_lsh[2]};
   CCTK_REAL  **all_vars;
   int        i = 0;
 

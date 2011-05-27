@@ -652,7 +652,7 @@ equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
                {DeclareVariables[localName/@#2, DataType[]],"\n",
                 Conditional[#1,
                   Table[AssignVariableInLoop[localName[var], GridName[var], useVectors], {var, #2}],
-                  Sequence@@If[#3 =!= None, {Table[AssignVariableInLoop[localName[var], #3, useVectors], {var, #2}]}, {}]]},
+                  Sequence@@If[#3 =!= None, {Table[AssignVariableInLoop[localName[var], #3, False (*useVectors*)], {var, #2}]}, {}]]},
                (* else *)
                {}] &,
              {Map[#[[2]]&, conds], varsInConds, Map[#[[3]]&, conds]}], "\n"]}};

@@ -511,7 +511,7 @@ void GenericFD_AssertGroupStorage(cGH const * restrict const cctkGH, const char 
 
 /* Return a list of pointers to the members of a named group */
 void GenericFD_GroupDataPointers(cGH const * restrict const cctkGH, const char *group_name,
-                                 int nvars, CCTK_REAL **ptrs)
+                                 int nvars, CCTK_REAL const *restrict *ptrs)
 {
   int group_index, status;
   cGroup  group_info;
@@ -541,6 +541,6 @@ void GenericFD_GroupDataPointers(cGH const * restrict const cctkGH, const char *
 
   for (int v = 0; v < nvars; v++)
   {
-    ptrs[v] = (CCTK_REAL *) CCTK_VarDataPtrI(cctkGH, 0 /* timelevel */, v1+v);
+    ptrs[v] = (CCTK_REAL const *) CCTK_VarDataPtrI(cctkGH, 0 /* timelevel */, v1+v);
   }
 }

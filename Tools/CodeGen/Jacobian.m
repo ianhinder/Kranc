@@ -84,23 +84,23 @@ InsertJacobian[calc_List, opts:OptionsPattern[]] :=
    derivatives groups *)
 CreateJacobianVariables[] :=
 CommentedBlock["Jacobian variable pointers",
-  {"bool use_jacobian = (!CCTK_IsFunctionAliased(\"MultiPatch_GetMap\") || MultiPatch_GetMap(cctkGH) != jacobian_identity_map)\n                     && strlen(jacobian_group) > 0;\n",
+  {"bool const use_jacobian = (!CCTK_IsFunctionAliased(\"MultiPatch_GetMap\") || MultiPatch_GetMap(cctkGH) != jacobian_identity_map)\n                     && strlen(jacobian_group) > 0;\n",
    "if (use_jacobian && strlen(jacobian_derivative_group) == 0)\n",
    "{\n",
    "  CCTK_WARN (1, \"GenericFD::jacobian_group and GenericFD::jacobian_derivative_group must both be set to valid group names\");\n",
    "}\n\n",
-   "CCTK_REAL *jacobian_ptrs[9];\n",
+   "CCTK_REAL const *restrict jacobian_ptrs[9];\n",
    "if (use_jacobian) GenericFD_GroupDataPointers(cctkGH, jacobian_group,\n",
    "                                              9, jacobian_ptrs);\n",
     "\n",
-    Table[{"CCTK_REAL *J",i,j," = use_jacobian ? jacobian_ptrs[",(i-1)*3+j-1,"] : 0;\n"},{i,1,3},{j,1,3}],
+    Table[{"CCTK_REAL const *restrict const J",i,j," = use_jacobian ? jacobian_ptrs[",(i-1)*3+j-1,"] : 0;\n"},{i,1,3},{j,1,3}],
    "\n",
-   "CCTK_REAL *jacobian_derivative_ptrs[18];\n",
+   "CCTK_REAL const *restrict jacobian_derivative_ptrs[18];\n",
    "if (use_jacobian) GenericFD_GroupDataPointers(cctkGH, jacobian_derivative_group,\n",
    "                                              18, jacobian_derivative_ptrs);\n",
     "\n",
     Module[{syms = Flatten[Table[{"dJ",i,j,k},{i,1,3},{j,1,3},{k,j,3}],2]},
-      MapIndexed[{"CCTK_REAL *", #1, " = use_jacobian ? jacobian_derivative_ptrs[", #2-1, "] : 0;\n"} &, syms]]}];
+      MapIndexed[{"CCTK_REAL const *restrict const ", #1, " = use_jacobian ? jacobian_derivative_ptrs[", #2-1, "] : 0;\n"} &, syms]]}];
 
 (* List of symbols which should be allowed in a calculation *)
 JacobianSymbols[] :=

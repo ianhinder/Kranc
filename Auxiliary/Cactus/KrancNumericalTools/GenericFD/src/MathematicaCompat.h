@@ -12,7 +12,7 @@
 #  define Abs(x)        (abs(x))
 #  define Min(x, y)     (min(x,y))
 #  define Max(x, y)     (max(x,y))
-/* IfThen cannot be expressed in Fortran */
+#  define IfThen(x,y,z) ((x)*(y) + (1-(x))*(z))
 #endif
 
 #define Exp(x)        (exp(x))

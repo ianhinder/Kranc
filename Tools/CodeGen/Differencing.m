@@ -305,8 +305,10 @@ ComponentDerivativeOperatorMacroDefinition[componentDerivOp:(name_[inds___] -> e
        liName = "p" <> signModifier <> quotient <> ToString[Apply[SequenceForm,Simplify[1/(ss /. spacings2)],{0,Infinity}]];
 (*       Print["liName == ", liName];*)
 
-       (* rhs = rhs /. pat -> Times[liName, rest], *)
+       rhs = rhs /. pat -> Times[liName, rest],
+(*
        rhs = (rhs /. pat -> Times[liName, rest]) / If[vectorise, liName, 1], (* horrible *)
+*)
 (*       Print["!!!!!!!!DOES NOT MATCH!!!!!!!!!"];*)
        rhs = rhs];
 
@@ -330,16 +332,44 @@ ComponentDerivativeOperatorMacroDefinition[componentDerivOp:(name_[inds___] -> e
     {pDefs, FlattenBlock[{
       "#ifndef KRANC_DIFF_FUNCTIONS\n",
        (* default, differencing operators are macros *)
+(*
       "#  define ", macroName, "(u) ", "(kmul(", liName, ",", rhs, "))\n",
+*)
+      "#  define ", macroName, "(u) ", "(", rhs, ")\n",
       "#else\n",
        (* new, differencing operators are static functions *)
+(*
       "#  define ", macroName, "(u) ", "(kmul(", liName, ",", macroName, "_impl((u),dj,dk)))\n",
-      "#include \"vectors.h\"\n",
-      "static CCTK_REAL_VEC ", macroName, "_impl(CCTK_REAL const* restrict const u, ptrdiff_t const dj, ptrdiff_t const dk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_PURE CCTK_ATTRIBUTE_UNUSED;\n",
+      "static CCTK_REAL_VEC ", macroName, "_impl(CCTK_REAL const* restrict const u, ptrdiff_t const dj, ptrdiff_t const dk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;\n",
       "static CCTK_REAL_VEC ", macroName, "_impl(CCTK_REAL const* restrict const u, ptrdiff_t const dj, ptrdiff_t const dk)\n",
       If[StringMatchQ[rhs, RegularExpression[".*\\bdir\\d\\b.*"]],
          { "{ return ToReal(1e30); /* ERROR */ }\n" },
          { "{ return ", rhs, "; }\n" }],
+*)
+(*
+      "#  define ", macroName, "(u) ", "(kmul(", liName, ",", macroName, "_impl(u,cdj,cdk)))\n",
+      "static CCTK_REAL_VEC ", macroName, "_impl(CCTK_REAL const* restrict const u, ptrdiff_t const cdj, ptrdiff_t const cdk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;\n",
+      "static CCTK_REAL_VEC ", macroName, "_impl(CCTK_REAL const* restrict const u, ptrdiff_t const cdj, ptrdiff_t const cdk)\n",
+      (* We cannot handle dirN,
+         so we punt on all expressions that contain dirN *)
+      If[StringMatchQ[rhs, RegularExpression[".*\\bdir\\d\\b.*"]],
+         { "{ return ToReal(1e30); /* ERROR */ }\n" },
+         { "{\n",
+           "  ptrdiff_t const cdi=sizeof(CCTK_REAL);\n",
+           "  return ", rhs, ";\n",
+           "}\n" }],
+*)
+      "#  define ", macroName, "(u) ", "(", macroName, "_impl(u,", liName, ",cdj,cdk))\n",
+      "static CCTK_REAL_VEC ", macroName, "_impl(CCTK_REAL const* restrict const u, CCTK_REAL_VEC const ", liName, ", ptrdiff_t const cdj, ptrdiff_t const cdk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;\n",
+      "static CCTK_REAL_VEC ", macroName, "_impl(CCTK_REAL const* restrict const u, CCTK_REAL_VEC const ", liName, ", ptrdiff_t const cdj, ptrdiff_t const cdk)\n",
+      (* We cannot handle dirN,
+         so we punt on all expressions that contain dirN *)
+      If[StringMatchQ[rhs, RegularExpression[".*\\bdir\\d\\b.*"]],
+         { "{ return ToReal(1e30); /* ERROR */ }\n" },
+         { "{\n",
+           "  ptrdiff_t const cdi=sizeof(CCTK_REAL);\n",
+           "  return ", rhs, ";\n",
+           "}\n" }],
       "#endif\n"
     }]},
 
@@ -422,6 +452,7 @@ DifferenceGFTerm[op_, i_, j_, k_, vectorise_] :=
 *)
 
   If[vectorise,
+(*
     remaining "vec_loadu_maybe3" <>
       "(" <> ToString[CFormHideStrings[nx /. {dir1->1, dir2->1, dir3->1}]] <> "," <>
              ToString[CFormHideStrings[ny /. {dir1->1, dir2->1, dir3->1}]] <> "," <>
@@ -429,11 +460,21 @@ DifferenceGFTerm[op_, i_, j_, k_, vectorise_] :=
       "(u)[(" <> ToString[CFormHideStrings[nx]] <> ")" <>
       "+dj*(" <> ToString[CFormHideStrings[ny]] <> ")" <>
       "+dk*(" <> ToString[CFormHideStrings[nz]] <> ")])",
+*)
+    remaining "vec_loadu_maybe3" <>
+      "(" <> ToString[CFormHideStrings[nx /. {dir1->1, dir2->1, dir3->1}]] <> "," <>
+             ToString[CFormHideStrings[ny /. {dir1->1, dir2->1, dir3->1}]] <> "," <>
+             ToString[CFormHideStrings[nz /. {dir1->1, dir2->1, dir3->1}]] <> "," <>
+      "*(CCTK_REAL const*)&((char const*)(u))" <>
+        "[cdi*(" <> ToString[CFormHideStrings[nx]] <> ")" <>
+        "+cdj*(" <> ToString[CFormHideStrings[ny]] <> ")" <>
+        "+cdk*(" <> ToString[CFormHideStrings[nz]] <> ")])",
 
     remaining "(u)[" <>
       "di*(" <> ToString[CFormHideStrings[nx]] <> ")" <>
       "+dj*(" <> ToString[CFormHideStrings[ny]] <> ")" <>
       "+dk*(" <> ToString[CFormHideStrings[nz]] <> ")]"],
+
 
 (*
     remaining "vec_loadu" <>

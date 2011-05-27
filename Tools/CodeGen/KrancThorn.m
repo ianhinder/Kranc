@@ -207,6 +207,9 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     (* Write the differencing header file *)
     InfoMessage[Terse, "Creating differencing header file"];
     {pDefs, diffHeader} = CreateDifferencingHeader[partialDerivs, OptionValue[ZeroDimensions], OptionValue[UseVectors]];
+    diffHeader = Join[
+        If[OptionValue[UseVectors], {"#include \"vectors.h\"\n", "\n"}, {}],
+        diffHeader];
 
     (* Add the predefinitions into the calcs *)
     calcs = Map[Join[#, {PreDefinitions -> pDefs}] &, calcs];
@@ -243,7 +246,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
                   {Filename -> "Startup.cc", Contents -> startup}, 
                   {Filename -> "RegisterMoL.cc", Contents -> molregister},
                   {Filename -> "RegisterSymmetries.cc", Contents -> symregister},
-                  {Filename -> "Differencing.h", Contents -> diffHeader}},
+                 {Filename -> "Differencing.h", Contents -> diffHeader}},
                   MapThread[{Filename -> #1, Contents -> #2} &, 
                             {calcFilenames, calcSources}], boundarySources]};
     InfoMessage[Terse, "Creating thorn"];

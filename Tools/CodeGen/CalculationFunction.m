@@ -681,7 +681,16 @@ equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
 
       If[OptionValue[UseVectors], {
         CommentedBlock["If necessary, store only partial vectors after the first iteration",
-          ConditionalOnParameterTextual["CCTK_REAL_VEC_SIZE > 1 && i<lc_imin",
+          ConditionalOnParameterTextual["CCTK_REAL_VEC_SIZE > 2 && CCTK_BUILTIN_EXPECT(i < lc_imin && i+CCTK_REAL_VEC_SIZE > lc_imax, 0)",
+            {
+              DeclareAssignVariable["ptrdiff_t", "elt_count_lo", "lc_imin-i"],
+              DeclareAssignVariable["ptrdiff_t", "elt_count_hi", "lc_imax-i"],
+              Map[StoreMiddlePartialVariableInLoop[GridName[#], localName[#], "elt_count_lo", "elt_count_hi"] &,
+                  gfsInLHS],
+              "break;\n"
+            }]],
+        CommentedBlock["If necessary, store only partial vectors after the first iteration",
+          ConditionalOnParameterTextual["CCTK_REAL_VEC_SIZE > 1 && CCTK_BUILTIN_EXPECT(i < lc_imin, 0)",
             {
               DeclareAssignVariable["ptrdiff_t", "elt_count", "lc_imin-i"],
               Map[StoreHighPartialVariableInLoop[GridName[#], localName[#], "elt_count"] &,
@@ -689,7 +698,7 @@ equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
               "continue;\n"
             }]],
         CommentedBlock["If necessary, store only partial vectors after the last iteration",
-          ConditionalOnParameterTextual["CCTK_REAL_VEC_SIZE > 1 && i+CCTK_REAL_VEC_SIZE > lc_imax",
+          ConditionalOnParameterTextual["CCTK_REAL_VEC_SIZE > 1 && CCTK_BUILTIN_EXPECT(i+CCTK_REAL_VEC_SIZE > lc_imax, 0)",
             {
               DeclareAssignVariable["ptrdiff_t", "elt_count", "lc_imax-i"],
               Map[StoreLowPartialVariableInLoop[GridName[#], localName[#], "elt_count"] &,

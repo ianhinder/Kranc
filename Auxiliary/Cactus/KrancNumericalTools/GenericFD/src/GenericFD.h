@@ -154,6 +154,7 @@ void GenericFD_LoopOverInterior(cGH const * restrict cctkGH, Kranc_Calculation c
 
 void GenericFD_GroupDataPointers(cGH const * restrict const cctkGH, const char *group_name,
                                  int nvars, CCTK_REAL const *restrict *ptrs);
+void GenericFD_EnsureStencilFits(cGH const * restrict const cctkGH, const char *calc, int ni, int nj, int nk);
 
 
 #ifdef __cplusplus

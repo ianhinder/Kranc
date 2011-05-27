@@ -556,3 +556,45 @@ void GenericFD_GroupDataPointers(cGH const * restrict const cctkGH, const char *
     ptrs[v] = (CCTK_REAL const *) CCTK_VarDataPtrI(cctkGH, 0 /* timelevel */, v1+v);
   }
 }
+
+void GenericFD_EnsureStencilFits(cGH const * restrict const cctkGH, const char *calc, int ni, int nj, int nk)
+{
+  DECLARE_CCTK_ARGUMENTS
+
+  int bws[6];
+  GenericFD_GetBoundaryWidths(cctkGH, bws);
+
+  int ns[] = {ni, nj, nk};
+  const char *dirs[] = {"x", "y", "z"};
+  const char *faces[] = {"lower", "upper"};
+  int abort = 0;
+
+  for (int dir = 0; dir < 3; dir++)
+  {
+    for (int face = 0; face < 2; face++)
+    {
+      int bw = bws[2*dir+face];
+      if (bw < ns[dir])
+      {
+        CCTK_VInfo(CCTK_THORNSTRING,
+                   "The stencil for %s requires %d points, but the %s %s boundary has only %d points.",
+                   calc, ns[dir], faces[face], dirs[dir], bw);
+        abort = 1;
+      }
+    }
+    int gz = cctk_nghostzones[dir];
+    if (gz < ns[dir])
+    {
+      CCTK_VInfo(CCTK_THORNSTRING,
+                 "The stencil for %s requires %d points, but there are only %d ghost zones in the %s direction.",
+                 calc, ns[dir], gz, dirs[dir]);
+      abort = 1;
+    }
+  }
+
+  if (abort)
+  {
+    CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+               "Insufficient ghost or boundary points for %s", calc);
+  }
+}

@@ -59,11 +59,10 @@ int sgn(CCTK_REAL x)
     return 0;
 }
 
-int GenericFD_GetBoundaryWidth(cGH const * restrict const cctkGH)
+void GenericFD_GetBoundaryWidths(cGH const * restrict const cctkGH, int nboundaryzones[6])
 {
   int is_internal[6];
   int is_staggered[6];
-  int nboundaryzones[6];
   int shiftout[6];
   int ierr = -1;
 
@@ -72,8 +71,15 @@ int GenericFD_GetBoundaryWidth(cGH const * restrict const cctkGH)
     /* This doesn't make sense in level mode */
     if (map < 0)
     {
-//      CCTK_WARN(1, "Could not determine current map");
-      return 0;
+      static int have_warned = 0;
+      if (!have_warned)
+      {
+        CCTK_WARN(1, "GenericFD_GetBoundaryWidths: Could not determine current map (can be caused by calling in LEVEL mode)");
+        have_warned = 1;
+      }
+      for (int i = 0; i < 6; i++)
+        nboundaryzones[i] = 0;
+      return;
     }
     ierr = MultiPatch_GetBoundarySpecification
       (map, 6, nboundaryzones, is_internal, is_staggered, shiftout);
@@ -87,6 +93,12 @@ int GenericFD_GetBoundaryWidth(cGH const * restrict const cctkGH)
   } else {
     CCTK_WARN(0, "Could not obtain boundary specification");
   }
+}
+
+int GenericFD_GetBoundaryWidth(cGH const * restrict const cctkGH)
+{
+  int nboundaryzones[6];
+  GenericFD_GetBoundaryWidths(cctkGH, nboundaryzones);
 
   int bw = nboundaryzones[0];
 

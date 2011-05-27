@@ -463,11 +463,13 @@ InitialiseFDSpacingVariablesC[vectorise_:False] :=
     ""],
     DeclareAssignVariable[DataType[], "dx", "ToReal(CCTK_DELTA_SPACE(0))"],
     DeclareAssignVariable[DataType[], "dy", "ToReal(CCTK_DELTA_SPACE(1))"],
-    DeclareAssignVariable[DataType[], "dz", "ToReal(CCTK_DELTA_SPACE(2))"]
+    DeclareAssignVariable[DataType[], "dz", "ToReal(CCTK_DELTA_SPACE(2))"],
+    DeclareAssignVariable[DataType[], "dt", "ToReal(CCTK_DELTA_TIME)"]
   };
 
 InitialiseFDSpacingVariablesFortran[] := 
   {
+    AssignVariable["dt", "CCTK_DELTA_TIME"],
     AssignVariable["dx", "CCTK_DELTA_SPACE(1)"],
     AssignVariable["dy", "CCTK_DELTA_SPACE(2)"],
     AssignVariable["dz", "CCTK_DELTA_SPACE(3)"]

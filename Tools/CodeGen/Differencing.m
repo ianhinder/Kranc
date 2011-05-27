@@ -382,22 +382,26 @@ ComponentDerivativeOperatorMacroName[componentDerivOp:(name_[inds___] -> expr_)]
     stringName = StringJoin[Map[ToString, Join[{name}, {inds}]]];
     stringName];
 
-
-
+DerivativeOperatorStencilWidth[derivOp_] :=
+  Map[Max, Transpose[Map[ComponentDerivativeOperatorStencilWidth, DerivativeOperatorToComponents[derivOp]]]];
 
 ComponentDerivativeOperatorStencilWidth[componentDerivOp:(name_[inds___] -> expr_)] :=
-  Module[{cases, nx, ny, nz},
-    cases = Union[Flatten[Cases[{expr}, shift[_] | Power[shift[_],_], Infinity]]];
-    Print[cases];
+  Module[{cases, nx, ny, nz, result},
+    result = Table[
+    cases = Union[Flatten[Cases[{expr}, shift[d] | Power[shift[d],_], Infinity]]];
+    ns = Map[Exponent[#, shift[d]] &, cases];
+    If[Length[ns] == 0, 0, Max[Abs[ns]]], {d, 1, 3}];
 
-    nx = Exponent[op, shift[1]];
-    ny = Exponent[op, shift[2]];
-    nz = Exponent[op, shift[3]];
+    (* We do not know the run-time value of any shorthands used in
+       operator definitions.  In all the current known cases, this
+       will be a "direction" which is +/- 1.  In future, the
+       differencing mechanism will support shorthand arguments to
+       operators and this hack can be removed. *)
+    result = Replace[result, _Symbol -> 1, {-1}];
 
-  ];
-
-
-
+    If[!And@@Map[NumericQ, result],
+      Throw["Stencil width is not numeric in "<>ToString[componentDerivOp]]];
+    result];
 
 (* Farm out each term of a difference operator *)
 DifferenceGF[op_, i_, j_, k_, vectorise_] :=

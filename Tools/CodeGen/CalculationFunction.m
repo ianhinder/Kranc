@@ -476,6 +476,9 @@ CreateCalculationFunction[calcp_, debug_, imp_, opts:OptionsPattern[]] :=
 
     CheckGroupStorage[groupsInCalculation[cleancalc, imp], functionName],
 
+    "\n",
+    CheckStencil[pddefs, eqs, functionName],
+
     If[haveCondTextuals, Map[ConditionalOnParameterTextual["!(" <> # <> ")", "return;\n"] &,condTextuals], {}],
 
     CommentedBlock["Include user-supplied include files",

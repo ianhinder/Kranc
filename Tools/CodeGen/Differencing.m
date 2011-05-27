@@ -140,6 +140,7 @@ DZero::usage = "";
 shift::usage = "";
 spacing::usage = "";
 ComponentDerivativeOperatorStencilWidth::usage = "";
+CheckStencil::usage = "";
 
 Begin["`Private`"];
 
@@ -199,6 +200,16 @@ ReplaceDerivatives[derivOps_, expr_, precompute_] :=
       rules = Map[# :> evaluateDerivative[#] &, gfds]];
     expr /. rules];
 
+(* Generate code to ensure that there are sufficient ghost and
+   boundary points for the passed derivative operators used in eqs *)
+CheckStencil[derivOps_, eqs_, name_] :=
+  Module[{gfds, rgzList, rgz},
+    gfds = Map[GridFunctionDerivativesInExpression[{#}, eqs] &, derivOps];
+    rgzList = MapThread[If[Length[#2] > 0, DerivativeOperatorStencilWidth[#1], {0,0,0}] &, {derivOps, gfds}];
+    If[Length[rgzList] === 0, Return[{}]];
+    rgz = Map[Max, Transpose[rgzList]];
+    If[Max[rgz] == 0, {},
+    {"GenericFD_EnsureStencilFits(cctkGH, ", Quote@name, ", ", Riffle[rgz,", "], ");\n"}]];
 
 (*************************************************************)
 (* Misc *)

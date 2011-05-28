@@ -317,9 +317,6 @@ ComponentDerivativeOperatorMacroDefinition[componentDerivOp:(name_[inds___] -> e
 (*       Print["liName == ", liName];*)
 
        rhs = rhs /. pat -> Times[liName, rest],
-(*
-       rhs = (rhs /. pat -> Times[liName, rest]) / If[vectorise, liName, 1], (* horrible *)
-*)
 (*       Print["!!!!!!!!DOES NOT MATCH!!!!!!!!!"];*)
        rhs = rhs];
 
@@ -337,39 +334,14 @@ ComponentDerivativeOperatorMacroDefinition[componentDerivOp:(name_[inds___] -> e
 
     rhs = CFormHideStrings[ReplacePowers[rhs /. spacings, vectorise]];
     (* Print["rhs=",FullForm[rhs]]; *)
-    (* {pDefs, FlattenBlock[{"#define ", macroName, "(u,i,j,k) ", "(", rhs, ")"}]} *)
     finalDef =
       If[vectorise,
     {pDefs, FlattenBlock[{
       "#ifndef KRANC_DIFF_FUNCTIONS\n",
        (* default, differencing operators are macros *)
-(*
-      "#  define ", macroName, "(u) ", "(kmul(", liName, ",", rhs, "))\n",
-*)
       "#  define ", macroName, "(u) ", "(", rhs, ")\n",
       "#else\n",
        (* new, differencing operators are static functions *)
-(*
-      "#  define ", macroName, "(u) ", "(kmul(", liName, ",", macroName, "_impl((u),dj,dk)))\n",
-      "static CCTK_REAL_VEC ", macroName, "_impl(CCTK_REAL const* restrict const u, ptrdiff_t const dj, ptrdiff_t const dk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;\n",
-      "static CCTK_REAL_VEC ", macroName, "_impl(CCTK_REAL const* restrict const u, ptrdiff_t const dj, ptrdiff_t const dk)\n",
-      If[StringMatchQ[rhs, RegularExpression[".*\\bdir\\d\\b.*"]],
-         { "{ return ToReal(1e30); /* ERROR */ }\n" },
-         { "{ return ", rhs, "; }\n" }],
-*)
-(*
-      "#  define ", macroName, "(u) ", "(kmul(", liName, ",", macroName, "_impl(u,cdj,cdk)))\n",
-      "static CCTK_REAL_VEC ", macroName, "_impl(CCTK_REAL const* restrict const u, ptrdiff_t const cdj, ptrdiff_t const cdk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;\n",
-      "static CCTK_REAL_VEC ", macroName, "_impl(CCTK_REAL const* restrict const u, ptrdiff_t const cdj, ptrdiff_t const cdk)\n",
-      (* We cannot handle dirN,
-         so we punt on all expressions that contain dirN *)
-      If[StringMatchQ[rhs, RegularExpression[".*\\bdir\\d\\b.*"]],
-         { "{ return ToReal(1e30); /* ERROR */ }\n" },
-         { "{\n",
-           "  ptrdiff_t const cdi=sizeof(CCTK_REAL);\n",
-           "  return ", rhs, ";\n",
-           "}\n" }],
-*)
       "#  define ", macroName, "(u) ", "(", macroName, "_impl(u,", liName, ",cdj,cdk))\n",
       "static CCTK_REAL_VEC ", macroName, "_impl(CCTK_REAL const* restrict const u, CCTK_REAL_VEC const ", liName, ", ptrdiff_t const cdj, ptrdiff_t const cdk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;\n",
       "static CCTK_REAL_VEC ", macroName, "_impl(CCTK_REAL const* restrict const u, CCTK_REAL_VEC const ", liName, ", ptrdiff_t const cdj, ptrdiff_t const cdk)\n",
@@ -384,7 +356,26 @@ ComponentDerivativeOperatorMacroDefinition[componentDerivOp:(name_[inds___] -> e
       "#endif\n"
     }]},
 
-    {pDefs, FlattenBlock[{"#define ", macroName, "(u) ", "(", rhs, ")"}]}];
+    {pDefs, FlattenBlock[{
+      "#ifndef KRANC_DIFF_FUNCTIONS\n",
+       (* default, differencing operators are macros *)
+      "#  define ", macroName, "(u) ", "(", rhs, ")\n",
+      "#else\n",
+       (* new, differencing operators are static functions *)
+      "#  define ", macroName, "(u) ", "(", macroName, "_impl(u,", liName, ",cdj,cdk))\n",
+      "static CCTK_REAL ", macroName, "_impl(CCTK_REAL const* restrict const u, CCTK_REAL const ", liName, ", ptrdiff_t const cdj, ptrdiff_t const cdk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;\n",
+      "static CCTK_REAL ", macroName, "_impl(CCTK_REAL const* restrict const u, CCTK_REAL const ", liName, ", ptrdiff_t const cdj, ptrdiff_t const cdk)\n",
+      (* We cannot handle dirN,
+         so we punt on all expressions that contain dirN *)
+      If[StringMatchQ[rhs, RegularExpression[".*\\bdir\\d\\b.*"]],
+         { "{ return ToReal(1e30); /* ERROR */ }\n" },
+         { "{\n",
+           "  ptrdiff_t const cdi=sizeof(CCTK_REAL);\n",
+           "  return ", rhs, ";\n",
+           "}\n" }],
+      "#endif\n"
+    }]}];
+
     finalDef
 ];
 
@@ -445,37 +436,8 @@ DifferenceGFTerm[op_, i_, j_, k_, vectorise_] :=
       ThrowError["Could not parse difference operator:", op]];
     
     If[CodeGen`SOURCELANGUAGE == "C",
-(*
-    remaining "(u)[CCTK_GFINDEX3D(cctkGH," <>
-      "(int)(" <> ToString[CFormHideStrings[i+nx]] <> ")," <>
-      "(int)(" <> ToString[CFormHideStrings[j+ny]] <> ")," <>
-      "(int)(" <> ToString[CFormHideStrings[k+nz]] <> "))]",
-*)
-(*
-    remaining "vec_loadu_maybe" <>
-      "(" <> ToString[CFormHideStrings[nx]] <> "," <>
-             "(u)[index" <>
-                  "+di*(" <> ToString[CFormHideStrings[nx]] <> ")" <>
-                  "+dj*(" <> ToString[CFormHideStrings[ny]] <> ")" <>
-                  "+dk*(" <> ToString[CFormHideStrings[nz]] <> ")])",
-*)
-(*
-    remaining "vec_loadu_maybe(" <> ToString[CFormHideStrings[nx]] <> "," <>
-      "(u)[(" <> ToString[CFormHideStrings[nx]] <> ")" <>
-      "+dj*(" <> ToString[CFormHideStrings[ny]] <> ")" <>
-      "+dk*(" <> ToString[CFormHideStrings[nz]] <> ")])",
-*)
 
   If[vectorise,
-(*
-    remaining "vec_loadu_maybe3" <>
-      "(" <> ToString[CFormHideStrings[nx /. {dir1->1, dir2->1, dir3->1}]] <> "," <>
-             ToString[CFormHideStrings[ny /. {dir1->1, dir2->1, dir3->1}]] <> "," <>
-             ToString[CFormHideStrings[nz /. {dir1->1, dir2->1, dir3->1}]] <> "," <>
-      "(u)[(" <> ToString[CFormHideStrings[nx]] <> ")" <>
-      "+dj*(" <> ToString[CFormHideStrings[ny]] <> ")" <>
-      "+dk*(" <> ToString[CFormHideStrings[nz]] <> ")])",
-*)
     remaining "vec_loadu_maybe3" <>
       "(" <> ToString[CFormHideStrings[nx /. {dir1->1, dir2->1, dir3->1}]] <> "," <>
              ToString[CFormHideStrings[ny /. {dir1->1, dir2->1, dir3->1}]] <> "," <>
@@ -485,24 +447,12 @@ DifferenceGFTerm[op_, i_, j_, k_, vectorise_] :=
         "+cdj*(" <> ToString[CFormHideStrings[ny]] <> ")" <>
         "+cdk*(" <> ToString[CFormHideStrings[nz]] <> ")])",
 
-    remaining "(u)[" <>
-      "di*(" <> ToString[CFormHideStrings[nx]] <> ")" <>
-      "+dj*(" <> ToString[CFormHideStrings[ny]] <> ")" <>
-      "+dk*(" <> ToString[CFormHideStrings[nz]] <> ")]"],
+    remaining
+      "(*(CCTK_REAL const*)&((char const*)(u))" <>
+        "[cdi*(" <> ToString[CFormHideStrings[nx]] <> ")" <>
+        "+cdj*(" <> ToString[CFormHideStrings[ny]] <> ")" <>
+        "+cdk*(" <> ToString[CFormHideStrings[nz]] <> ")])"],
 
-
-(*
-    remaining "vec_loadu" <>
-      "(u[(" <> ToString[CFormHideStrings[nx]] <> ")" <>
-                "+dj*(" <> ToString[CFormHideStrings[ny]] <> ")" <>
-                "+dk*(" <> ToString[CFormHideStrings[nz]] <> ")])",
-*)
-(*
-    remaining "(u)[CCTK_GFINDEX3D(cctkGH,floor((" <>
-      ToString[CFormHideStrings[i+nx]] <> ")+0.5),floor((" <>
-      ToString[CFormHideStrings[j+ny]] <> ")+0.5),floor((" <>
-      ToString[CFormHideStrings[k+nz]] <> ")+0.5))]",
-*)
     remaining "u(" <> ToString[FortranForm[i+nx]] <> "," <> 
       ToString[FortranForm[j+ny]] <> "," <> ToString[FortranForm[k+nz]] <> ")"] ];
 

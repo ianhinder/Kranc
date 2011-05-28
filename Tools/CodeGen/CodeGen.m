@@ -459,13 +459,13 @@ InitialiseFDSpacingVariablesC[vectorise_:False] :=
     DeclareAssignVariable["ptrdiff_t", "di", "1"],
     DeclareAssignVariable["ptrdiff_t", "dj", "CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0)"],
     DeclareAssignVariable["ptrdiff_t", "dk", "CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0)"],
-    If[vectorise,
-    {
+    (* If[vectorise, *)
+    (* { *)
       DeclareAssignVariable["ptrdiff_t", "cdi", "sizeof(CCTK_REAL) * di"],
       DeclareAssignVariable["ptrdiff_t", "cdj", "sizeof(CCTK_REAL) * dj"],
-      DeclareAssignVariable["ptrdiff_t", "cdk", "sizeof(CCTK_REAL) * dk"]
-    },
-    ""],
+      DeclareAssignVariable["ptrdiff_t", "cdk", "sizeof(CCTK_REAL) * dk"],
+    (* }, *)
+    (* ""], *)
     DeclareAssignVariable[DataType[], "dx", "ToReal(CCTK_DELTA_SPACE(0))"],
     DeclareAssignVariable[DataType[], "dy", "ToReal(CCTK_DELTA_SPACE(1))"],
     DeclareAssignVariable[DataType[], "dz", "ToReal(CCTK_DELTA_SPACE(2))"],

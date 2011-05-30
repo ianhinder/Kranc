@@ -362,17 +362,27 @@ ComponentDerivativeOperatorMacroDefinition[componentDerivOp:(name_[inds___] -> e
       "#  define ", macroName, "(u) ", "(", rhs, ")\n",
       "#else\n",
        (* new, differencing operators are static functions *)
-      "#  define ", macroName, "(u) ", "(", macroName, "_impl(u,", liName, ",cdj,cdk))\n",
-      "static CCTK_REAL ", macroName, "_impl(CCTK_REAL const* restrict const u, CCTK_REAL const ", liName, ", ptrdiff_t const cdj, ptrdiff_t const cdk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;\n",
-      "static CCTK_REAL ", macroName, "_impl(CCTK_REAL const* restrict const u, CCTK_REAL const ", liName, ", ptrdiff_t const cdj, ptrdiff_t const cdk)\n",
-      (* We cannot handle dirN,
-         so we punt on all expressions that contain dirN *)
-      If[StringMatchQ[rhs, RegularExpression[".*\\bdir\\d\\b.*"]],
-         { "{ return ToReal(1e30); /* ERROR */ }\n" },
-         { "{\n",
-           "  ptrdiff_t const cdi=sizeof(CCTK_REAL);\n",
-           "  return ", rhs, ";\n",
-           "}\n" }],
+      If[! StringMatchQ[rhs, RegularExpression[".*\\bdir\\d\\b.*"]],
+      {
+        (* simple case, dirN is not used *)
+        "#  define ", macroName, "(u) ", "(", macroName, "_impl(u,", liName, ",cdj,cdk))\n",
+        "static CCTK_REAL ", macroName, "_impl(CCTK_REAL const* restrict const u, CCTK_REAL const ", liName, ", ptrdiff_t const cdj, ptrdiff_t const cdk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;\n",
+        "static CCTK_REAL ", macroName, "_impl(CCTK_REAL const* restrict const u, CCTK_REAL const ", liName, ", ptrdiff_t const cdj, ptrdiff_t const cdk)\n",
+        "{\n",
+        "  ptrdiff_t const cdi=sizeof(CCTK_REAL);\n",
+        "  return ", rhs, ";\n",
+        "}\n"
+      },
+      {
+        (* dirN is used *)
+        "#  define ", macroName, "(u) ", "(", macroName, "_impl(u,", liName, ",cdj,cdk,dir1,dir2,dir3))\n",
+        "static CCTK_REAL ", macroName, "_impl(CCTK_REAL const* restrict const u, CCTK_REAL const ", liName, ", ptrdiff_t const cdj, ptrdiff_t const cdk, ptrdiff_t const dir1, ptrdiff_t const dir2, ptrdiff_t const dir3) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;\n",
+        "static CCTK_REAL ", macroName, "_impl(CCTK_REAL const* restrict const u, CCTK_REAL const ", liName, ", ptrdiff_t const cdj, ptrdiff_t const cdk, ptrdiff_t const dir1, ptrdiff_t const dir2, ptrdiff_t const dir3)\n",
+        "{\n",
+        "  ptrdiff_t const cdi=sizeof(CCTK_REAL);\n",
+        "  return ", rhs, ";\n",
+        "}\n"
+      }],
       "#endif\n"
     }]}];
 

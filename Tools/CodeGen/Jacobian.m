@@ -62,21 +62,51 @@ derivToJacDeriv[deriv_[var_, i_]] :=
 derivToJacDeriv[deriv_[var_, i_, j_]] :=
   Symbol["Global`Jac"<>ToString[deriv]<>ToString[i]<>ToString[j]<>ToString[var]];
 
+shorthandsInDerivDef[def_, shorthands_] :=
+  Module[{allAtoms},
+    allAtoms = Union[Level[def, {-1}]];
+    Intersection[shorthands, allAtoms]];
+
+(* Insert a Jacobian shorthand definition into a list of equations
+   after all the shorthands that it uses *)
+insertDerivInEqs[deriv_, defs_, eqs_, shorthands_] :=
+  Module[{shortsUsed, lhss, positions, positions2, position, newShort, derivsInShort, defsUsed},
+    newShort = jacobianShorthand[deriv]; (* Definition expression for new shorthand *)
+    derivsInShort = GridFunctionDerivativesInExpression[defs, newShort]; (* Derivatives needed *)
+    defsUsed = Map[GridFunctionDerivativeToDef[#, defs] &, derivsInShort]; (* Definitions of those derivatives *)
+    shortsUsed = Union[Flatten[Map[shorthandsInDerivDef[#, shorthands] &, defsUsed],1]];
+    lhss = Map[First, eqs];
+    positions = Map[Position[lhss, #, {1}, 1] &, shortsUsed];
+    MapThread[If[Length[#2] === 0,
+      Throw["Shorthand " <> ToString[#1] <> " used in derivative " <> ToString[deriv] <>
+        " but not defined in calculation"]] &, {shortsUsed, positions}];
+    positions2 = Map[#[[1,1]] &, positions];
+    position = If[Length[positions2] === 0, 1, Max[positions2]+1];
+    Insert[eqs, newShort, position]
+  ];
+
 (* Given a calculation containing partial derivatives, return a
    version of the calculation with all the partial derivatives multiplied
    by the Jacobian *)
 Options[InsertJacobian] = ThornOptions;
 InsertJacobian[calc_List, opts:OptionsPattern[]] :=
-  Module[{pdDefs, derivs, newShortDefs, newShorts, combinedShorts, combinedEqs, combinedCalc, eqs, newEqs},
+  Module[{pdDefs, derivs, newShortDefs, newShorts, combinedShorts, combinedEqs, combinedCalc, eqs, newEqs,
+          shorts},
+    shorts = lookupDefault[calc, Shorthands, {}];
     pdDefs = OptionValue[PartialDerivatives];
     derivs = GridFunctionDerivativesInExpression[pdDefs, lookup[calc, Equations]];
     If[Length[derivs] === 0, Return[calc]];
     newShortDefs = Map[jacobianShorthand, derivs];
     newShorts = Map[First, newShortDefs];
-    combinedShorts = Join[lookupDefault[calc, Shorthands, {}], newShorts];
+    combinedShorts = Join[shorts, newShorts];
     eqs = lookup[calc, Equations];
     newEqs = eqs /. (x_?(MemberQ[derivs, #] &) :> derivToJacDeriv[x]);
-    combinedEqs = Join[newShortDefs, newEqs];
+    combinedEqs = newEqs;
+
+    Do[
+      combinedEqs = insertDerivInEqs[derivs[[i]], pdDefs, combinedEqs, shorts],
+      {i, Length[derivs], 1, -1}];
+
     combinedCalc = mapReplace[mapReplace[mapEnsureKey[calc, Shorthands, {}], Shorthands, combinedShorts], Equations, combinedEqs];
     combinedCalc];
 

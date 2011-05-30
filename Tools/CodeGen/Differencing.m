@@ -141,6 +141,7 @@ shift::usage = "";
 spacing::usage = "";
 ComponentDerivativeOperatorStencilWidth::usage = "";
 CheckStencil::usage = "";
+GridFunctionDerivativeToDef;
 
 Begin["`Private`"];
 
@@ -248,6 +249,12 @@ GridFunctionDerivativesInExpression[derivOps_, expr_] :=
     derivs = Map[First, dupsRemoved];
     patterns = Map[# /. x_[inds___] -> x[y_, inds] &, derivs];
     Flatten[Map[Union[Cases[{expr}, #, Infinity]] &, patterns]]];
+
+(* Return the definition associated with a grid function derivative *)
+GridFunctionDerivativeToDef[pd_[gf_, inds___], derivOps_] :=
+  Module[{componentDerivOps},
+    componentDerivOps = Flatten[Map[DerivativeOperatorToComponents, derivOps]];
+    pd[inds] /. componentDerivOps];
 
 (*************************************************************)
 (* DerivativeOperator *)

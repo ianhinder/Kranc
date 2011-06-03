@@ -43,6 +43,9 @@ IncludeSystemFile::usage = "IncludeFile[name] returns a block of code" <>
 DeclareVariable::usage = "DeclareVariable[name, type] returns a block of code " <>
   "that declares a variable of given name and type.  'name' and 'type' should be " <>
   "strings.";
+DeclareVariableNoInit::usage = "DeclareVariableNoInit[name, type] returns a block of code " <>
+  "that declares a variable of given name and type without initialising it.  'name' and 'type' should be " <>
+  "strings.";
 DeclareVariables::usage = "DeclareVariables[names, type] returns a block of code " <>
   "that declares a list of variables of given name and type.  'names' should be a list" <>
   " of strings and 'type' should be a string string.";
@@ -60,14 +63,20 @@ DeclareAssignVariable::usage = "DeclareAssignVariable[type_, dest_, src_] return
   "that declares and sets a constant variable of given name and type.";
 AssignVariableInLoop::usage = "AssignVariableInLoop[dest_, src_] returns a block of code " <>
   "that assigns 'src' to 'dest'.";
+StoreVariableInLoop::usage = "StoreVariableInLoop[dest_, src_] returns a block of code " <>
+  "that assigns 'src' to 'dest'.";
+StoreLowPartialVariableInLoop::usage = "StoreLowPartialVariableInLoop[dest_, src_, count_] returns a block of code " <>
+  "that assigns 'src' to 'dest'.";
+StoreHighPartialVariableInLoop::usage = "StoreHighPartialVariableInLoop[dest_, src_, count_] returns a block of code " <>
+  "that assigns 'src' to 'dest'.";
+StoreMiddlePartialVariableInLoop::usage = "StoreMiddlePartialVariableInLoop[dest_, src_, countLow_, countHigh_] returns a block of code " <>
+  "that assigns 'src' to 'dest'.";
 DeclareAssignVariableInLoop::usage = "DeclareAssignVariableInLoop[type_, dest_, src_] returns a block of code " <>
   "that assigns 'src' to 'dest'.";
 MaybeAssignVariableInLoop::usage = "MaybeAssignVariableInLoop[dest_, src_, cond_] returns a block of code " <>
   "that assigns 'src' to 'dest'.";
 DeclareMaybeAssignVariableInLoop::usage = "DeclareMaybeAssignVariableInLoop[type_, dest_, src_, cond_] returns a block of code " <>
   "that assigns 'src' to 'dest'.";
-DeclareVariablesInLoopVectorised::usage = "";
-AssignVariablesInLoopVectorised::usage = "";
 TestForNaN::usage = "TestForNaN[expr_] returns a block of code " <>
   "that tests 'expr' for nan.";
 CommentedBlock::usage = "CommentedBlock[comment, block] returns a block consisting " <>
@@ -117,7 +126,6 @@ CommaNewlineSeparated::usage = ""; (* This should not really be in CodeGen *)
 CommaSeparated::usage = "";
 ReplacePowers::usage = "";
 CFormHideStrings::usage = "";
-CSE::usage = "";
 BoundaryLoop::usage = "";
 BoundaryWithGhostsLoop::usage = "";
 GenericGridLoop::usage = "";
@@ -125,15 +133,18 @@ GenericGridLoop::usage = "";
 NameRoot::usage = "";
 PartitionVarList::usage = "";
 Quote::usage = "Quote[x] returns x surrounded by quotes";
+DataType::usage = "DataType[] returns a string for the grid function data type (e.g. CCTK_REAL)";
+SetDataType::usage = "SetDataType[type] sets a string for the grid function data type (e.g. CCTK_REAL)";
+Conditional;
 
 Begin["`Private`"];
 
 SOURCELANGUAGE =  "C";
-SOURCESUFFIX   = ".c";
+SOURCESUFFIX   = ".cc";
 
 setSourceSuffix[lang_] :=
 If[ (lang == "C"),
-  SOURCESUFFIX = ".c";
+  SOURCESUFFIX = ".cc";
 ,
   SOURCESUFFIX = ".F90";
 ];
@@ -146,9 +157,17 @@ If[ (lang == "C" || lang == "Fortran"),
   InfoMessage[Terse, "User set source language to " <> lang],
 
   SOURCELANGUAGE = "C";
-  setSourceSuffix[".c"];
+  setSourceSuffix[".cc"];
   InfoMessage[Terse, "Setting Source Language to C"];
 ];
+
+SetDataType[type_String] :=
+  dataType = type;
+
+DataType[] :=
+  If[dataType === Symbol["datatype"],
+    Throw["DataType: Have not set a data type"],
+    dataType];
 
 (* Code generation utilities; not specific to any language *)
 
@@ -234,6 +253,12 @@ If[SOURCELANGUAGE == "C",
   {type, " :: ", name, EOL[]} (* no value init here to avoid implicit SAVE attribute *)
   ];
 
+DeclareVariableNoInit[name_, type_] :=
+If[SOURCELANGUAGE == "C",
+  {type, " ",    name, EOL[]},
+  {type, " :: ", name, EOL[]} (* no value init here to avoid implicit SAVE attribute *)
+  ];
+
 
 DeclareVariables[names_?ListQ, type_] := 
 If[SOURCELANGUAGE == "C",
@@ -273,69 +298,41 @@ AssignVariable[dest_, src_] :=
 DeclareAssignVariable[type_, dest_, src_] :=
   {type, " const ", dest, " = ", src, EOL[]};
 
-AssignVariableInLoop[dest_, src_] :=
-  {dest, " = ", src, EOL[]};
+AssignVariableInLoop[dest_, src_, vectorise_:False] :=
+  Module[{loader},
+    loader[x_] := If[vectorise, {"vec_load(", x, ")"}, x];
+    {dest, " = ", loader[src], EOL[]}];
 (*
   {dest, " = ", src, EOL[],
    TestForNaN[dest]};
 *)
 
+StoreVariableInLoop[dest_, src_] :=
+  {"vec_store_nta(", dest, ",", src, ")", EOL[]};
+
+StoreLowPartialVariableInLoop[dest_, src_, count_] :=
+  {"vec_store_nta_partial_lo(", dest, ",", src, ",", count, ")", EOL[]};
+
+StoreHighPartialVariableInLoop[dest_, src_, count_] :=
+  {"vec_store_nta_partial_hi(", dest, ",", src, ",", count, ")", EOL[]};
+
+StoreMiddlePartialVariableInLoop[dest_, src_, countLow_, countHigh_] :=
+  {"vec_store_nta_partial_mid(", dest, ",", src, ",", countLow, ",", countHigh, ")", EOL[]};
+
 DeclareAssignVariableInLoop[type_, dest_, src_] :=
-  {type, " const ", dest, " = ", src, EOL[]};
+  {type, " const ", dest, " = vec_load(", src, ")", EOL[]};
 
 MaybeAssignVariableInLoop[dest_, src_, cond_] :=
   If [cond,
-      {dest, " = useMatter ? ", src, " : 0.0", EOL[]},
-      {dest, " = ", src, EOL[]}];
+      {dest, " = useMatter ? vec_load(", src, ") : ToReal(0.0)", EOL[]},
+      {dest, " = vec_load(", src, ")", EOL[]}];
 
-DeclareMaybeAssignVariableInLoop[type_, dest_, src_, mmaCond_, codeCond_] :=
-  If [mmaCond,
-      {type, "  ", dest, " = (", codeCond, ") ? (", src, ") : 0.0", EOL[]},
-      {type, "  ", dest, " = ", src, EOL[]}];
-
-(* TODO: move these into OpenMP loop *)
-DeclareVariablesInLoopVectorised[dests_, temps_, srcs_] :=
-  {
-   {"#undef LC_PRELOOP_STATEMENTS", "\n"},
-   {"#define LC_PRELOOP_STATEMENTS", " \\\n"},
-   {"int const GFD_imin = lc_imin + ((lc_imin + cctk_lsh[0] * (j + cctk_lsh[1] * k)) & (CCTK_REAL_VEC_SIZE-1))", "; \\\n"},
-   {"int const GFD_imax = lc_imax + ((lc_imax + cctk_lsh[0] * (j + cctk_lsh[1] * k)) & (CCTK_REAL_VEC_SIZE-1)) - CCTK_REAL_VEC_SIZE", "; \\\n"},
-   Map[Function[x, Module[{dest, temp, src},
-                          {dest, temp, src} = x;
-                          {"CCTK_REAL_VEC ", temp, "; \\\n"}]],
-       Transpose[{dests, temps, srcs}]],
-   {"\n"}
-  };
-
-AssignVariablesInLoopVectorised[dests_, temps_, srcs_] :=
-  {
-   {"{\n"},
-   {"  if (i < GFD_imin || i >= GFD_imax) {\n"},
-   Map[Function[x, Module[{dest, temp, src},
-                          {dest, temp, src} = x;
-                          {"    ", dest, "[index] = ", src, EOL[]}]],
-       Transpose[{dests, temps, srcs}]],
-   {"  } else {\n"},
-   {"    size_t const index0 = index & (CCTK_REAL_VEC_SIZE-1)", EOL[]},
-   Map[Function[x, Module[{dest, temp, src},
-                          {dest, temp, src} = x;
-                          {"    ((CCTK_REAL*)&", temp, ")[index0] = ",
-                           src, EOL[]}]],
-       Transpose[{dests, temps, srcs}]],
-   {"    if (index0 == CCTK_REAL_VEC_SIZE-1) {\n"},
-   {"      size_t const index1 = index - (CCTK_REAL_VEC_SIZE-1)", EOL[]},
-   Map[Function[x, Module[{dest, temp, src},
-                          {dest, temp, src} = x;
-                          {"      _mm_stream_pd (&", dest, "[index1], ",
-                           temp, ")", EOL[]}]],
-       Transpose[{dests, temps, srcs}]],
-   {"    }\n"},
-   {"  }\n"},
-   {"}\n"}
-  };
-
-AssignVariableInLoopsVectorised[dest_, temp_, src_] :=
-  {"GFD_save_and_store(", dest, ",", "index", ",", "&", temp, ",", src, ")", EOL[]};
+DeclareMaybeAssignVariableInLoop[type_, dest_, src_, mmaCond_, codeCond_, vectorise_:False] :=
+  Module[{loader},
+    loader[x_] := If[vectorise, {"vec_load(", x, ")"}, x];
+    If [mmaCond,
+        {type, " ", dest, " = (", codeCond, ") ? ", loader[src], " : ToReal(0.0)", EOL[]},
+        {type, " ", dest, " = ", loader[src], EOL[]}]];
 
 TestForNaN[expr_] :=
   {"if (isnan(", expr, ")) {\n",
@@ -343,7 +340,7 @@ TestForNaN[expr_] :=
    "  CCTK_VInfo(CCTK_THORNSTRING, \"ipos: %d %d %d\", i, j, k);\n",
    "  CCTK_VInfo(CCTK_THORNSTRING, \"lbnd: %d %d %d\", cctk_lbnd[0], cctk_lbnd[1], cctk_lbnd[2]);\n",
    "  CCTK_VInfo(CCTK_THORNSTRING, \"lsh: %d %d %d\", cctk_lsh[0], cctk_lsh[1], cctk_lsh[2]);\n",
-   "  CCTK_VInfo(CCTK_THORNSTRING, \"lssh: %d %d %d\", cctk_lssh[CCTK_LSSH_IDX(0,0)], cctk_lssh[CCTK_LSSH_IDX(0,1)], cctk_lssh[CCTK_LSSH_IDX(0,2)]);\n",
+   "  CCTK_VInfo(CCTK_THORNSTRING, \"LSSH: %d %d %d\", CCTK_LSSH(0,0), CCTK_LSSH(0,1), CCTK_LSSH(0,2));\n",
    "  CCTK_VInfo(CCTK_THORNSTRING, \"", expr, ": %.17g\", (double)", expr, ");\n",
    "}\n"};
 
@@ -406,7 +403,7 @@ defineSubroutine[name_, args_, contents_] :=
 
 defineSubroutineC[name_, args_, contents_] :=
   SeparatedBlock[
-    {"void ", name, "(", args, ")", "\n",
+    {"extern \"C\" void ", name, "(", args, ")", "\n",
      CBlock[contents]}];
 
 defineSubroutineF[name_, args_, contents_] :=
@@ -426,7 +423,7 @@ defineSubroutineF[name_, args_, contents_] :=
 
 (* This is a Cactus-callable function *)
 DefineCCTKFunction[name_, type_, contents_] :=
-  DefineFunction[name, type, "CCTK_ARGUMENTS", 
+  DefineFunction[name, "extern \"C\" " <> type, "CCTK_ARGUMENTS", 
     {
       "DECLARE_CCTK_ARGUMENTS;\n",
       "DECLARE_CCTK_PARAMETERS;\n\n",
@@ -451,47 +448,65 @@ DeclareFDVariables[] :=
                                               {khalf,kthird,ktwothird,kfourthird,keightthird},
                                               {"hdxi", "hdyi", "hdzi"}}],
      "\n"},
-    {Map[DeclareVariables[#, "int"] &, {{"di", "dj", "dk"}}],
+    {Map[DeclareVariables[#, "ptrdiff_t"] &, {{"di", "dj", "dk"}}],
      "\n"}];
 *)
   CommentedBlock["Declare finite differencing variables", {}];
 
-InitialiseFDSpacingVariablesC[] := 
+InitialiseFDSpacingVariablesC[vectorise_:False] := 
   {
-    DeclareAssignVariable["CCTK_REAL", "dx", "CCTK_DELTA_SPACE(0)"],
-    DeclareAssignVariable["CCTK_REAL", "dy", "CCTK_DELTA_SPACE(1)"],
-    DeclareAssignVariable["CCTK_REAL", "dz", "CCTK_DELTA_SPACE(2)"],
-    (* DeclareAssignVariable["int", "di", "CCTK_GFINDEX3D(cctkGH,1,0,0) - CCTK_GFINDEX3D(cctkGH,0,0,0)"], *)
-    DeclareAssignVariable["int", "di", "1"],
-    DeclareAssignVariable["int", "dj", "CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0)"],
-    DeclareAssignVariable["int", "dk", "CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0)"]
+    (* DeclareAssignVariable["ptrdiff_t", "di", "CCTK_GFINDEX3D(cctkGH,1,0,0) - CCTK_GFINDEX3D(cctkGH,0,0,0)"], *)
+    DeclareAssignVariable["ptrdiff_t", "di", "1"],
+    DeclareAssignVariable["ptrdiff_t", "dj", "CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0)"],
+    DeclareAssignVariable["ptrdiff_t", "dk", "CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0)"],
+    If[vectorise,
+    {
+      DeclareAssignVariable["ptrdiff_t", "cdi", "sizeof(CCTK_REAL) * di"],
+      DeclareAssignVariable["ptrdiff_t", "cdj", "sizeof(CCTK_REAL) * dj"],
+      DeclareAssignVariable["ptrdiff_t", "cdk", "sizeof(CCTK_REAL) * dk"]
+    },
+    ""],
+    DeclareAssignVariable[DataType[], "dx", "ToReal(CCTK_DELTA_SPACE(0))"],
+    DeclareAssignVariable[DataType[], "dy", "ToReal(CCTK_DELTA_SPACE(1))"],
+    DeclareAssignVariable[DataType[], "dz", "ToReal(CCTK_DELTA_SPACE(2))"],
+    DeclareAssignVariable[DataType[], "dt", "ToReal(CCTK_DELTA_TIME)"]
   };
 
 InitialiseFDSpacingVariablesFortran[] := 
   {
+    AssignVariable["dt", "CCTK_DELTA_TIME"],
     AssignVariable["dx", "CCTK_DELTA_SPACE(1)"],
     AssignVariable["dy", "CCTK_DELTA_SPACE(2)"],
     AssignVariable["dz", "CCTK_DELTA_SPACE(3)"]
   }
 
 
-InitialiseFDVariables[] :=
+InitialiseFDVariables[vectorise_] :=
   CommentedBlock["Initialise finite differencing variables",
   { If[SOURCELANGUAGE == "Fortran",
        InitialiseFDSpacingVariablesFortran[],
-       InitialiseFDSpacingVariablesC[]],
+       InitialiseFDSpacingVariablesC[vectorise]],
     
-    DeclareAssignVariable["CCTK_REAL", "dxi", "1.0 / dx"],
-    DeclareAssignVariable["CCTK_REAL", "dyi", "1.0 / dy"],
-    DeclareAssignVariable["CCTK_REAL", "dzi", "1.0 / dz"],
-    DeclareAssignVariable["CCTK_REAL", "khalf", "0.5"],
-    DeclareAssignVariable["CCTK_REAL", "kthird", "1/3.0"],
-    DeclareAssignVariable["CCTK_REAL", "ktwothird", "2.0/3.0"],
-    DeclareAssignVariable["CCTK_REAL", "kfourthird", "4.0/3.0"],
-    DeclareAssignVariable["CCTK_REAL", "keightthird", "8.0/3.0"],
-    DeclareAssignVariable["CCTK_REAL", "hdxi", "0.5 * dxi"],
-    DeclareAssignVariable["CCTK_REAL", "hdyi", "0.5 * dyi"],
-    DeclareAssignVariable["CCTK_REAL", "hdzi", "0.5 * dzi"]}];
+    DeclareAssignVariable[DataType[], "dxi", "INV(dx)"],
+    DeclareAssignVariable[DataType[], "dyi", "INV(dy)"],
+    DeclareAssignVariable[DataType[], "dzi", "INV(dz)"],
+    If[vectorise,
+     {DeclareAssignVariable[DataType[], "khalf", "ToReal(0.5)"],
+      DeclareAssignVariable[DataType[], "kthird", "ToReal(1.0/3.0)"],
+      DeclareAssignVariable[DataType[], "ktwothird", "ToReal(2.0/3.0)"],
+      DeclareAssignVariable[DataType[], "kfourthird", "ToReal(4.0/3.0)"],
+      DeclareAssignVariable[DataType[], "keightthird", "ToReal(8.0/3.0)"],
+      DeclareAssignVariable[DataType[], "hdxi", "kmul(ToReal(0.5), dxi)"],
+      DeclareAssignVariable[DataType[], "hdyi", "kmul(ToReal(0.5), dyi)"],
+      DeclareAssignVariable[DataType[], "hdzi", "kmul(ToReal(0.5), dzi)"]},
+     {DeclareAssignVariable[DataType[], "khalf", "0.5"],
+      DeclareAssignVariable[DataType[], "kthird", "1/3.0"],
+      DeclareAssignVariable[DataType[], "ktwothird", "2.0/3.0"],
+      DeclareAssignVariable[DataType[], "kfourthird", "4.0/3.0"],
+      DeclareAssignVariable[DataType[], "keightthird", "8.0/3.0"],
+      DeclareAssignVariable[DataType[], "hdxi", "0.5 * dxi"],
+      DeclareAssignVariable[DataType[], "hdyi", "0.5 * dyi"],
+      DeclareAssignVariable[DataType[], "hdzi", "0.5 * dzi"]}]}];
 
 GridName[x_] := If[SOURCELANGUAGE == "C",
                    ToExpression[ToString[x] <> "[index]"],
@@ -543,9 +558,9 @@ InitialiseGridLoopVariables[derivativesUsedSwitch_, addToStencilWidth_] :=
   AssignVariable["kstart", arrayIndex["index_offset_z"]],
 
   "\n",
-  AssignVariable["iend", {arrayElement["cctk_lssh", "CCTK_LSSH_IDX(0,0)"], " - index_offset_x"}],
-  AssignVariable["jend", {arrayElement["cctk_lssh", "CCTK_LSSH_IDX(0,1)"], " - index_offset_y"}],
-  AssignVariable["kend", {arrayElement["cctk_lssh", "CCTK_LSSH_IDX(0,2)"], " - index_offset_z"}]
+  AssignVariable["iend", {"CCTK_LSSH(0,0) - index_offset_x"}],
+  AssignVariable["jend", {"CCTK_LSSH(0,1) - index_offset_y"}],
+  AssignVariable["kend", {"CCTK_LSSH(0,2) - index_offset_z"}]
   },
 
   {
@@ -554,9 +569,9 @@ InitialiseGridLoopVariables[derivativesUsedSwitch_, addToStencilWidth_] :=
   AssignVariable["kstart", arrayIndex[0]],
 
   "\n",
-  AssignVariable["iend", arrayElement["cctk_lssh", "CCTK_LSSH_IDX(0,0)"]],
-  AssignVariable["jend", arrayElement["cctk_lssh", "CCTK_LSSH_IDX(0,1)"]],
-  AssignVariable["kend", arrayElement["cctk_lssh", "CCTK_LSSH_IDX(0,2)"]]
+  AssignVariable["iend", "CCTK_LSSH(0,0)"],
+  AssignVariable["jend", "CCTK_LSSH(0,1)"],
+  AssignVariable["kend", "CCTK_LSSH(0,2)"]
   }]
 ];
 
@@ -629,7 +644,7 @@ Options[GenericGridLoop] = ThornOptions;
 
 GenericGridLoop[functionName_, block_, opts:OptionsPattern[]] :=
   If[OptionValue[UseLoopControl],
-    GenericGridLoopUsingLoopControl[functionName, block],
+    GenericGridLoopUsingLoopControl[functionName, block, OptionValue[UseVectors]],
     GenericGridLoopTraditional[block]];
 
 GenericGridLoopTraditional[block_] :=
@@ -647,24 +662,26 @@ GenericGridLoopTraditional[block_] :=
        }
         ]]]];
 
-GenericGridLoopUsingLoopControl[functionName_, block_] :=
+GenericGridLoopUsingLoopControl[functionName_, block_, vectorise_] :=
   If[SOURCELANGUAGE == "C",  
     CommentedBlock["Loop over the grid points",
       {
         "#pragma omp parallel\n",
-        "LC_LOOP3 (", functionName, ",\n",
-        "          i,j,k, min[0],min[1],min[2], max[0],max[1],max[2],\n",
-        "          cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])\n",
+        If[vectorise, "LC_LOOP3VEC", "LC_LOOP3"] <> " (", functionName, ",\n",
+        "  i,j,k, min[0],min[1],min[2], max[0],max[1],max[2],\n",
+        "  cctk_lsh[0],cctk_lsh[1],cctk_lsh[2]", If[vectorise, {",\n",
+        "  CCTK_REAL_VEC_SIZE"},""] <> ")\n",
         "{\n",
         indentBlock[
           {
-             DeclareVariable["index", "// int"],
-             DeclareAssignVariable["int", "index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"],
+             (* DeclareVariable["index", "// int"], *)
+             (* DeclareAssignVariable["int", "index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"], *)
+             DeclareAssignVariable["ptrdiff_t", "index", "di*i + dj*j + dk*k"],
              block
           }
         ],
         "}\n",
-        "LC_ENDLOOP3 (", functionName, ");\n"
+        If[vectorise, "LC_ENDLOOP3VEC", "LC_ENDLOOP3"] <> " (", functionName, ");\n"
       }
     ],
     ""
@@ -691,9 +708,9 @@ BoundaryLoop[block_] :=
   AssignVariable[arrayElement["bmin", 0], "is_physbnd[0*2+0] ? 0 : imin[0]"],
   AssignVariable[arrayElement["bmin", 1], "is_physbnd[1*2+0] ? 0 : imin[1]"],
   AssignVariable[arrayElement["bmin", 2], "is_physbnd[2*2+0] ? 0 : imin[2]"],
-  AssignVariable[arrayElement["bmax", 0], "is_physbnd[0*2+1] ? cctk_from[CCTK_LSSH_IDX(0,0)] : imax[0]"],
-  AssignVariable[arrayElement["bmax", 1], "is_physbnd[1*2+1] ? cctk_from[CCTK_LSSH_IDX(0,1)] : imax[1]"],
-  AssignVariable[arrayElement["bmax", 2], "is_physbnd[2*2+1] ? cctk_from[CCTK_LSSH_IDX(0,2)] : imax[2]"]}], 
+  AssignVariable[arrayElement["bmax", 0], "is_physbnd[0*2+1] ? CCTK_LSSH(0,0) : imax[0]"],
+  AssignVariable[arrayElement["bmax", 1], "is_physbnd[1*2+1] ? CCTK_LSSH(0,1) : imax[1]"],
+  AssignVariable[arrayElement["bmax", 2], "is_physbnd[2*2+1] ? CCTK_LSSH(0,2) : imax[2]"]}], 
 
   CommentedBlock["Loop over all faces",
    loopOverInteger["dir", "0", "3",
@@ -704,7 +721,7 @@ BoundaryLoop[block_] :=
         {0,  {AssignVariable[arrayElement["bmax", "dir"], {arrayElement["imin", "dir"], ""}], 
               AssignVariable[arrayElement["bmin", "dir"], {0, ""}]}},
         {1,  {AssignVariable[arrayElement["bmin", "dir"], {arrayElement["imax", "dir"], "" }],
-              AssignVariable[arrayElement["bmax", "dir"], {"cctk_lssh[CCTK_LSSH_IDX(0,dir)]", ""}]}}]],
+              AssignVariable[arrayElement["bmax", "dir"], {"CCTK_LSSH(0,dir)", ""}]}}]],
        conditional[arrayElement["is_physbnd", "dir * 2 + face"],
          loopOverInteger["k", arrayElement["bmin",2], arrayElement["bmax",2],
            loopOverInteger["j", arrayElement["bmin",1], arrayElement["bmax",1],
@@ -728,9 +745,9 @@ BoundaryWithGhostsLoop[block_] :=
   AssignVariable[arrayElement["bmin", 0], "0"],
   AssignVariable[arrayElement["bmin", 1], "0"],
   AssignVariable[arrayElement["bmin", 2], "0"],
-  AssignVariable[arrayElement["bmax", 0], "cctk_lssh[CCTK_LSSH_IDX(0,0)]"],
-  AssignVariable[arrayElement["bmax", 1], "cctk_lssh[CCTK_LSSH_IDX(0,1)]"],
-  AssignVariable[arrayElement["bmax", 2], "cctk_lssh[CCTK_LSSH_IDX(0,2)]"]}], 
+  AssignVariable[arrayElement["bmax", 0], "CCTK_LSSH(0,0)"],
+  AssignVariable[arrayElement["bmax", 1], "CCTK_LSSH(0,1)"],
+  AssignVariable[arrayElement["bmax", 2], "CCTK_LSSH(0,2)"]}], 
 
   CommentedBlock["Loop over all faces",
    loopOverInteger["dir", "0", "3",
@@ -741,7 +758,7 @@ BoundaryWithGhostsLoop[block_] :=
         {0,  {AssignVariable[arrayElement["bmax", "dir"], {arrayElement["imin", "dir"], ""}], 
               AssignVariable[arrayElement["bmin", "dir"], {0, ""}]}},
         {1,  {AssignVariable[arrayElement["bmin", "dir"], {arrayElement["imax", "dir"], "" }],
-              AssignVariable[arrayElement["bmax", "dir"], {"cctk_lssh[CCTK_LSSH_IDX(0,dir)]", ""}]}}]],
+              AssignVariable[arrayElement["bmax", "dir"], {"CCTK_LSSH(0,dir)]", ""}]}}]],
        conditional[arrayElement["is_physbnd", "dir * 2 + face"],
          loopOverInteger["k", arrayElement["bmin",2], arrayElement["bmax",2],
            loopOverInteger["j", arrayElement["bmin",1], arrayElement["bmax",1],
@@ -757,12 +774,28 @@ BoundaryWithGhostsLoop[block_] :=
       ]}
      ]]]};
 
-conditional[condition_, block_] :=
- {"if (", condition, ")\n",
+(* Remove call to ToReal from condtion. This should really instead be
+   done much earlier. Sometimes Conditional is called with a
+   conditional that is an expression, sometimes it is a list of
+   strings, so we need to handle both cases. *)
+(* One approach to remove calls to ToReal is to wrap the condition
+  into a function call, such as e.g. Cond[x], which is then handled by
+  the vectorisation code in the same way the IfThen[x,y,z] expression
+  is handled there. *)
+removeToRealFunc[condition_] := Replace[condition, {ToReal[x_] -> x}]
+removeToRealString[condition_] := If[StringQ[condition], StringReplace[condition, "ToReal(" ~~ x__ ~~ ")" :> x], condition]
+removeToReal[condition_] := Map[removeToRealString, removeToRealFunc[condition]]
+
+Conditional[condition_, block_] :=
+ {"if (", removeToReal[condition], ")\n",
   CBlock[block]};
 
+Conditional[condition_, block1_, block2_] :=
+ {"if (", removeToReal[condition], ")\n",
+  CBlock[block1], "else\n", CBlock[block2]};
+
 onceInGridLoop[block_] :=
-  conditional["i == 5 && j == 5 && k == 5",
+  Conditional["i == 5 && j == 5 && k == 5",
               block];
 
 InfoVariable[name_] :=
@@ -789,47 +822,166 @@ insertFile[name_] :=
     Close[istream];
     contents];
 
+vectoriseExpression[exprp_] :=
+  Module[{isNotMinusOneQ, isNotTimesMinusOneQ, fmaRules, isNotKneg, arithRules, undoRules, expr},
+    expr = exprp;
+
+    (* Constants *)
+    (* expr = expr /. xx_Integer/; xx!=-1 :> ToReal[xx]; *)
+    expr = expr /. xx_Integer -> ToReal[xx];
+    expr = expr /. xx_Real -> ToReal[xx];
+    removeToRealRules = {
+      - ToReal[xx_] -> ToReal[- xx],
+      ToReal[xx_] + ToReal[yy_] -> ToReal[xx + yy],
+      ToReal[xx_] * ToReal[yy_] -> ToReal[xx * yy],
+      ToReal[xx_] == ToReal[yy_] -> ToReal[xx == yy],
+      ToReal[xx_] != ToReal[yy_] -> ToReal[xx != yy],
+      pow[xx_, ToReal[power_]] -> pow[xx, power],
+      (* keep the conditional expression scalar *)
+      IfThen[ToReal[xx_], yy_, zz_] -> IfThen[xx, yy, zz]
+    };
+    expr = expr //. removeToRealRules;
+
+    (* Replace all operators and functions *)
+    (* kneg, kadd, ksub, kmul, kdiv *)
+    isNotKneg[n_] := ! MatchQ[n,kneg[_]];
+    arithRules = {
+      - xx_ -> kneg[xx],
+      xx_ * yy_ -> kmul[xx,yy],
+      xx_ / yy_ -> kdiv[xx,yy],
+      xx_ + yy_ -> kadd[xx,yy],
+      xx_ - yy_ -> ksub[xx,yy],
+      kmul[-1,xx_]            -> kneg[xx],
+      kmul[xx_,-1]            -> kneg[xx],
+      kmul[ToReal[-1],xx_]    -> kneg[xx],
+      kmul[xx_,ToReal[-1]]    -> kneg[xx],
+      (* kmul[xx_,INV[yy_]]      -> kdiv[xx,yy], *)
+      (* kmul[INV[xx_],yy_]      -> kdiv[yy,xx], *)
+      kdiv[xx_,kdiv[yy_,zz_]] -> kdiv[kmul[xx,zz],yy],
+      kdiv[kdiv[xx_,yy_],zz_] -> kdiv[xx,kmul[yy,zz]],
+      kmul[kneg[xx_],yy_]     -> kneg[kmul[xx,yy]],
+      kmul[xx_,kneg[yy_]]     -> kneg[kmul[xx,yy]],
+      kdiv[kneg[xx_],yy_]     -> kneg[kdiv[xx,yy]],
+      kdiv[xx_,kneg[yy_]]     -> kneg[kdiv[xx,yy]],
+      kadd[kneg[xx_],yy_]     -> ksub[yy,xx],
+      ksub[kneg[xx_],yy_]     -> kneg[kadd[xx,yy]],
+      kadd[xx_,kneg[yy_]]     -> ksub[xx,yy],
+      ksub[xx_,kneg[yy_]]     -> kadd[xx,yy],
+      kneg[ksub[xx_,yy_]]     -> ksub[yy,xx],
+      Abs[xx_]      -> kfabs[xx],
+      Log[xx_]      -> klog[xx],
+      fabs[xx_]     -> kfabs[xx],
+      fmax[xx_,yy_] -> kfmax[xx,yy],
+      fmin[xx_,yy_] -> kfmin[xx,yy],
+      sqrt[xx_]     -> ksqrt[xx],
+      exp[xx_]      -> kexp[xx],
+      log[xx_]      -> klog[xx],
+      pow[xx_,yy_]  -> kpow[xx,yy],
+      kneg[kneg[xx_]]   -> xx,
+      kfabs[kneg[xx_]]  -> kfabs[xx],
+      kfnabs[kneg[xx_]] -> kfnabs[xx],
+      kneg[kfabs[xx_]]  -> kfnabs[xx],
+      kneg[kfnabs[xx_]] -> kfabs[xx]
+    };
+    expr = expr //. arithRules;
+
+    (* Undo some transformations *)
+    undoRules = {
+      IfThen[kmul[xx_,yy_], aa_, bb_] -> IfThen[xx*yy, aa, bb],
+      IfThen[kmul[xx_,yy_] != zz_, aa_, bb_] -> IfThen[xx*yy!=zz, aa, bb],
+      ToReal[kneg[xx_]] -> ToReal[-xx],
+      ToReal[kadd[xx_,yy_]] -> ToReal[xx+yy],
+      ToReal[ksub[xx_,yy_]] -> ToReal[xx-yy],
+      ToReal[kmul[xx_,yy_]] -> ToReal[xx*yy],
+      ToReal[xx_*kadd[yy_,zz_]] -> ToReal[xx*(yy+zz)],
+      kpow[xx_, kneg[power_]] -> kpow[xx, -power]
+    };
+    expr = expr //. undoRules;
+    
+    (* FMA (fused multiply-add) instructions *)
+    (* kmadd (x,y,z) =   xy+z
+       kmsub (x,y,z) =   xy-z
+       knmadd(x,y,z) = -(xy+z)
+       knmsub(x,y,z) = -(xy-z) *)
+    fmaRules = {
+      kadd[kmul[xx_,yy_],zz_] -> kmadd[xx,yy,zz],
+      kadd[zz_,kmul[xx_,yy_]] -> kmadd[xx,yy,zz],
+      ksub[kmul[xx_,yy_],zz_] -> kmsub[xx,yy,zz],
+      ksub[zz_,kmul[xx_,yy_]] -> knmsub[xx,yy,zz],
+      kneg[kmadd [xx_,yy_,zz_]] -> knmadd[xx,yy,zz],
+      kneg[kmsub [xx_,yy_,zz_]] -> knmsub[xx,yy,zz],
+      kneg[knmadd[xx_,yy_,zz_]] -> kmadd [xx,yy,zz],
+      kneg[knmsub[xx_,yy_,zz_]] -> kmsub [xx,yy,zz]
+      (* we could match this and similar patterns
+      kmul[xx_, kadd[yy_, ToReal[+1]]] -> kmadd[xx, yy, xx],
+      kmul[xx_, kadd[yy_, ToReal[-1]]] -> kmsub[xx, yy, xx],
+      *)
+    };
+    expr = expr //. fmaRules;
+    
+    Return[expr]];
+
 (* Take an expression x and replace occurrences of Powers with the C
 macros SQR, CUB, QAD *)
-ReplacePowers[x_] :=
+ReplacePowers[expr_, vectorise_] :=
   Module[{rhs},
-    rhs = x /. Power[xx_, -1] -> INV[xx];
+    rhs = expr /. Power[xx_, -1] -> INV[xx];
 
     If[SOURCELANGUAGE == "C",
            Module[{},
-	     rhs = rhs //. Power[xx_, 2] -> SQR[xx];
-	     rhs = rhs //. Power[xx_, 3] -> CUB[xx];
-	     rhs = rhs //. Power[xx_, 4] -> QAD[xx];
+	     rhs = rhs /. Power[xx_,  2  ] -> SQR[xx];
+	     rhs = rhs /. Power[xx_,  3  ] -> CUB[xx];
+	     rhs = rhs /. Power[xx_,  4  ] -> QAD[xx];
+	     rhs = rhs /. Power[xx_, -2  ] -> INV[SQR[xx]];
+             rhs = rhs /. Power[xx_,  1/2] -> sqrt[xx];
+             rhs = rhs /. Power[xx_, -1/2] -> INV[sqrt[xx]];
+             rhs = rhs /. Power[xx_,  0.5] -> sqrt[xx];
+             rhs = rhs /. Power[xx_, -0.5] -> INV[sqrt[xx]];
 
-	     rhs = rhs //. xx_/2 -> khalf xx;
-	     rhs = rhs //. (-1/2) -> -khalf;
+             (*
+	     rhs = rhs /.  1/2 ->  khalf
+	     rhs = rhs /. -1/2 -> -khalf;
 
-	     rhs = rhs //. xx_/3 -> kthird xx;
-	     rhs = rhs //. (-1/3) -> -kthird;
+	     rhs = rhs /.  1/3 ->  kthird;
+	     rhs = rhs /. -1/3 -> -kthird;
 
-	     rhs = rhs //. 2/3 -> ktwothird;
-	     rhs = rhs //. (-2/3) -> -ktwothird;
+	     rhs = rhs /.  2/3 ->  ktwothird;
+	     rhs = rhs /. -2/3 -> -ktwothird;
 
-	     rhs = rhs //. 4/3 -> kfourthird;
-	     rhs = rhs //. (-4/3) -> -kfourthird;
+	     rhs = rhs /.  4/3 ->  kfourthird;
+	     rhs = rhs /. -4/3 -> -kfourthird;
 
-	     rhs = rhs //. 8/3 -> keightthird;
-	     rhs = rhs //. (-8/3) -> -keightthird;
+	     rhs = rhs /.  8/3 ->  keightthird;
+	     rhs = rhs /. -8/3 -> -keightthird;
+             *)
 
-	     rhs = rhs //. xx_ y_ + xx_ z_ -> xx(y+z); 
+             (* Avoid rational numbers *)
+	     rhs = rhs /. Rational[xx_,yy_] :> N[xx/yy, 30];
 
-             rhs = rhs //. Power[E, power_] -> exp[power];
-             rhs = rhs //. Power[xx_, 0.5] -> sqrt[xx];
+             rhs = rhs //.      IfThen[cond1_,xx1_,yy1_] +      IfThen[cond2_,xx2_,yy2_] /; cond1==cond2 :> IfThen[cond1, Simplify[    xx1 +     xx2], Simplify[    yy1 +     yy2]];
+             rhs = rhs //. ff1_ IfThen[cond1_,xx1_,yy1_] +      IfThen[cond2_,xx2_,yy2_] /; cond1==cond2 :> IfThen[cond1, Simplify[ff1 xx1 +     xx2], Simplify[ff1 yy1 +     yy2]];
+             rhs = rhs //.      IfThen[cond1_,xx1_,yy1_] + ff2_ IfThen[cond2_,xx2_,yy2_] /; cond1==cond2 :> IfThen[cond1, Simplify[    xx1 + ff2 xx2], Simplify[    yy1 + ff2 yy2]];
+             rhs = rhs //. ff1_ IfThen[cond1_,xx1_,yy1_] + ff2_ IfThen[cond2_,xx2_,yy2_] /; cond1==cond2 :> IfThen[cond1, Simplify[ff1 xx1 + ff2 xx2], Simplify[ff1 yy1 + ff2 yy2]];
+
+             (* Is this still a good idea when FMA instructions are used? *)
+	     rhs = rhs //. xx_ yy_ + xx_ zz_ -> xx (yy+zz);
+	     rhs = rhs //. xx_ yy_ - xx_ zz_ -> xx (yy-zz);
+
+             rhs = rhs /. Power[E, power_] -> exp[power];
 
              (* there have been some problems doing the Max/Min
                 replacement via the preprocessor for C, so we do it
                 here *)
-             rhs = rhs //. Max[xx_, yy_] -> fmax[xx, yy];
-             rhs = rhs //. Min[xx_, yy_] -> fmin[xx, yy];
+             rhs = rhs /. Max[xx_, yy_] -> fmax[xx, yy];
+             rhs = rhs /. Min[xx_, yy_] -> fmin[xx, yy];
 
-             rhs = rhs //. Power[xx_, power_] -> pow[xx, power]],
+             rhs = rhs /. Power[xx_, power_] -> pow[xx, power];
 
-           rhs = rhs //. Power[xx_, power_] -> xx^power
+             If[vectorise === True,
+              rhs = vectoriseExpression[rhs]];
+           ],
+
+           rhs = rhs /. Power[xx_, power_] -> xx^power
        ];
 (*       Print[rhs//FullForm];*)
     rhs
@@ -840,180 +992,6 @@ ReplacePowers[x_] :=
 CFormHideStrings[x_, opts___] := StringReplace[ToString[CForm[x,opts]], "\"" -> ""];
 
 
-
-(* Debug output *)
-DebugCSE = True;
-
-(* Eliminate common subexpressions in a code sequence *)
-CSE[code_] := Module[
-  {expr, optexpr,
-   decomposed, locals, block,
-   block1, block2, temps1, stmts1, stmts2, stmts3,
-   replacevar,
-   stmts4,
-   stmts5, stmts6, stmts7},
-  if [DebugCSE, Print["code\n", code, "\nendcode\n"]];
-  
-  (* The code is passed in as list of {lhs,rhs} tuples.  Turn this
-     list into a single expression, so that it can be optimised.  *)
-  expr = code //. {a_, b__} -> CSequence[a, {b}]
-              //. {a_} -> a
-              //. (a_ -> b_) -> CAssign[a, b];
-  If [DebugCSE, Print["expr\n", expr, "\nendexpr\n"]];
-  
-  (* Optimise this expression *)
-  optexpr = Experimental`OptimizeExpression[expr];
-  If [DebugCSE, Print["optexpr\n", optexpr, "\nendoptexpr\n"]];
-  
-  (* This expression is a Mathematica expression.  Decompose it into
-     the set of newly introduced local variables and the optimised
-     expression itself.  *)
-  decomposed =
-    ReleaseHold[(Hold @@ optexpr)
-                /. Verbatim[Block][vars_, seq_] :> {vars, Hold[seq]}];
-  
-  If[decomposed[[0]] =!= List,
-    (* If the optimiser didn't create a Block expression, we assume it
-       didn't do anything useful and return the original.  *)
-    code,
-    
-    {locals, block} = decomposed;
-    If [DebugCSE, Print["locals\n", locals, "\nendlocals\n"]];
-    If [DebugCSE, Print["block\n", block, "\nendblock\n"]];
-    
-    block1 = block /. Hold[CompoundExpression[seq__]] :> Hold[{seq}];
-    If [DebugCSE, Print["block1\n", block1, "\nendblock1\n"]];
-    block2 = First[block1 //. Hold[{a___Hold, b_, c___}]
-                              /; Head[Unevaluated[b]] =!= Hold
-                              :> Hold[{a, Hold[b], c}]];
-    If [DebugCSE, Print["block2\n", block2, "\nendblock2\n"]];
-    
-    (* Temporaries, including a fake declaration for them *)
-    temps1 = Most[block2] //. Hold[lhs_ = rhs_] -> CAssign[CDeclare[lhs], rhs];
-    If [DebugCSE, Print["temps1\n", temps1, "\nendtemps1\n"]];
-    
-    (* Expression *)
-    stmts1 = ReleaseHold[Last[block2]];
-    If [DebugCSE, Print["stmts1\n", stmts1, "\nendstmts1\n"]];
-    
-    (* Turn CSequence back into a list *)
-    stmts2 = Flatten[{stmts1} //. CSequence[a_,b_] -> {a,b}];
-    If [DebugCSE, Print["stmts2\n", stmts2, "\nendstmts2\n"]];
-    
-    (* Combine temporaries and expression *)
-    stmts3 = Join[temps1, stmts2];
-    If [DebugCSE, Print["stmts3\n", stmts3, "\nendstmts3\n"]];
-    
-    (* Replace the internal names of the newly generated temporaries
-       with legal C names *)
-    replacevar =
-      Rule @@@ Transpose[{(*ToString[CForm[#]] & /@*) locals,
-        Symbol[
-          StringReplace[StringReplace[ToString[#], {__ ~~ "`" ~~ a_ :> a}],
-            "$" -> "T"]] & /@ locals}];
-    If [DebugCSE, Print["replacevar\n", replacevar, "\nendreplacevar\n"]];
-    
-    stmts4 = stmts3 //. replacevar;
-    If [DebugCSE, Print["stmts4\n", stmts4, "\nendstmts4\n"]];
-    
-    (* Sort statements topologically *)
-(*
-    stmts5 = stmts4;
-*)
-    If [DebugCSE, Print["A\n"]];
-    stmts5 =
-      Module[{debug,
-              tmpVars, newVars, i,
-              stmtsLeft, stmtsDone,
-              lhs, rhs, any, contains, containsAny,
-              canDoStmts, cannotDoStmts,
-              selfStmts, selfVars, allVars, nonSelfVars},
-        debug = False;
-        stmtsLeft = stmts4;
-        If [DebugCSE, Print["B\n"]];
-        stmtsDone = {};
-        If [DebugCSE, Print["C\n"]];
-        (* lhs[x_] := x[[1]]; *)
-        lhs[x_] := x /. (CAssign[lhs_, rhs_] -> lhs);
-        If [DebugCSE, Print["D\n"]];
-        (* rhs[x_] := x[[2]]; *)
-        rhs[x_] := x /. (CAssign[lhs_, rhs_] -> rhs);
-        If [DebugCSE, Print["E\n"]];
-        (* any[xs_] := Fold[Or, False, xs]; *)
-        any[xs_] := MemberQ[xs, True];
-        If [DebugCSE, Print["F\n"]];
-        (* contains[e_, x_] := (e /. x -> {}) =!= e; *)
-        (* contains[e_, x_] := Count[{e}, x, Infinity] > 0; *)
-        contains[e_, x_] := MemberQ[{e}, x, Infinity];
-        If [DebugCSE, Print["G\n"]];
-        containsAny[e_, xs_] := any[Map[contains[e,#]&, xs]];
-        If [DebugCSE, Print["H\n"]];
-        getVars[stmts_] := Map[lhs, stmts] //. (CDeclare[lhs_] -> lhs);
-
-        (* Rename temporary variables deterministically *)
-        tmpVars = Select[getVars[stmtsLeft],
-                         StringMatchQ[ToString[#], "TT"~~__]&];
-        newVars = Table[Symbol["T"<>ToString[1000000+i]],
-                        {i, 1, Length[tmpVars]}];
-        stmtsLeft = stmtsLeft /. MapThread[(#1->#2)&, {tmpVars, newVars}];
-
-        allVars = getVars[stmtsLeft];
-        While[stmtsLeft =!= {},
-          If[debug, Print["stmtsLeft = \n", stmtsLeft]];
-          If[debug, Print["stmtsDone = \n", stmtsDone]];
-          allVars = getVars[stmtsLeft];
-          If[debug, Print["allVars = \n", allVars]];
-          canDoStmts =
-            Select[stmtsLeft, Not[containsAny[rhs[#], allVars]] &];
-          cannotDoStmts =
-            Select[stmtsLeft,     containsAny[rhs[#], allVars]  &];
-          If[debug, Print["canDoStmts = \n", canDoStmts]];
-          If[debug, Print["cannotDoStmts = \n", cannotDoStmts]];
-          If[False && canDoStmts == {},
-            (* Handle assignment where LHS and RHS access the same variables
-               (hopefully without taking derivatives!) *)
-            selfStmts = Select[stmtsLeft, contains[rhs[#], lhs[#]]];
-            selfVars = getVars[selfStmts];
-            nonSelfVars = Select[allVars, Not[contains[selfVars, #]] &];
-            canDoStmts =
-              Select[stmtsLeft, Not[containsAny[rhs[#], nonSelfVars]] &];
-            cannotDoStmts =
-              Select[stmtsLeft,     containsAny[rhs[#], nonSelfVars]  &];
-            If[debug, Print["nonself/canDoStmts = \n", canDoStmts]];
-            If[debug, Print["nonself/cannotDoStmts = \n", cannotDoStmts]];
-          ];
-          If[canDoStmts == {},
-            (* Accept the first statement *)
-            canDoStmts = {First[stmtsLeft]};
-            cannotDoStmts = Rest[stmtsLeft];
-            If[debug, Print["takeone/canDoStmts = \n", canDoStmts]];
-            If[debug, Print["takeone/cannotDoStmts = \n", cannotDoStmts]];
-          ];
-          If[canDoStmts == {}, ThrowError["canDoStmts == {}"]];
-          stmtsDone = Join[stmtsDone, canDoStmts];
-          If [DebugCSE, Print["I\n"]];
-          stmtsLeft = cannotDoStmts;
-          If [DebugCSE, Print["J\n"]];
-        ];
-        If[debug, Print["stmtsLeft\n", stmtsLeft]];
-        If[debug, Print["stmtsDone\n", stmtsDone]];
-      stmtsDone];
-    If [DebugCSE, Print["Z\n"]];
-    
-    (* Turn CAssign statements back into (->) tuples *)
-    stmts6 = stmts5 //. CAssign[lhs_,rhs_] -> (lhs -> rhs);
-    If [DebugCSE, Print["stmts6\n", stmts6, "\nendstmts6\n"]];
-    
-    (* Turn CDeclare statements into "faked" declarations *)
-    stmts7 = stmts6
-      //. CDeclare[var_]
-          :> "CCTK_REAL const " <>
-             StringReplace[ToString[var], __ ~~ "`" -> ""];
-    If [DebugCSE, Print["stmts7\n", stmts7, "\nendstmts7\n"]];
-    
-    stmts7
-  ]
-];
 
 Quote[x_] := {"\"", x, "\""};
 

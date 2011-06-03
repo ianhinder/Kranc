@@ -4,38 +4,46 @@
 
 # $Header$ 
 
-private:    
-
-KEYWORD FDscheme "Type of finite differencing to use"
-{                                                     
-  "2nd order centered macro"      :: "centered 2nd order implemented with macros"          
-  "4th order centered macro"      :: "centered 4th order implemented with macros"
-} "2nd order centered macro"
-
 restricted:
 
-CCTK_INT  stencil_width "stencil width used near boundary"
+CCTK_INT  stencil_width "stencil width used near boundary DEPRECATED"
 {
   -1:* :: "outgoing characteristic speed > 0, default of -1 is intentionally invalid"
 } -1
 
-CCTK_INT  stencil_width_x "stencil width used near boundary"
+CCTK_INT  stencil_width_x "stencil width used near boundary DEPRECATED"
 {
   -1:* :: "outgoing characteristic speed > 0, default of -1 is intentionally invalid"
 } -1
 
-CCTK_INT  stencil_width_y "stencil width used near boundary"
+CCTK_INT  stencil_width_y "stencil width used near boundary DEPRECATED"
 {
   -1:* :: "outgoing characteristic speed > 0, default of -1 is intentionally invalid"
 } -1
 
-CCTK_INT  stencil_width_z "stencil width used near boundary"
+CCTK_INT  stencil_width_z "stencil width used near boundary DEPRECATED"
 {
   -1:* :: "outgoing characteristic speed > 0, default of -1 is intentionally invalid"
 } -1
 
-CCTK_INT  boundary_width "width of boundary (fix later to use Cactus boundary calls)"
+CCTK_INT  boundary_width "width of boundary (fix later to use Cactus boundary calls) DEPRECATED"
 {
   -1:* :: "Any integer"
 } 1
 
+restricted:
+CCTK_STRING jacobian_group "Name of group containing Jacobian" STEERABLE=RECOVER
+{
+  "" :: "String of the form <implementation>::<groupname>"
+} ""
+
+restricted:
+CCTK_STRING jacobian_derivative_group "Name of group containing Jacobian derivative" STEERABLE=RECOVER
+{
+  "" :: "String of the form <implementation>::<groupname>"
+} ""
+
+CCTK_INT  jacobian_identity_map "Map number on which the Jacobian should not be applied"
+{
+  -1:* :: "Any integer"
+} -1

@@ -59,18 +59,28 @@ int sgn(CCTK_REAL x)
     return 0;
 }
 
-int GenericFD_GetBoundaryWidth(cGH const * restrict const cctkGH)
+void GenericFD_GetBoundaryWidths(cGH const * restrict const cctkGH, int nboundaryzones[6])
 {
   int is_internal[6];
   int is_staggered[6];
-  int nboundaryzones[6];
   int shiftout[6];
   int ierr = -1;
 
   if (CCTK_IsFunctionAliased ("MultiPatch_GetBoundarySpecification")) {
     int const map = MultiPatch_GetMap (cctkGH);
+    /* This doesn't make sense in level mode */
     if (map < 0)
-      CCTK_WARN(0, "Could not determine current map");
+    {
+      static int have_warned = 0;
+      if (!have_warned)
+      {
+        CCTK_WARN(1, "GenericFD_GetBoundaryWidths: Could not determine current map (can be caused by calling in LEVEL mode)");
+        have_warned = 1;
+      }
+      for (int i = 0; i < 6; i++)
+        nboundaryzones[i] = 0;
+      return;
+    }
     ierr = MultiPatch_GetBoundarySpecification
       (map, 6, nboundaryzones, is_internal, is_staggered, shiftout);
     if (ierr != 0)
@@ -83,6 +93,12 @@ int GenericFD_GetBoundaryWidth(cGH const * restrict const cctkGH)
   } else {
     CCTK_WARN(0, "Could not obtain boundary specification");
   }
+}
+
+int GenericFD_GetBoundaryWidth(cGH const * restrict const cctkGH)
+{
+  int nboundaryzones[6];
+  GenericFD_GetBoundaryWidths(cctkGH, nboundaryzones);
 
   int bw = nboundaryzones[0];
 
@@ -92,20 +108,6 @@ int GenericFD_GetBoundaryWidth(cGH const * restrict const cctkGH)
 
   return bw;
 }
-
-/* int GenericFD_BoundaryWidthTable(cGH const * restrict const cctkGH) */
-/* { */
-/*   int nboundaryzones[6]; */
-/*   GenericFD_GetBoundaryWidth(cctkGH, nboundaryzones); */
-
-/*   int table = Util_TableCreate(0); */
-/*   if (table < 0) CCTK_WARN(0, "Could not create table"); */
-
-/*   if (Util_TableSetIntArray(table, 6, nboundaryzones, "BOUNDARY_WIDTH") < 0) */
-/*     CCTK_WARN(0, "Could not set table"); */
-/*   return table; */
-/* } */
-
 
 /* Return the array indices in imin and imax for looping over the
    interior of the grid. imin is the index of the first grid point.
@@ -219,7 +221,7 @@ void GenericFD_GetBoundaryInfo(cGH const * restrict const cctkGH,
 	imin[dir] = npoints;
 	break;
       case 1: /* Upper boundary */
-	imax[dir] = cctk_lssh[CCTK_LSSH_IDX(0,dir)] - npoints;
+	imax[dir] = CCTK_LSSH(0,dir) - npoints;
 	break;
       default:
 	CCTK_WARN(0, "internal error");
@@ -239,7 +241,7 @@ void GenericFD_LoopOverEverything(cGH const * restrict const cctkGH, Kranc_Calcu
   CCTK_REAL  tangentA[] = {0,0,0};
   CCTK_REAL  tangentB[] = {0,0,0};
   int   bmin[] = {0,0,0};
-  int   bmax[] = {cctk_lssh[CCTK_LSSH_IDX(0,0)],cctk_lssh[CCTK_LSSH_IDX(0,1)],cctk_lssh[CCTK_LSSH_IDX(0,2)]};
+  int   bmax[] = {CCTK_LSSH(0,0),CCTK_LSSH(0,1),CCTK_LSSH(0,2)};
 
   calc(cctkGH, dir, face, normal, tangentA, tangentB, bmin, bmax, 0, NULL);
   return;
@@ -301,7 +303,7 @@ void GenericFD_LoopOverBoundary(cGH const * restrict const cctkGH, Kranc_Calcula
             break;
           case +1:
             bmin[d] = imax[d];
-            bmax[d] = cctk_lssh[CCTK_LSSH_IDX(0,d)];
+            bmax[d] = CCTK_LSSH(0,d);
             have_bnd = 1;
             all_physbnd = all_physbnd && is_physbnd[2*d+1];
             break;
@@ -394,7 +396,7 @@ void GenericFD_LoopOverBoundaryWithGhosts(cGH const * restrict const cctkGH, Kra
             break;
           case +1:
             bmin[d] = imax[d];
-            bmax[d] = cctk_lssh[CCTK_LSSH_IDX(0,d)];
+            bmax[d] = CCTK_LSSH(0,d);
             have_bnd = 1;
             have_physbnd = have_physbnd || is_physbnd[2*d+1];
             break;
@@ -474,7 +476,7 @@ void GenericFD_PenaltyPrim2Char(cGH const * restrict const cctkGH, int const dir
   CCTK_REAL  tangentA[] = {0,0,0};
   CCTK_REAL  tangentB[] = {0,0,0};
   int   bmin[] = {0,0,0};
-  int   bmax[] = {cctk_lssh[CCTK_LSSH_IDX(0,0)],cctk_lssh[CCTK_LSSH_IDX(0,1)],cctk_lssh[CCTK_LSSH_IDX(0,2)]};
+  int   bmax[] = {cctk_lsh[0],cctk_lsh[1],cctk_lsh[2]};
   CCTK_REAL  **all_vars;
   int        i = 0;
 
@@ -498,4 +500,101 @@ void GenericFD_PenaltyPrim2Char(cGH const * restrict const cctkGH, int const dir
   free(all_vars);
   
   return;
+}
+
+void GenericFD_AssertGroupStorage(cGH const * restrict const cctkGH, const char *calc,
+                                  int ngroups, const char *group_names[ngroups])
+{
+  for (int i = 0; i < ngroups; i++)
+  {
+    int result = CCTK_QueryGroupStorage(cctkGH, group_names[i]);
+    if (result == 0)
+    {
+      CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                 "Error in %s: Group \"%s\" does not have storage", calc, group_names[i]);
+    }
+    else if (result < 0)
+    {
+      CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                 "Error in %s: Invalid group name \"%s\"", calc, group_names[i]);
+    }
+  }
+}
+
+/* Return a list of pointers to the members of a named group */
+void GenericFD_GroupDataPointers(cGH const * restrict const cctkGH, const char *group_name,
+                                 int nvars, CCTK_REAL const *restrict *ptrs)
+{
+  int group_index, status;
+  cGroup  group_info;
+
+  group_index = CCTK_GroupIndex(group_name);
+  if (group_index < 0)
+    CCTK_VWarn(CCTK_WARN_ABORT,   __LINE__, __FILE__, CCTK_THORNSTRING,
+               "Error return %d trying to get group index for group \'%s\'",
+               group_index,
+               group_name);
+
+  status = CCTK_GroupData(group_index, &group_info);
+  if (status < 0)
+    CCTK_VWarn(CCTK_WARN_ABORT,   __LINE__, __FILE__, CCTK_THORNSTRING,
+               "Error return %d trying to get info for group \'%s\'",
+               status,
+               group_name);
+
+  if (group_info.numvars != nvars)
+  {
+    CCTK_VWarn(CCTK_WARN_ABORT,   __LINE__, __FILE__, CCTK_THORNSTRING,
+               "Group \'%s\' has %d variables but %d were expected",
+               group_name, group_info.numvars, nvars);
+  }
+
+  int v1 = CCTK_FirstVarIndex(group_name);
+
+  for (int v = 0; v < nvars; v++)
+  {
+    ptrs[v] = (CCTK_REAL const *) CCTK_VarDataPtrI(cctkGH, 0 /* timelevel */, v1+v);
+  }
+}
+
+void GenericFD_EnsureStencilFits(cGH const * restrict const cctkGH, const char *calc, int ni, int nj, int nk)
+{
+  DECLARE_CCTK_ARGUMENTS
+
+  int bws[6];
+  GenericFD_GetBoundaryWidths(cctkGH, bws);
+
+  int ns[] = {ni, nj, nk};
+  const char *dirs[] = {"x", "y", "z"};
+  const char *faces[] = {"lower", "upper"};
+  int abort = 0;
+
+  for (int dir = 0; dir < 3; dir++)
+  {
+    for (int face = 0; face < 2; face++)
+    {
+      int bw = bws[2*dir+face];
+      if (bw < ns[dir])
+      {
+        CCTK_VInfo(CCTK_THORNSTRING,
+                   "The stencil for %s requires %d points, but the %s %s boundary has only %d points.",
+                   calc, ns[dir], faces[face], dirs[dir], bw);
+        abort = 1;
+      }
+    }
+    int gz = cctk_nghostzones[dir];
+    if (gz < ns[dir])
+    {
+      CCTK_VInfo(CCTK_THORNSTRING,
+                 "The stencil for %s requires %d points, but there are only %d ghost zones in the %s direction.",
+                 calc, ns[dir], gz, dirs[dir]);
+      abort = 1;
+    }
+  }
+
+  if (abort)
+  {
+    CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+               "Insufficient ghost or boundary points for %s", calc);
+  }
 }

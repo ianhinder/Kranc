@@ -69,7 +69,7 @@ GetScheduledGroups[thornName_] :=
  {Name          -> "ApplyBCs",
   Language      -> "None", (* groups do not have a language *)
   SchedulePoint -> "as " <> thornName <> "_ApplyBCs in MoL_PostStep "
-                   <> " after " <> boundariesName[thornName], 
+                   <> "after " <> boundariesName[thornName], 
   Comment       -> "Apply boundary conditions "
                    <> "controlled by thorn Boundary"
  }
@@ -95,10 +95,10 @@ GetScheduledFunctions[thornName_, evolvedGroups_] :=
   }
 };
 
-createBoundTypeParam[groupOrGF_] := {
+createBoundTypeParam[groupOrGF_, def_] := {
                  Name          ->  ToString@groupOrGF <> "_bound",
                  Type          ->  "KEYWORD",
-                 Default       ->  "skip",
+                 Default       ->  def,
                  Description   ->  "Boundary condition to implement",
                  Visibility    ->  "private",
                  AllowedValues ->  {
@@ -108,8 +108,9 @@ createBoundTypeParam[groupOrGF_] := {
         {Value -> "radiative", Description -> "Radiation boundary condition"},
         {Value -> "scalar",    Description -> "Dirichlet boundary condition"},
         {Value -> "newrad",    Description -> "Improved radiative boundary condition"},
-        {Value -> "skip",      Description -> "skip boundary condition code"}
-}};
+        {Value -> "skip",      Description -> "skip boundary condition code"}},
+                 Steerable -> Always
+};
 
 
 createBoundSpeedParam[groupOrGF_] := {
@@ -119,7 +120,8 @@ createBoundSpeedParam[groupOrGF_] := {
                  Description   ->  "characteristic speed at boundary",
                  Visibility    ->  "private",
                  AllowedValues ->  {{Value -> "0:*" ,
-                      Description -> "outgoing characteristic speed > 0"}}
+                      Description -> "outgoing characteristic speed > 0"}},
+                 Steerable -> Always
 };
 
 createBoundLimitParam[groupOrGF_] := {
@@ -129,7 +131,8 @@ createBoundLimitParam[groupOrGF_] := {
                  Description   ->  "limit value for r -> infinity",
                  Visibility    ->  "private",
                  AllowedValues ->  {{Value -> "*:*" ,
-                      Description -> "value of limit value is unrestricted"}}
+                      Description -> "value of limit value is unrestricted"}},
+                 Steerable -> Always
 };
 
 createBoundScalarParam[groupOrGF_] := {
@@ -139,12 +142,13 @@ createBoundScalarParam[groupOrGF_] := {
                  Description   ->  "Dirichlet boundary value",
                  Visibility    ->  "private",
                  AllowedValues ->  {{Value -> "*:*" ,
-                      Description -> "unrestricted"}}
+                      Description -> "unrestricted"}},
+                 Steerable -> Always
 };
 
 GetParameters[evolvedGFs_, evolvedGroups_] :=
-  Join[Map[createBoundTypeParam, evolvedGFs],
-       Map[createBoundTypeParam, Map[unqualifiedGroupName,evolvedGroups]],
+  Join[Map[createBoundTypeParam[#,"skip"] &, evolvedGFs],
+       Map[createBoundTypeParam[#,"none"] &, Map[unqualifiedGroupName,evolvedGroups]],
 
        Map[createBoundSpeedParam, evolvedGFs],
        Map[createBoundSpeedParam, Map[unqualifiedGroupName,evolvedGroups]], 
@@ -169,7 +173,7 @@ GetSources[evolvedGroups_, groups_, implementation_, thornName_] :=
       ExcisionGFs -> evolvedGFs
     };
 
-    Return[{{Filename -> "Boundaries.c", 
+    Return[{{Filename -> "Boundaries.cc", 
              Contents -> CreateMoLBoundariesSource[boundarySpec]}}]];
 
 End[];

@@ -1,8 +1,0 @@
-# Main make.code.defn file for thorn perturb
-# $Header$
-
-# Source files in this directory
-SRCS = id_perturb.c bc_perturb.c
-
-# Subdirectories containing source files
-SUBDIRS = 

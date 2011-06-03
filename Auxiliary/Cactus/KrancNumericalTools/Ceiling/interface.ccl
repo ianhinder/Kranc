@@ -1,8 +1,0 @@
-# file produced by user shusa, 31/3/2004
-
-# $Id$
-
-implements: Ceiling
-
-inherits: Grid 
-

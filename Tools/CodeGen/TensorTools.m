@@ -217,10 +217,10 @@ IndexIsLower[TensorIndex[_, "u"]] := False;
    -------------------------------------------------------------------------- *)
 
 Format[TensorIndex[label_, "u"], OutputForm] :=
-  Superscript[null,label];
+  "u"<>ToString[label];
 
 Format[TensorIndex[label_, "l"], OutputForm] :=
-  Subscript[null,label];
+  "l"<>ToString[label];
 
 Format[TensorIndex[label_, "u"], StandardForm] :=
   Superscript[null,label];
@@ -251,12 +251,12 @@ DefineTensor[T_] :=
 
     Format[Tensor[T, is:((TensorIndex[_,_] | _Integer) ..) ], StandardForm] := 
       PrecedenceForm[
-        SequenceForm[T,is],
+        SequenceForm[T,"[",Sequence@@Riffle[{is},","],"]"],
         10000];
 
     Format[Tensor[T, is:((TensorIndex[_,_] | _Integer) ..) ], OutputForm] := 
       PrecedenceForm[
-        SequenceForm[T,is],
+        SequenceForm[T,"[",Sequence@@Riffle[{is},","],"]"],
         10000];
 
 (* Cannot get InputForm to work *)
@@ -265,7 +265,7 @@ DefineTensor[T_] :=
       HoldForm[T[is]];*)
 
     T[is:((TensorIndex[_,_] | _Integer) ..)] := Tensor[T, is];
-    TensorAttributes[T] = {TensorWeight -> 1, Symmetries -> {}};
+    TensorAttributes[T] = {TensorWeight -> 0, Symmetries -> {}};
     T];
 
 (* -------------------------------------------------------------------------- 
@@ -1235,10 +1235,11 @@ CheckTensors[x_, y_] :=
       ];
 
 CheckTensors[t:Tensor[k_, is__]] :=
-  Module[{},
+  Module[{is2},
 (*    Print["CheckTensors: Tensor: ", t];*)
-    If[!(Union[{is}] === Sort[{is}]),
-       ThrowError["Tensor has repeated indices: ", t, {is}]];
+    is2 = Select[{is}, !NumericQ[#]&];
+    If[!(Union[is2] === Sort[is2]),
+       ThrowError["Tensor has repeated indices: ", t, is2]];
     True];
 
 CheckTensors[t:f_[TensorIndex[__]..]] :=

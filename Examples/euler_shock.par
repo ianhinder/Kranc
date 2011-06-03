@@ -40,7 +40,7 @@ CoordBase::xmax                         = 2
 CoordBase::ymax                         = 0.1
 CoordBase::zmax                         = 0.1
 
-CoordBase::dx                           = 0.04
+CoordBase::dx                           = 0.0025
 CoordBase::dy                           = 0.1
 CoordBase::dz                           = 0.1
 
@@ -80,6 +80,7 @@ Carpet::num_integrator_substeps         = 4
 
 Cactus::terminate                     = "time"
 Cactus::cctk_final_time               = 0.2
+Cactus::cctk_itlast               = 2
 
 Time::dtfac                           = 0.25
 MethodOfLines::ode_method             = "RK4"
@@ -124,7 +125,7 @@ Carpet::check_for_poison                = no
 #############################################################
 
 IO::out_dir                   = $parfile
-IO::out_fileinfo              = "all"
+IO::out_fileinfo              = "none"
 
 CarpetIOBasic::outInfo_every        = 1
 CarpetIOBasic::outInfo_vars         = "Euler::rho Euler::DenF Euler::v1 Euler::p Euler::Den Euler::S1 Euler::En"
@@ -133,9 +134,37 @@ CarpetIOScalar::outScalar_every = 1
 CarpetIOScalar::outScalar_vars = ""
 CarpetIOScalar::outScalar_reductions = "minimum maximum norm2"
 
-IOASCII::out1D_every          = 1
+IOASCII::out1D_every          = 16
 IOASCII::out1D_x              = "yes"
-IOASCII::out1D_vars           = "Euler::rho Euler::v1 Euler::p Euler::Den Euler::S1 Euler::En"
+IOASCII::out1D_y              = "no"
+IOASCII::out1D_z              = "no"
+IOASCII::out1D_d              = "no"
+IOASCII::out1D_vars           = "
+Euler::Den
+Euler::S1
+Euler::En
+Euler::rho
+Euler::v1
+Euler::p
+
+Euler::DenLeft
+Euler::SLeft1
+Euler::EnLeft
+Euler::rhoLeft
+Euler::vLeft1
+Euler::pLeft
+
+Euler::DenRight
+Euler::SRight1
+Euler::EnRight
+Euler::rhoRight
+Euler::vRight1
+Euler::pRight
+
+Euler::DenF
+Euler::SF1
+Euler::EnF
+"
 
 CarpetIOASCII::out_precision = 19
 CarpetIOASCII::out3D_ghosts   = "yes"

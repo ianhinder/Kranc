@@ -343,6 +343,8 @@ CreateKrancThornTT[groups_, parentDirectory_, thornName_, opts___] :=
     expCalcs = Map[makeCalculationExplicit, calcs];
     expConsCalcs = Map[makeCalculationExplicit, consCalcs];
 
+    Print[expConsCalcs];
+
     InfoMessage[Info, "Group definitions:", groups];
 
     expDerivs = Flatten[Map[MakeExplicit,derivs],1];
@@ -378,7 +380,8 @@ makeCalculationExplicit[calc_] :=
      CollectList -> MakeExplicit, 
      Equations -> MakeExplicit,
      PrimitiveEquations -> MakeExplicit,
-     ConservedEquations -> MakeExplicit}];
+     ConservedEquations -> MakeExplicit,
+     Primitives -> MakeExplicit}];
 
 makeGroupExplicit[g_] :=
   Module[{variables, newVariables, newGroup},

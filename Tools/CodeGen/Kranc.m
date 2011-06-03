@@ -85,7 +85,7 @@ Contents, ThornName, BaseImplementation, EvolvedGFs, PrimitiveGFs,
 Groups, Calculation, GridFunctions, Shorthands, Equations, Parameter,
 Value, UsesFunctions, ArgString, Conditional, Conditionals, D1, D2, D3, D11, D22,
 D33, D21, D31, D32, Textual, TriggerGroups, Include, RHSGroups, Tags, 
-Steerable, Never, Always, Recover};
+Steerable, Never, Always, Recover, Primitives};
 
 {ExcisionGFs};
 

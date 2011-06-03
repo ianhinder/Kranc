@@ -49,4 +49,4 @@
 #define Pi              3.14159265358979323846264d0
 #endif
 
-#define UnitStep(x) ( (x) > 0 ? 1 : 0 )
+#define StepFunction(x) ( (x) > 0 ? 1 : 0 )

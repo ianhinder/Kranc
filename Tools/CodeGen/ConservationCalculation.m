@@ -89,23 +89,27 @@ consVars[calc_] :=
 
 (* Return the list of variables to reconstruct in a calculation *)
 primitiveVars[calc_] :=
-  Module[{allGFs, calcSyms, gfsUsed, conserved, primitive},
-    allGFs = allGroupVariables[lookup[calc, Groups]];
-    calcSyms = calculationSymbols[calc];
-    gfsUsed = Intersection[allGFs, calcSyms];
-    conserved = consVars[calc];
-    primitive = Complement[gfsUsed, conserved];
-    primitive];
+  lookup[calc, Primitives];
+
+  (* Module[{allGFs, calcSyms, gfsUsed, conserved, primitive}, *)
+  (*   allGFs = allGroupVariables[lookup[calc, Groups]]; *)
+  (*   calcSyms = calculationSymbols[calc]; *)
+  (*   gfsUsed = Intersection[allGFs, calcSyms]; *)
+  (*   conserved = consVars[calc]; *)
+  (*   primitive = Complement[gfsUsed, conserved]; *)
+  (*   primitive]; *)
 
 (* Return the variables for which Left and Right GFs need to be created *)
 lrGFs[calc_] :=
-  Module[{allGFs, calcSyms, gfsUsed, conserved, primitive},
-    allGFs = allGroupVariables[lookup[calc, Groups]];
-    calcSyms = calculationSymbols[calc];
-    gfsUsed = Intersection[allGFs, calcSyms];
-    conserved = consVars[calc];
-    primitive = Complement[gfsUsed, conserved];
-    Join[primitive, conserved]];
+  Join[primitiveVars[calc], consVars[calc]];
+
+  (* Module[{allGFs, calcSyms, gfsUsed, conserved, primitive}, *)
+  (*   allGFs = allGroupVariables[lookup[calc, Groups]]; *)
+  (*   calcSyms = calculationSymbols[calc]; *)
+  (*   gfsUsed = Intersection[allGFs, calcSyms]; *)
+  (*   conserved = consVars[calc]; *)
+  (*   primitive = Complement[gfsUsed, conserved]; *)
+  (*   Join[primitive, conserved]]; *)
 
 reconstructCalc[calc_, i_] :=
 {
@@ -162,14 +166,16 @@ primitivesCalc[calc_, thornName_] :=
 {
   Name -> lookup[calc, Name] <> "_primitives",
   Schedule -> {"in MoL_PostStep after " <> thornName <>"_ApplyBCs"},
-  Equations -> lookup[calc, PrimitiveEquations]
+  Equations -> lookup[calc, PrimitiveEquations],
+  Shorthands -> lookup[calc, Shorthands]
 };
 
 conservedCalc[calc_] :=
 {
   Name -> lookup[calc, Name] <> "_conserved",
   Schedule -> {"at POSTINITIAL"},
-  Equations -> lookup[calc, ConservedEquations]
+  Equations -> lookup[calc, ConservedEquations],
+  Shorthands -> lookup[calc, Shorthands]
 };
 
 conservedIntercellCalc[calc_, i_] :=
@@ -177,6 +183,7 @@ conservedIntercellCalc[calc_, i_] :=
   Name -> lookup[calc, Name] <> "_intercell_conserved_" <> ToString[i],
   Schedule -> {"in MoL_CalcRHS after " <> lookup[calc, Name] <> "_reconstruct_" <> ToString[i]},
 
+  Shorthands -> lookup[calc, Shorthands],
   Equations ->
     Module[{vars = Join[primitiveVars[calc], consVars[calc]]},
       Join[lookup[calc, ConservedEquations] /. (Map[# -> leftSymbol[#] &, vars]),

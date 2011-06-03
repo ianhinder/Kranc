@@ -22,10 +22,10 @@ CactusBase/Boundary
 CactusBase/CartGrid3D
 CactusBase/CoordBase
 CactusBase/Fortran
-CactusBase/IOBasic
+# CactusBase/IOBasic
 CactusBase/IOUtil
 CactusBase/InitBase
-CactusBase/LocalInterp
+#CactusBase/LocalInterp
 CactusBase/SymBase
 CactusBase/Time
 
@@ -63,7 +63,13 @@ Carpet/LoopControl
 
 # Kranc support thorn
 KrancHydroNumericalTools/GenericFD
-KrancHydroExamples/Euler
-KrancHydroExamples/EulerAuto
-KrancHydroExamples/Advect
-KrancHydroExamples/Burgers
+# KrancHydroExamples/Euler
+# KrancHydroExamples/EulerAuto
+KrancHydroExamples/EulerSR
+# KrancHydroExamples/Advect
+# KrancHydroExamples/Burgers
+
+Carpet/CarpetIOHDF5
+ExternalLibraries/HDF5
+ExternalLibraries/zlib
+CactusUtils/TimerReport

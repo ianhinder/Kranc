@@ -17,9 +17,11 @@
 #endif
 
 #ifdef KRANC_C
-#define Sign(x)       (signbit(x)?-1:+1)
+#  define Sign(x)     (copysign(1.0,(x)))
+#  define ToReal(x)   ((CCTK_REAL)(x))
 #else
-#define Sign(x)       (sgn(x))
+#  define Sign(x)     (sgn(x))
+#  define ToReal(x)   (real((x),kind(khalf)))
 #endif
 
 #define MinMod(x, y)  ((x) * (y) < 0 ? 0 : (fabs((x)) < fabs((y)) ? (x) : (y)))
@@ -41,13 +43,6 @@
 #define Cosh(x)       (cosh(x))
 #define Tanh(x)       (tanh(x))
 
-#ifdef KRANC_C
-#  define Sign(x)     (copysign(1.0,(x)))
-#  define ToReal(x)   ((CCTK_REAL)(x))
-#else
-#  define Sign(x)     (sgn(x))
-#  define ToReal(x)   (real((x),kind(khalf)))
-#endif
 
 #if 0
 

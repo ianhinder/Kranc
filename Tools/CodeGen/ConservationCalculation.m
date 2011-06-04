@@ -197,14 +197,14 @@ ProcessConservationCalculation[calc_, thornName_] :=
   Module[{},
   {
     zeroRHSCalc[calc],
+    conservedCalc[calc],
+    primitivesCalc[calc, thornName],
     Sequence@@Flatten[
       Table[
-        {conservedCalc[calc],
-         reconstructCalc[calc, i],
+        {reconstructCalc[calc, i],
          conservedIntercellCalc[calc, i],
          fluxCalc[calc, i],
-         rhs[calc, i],
-         primitivesCalc[calc, thornName]}, {i, 1, 1}], 1]
+         rhs[calc, i]}, {i, 1, 3}], 1]
   }];
 
 (* Return all the new groups which need to be created for this

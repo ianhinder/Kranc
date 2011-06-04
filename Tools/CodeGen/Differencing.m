@@ -425,7 +425,7 @@ DifferenceGF[op_, i_, j_, k_, vectorise_] :=
     
     If[Head[expanded] === Plus,
       Apply[Plus, Map[DifferenceGFTerm[#, i, j, k, vectorise] &, expanded]],
-      DifferenceGFTerm[expanded, i, j, k]]];
+      DifferenceGFTerm[expanded, i, j, k, vectorise]]];
 
 
 (* Return the fragment of a macro definition for defining a derivative

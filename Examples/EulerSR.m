@@ -34,13 +34,15 @@ initialShockCalc =
   Name -> "eulersr_initial_shock",
   Schedule -> {"at CCTK_INITIAL as eulersr_initial"},
   ConditionalOnKeyword -> {"initial_data", "shock"},
+  Shorthands -> {X},
   Equations ->
   {
-    rho -> rhoR0 StepFunction[x-0.5] + rhoL0 (1-StepFunction[x-0.5]),
-    v[1] -> vR0 StepFunction[x-0.5] + vL0 (1-StepFunction[x-0.5]),
-    v[2] -> 0,
-    v[3] -> 0,
-    epsi -> epsiR0 StepFunction[x-0.5] + epsiL0 (1-StepFunction[x-0.5])
+    X -> x+y (*+y+z*),
+    rho -> rhoR0 StepFunction[X] + rhoL0 (1-StepFunction[X]),
+    v[1] -> vR0 StepFunction[X] + vL0 (1-StepFunction[X]),
+    v[2] -> vR0 StepFunction[X] + vL0 (1-StepFunction[X]),
+    v[3] -> vR0 StepFunction[X] + vL0 (1-StepFunction[X]),
+    epsi -> epsiR0 StepFunction[X] + epsiL0 (1-StepFunction[X])
   }
 };
 

@@ -23,9 +23,9 @@
 (****************************************************************************)
 (* Wrapper providing tensor support to Kranc (from TensorTools or xTensor)  *)
 (****************************************************************************)
-If[!ValueQ[$KrancTensorPackage], $KrancTensorPackage = "TensorToolsKranc`"];
 
-BeginPackage["KrancTensor`", {"Errors`", "KrancThorn`", "MapLookup`", "KrancGroups`", "Kranc`", $KrancTensorPackage}];
+$KrancTensorPackage = "TensorToolsKranc`";
+
 BeginPackage["KrancTensor`", {"Errors`", "KrancThorn`", "MapLookup`", "KrancGroups`", "Kranc`", $KrancTensorPackage, "ConservationCalculation`", "TensorTools`"}];
 
 CreateKrancThornTT::usage = "Construct a Kranc thorn using tensor expressions.";
@@ -47,6 +47,8 @@ CreateKrancThornTT[groups_, parentDirectory_, thornName_, opts___] :=
     Map[CheckCalculationTensors, calcs];
     expCalcs = Map[makeCalculationExplicit, calcs];
     expConsCalcs = Map[makeCalculationExplicit, consCalcs];
+
+    Print["expConsCalcs = ", expConsCalcs];
 
     InfoMessage[Info, "Group definitions:", groups];
     VerifyGroups[groups];

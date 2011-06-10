@@ -774,24 +774,12 @@ BoundaryWithGhostsLoop[block_] :=
       ]}
      ]]]};
 
-(* Remove call to ToReal from condtion. This should really instead be
-   done much earlier. Sometimes Conditional is called with a
-   conditional that is an expression, sometimes it is a list of
-   strings, so we need to handle both cases. *)
-(* One approach to remove calls to ToReal is to wrap the condition
-  into a function call, such as e.g. Cond[x], which is then handled by
-  the vectorisation code in the same way the IfThen[x,y,z] expression
-  is handled there. *)
-removeToRealFunc[condition_] := Replace[condition, {ToReal[x_] -> x}]
-removeToRealString[condition_] := If[StringQ[condition], StringReplace[condition, "ToReal(" ~~ x__ ~~ ")" :> x], condition]
-removeToReal[condition_] := Map[removeToRealString, removeToRealFunc[condition]]
-
 Conditional[condition_, block_] :=
- {"if (", removeToReal[condition], ")\n",
+ {"if (", condition, ")\n",
   CBlock[block]};
 
 Conditional[condition_, block1_, block2_] :=
- {"if (", removeToReal[condition], ")\n",
+ {"if (", condition, ")\n",
   CBlock[block1], "else\n", CBlock[block2]};
 
 onceInGridLoop[block_] :=

@@ -426,9 +426,9 @@ CreateCalculationFunction[calcp_, debug_, imp_, opts:OptionsPattern[]] :=
 
   InfoMessage[InfoFull, "Equations:"];
 
-  (* Wrap parameters with ToReal *)
+  (* Wrap parameters with ToReal unless they are part of the condition in an IfThen *)
   parameterRules = Map[(#->ToReal[#])&, parameters];
-  eqs = eqs /. parameterRules;
+  eqs = eqs /. Prepend[parameterRules, IfThen[cond_, x_, y_] :> IfThen[cond, x/.parameterRules, y/.parameterRules]];
 
   Map[printEq, eqs];
 

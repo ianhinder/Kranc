@@ -508,48 +508,45 @@ listComponents[x_, index1:(TensorIndex[_,lower]), index2:(TensorIndex[_,upper])]
 listComponentsOfDummyIndex[x_, i:(TensorIndex[_,lower])] := 
   listComponents[x, i, toggleIndex[i]];
 
+(* -------------------------------------------------------------------------- 
+   Tensor Index Contractions
+   -------------------------------------------------------------------------- *)
 
-(* Given an expression consisting of sums, products, symbols, abstract
-   tensors and ordinary derivatives, return an expression where all
-   the implicit summations have been explicitly carried out. *)
+(* We treat tensor index contraction using the following simple rules:
 
-makeSum[x_ y_] := 
-  Module[{x2 = makeSum[x],
-          y2 = makeSum[y]},
-          makeSumOverDummies[x2 y2, dummiesIn[x2 y2]]];
+   * In any expression of the form H[a, b, ...], the subexpressions a,
+     b, ... first have tensor summation applied individually.
 
-makeSum[TensorProduct[ts__]] :=
-  Module[{summed, prodSummed},
-    summed = Map[makeSum, {ts}];
-    prodSummed = Apply[TensorProduct,summed];
-    makeSumOverDummies[prodSummed, dummiesIn[prodSummed]]];
+   * Further, when the expression is a product (H is Times or
+     TensorProduct) and there are pairs of raised and lowered indices
+     (lx, ux) in the different factors of the product, the product is
+     summed over those indices.
 
-makeSum[t:(Tensor[K_, is__])] :=
-    makeSumOverDummies[t, dummiesIn[t]];
+   * When the expression is a tensor itself, pairs of indices are
+     summed over.
 
+   * Nontensorial expressions (those not containing any tensor
+     indices) are returned unchanged.
 
-(* Given a sum of terms, each one has independent dummy indices, so
-   they cannot all be summed together.  Must split off into terms
-   before extracting the dummy indices. *)
-makeSum[x_ + y_] := 
-  makeSum[x] + makeSum[y];
-
-makeSum[x_ == y_] := 
-  makeSum[x] == makeSum[y];
-
-makeSum[x_ -> y_] := 
-  makeSum[x] -> makeSum[y];
+   These rules completely describe how TensorTools handles
+   contractions of tensorial expressions.
+*)
 
 makeSum[f_[x___]] :=
-  Module[{xs2},
-    xs2 = Map[makeSum, {x}];
-    Apply[f, xs2]];
+  Apply[f, Map[makeSum, {x}]];
+
+makeSum[(h:(TensorProduct|Times))[ts__]] :=
+  makeSumOverDummies[Apply[h, Map[makeSum, {ts}]]];
+
+makeSum[t:(Tensor[K_, is__])] :=
+  makeSumOverDummies[t];
 
 makeSum[x_?nontensorialQ] :=
   x;
 
 makeSum[x_] :=
-  Throw["Expression " <> ToString[x] <> " is not recognized, and tensor indices will not be expanded"];
+  Throw["Expression " <> ToString[x] <> 
+    " is not recognized, and tensor indices will not be expanded"];
 
 sumComponentsOfDummyIndex[x_, i_] := 
   Apply[Plus,listComponents[x, i, toggleIndex[i]]];
@@ -557,10 +554,12 @@ sumComponentsOfDummyIndex[x_, i_] :=
 (* Given an expression and a list of lower indices which are dummies
    in that expression, expand the dummy indices in the expression into
    components. *)
-makeSumOverDummies[x_, is_] := 
-  If[is == {}, 
-     x, 
-     makeSumOverDummies[sumComponentsOfDummyIndex[x, is[[1]]], Rest[is]]];
+makeSumOverDummies[x_] := 
+  Module[{is},
+    is = dummiesIn[x];
+    If[is == {}, 
+      x, 
+      makeSumOverDummies[sumComponentsOfDummyIndex[x, First[is]]]]];
 
 (* -------------------------------------------------------------------------- 
    Rules for converting expressions into different forms

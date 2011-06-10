@@ -186,9 +186,6 @@ separateWithString[l_List, s_] :=
 (* List all the letters we can use as index labels *)
 listLetters[] = Map[ToString, CharacterRange["a", "z"]];
 
-(* List all the numbers we can use as index labels *)
-listNumbers[] = Table[ToString[i], {i,0,9}];
-
 (* Create and return a symbol using the strings 'prefix' and 'suffix'
    to be used as in index.  Ensure that this symbol is created in the
    TensorTools context. *)
@@ -197,7 +194,7 @@ indexSymbol[(prefix_ ? StringQ) /; (StringLength[prefix] == 1),
     Symbol["TensorTools`" <> prefix <> suffix];
 
 listIndexLabels[] =
-  Join[listLetters[],listNumbers[]];
+  Join[listLetters[]];
 
 listUpperIndices[] =
   Map[indexSymbol[upper, #] &, listIndexLabels[]];

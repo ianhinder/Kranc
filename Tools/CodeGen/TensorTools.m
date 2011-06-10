@@ -540,8 +540,16 @@ makeSum[x_ == y_] :=
 makeSum[x_ -> y_] := 
   makeSum[x] -> makeSum[y];
 
-makeSum[x_] := 
-  makeSumOverDummies[x, dummiesIn[x]];
+makeSum[f_[x___]] :=
+  Module[{xs2},
+    xs2 = Map[makeSum, {x}];
+    Apply[f, xs2]];
+
+makeSum[x_?nontensorialQ] :=
+  x;
+
+makeSum[x_] :=
+  Throw["Expression " <> ToString[x] <> " is not recognized, and tensor indices will not be expanded"];
 
 sumComponentsOfDummyIndex[x_, i_] := 
   Apply[Plus,listComponents[x, i, toggleIndex[i]]];

@@ -248,16 +248,11 @@ defineIndices[];
 
 DefineTensor[T_] :=
   Module[{},
+    Format[Tensor[T, is:((TensorIndex[_,_] | _Integer) ..) ], StandardForm] :=
+      Row[{T,is}]/.x_Integer->Subscript[null,x];
 
-    Format[Tensor[T, is:((TensorIndex[_,_] | _Integer) ..) ], StandardForm] := 
-      PrecedenceForm[
-        SequenceForm[T,"[",Sequence@@Riffle[{is},","],"]"],
-        10000];
-
-    Format[Tensor[T, is:((TensorIndex[_,_] | _Integer) ..) ], OutputForm] := 
-      PrecedenceForm[
-        SequenceForm[T,"[",Sequence@@Riffle[{is},","],"]"],
-        10000];
+    Format[Tensor[T, is:((TensorIndex[_,_] | _Integer) ..) ], OutputForm] :=
+        Row[{T,"[",Sequence@@Riffle[{is},","],"]"}];
 
 (* Cannot get InputForm to work *)
 
@@ -393,9 +388,6 @@ Unprotect[Times];
 Times[TensorProduct[], x_] = x;
 
 Format[x_ t:TensorProduct[((Tensor[__] | CD[__] | PD[__] | FD[__]) ..)]] := 
-  SequenceForm[x," ",t];
-
-Format[x_ t:Tensor[__]] := 
   SequenceForm[x," ",t];
 
 Protect[Times];

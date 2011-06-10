@@ -724,8 +724,7 @@ getDefaultConnection[] :=
    Christoffel symbol. *)
 DefineConnection[cd_, pd_, gamma_] :=
   Module[{},
-    connections = Join[connections, {{cd, pd, gamma}}]];
-
+    connections = Append[DeleteCases[connections,{cd,_,_}], {cd, pd, gamma}]];
 
 (* Things we can do with covariant derivatives:
 

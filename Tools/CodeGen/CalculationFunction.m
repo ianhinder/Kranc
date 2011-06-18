@@ -615,13 +615,13 @@ equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
         Which[
         SameQ[Head[eq2[[2]]], IfThen],
           ret = assignVariableFromExpression[eq2[[1]],
-            eq2[[2]] /. IfThen[cond_, x__]:> IfThen[cond, x], declare2, vectorize];,
+            eq2[[2]] /. IfThen[cond_, x__]:> IfThen[Scalar[cond], x], declare2, vectorize];,
         SameQ[Head[eq2], IfThenGroup],
           vars = eq2[[2,All,1]];
           cond = eq2[[1]];
           preDeclare = Pick[vars, declare2];
           ret = {Map[DeclareVariableNoInit[#, DataType[]] &, Complement[Union[preDeclare], localName/@gfsInRHS]], {"\n"},
-                 Conditional[generateCodeFromExpression[cond, vectorize],
+                 Conditional[generateCodeFromExpression[Scalar[cond], False],
                   Riffle[assignVariableFromExpression[#[[1]], #[[2]], False, vectorize]& /@ eq2[[2]], "\n"],
                   Riffle[assignVariableFromExpression[#[[1]], #[[2]], False, vectorize]& /@ eq2[[3]], "\n"]]};,
         True,

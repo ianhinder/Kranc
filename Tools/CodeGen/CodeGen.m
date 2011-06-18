@@ -453,19 +453,15 @@ DeclareFDVariables[] :=
 *)
   CommentedBlock["Declare finite differencing variables", {}];
 
-InitialiseFDSpacingVariablesC[vectorise_:False] := 
+InitialiseFDSpacingVariablesC[] :=
   {
     (* DeclareAssignVariable["ptrdiff_t", "di", "CCTK_GFINDEX3D(cctkGH,1,0,0) - CCTK_GFINDEX3D(cctkGH,0,0,0)"], *)
     DeclareAssignVariable["ptrdiff_t", "di", "1"],
     DeclareAssignVariable["ptrdiff_t", "dj", "CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0)"],
     DeclareAssignVariable["ptrdiff_t", "dk", "CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0)"],
-    (* If[vectorise, *)
-    (* { *)
-      DeclareAssignVariable["ptrdiff_t", "cdi", "sizeof(CCTK_REAL) * di"],
-      DeclareAssignVariable["ptrdiff_t", "cdj", "sizeof(CCTK_REAL) * dj"],
-      DeclareAssignVariable["ptrdiff_t", "cdk", "sizeof(CCTK_REAL) * dk"],
-    (* }, *)
-    (* ""], *)
+    DeclareAssignVariable["ptrdiff_t", "cdi", "sizeof(CCTK_REAL) * di"],
+    DeclareAssignVariable["ptrdiff_t", "cdj", "sizeof(CCTK_REAL) * dj"],
+    DeclareAssignVariable["ptrdiff_t", "cdk", "sizeof(CCTK_REAL) * dk"],
     DeclareAssignVariable[DataType[], "dx", "ToReal(CCTK_DELTA_SPACE(0))"],
     DeclareAssignVariable[DataType[], "dy", "ToReal(CCTK_DELTA_SPACE(1))"],
     DeclareAssignVariable[DataType[], "dz", "ToReal(CCTK_DELTA_SPACE(2))"],
@@ -485,7 +481,7 @@ InitialiseFDVariables[vectorise_] :=
   CommentedBlock["Initialise finite differencing variables",
   { If[SOURCELANGUAGE == "Fortran",
        InitialiseFDSpacingVariablesFortran[],
-       InitialiseFDSpacingVariablesC[vectorise]],
+       InitialiseFDSpacingVariablesC[]],
     
     DeclareAssignVariable[DataType[], "dxi", "INV(dx)"],
     DeclareAssignVariable[DataType[], "dyi", "INV(dy)"],
@@ -821,12 +817,11 @@ vectoriseExpression[exprp_] :=
     removeToRealRules = {
       - ToReal[xx_] -> ToReal[- xx],
       ToReal[xx_] + ToReal[yy_] -> ToReal[xx + yy],
+      ToReal[xx_] - ToReal[yy_] -> ToReal[xx - yy],
       ToReal[xx_] * ToReal[yy_] -> ToReal[xx * yy],
       ToReal[xx_] == ToReal[yy_] -> ToReal[xx == yy],
       ToReal[xx_] != ToReal[yy_] -> ToReal[xx != yy],
-      pow[xx_, ToReal[power_]] -> pow[xx, power],
-      (* keep the conditional expression scalar *)
-      IfThen[ToReal[xx_], yy_, zz_] -> IfThen[xx, yy, zz]
+      pow[xx_, ToReal[power_]] -> pow[xx, power]
     };
     expr = expr //. removeToRealRules;
 
@@ -843,6 +838,7 @@ vectoriseExpression[exprp_] :=
       kmul[xx_,-1]            -> kneg[xx],
       kmul[ToReal[-1],xx_]    -> kneg[xx],
       kmul[xx_,ToReal[-1]]    -> kneg[xx],
+      ToReal[- xx_]           -> kneg[ToReal[xx]],
       (* kmul[xx_,INV[yy_]]      -> kdiv[xx,yy], *)
       (* kmul[INV[xx_],yy_]      -> kdiv[yy,xx], *)
       kdiv[xx_,kdiv[yy_,zz_]] -> kdiv[kmul[xx,zz],yy],
@@ -877,6 +873,11 @@ vectoriseExpression[exprp_] :=
     undoRules = {
       IfThen[kmul[xx_,yy_], aa_, bb_] -> IfThen[xx*yy, aa, bb],
       IfThen[kmul[xx_,yy_] != zz_, aa_, bb_] -> IfThen[xx*yy!=zz, aa, bb],
+      IfThen[ToReal[xx_], aa_, bb_] -> IfThen[xx, aa, bb],
+      Scalar[kmul[xx_,yy_]] -> Scalar[xx*yy],
+      Scalar[kmul[xx_,yy_] != zz_] -> Scalar[xx*yy!=zz],
+      Scalar[ToReal[xx_]] -> Scalar[xx],
+      Scalar[xx_ != ToReal[yy_]] -> Scalar[xx != yy],
       ToReal[kneg[xx_]] -> ToReal[-xx],
       ToReal[kadd[xx_,yy_]] -> ToReal[xx+yy],
       ToReal[ksub[xx_,yy_]] -> ToReal[xx-yy],
@@ -967,6 +968,9 @@ ReplacePowers[expr_, vectorise_] :=
 
              If[vectorise === True,
               rhs = vectoriseExpression[rhs]];
+
+             (* Remove Scalar[] after vectorising *)
+             rhs = rhs /. Scalar[xx_] -> xx;
            ],
 
            rhs = rhs /. Power[xx_, power_] -> xx^power

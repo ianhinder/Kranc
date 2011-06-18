@@ -1,3 +1,4 @@
+(* ::Package:: *)
 
 (*  Copyright 2004 Sascha Husa, Ian Hinder, Christiane Lechner
 
@@ -536,7 +537,7 @@ equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
           localMap, eqs2, derivSwitch, code, functionName, calcCode,
           loopFunction, gfsInBoth, gfsDifferentiated,
           gfsDifferentiatedAndOnLHS, declare, eqsReplaced,
-          generateEquationsCode},
+          generateEquationCode, groupedIfs, IfThenGroup},
 
     rhss = Map[#[[2]] &, eqs];
     lhss = Map[#[[1]] &, eqs];
@@ -597,41 +598,39 @@ equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
        to these do not generate declarations here. *)
     declare = Block[{$RecursionLimit=Infinity},markFirst[First /@ eqsReplaced, Map[localName, gfsInRHS]]];
 
-    (* Generate the code for the equations, factoring out any
-       sequential IfThen statements with the same condition.  Try to
-       declare variables as they are assigned, but it is only possible
-       to do this outside all if(){} statements. "declare2" is a list
-       of booleans indicating if the LHS variables should be declared
-       as they are assigned.  *)
-    generateEquationsCode[eqs2_, declare2_] :=
-      Module[{ifs, ind, cond, num, preDeclare},
-        ifs = Position[eqs2, _ -> IfThen[__], {1}];
-        If[Length[ifs] <= 1,
-          Riffle[MapThread[assignVariableFromExpression[#1[[1]], #1[[2]], #2, OptionValue[UseVectors]] &,
-            {eqs2, declare2}],"\n"],
-        (* else *)
-          ind = ifs[[1,1]];
-          If[ind > 1,
-            {generateEquationsCode[Take[eqs2, ind-1], Take[declare2, ind-1]], "\n",
-             generateEquationsCode[Drop[eqs2, ind-1], Drop[declare2, ind-1]]},
-          (* else *)
-            cond = eqs2[[1,2,1]];
-            num = LengthWhile[eqs2, MatchQ[#, _ -> IfThen[cond, _, _]] &];
-            If[num == 1,
-              {generateEquationsCode[Take[eqs2,1], Take[declare2,1]], "\n",
-               generateEquationsCode[Drop[eqs2,1], Drop[declare2,1]]},
-            (* else *)
-              e1 = Take[eqs2, num];
-              e2 = Drop[eqs2, num];
-              preDeclare = #[[2,1]] & /@ Select[MapThread[List, {Take[declare2,num], e1}], #[[1]] &];
-              {Map[DeclareVariableNoInit[#, DataType[]] &, Complement[Union[preDeclare], localName/@gfsInRHS]], {"\n"},
-              {Conditional[generateCodeFromExpression[cond, OptionValue[UseVectors]],
-                generateEquationsCode[Map[#[[1]] -> #[[2,2]]&, e1], ConstantArray[False, Length[e1]]],
-                generateEquationsCode[Map[#[[1]] -> #[[2,3]]&, e1], ConstantArray[False, Length[e1]]]],
-              "\n",
-              generateEquationsCode[e2,Drop[declare2,Length[e1]]]}}]]]];
+    (* Replace consecutive IfThen statements with the same condition by a single IfThenGroup *)
+    groupedIfs = Thread[{declare, eqsReplaced}] //.
+      {{x___, {deca_, a_->IfThen[cond_, at_, af_]}, {decb_, b_->IfThen[cond_, bt_, bf_]}, y___} :>
+         {x, {{deca, decb}, IfThenGroup[cond, {a->at, b->bt}, {a->af, b->bf}]}, y},
+       {x___, {deca_, IfThenGroup[cond_, at_, af_]}, {decb_, b_->IfThen[cond_, bt_, bf_]}, y___} :>
+         {x, {Join[deca, {decb}], IfThenGroup[cond, Join[at, {b->bt}], Join[af, {b->bf}]]}, y},
+       {x___, {deca_, IfThenGroup[cond_, at_, af_]}, {decb_, IfThenGroup[cond_, bt_, bf_]}, y___} :>
+         {x, {Join[deca, decb], IfThenGroup[cond, Join[at, bt], Join[af, bf]]}, y}};
 
-    calcCode = generateEquationsCode[eqsReplaced, declare];
+    (* Generace actual code strings. Try to declare variables as they are assigned, but
+       it is only possible to do this outside all if(){} statements. *)
+    generateEquationCode[{declare2_, eq2_}] :=
+      Module[{ret, vars, preDeclare, cond, vectorize},
+        vectorize = OptionValue[UseVectors];
+        Which[
+        SameQ[Head[eq2[[2]]], IfThen],
+          ret = assignVariableFromExpression[eq2[[1]],
+            eq2[[2]] /. IfThen[cond_, x__]:> IfThen[cond, x], declare2, vectorize];,
+        SameQ[Head[eq2], IfThenGroup],
+          vars = eq2[[2,All,1]];
+          cond = eq2[[1]];
+          preDeclare = Pick[vars, declare2];
+          ret = {Map[DeclareVariableNoInit[#, DataType[]] &, Complement[Union[preDeclare], localName/@gfsInRHS]], {"\n"},
+                 Conditional[generateCodeFromExpression[cond, vectorize],
+                  Riffle[assignVariableFromExpression[#[[1]], #[[2]], False, vectorize]& /@ eq2[[2]], "\n"],
+                  Riffle[assignVariableFromExpression[#[[1]], #[[2]], False, vectorize]& /@ eq2[[3]], "\n"]]};,
+        True,
+          ret = assignVariableFromExpression[eq2[[1]], eq2[[2]], declare2, OptionValue[UseVectors]];
+        ];
+        ret
+    ];
+
+    calcCode = Riffle[generateEquationCode /@ groupedIfs, "\n"];
       
 
     assignLocalGridFunctions[gs_, useVectors_, useJacobian_] :=

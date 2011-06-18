@@ -355,7 +355,7 @@ ComponentDerivativeOperatorMacroDefinition[componentDerivOp:(name_[inds___] -> e
       (* We cannot handle dirN,
          so we punt on all expressions that contain dirN *)
       If[StringMatchQ[rhs, RegularExpression[".*\\bdir\\d\\b.*"]],
-         { "{ return ToReal(1e30); /* ERROR */ }\n" },
+         { "{ assert(0); return ToReal(1e30); /* ERROR */ }\n" },
          { "{\n",
            "  ptrdiff_t const cdi=sizeof(CCTK_REAL);\n",
            "  return ", rhs, ";\n",

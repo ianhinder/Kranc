@@ -1,0 +1,37 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+        "http://www.w3.org/TR/html4/strict.dtd">
+
+<html>
+<head>
+<title>Kranc Features</title>
+<!--#include file="preamble.shtml" -->
+</head>
+  
+<body>
+<!--#include file="header.shtml" -->
+
+<H2>Features</H2>
+
+<p>Kranc</p>
+<ul>
+<li>solves time evolution problems using arbitrary order finite
+differencing;</li>
+<li>can be used with the PUGH (unigrid) or <a href =
+"http://carpetcode.org">Carpet</a> (adaptive mesh refinement) drivers
+for Cactus;</li>
+<li>generates high performance parallel codes suitable for use on
+supercomputers;</li>
+<li>supports OpenMP for use on modern multicore workstations or
+supercomputers;</li>
+<li>generates code with several optimisations (such as
+common-subexpression elimination) developed over many years of
+production use in HPC applications</li>
+<li>generates code that has a flat structure meaning that for
+complicated evolution systems, the generated code is long but still
+readable;</li>
+<li>can generate code for the <a href =
+"http://llamacode.org">Llama</a> multipatch system.</li>
+</ul>
+
+</body>
+</html>

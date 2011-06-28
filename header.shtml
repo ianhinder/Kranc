@@ -1,0 +1,18 @@
+<div id="container">
+  <h1>
+    <a href="index.shtml">
+      <img src="kranc.png" alt="Kranc" style="text-align:left">
+    </a>
+  </h1>
+
+  <ol class=contents>
+    <li><a href = "index.shtml">About</a></li>
+    <li><a href = "features.shtml">Features</a></li>
+    <li><a href = "documentation.shtml">Documentation</a></li>
+    <li><a href = "download.shtml">Download</a></li>
+    <li><a href = "users.shtml">Users</a></li>
+    <li><a href = "related.shtml">Related</a></li>
+    <li><a href = "support.shtml">Support</a></li>
+    <li><a href = "development.shtml">Development</a></li>
+  </ol>
+</div>

@@ -1,0 +1,25 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+        "http://www.w3.org/TR/html4/strict.dtd">
+
+<html>
+<head>
+<title>Kranc Development</title>
+<!--#include file="preamble.shtml" -->
+</head>
+  
+<body>
+<!--#include file="header.shtml" -->
+
+<H2>Development</H2>
+
+<p>Kranc development is coordinated using <a href =
+"http://github.com">GitHub</a>.  The GitHub project for Kranc is</p>
+<p style="text-align:center">
+<a href = "http://github.com/ianhinder/Kranc">http://github.com/ianhinder/Kranc</a>
+</p>
+<p>There is an <a href =
+"http://github.com/ianhinder/Kranc/issues">Issue Tracker</a> for
+developers to record bugs and feature requests.</p>
+
+</body>
+</html>

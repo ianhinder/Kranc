@@ -1,0 +1,71 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+        "http://www.w3.org/TR/html4/strict.dtd">
+
+<html>
+<head>
+<title>Kranc Users</title>
+<!--#include file="preamble.shtml" -->
+</head>
+  
+<body>
+<!--#include file="header.shtml" -->
+
+<H2>Users of Kranc</H2>
+
+<p>Codes built with Kranc have been used in <a href =
+"http://www-spires.dur.ac.uk/cgi-bin/spiface/hep?c=CPHCB,174,983">16
+publications</a>, mostly in the area of <a href =
+"http://en.wikipedia.org/wiki/Numerical_relativity">Numerical
+Relativity</a> for simulating <a href =
+"http://en.wikipedia.org/wiki/Black_hole">black holes</a>.</p>
+
+<p>Some Kranc-based codes are:</p>
+<ul>
+<li>the Penn State/Georgia Tech Einstein equation code for 3D binary
+black hole simulations;</li>
+<li><a href =
+"http://www.cct.lsu.edu/~eschnett/McLachlan">McLachlan</a> - the 3D
+Einstein equation code in the <a href =
+"http://einsteintoolkit.org">Einstein Toolkit</a> (free
+software);</li>
+<li><a href =
+"https://svn.einsteintoolkit.org/cactus/EinsteinAnalysis/WeylScal4/trunk/">WeylScal4</a>
+- the gravitational wave code in the <a href =
+"http://einsteintoolkit.org">Einstein Toolkit</a> (free
+software).</li>
+</ul>
+
+<p>Kranc is also used for experiments with vectorisation in the Blue
+Waters project.</p>
+
+<p>Kranc has been used at
+<ul>
+<li>the <a href = "http://numrel.aei.mpg.de">Numerical Relativity
+group</a> of the <a href = "http://www.aei.mpg.de">Albert Einstein
+Institute</a>;</li>
+
+<li>the <a href = "http://www.cct.lsu.edu">Center for Computation
+and Technology</a> at <a href = "http://www.lsu.edu">Louisiana State
+University</a>;</li>
+
+<li>the <a href =
+"http://www.soton.ac.uk/maths/research/applied">Applied Mathematics
+Department</a> of the <a href = "http://www.soton.ac.uk">University of
+Southampton</a>;</li>
+
+<li>the <a href = "http://cgwp.gravity.psu.edu">Center for
+Gravitational Wave Physics</a> at <a href =
+"http://www.psu.edu">Pennsylvania State University</a>;</li>
+
+<li>the <a href = "http://www.cra.gatech.edu/">Center for
+Relativistic Astrophysics</a> at <a href =
+"http://www.gatech.edu">Georgia Institute of Technology</a></li>
+
+<li>the <a href = "http://www.uib.es/depart/dfs/GRG/index.html">
+Relativity and Gravitation group</a> at the <a href =
+"http://www.uib.es/en/">University of the Balearic Islands</a>;</li>
+
+</ul>
+
+</body>
+</html>

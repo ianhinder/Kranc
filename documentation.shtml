@@ -1,0 +1,29 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+        "http://www.w3.org/TR/html4/strict.dtd">
+
+<html>
+<head>
+<title>Kranc Documentation</title>
+<!--#include file="preamble.shtml" -->
+</head>
+  
+<body>
+<!--#include file="header.shtml" -->
+
+<H2>Documentation</H2>
+
+<p>We provide several example scripts which can be adapted to develop
+your own codes.  The short
+script <a href="SimpleWave.m">SimpleWave.m</a> generates a wave
+equation code.  There is also a <a href = "tutorial.html">tutorial</a>
+to guide you through the process of downloading Cactus and Kranc,
+installing Kranc into Cactus, and generating your first Kranc
+thorn.</p>
+
+<p>There is online <a href = "doc">HTML documentation for Kranc</a>.
+This is also available in the Doc directory of Kranc in LaTeX format.
+Type "make KrancDoc.pdf" to make the PDF version, or "make
+KrancDoc.html" to make the HTML version.</p>
+
+</body>
+</html>

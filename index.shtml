@@ -1,0 +1,44 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+        "http://www.w3.org/TR/html4/strict.dtd">
+
+<html>
+<head>
+<title>About Kranc</title>
+<!--#include file="preamble.shtml" -->
+</head>
+  
+<body>
+<!--#include file="header.shtml" -->
+
+<h2>About</h2>
+
+<!-- <div class="description" style="text-align:center"> -->
+<!--   A Mathematica application for generating code for solving time -->
+<!--   dependent partial differential equations -->
+<!-- </div> -->
+
+<p>Kranc is a <a href =
+"http://www.wolfram.com/products/mathematica/index.html">Mathematica</a>
+application which turns a tensorial description of a time dependent
+partial differential equation into a module for the <a href =
+"http://cactuscode.org">Cactus Computational Toolkit</a>.  It is
+designed to take a simple continuum description of a problem and
+generate highly efficient and portable code.  As such, it can be used
+both for rapid prototyping of evolution systems and for high
+performance supercomputing.</p>
+
+<p>Kranc is free software distributed under the <a href =
+"http://www.gnu.org/licenses/old-licenses/gpl-2.0.html">GNU General
+Public License (GPL) (version 2)</a> for unrestricted use.  We request
+that you cite our 2006 <a href =
+"http://arxiv.org/abs/gr-qc/0404023">Kranc paper</a> if you use Kranc,
+or Kranc-generated code, in a scientific publication. Note that Kranc
+has evolved significantly since the version described in the paper,
+both in usability and functionality.</p>
+
+<p>Kranc was originally written by Sascha Husa, Ian Hinder, Christiane
+Lechner and is now actively developed by Ian Hinder, Erik Schnetter
+and Barry Wardell.</p>
+
+</body>
+</html>

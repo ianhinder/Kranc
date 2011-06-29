@@ -1,18 +1,30 @@
-<div id="container">
-  <h1>
-    <a href="index.shtml">
-      <img src="kranc.png" alt="Kranc" style="text-align:left">
-    </a>
-  </h1>
+<!-- <div id="container"> -->
+  <!-- <h1> -->
+  <!--   <a href="index.shtml"> -->
+  <!--     <img src="kranc.png" alt="Kranc" style="text-align:left"> -->
+  <!--   </a> -->
+  <!-- </h1> -->
+
+  <!-- <span id="logoname">Kranc</span> -->
+  <!-- <img src="krancsmall.png"> -->
+  <!-- <span id="logotagline">Kranc Assembles Numerical Code</span> -->
+
+  <div id="logo">
+  <!-- <div id="logoname">Kranc</div> -->
+  </div>
+  <img id="logoname" src="kranctext.png">
+  <img id="logoimage" src="krancsmall.png">
+  <!-- <div id="logotagline">Kranc Assembles Numerical Code</div> -->
+
 
   <ol class=contents>
-    <li><a href = "index.shtml">About</a></li>
-    <li><a href = "features.shtml">Features</a></li>
-    <li><a href = "documentation.shtml">Documentation</a></li>
-    <li><a href = "download.shtml">Download</a></li>
-    <li><a href = "users.shtml">Users</a></li>
-    <li><a href = "related.shtml">Related</a></li>
-    <li><a href = "support.shtml">Support</a></li>
-    <li><a href = "development.shtml">Development</a></li>
+    <li id="nav-about"><a href = "index.shtml">About</a></li>
+    <li id="nav-features"><a href = "features.shtml">Features</a></li>
+    <li id="nav-documentation"><a href = "documentation.shtml">Documentation</a></li>
+    <li id="nav-download"><a href = "download.shtml">Download</a></li>
+    <li id="nav-users"><a href = "users.shtml">Users</a></li>
+    <li id="nav-related"><a href = "related.shtml">Related</a></li>
+    <li id="nav-support"><a href = "support.shtml">Support</a></li>
+    <li id="nav-development"><a href = "development.shtml">Development</a></li>
   </ol>
-</div>
+<!-- </div> -->

@@ -7,7 +7,7 @@
 <!--#include file="preamble.shtml" -->
 </head>
   
-<body>
+<body id="download">
 <!--#include file="header.shtml" -->
 
 <h2>Download</h2>

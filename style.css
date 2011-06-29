@@ -1,10 +1,12 @@
 body {
     margin-top: 1.0em;
+    margin-left: 5%;
+    margin-right: 5%;
     background-color: #FFFFFF;
     font-family: "Helvetica,Arial,FreeSans";
     color: #000000;
     font-size: 10pt;
-    width: 600px;
+    /* width: 600px; */
     line-height: 150%;
 }
 #container {
@@ -27,17 +29,84 @@ hr { border: 0; width: 80%; border-bottom: 1px solid #aaa}
 
 ol.contents
 {
-  color: black;
   padding-left: 0em;
-  overflow: auto;
   width: auto;
-
+  text-align: center;
+  /* background: lightgray; */
+  background: #c87137;
+  padding: 5px;
+  clear: both;
 }
 
 ol.contents li
 {
-  float: left;
-  padding-left: 0em;
-  padding-right: 1em;
+  /* float: left; */
+  display: inline;
   list-style-type: none;
+  padding: 6px;
+  line-height: 160%;
+}
+
+#about ol.contents #nav-about,
+#features ol.contents #nav-features,
+#documentation ol.contents #nav-documentation,
+#download ol.contents #nav-download,
+#users ol.contents #nav-users,
+#related ol.contents #nav-related,
+#support ol.contents #nav-support,
+#development ol.contents #nav-development
+{
+    background: #e89157;
+}
+
+
+ol.contents li a
+{
+    color: white;
+    text-decoration: none;
+    text-shadow: 0.1em 0.1em #333;
+}
+
+#logo
+{
+    text-align: left;
+    /* background: #e89157; */
+    /* background: #c87137; */
+    /* height: 30px; */
+}
+
+#logoname
+{
+    margin-right: 20px;
+    color: black;
+    font-size: 64pt;
+    /* background: gray; */
+    /* width: 30%; */
+    float: left;
+    font-family: "Verdana";
+    font-style: bold;
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+#logoimage
+{
+    /* background: gray; */
+    float: right;
+    /* vertical-align:middle; */
+    padding-top: 20px;
+}
+
+#logotagline
+{
+    color: black;
+    font-size: 12pt;
+    float: leftright;
+    font-family: "Verdana";
+    white-space: nowrap;
+    line-height: 200%;
+    vertical-align:middle;
+    text-align: center;
+    padding-top: 20px;
+    /* clear: both; */
 }

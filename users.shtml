@@ -7,7 +7,7 @@
 <!--#include file="preamble.shtml" -->
 </head>
   
-<body>
+<body id="users">
 <!--#include file="header.shtml" -->
 
 <H2>Users of Kranc</H2>

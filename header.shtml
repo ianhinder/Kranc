@@ -1,23 +1,8 @@
-<!-- <div id="container"> -->
-  <!-- <h1> -->
-  <!--   <a href="index.shtml"> -->
-  <!--     <img src="kranc.png" alt="Kranc" style="text-align:left"> -->
-  <!--   </a> -->
-  <!-- </h1> -->
-
-  <!-- <span id="logoname">Kranc</span> -->
-  <!-- <img src="krancsmall.png"> -->
-  <!-- <span id="logotagline">Kranc Assembles Numerical Code</span> -->
-
-  <!-- <div id="logo"> -->
   <div id="logoname">
   <h1>Kranc</h1>
   </div>
-  <!-- </div> -->
   <p>
-  <!-- <img id="logoname" src="kranctext.png" alt="Kranc"> -->
   <img id="logoimage" src="krancsmall.png" alt="">
-  <!-- <div id="logotagline">Kranc Assembles Numerical Code</div> -->
   </p>
 
   <ol class=contents>
@@ -30,4 +15,3 @@
     <li id="nav-support"><a href = "support.shtml">Support</a></li>
     <li id="nav-development"><a href = "development.shtml">Development</a></li>
   </ol>
-<!-- </div> -->

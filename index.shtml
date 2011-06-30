@@ -12,11 +12,6 @@
 
 <h2>About</h2>
 
-<!-- <div class="description" style="text-align:center"> -->
-<!--   A Mathematica application for generating code for solving time -->
-<!--   dependent partial differential equations -->
-<!-- </div> -->
-
 <p>Kranc is a <a href =
 "http://www.wolfram.com/products/mathematica/index.html">Mathematica</a>
 application which turns a tensorial description of a time dependent

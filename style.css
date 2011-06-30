@@ -1,50 +1,58 @@
-body {
-    margin-top: 1.0em;
-    margin-left: 5%;
-    margin-right: 5%;
-    background-color: #FFFFFF;
-    font-family: "Helvetica,Arial,FreeSans";
-    color: #000000;
-    font-size: 10pt;
-    /* width: 600px; */
-    line-height: 150%;
+
+/* Heading */
+
+h1
+{
+    color: black;
+    font-size: 64pt;
+    font-family: "Verdana";
+    font-weight: bold;
+    margin-top: 0.5ex;
+    margin-bottom: 0.3ex;
 }
-#container {
-    margin: 2em;
-/*    width: 700px;  */
+
+#logoname
+{
+    margin-right: 20px;
+    float: left;
+    margin-top: 0;
+    margin-bottom: 0.3ex;
 }
-h1 { font-size: 3.8em; color: #c87137; margin-bottom: 3px; text-align: center;}
-h1 .small { font-size: 0.4em; }
-h1 a { text-decoration: none }
-h2 { font-size: 12pt; color: #c87137; }
-h3 { text-align: center; color: #1f9966; }
-a { color: #c87137; }
-img { border: 0px }
-.description { font-size: 1.2em; margin-bottom: 30px; margin-top: 30px; font-style: italic;}
-.download { float: right; }
-pre {/* background: #c8ae8a; color: #000000; */ padding: 6pt; padding-left:12pt}
-.verbatim { background: #000; color: #fff; padding: 15px;  }
-hr { border: 0; width: 80%; border-bottom: 1px solid #aaa}
-.footer { text-align:center; padding-top:30px; font-style: italic; }
+
+#logoimage
+{
+    float: right;
+    vertical-align: top;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+#logotagline
+{
+    color: black;
+    font-size: 12pt;
+    font-family: "Verdana";
+    white-space: nowrap;
+    line-height: 200%;
+    vertical-align:middle;
+    text-align: center;
+    padding-top: 20px;
+}
+
+/* Navigation Bar */
 
 ol.contents
 {
-  padding-left: 0em;
-  width: auto;
   text-align: center;
-  /* background: lightgray; */
   background: #c87137;
-  padding: 5px;
   clear: both;
 }
 
 ol.contents li
 {
-  /* float: left; */
-  display: inline;
+  display: inline-block;
   list-style-type: none;
-  padding: 6px;
-  line-height: 160%;
+  padding: 0.5em;
 }
 
 #about ol.contents #nav-about,
@@ -59,7 +67,6 @@ ol.contents li
     background: #e89157;
 }
 
-
 ol.contents li a
 {
     color: white;
@@ -67,46 +74,28 @@ ol.contents li a
     text-shadow: 0.1em 0.1em #333;
 }
 
-#logo
-{
-    text-align: left;
-    /* background: #e89157; */
-    /* background: #c87137; */
-    /* height: 30px; */
+/* Main Body */
+
+body {
+    margin-top: 1.0em;
+    margin-left: 5%;
+    margin-right: 5%;
+    background-color: #FFFFFF;
+    font-family: "Helvetica,Arial,FreeSans";
+    color: #000000;
+    font-size: 10pt;
+    line-height: 150%;
 }
 
-#logoname
-{
-    margin-right: 20px;
-    color: black;
-    font-size: 64pt;
-    /* background: gray; */
-    /* width: 30%; */
-    float: left;
-    font-family: "Verdana";
-    font-weight: bold;
-    padding-top: 20px;
-    padding-bottom: 20px;
-}
+h2 { font-size: 12pt; color: #c87137; }
 
-#logoimage
-{
-    /* background: gray; */
-    float: right;
-    vertical-align:top;
-    /* padding-top: 20px; */
-}
+a { color: #c87137; }
 
-#logotagline
-{
-    color: black;
-    font-size: 12pt;
-    float: leftright;
-    font-family: "Verdana";
-    white-space: nowrap;
-    line-height: 200%;
-    vertical-align:middle;
-    text-align: center;
-    padding-top: 20px;
-    /* clear: both; */
-}
+/* This is used for the headline/abstract description of Kranc */
+.description { font-size: 1.2em; margin-bottom: 30px; margin-top: 30px; font-style: italic;}
+
+/* This is used for the download command */
+pre {padding: 6pt; padding-left:12pt}
+
+.footer { text-align:center; padding-top:30px; font-style: italic; }
+

@@ -17,7 +17,6 @@
 <img src="cactus.png" alt = "Cactus logo">
 </div>
 
-<a name="related"></a>
 <ul>
 <li><a href="http://cactuscode.org">Cactus</a>: Kranc generates
 modules for the Cactus Computational Toolkit, an infrastructure for

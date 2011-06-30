@@ -84,7 +84,7 @@ ol.contents li a
     /* width: 30%; */
     float: left;
     font-family: "Verdana";
-    font-style: bold;
+    font-weight: bold;
     padding-top: 20px;
     padding-bottom: 20px;
 }
@@ -93,8 +93,8 @@ ol.contents li a
 {
     /* background: gray; */
     float: right;
-    /* vertical-align:middle; */
-    padding-top: 20px;
+    vertical-align:top;
+    /* padding-top: 20px; */
 }
 
 #logotagline

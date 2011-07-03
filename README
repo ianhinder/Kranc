@@ -1,0 +1,20 @@
+
+Generating this site
+====================
+
+Since GitHub does not support standard server-side includes, this site
+uses the Jekyll engine for page inclusion:
+
+       https://github.com/mojombo/jekyll/wiki
+
+Jekyll markup is automatically processed by GitHub when the page is
+uploaded.  In order to test the site locally, you need to install
+Jekyll:
+
+     https://github.com/mojombo/jekyll/wiki/Install
+
+To test the site, run
+
+   jekyll --pygments --safe
+
+in the root html directory.  The site will be generated in the _site directory.

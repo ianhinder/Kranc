@@ -1,16 +1,20 @@
+---
+---
+
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
         "http://www.w3.org/TR/html4/strict.dtd">
 
 <html>
 <head>
 <title>About Kranc</title>
-<!--#include file="preamble.shtml" -->
+{% include preamble.shtml %}
 </head>
   
 <body id="about">
-<!--#include file="header.shtml" -->
+{% include header.shtml %}
 
 <h2>About</h2>
+
 
 <p>Kranc is a <a href =
 "http://www.wolfram.com/products/mathematica/index.html">Mathematica</a>

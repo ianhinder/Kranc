@@ -1,14 +1,17 @@
+---
+---
+
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
         "http://www.w3.org/TR/html4/strict.dtd">
 
 <html>
 <head>
 <title>Software Related to Kranc</title>
-<!--#include file="preamble.shtml" -->
+{% include preamble.shtml %}
 </head>
   
 <body id="related">
-<!--#include file="header.shtml" -->
+{% include header.shtml %}
 
 <H2>Related Software</H2>
 

@@ -1,14 +1,17 @@
+---
+---
+
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
         "http://www.w3.org/TR/html4/strict.dtd">
 
 <html>
 <head>
 <title>Download Kranc</title>
-<!--#include file="preamble.shtml" -->
+{% include preamble.shtml %}
 </head>
   
 <body id="download">
-<!--#include file="header.shtml" -->
+{% include header.shtml %}
 
 <h2>Download</h2>
 <p>You can download Kranc with <a href="http://git-scm.com">Git</a> by running</p>

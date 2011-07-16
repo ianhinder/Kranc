@@ -66,7 +66,7 @@ scheduleCalc[calc_, groups_] :=
   Module[{points, conditional, conditionals, keywordConditional,
           keywordConditionals, triggered, keyword, value, keywordvaluepairs,
           groupsToSync, groupName, userSchedule, groupSched, fnSched,
-          selbcSched, appbcSched, bcGroupName, condParams, bcGroupSched},
+          selbcSched, appbcSched, bcGroupName, condParams, bcGroupSched, before, after, relStr},
     conditional = mapContains[calc, ConditionalOnKeyword];
     conditionals = mapContains[calc, ConditionalOnKeywords];
     triggered = mapContains[calc, TriggerGroups];
@@ -93,13 +93,19 @@ scheduleCalc[calc_, groups_] :=
                       groupsSetInCalc[calc, groups],
                       {}];
 
+    before = lookupDefault[calc, Before, None];
+    after = lookupDefault[calc, After, None];
+
+    relStr = If[before =!= None, " before " <> before, ""]
+             <> If[after =!= None, " after " <> after, ""];
+
     userSchedule = lookupDefault[calc, Schedule, Automatic];
     If[userSchedule =!= Automatic,
     Return[Map[
       Join[
       {
         Name               -> lookup[calc, Name],
-        SchedulePoint      -> #,
+        SchedulePoint      -> # <> relStr,
         SynchronizedGroups -> If[StringMatchQ[#, "*MoL_CalcRHS*", IgnoreCase -> True] || StringMatchQ[#, "*MoL_RHSBoundaries*", IgnoreCase -> True],
                                  {},
                                  groupsToSync],
@@ -131,7 +137,7 @@ scheduleCalc[calc_, groups_] :=
 
       groupSched = {
         Name               -> "group " <> groupName,
-        SchedulePoint      -> "in MoL_PseudoEvolution",
+        SchedulePoint      -> "in MoL_PseudoEvolution" <> relStr,
         SynchronizedGroups -> {},
         Language           -> "None",
         Comment            -> lookup[calc, Name]

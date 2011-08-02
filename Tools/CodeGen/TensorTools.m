@@ -452,8 +452,8 @@ Protect[Equal];
    expanded, and tensor components and derivatives in single-symbol
    form suitable for code generation *)
 MakeExplicit[x_] := 
-  ((((makeSplit[makeSum[PDtoFD[LieToPD[CDtoPD[x]]]]] /. componentNameRule) /. KDrule) /. EpsilonRule)
-       /. derivativeNameRule) /. TensorProduct -> Times;
+  (((((makeSplit[makeSum[PDtoFD[LieToPD[CDtoPD[x]]]]] /. componentNameRule) /. KDrule) /. EpsilonRule)
+       /. derivativeNameRule) /. TensorProduct -> Times) //. PDReduce;
 
 MakeExplicit[l:List[Rule[_, _] ..]] :=
   Flatten[Map[removeDuplicatesFromMap, Map[MakeExplicit, l]],1];
@@ -842,8 +842,19 @@ PDLeibnizTensorProduct :=
   PD[TensorProduct[s_, t__], i_] :> 
     TensorProduct[PD[s,i],t] + TensorProduct[s,PD[TensorProduct[t],i]];
 
+PDSqrt :=
+  PD[Sqrt[x_], i_] :> 1/(2 Sqrt[x]) PD[x,i];
+
+PDIntPow :=
+  PD[x_^y_Integer, i_] :> y x^(y-1) PD[x,i];
+
+PDConstInt :=
+  PD[x_Integer, i_] :> 0;
+
 PDLinearity :=
   PD[x_ + y_,i_] :> PD[x,i] + PD[y,i];
+
+PDRedRules = {PDIntPow,PDSqrt,PDConstInt,PDLeibnizTimes,PDLeibnizTensorProduct,PDLinearity};
 
 (* Flattening *)
 
@@ -854,7 +865,7 @@ PDUnflatten :=
   PD[x_, i_, is__] :> PD[PD[x,i],is];
 
 PDReduce :=
-  x_ :>  (((((x //. PDUnflatten) //. PDLeibnizTimes) //. PDLeibnizTensorProduct) //. PDLinearity) //. PDFlatten);
+  x_ :>  (((x //. PDUnflatten) //. PDRedRules) //. PDFlatten);
 
 PD[x:(_Real | _Integer), is__] := 0;
 

@@ -179,8 +179,7 @@ scheduleCalc[calc_, groups_] :=
       Return[{groupSched, fnSched} ~Join~ If[groupsToSync =!= {},
         {selbcSched, appbcSched,
          bcGroupSched["in "<>groupName <> " after " <> lookup[calc, Name]],
-         bcGroupSched["at CCTK_POSTRESTRICT"],
-         bcGroupSched["at CCTK_POSTRESTRICTINITIAL"]},{}]]]];
+         bcGroupSched["in MoL_PseudoEvolutionBoundaries after MoL_PostStep"]},{}]]]];
 
 CreateKrancScheduleFile[calcs_, groups_, evolvedGroups_, rhsGroups_, nonevolvedGroups_, thornName_, 
                         evolutionTimelevels_] :=

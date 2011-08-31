@@ -871,6 +871,9 @@ vectoriseExpression[exprp_] :=
 
     (* Undo some transformations *)
     undoRules = {
+      IfThen[_, aa_, aa_] -> aa,
+      IfThen[xx_?IntegerQ, aa_, bb_] /; xx!=0 :> aa,
+      IfThen[xx_?IntegerQ, aa_, bb_] /; xx==0 :> bb,
       IfThen[kmul[xx_,yy_], aa_, bb_] -> IfThen[xx*yy, aa, bb],
       IfThen[kmul[xx_,yy_] != zz_, aa_, bb_] -> IfThen[xx*yy!=zz, aa, bb],
       IfThen[ToReal[xx_], aa_, bb_] -> IfThen[xx, aa, bb],

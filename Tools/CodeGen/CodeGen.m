@@ -961,8 +961,9 @@ ReplacePowers[expr_, vectorise_] :=
              (* there have been some problems doing the Max/Min
                 replacement via the preprocessor for C, so we do it
                 here *)
-             rhs = rhs /. Max[xx_, yy_] -> fmax[xx, yy];
-             rhs = rhs /. Min[xx_, yy_] -> fmin[xx, yy];
+             (* Note: Mathematica simplifies Max[xx_] -> xx automatically *)
+             rhs = rhs //. Max[xx_, yy__] -> fmax[xx, Max[yy]];
+             rhs = rhs //. Min[xx_, yy__] -> fmin[xx, Min[yy]];
 
              rhs = rhs /. Power[xx_, power_] -> pow[xx, power];
 

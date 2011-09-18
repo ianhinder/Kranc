@@ -27,6 +27,9 @@ VerifyMap[m_] :=
       ThrowError["Expecting a map (list of rules) but found", m]];
     Map[VerifyRule, m]];
 
+lookup[map_, key_, default_] :=
+  lookupDefault[map, key, default];
+
 lookup[map_, key_] :=
   Module[{values},
     VerifyMap[map];

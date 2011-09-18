@@ -478,7 +478,7 @@ CreateCalculationFunction[calcp_, debug_, imp_, opts:OptionsPattern[]] :=
     CheckGroupStorage[groupsInCalculation[cleancalc, imp], functionName],
 
     "\n",
-    CheckStencil[pddefs, eqs, functionName],
+    CheckStencil[pddefs, eqs, functionName, lookup[{opts}, IntParameters, {}]],
 
     If[haveCondTextuals, Map[ConditionalOnParameterTextual["!(" <> # <> ")", "return;\n"] &,condTextuals], {}],
 
@@ -673,7 +673,7 @@ equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
         Map[IncludeFile, incs]],
 
       CommentedBlock["Precompute derivatives",
-        PrecomputeDerivatives[defsWithoutShorts, eqsOrdered]],
+        PrecomputeDerivatives[defsWithoutShorts, eqsOrdered, lookup[{opts}, IntParameters, {}]]],
 
       CommentedBlock["Calculate temporaries and grid functions", calcCode],
 

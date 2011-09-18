@@ -153,17 +153,19 @@ DZero[n_] := (DPlus[n] + DMinus[n])/2;
 (* User API *)
 (*************************************************************)
 
-CreateDifferencingHeader[derivOps_, zeroDims_, vectorise_] :=
-  Module[{componentDerivOps, dupsRemoved, expressions, componentDerivOps2, zeroDimRules, derivOps2, pDefs},
-    Map[DerivativeOperatorVerify, derivOps];
+CreateDifferencingHeader[derivOps1_, zeroDims_, vectorise_, intParams_] :=
+  Module[{componentDerivOps, dupsRemoved, expressions, componentDerivOps2, zeroDimRules,
+          pDefs, derivOps},
+    derivOps = Flatten[Map[expandDerivOpOverParameters[#, intParams] &, derivOps1],1];
 
+    Map[DerivativeOperatorVerify, derivOps];
     zeroDimRules = Map[shift[#] -> 1 &, zeroDims];
 
     componentDerivOps = Flatten[Map[DerivativeOperatorToComponents, derivOps]];
 
     componentDerivOps2 = componentDerivOps /. zeroDimRules;
 
-    dupsRemoved = RemoveDuplicateRules[componentDerivOps2];
+    dupsRemoved = Block[{$RecursionLimit = Infinity}, RemoveDuplicateRules[componentDerivOps2]];
 
     mDefPairs = Map[ComponentDerivativeOperatorMacroDefinition[#, vectorise] &, dupsRemoved];
 
@@ -175,12 +177,39 @@ CreateDifferencingHeader[derivOps_, zeroDims_, vectorise_] :=
 ordergfds[_[v1_,___], _[v2_,___]] := 
   Order[v1,v2] != -1;
 
-PrecomputeDerivatives[derivOps_, expr_] :=
-  Module[{componentDerivOps, gfds, sortedgfds},
-    Map[DerivativeOperatorVerify, derivOps];
+getParamName[p_List] := lookup[p,Name];
+getParamName[p_] := p;
+
+PrecomputeDerivatives[derivOps_, expr_, intParams_] :=
+  Module[{componentDerivOps, gfds, sortedgfds, opNames, intParamNames, paramsInOps,
+          paramName, opsWithParam, opNamesWithParam, replace, param},
     gfds = GridFunctionDerivativesInExpression[derivOps, expr];
     sortedgfds = Sort[gfds, ordergfds];
-    Map[PrecomputeDerivative, sortedgfds]];
+
+    opNames = Union[Map[Head, sortedgfds]];
+    intParamNames = getParamName /@ intParams;
+    paramsInOps = Union@Flatten@Map[Cases[derivOps, #, Infinity] &, intParamNames];
+
+    If[Length[paramsInOps] > 1,
+      Throw["Cannot have more than one integer parameter in the list of partial derivative definitions"]];
+
+    If[paramsInOps === {},
+      Map[DerivativeOperatorVerify, derivOps];
+      Map[PrecomputeDerivative, sortedgfds],
+      (* else *)
+      paramName = First[paramsInOps];
+      opsWithParam = Select[derivOps, Cases[#, paramName, Infinity] =!= {} &];
+      opNamesWithParam = Map[#[[1,0]] &, opsWithParam];
+
+      replace[value_] :=
+        Map[(# -> combineOpNameWithParameter[#, paramName, value]) &, opNamesWithParam];
+
+      param = Select[intParams, getParamName[#] === paramName &][[1]];
+      {Map[DeclareVariableNoInit[GridFunctionDerivativeName[#],DataType[]] &, sortedgfds],
+       "\n",
+       SwitchStatement[paramName,
+         Sequence@@Table[{value, Map[PrecomputeDerivative[# /. replace[value],#] &, sortedgfds]}, 
+                         {value, lookup[param, AllowedValues]}]]}]];
 
 DeclareDerivatives[derivOps_, expr_] :=
   Module[{componentDerivOps, gfds, sortedgfds},
@@ -212,13 +241,32 @@ CheckStencil[derivOps_, eqs_, name_] :=
     If[Max[rgz] == 0, {},
     {"GenericFD_EnsureStencilFits(cctkGH, ", Quote@name, ", ", Riffle[rgz,", "], ");\n"}]];
 
+parametersUsedInOps[derivOps_, intParams_] :=
+  Union@Flatten[Map[Cases[derivOps, getParamName[#] -> #, Infinity] &,
+                    intParams], 1];
+
+CheckStencil[derivOps_, eqs_, name_, intParams_] :=
+  Module[{psUsed, p},
+    psUsed = parametersUsedInOps[derivOps, intParams];
+    If[Length[psUsed] > 1, Throw["Too many parameters in partial derivatives"]];
+    If[psUsed === {},
+      CheckStencil[derivOps,eqs,name],
+      p = psUsed[[1]];
+      SwitchStatement[getParamName[p],
+        Sequence@@Table[{value,
+                         CheckStencil[derivOps/.getParamName[p]->value, eqs,
+                                      name]},
+                        {value, lookup[p, AllowedValues]}]]]];
+
 (*************************************************************)
 (* Misc *)
 (*************************************************************)
 
-PrecomputeDerivative[d:pd_[gf_, inds___]] :=
+PrecomputeDerivative[d:pd_[gf_, inds___], vargfd_:Automatic] :=
   Module[{},
-    DeclareAssignVariable[DataType[], GridFunctionDerivativeName[d], evaluateDerivative[d]]];
+    If[vargfd === Automatic,
+      DeclareAssignVariable[DataType[], GridFunctionDerivativeName[d], evaluateDerivative[d]],
+      AssignVariable[GridFunctionDerivativeName[vargfd], evaluateDerivative[d]]]];
 
 evaluateDerivative[d:pd_[gf_, inds___]] :=
   Module[{macroname},
@@ -450,7 +498,7 @@ DifferenceGFTerm[op_, i_, j_, k_, vectorise_] :=
     remaining = op / (shift[1]^nx) / (shift[2]^ny) / (shift[3]^nz);
 
     If[Cases[{remaining}, shift[_], Infinity] != {},
-      ThrowError["Could not parse difference operator:", op]];
+      ThrowError["Could not parse difference operator", op]];
     
     If[CodeGen`SOURCELANGUAGE == "C",
 
@@ -535,7 +583,7 @@ RemoveDuplicateRules[l_] :=
    using m grid points before and m grid points after the centre
    point. Return an error if this is not possible. *)
 
-StandardCenteredDifferenceOperator[p_, m_, i_] := 
+StandardCenteredDifferenceOperator[p_, m_Integer, i_] :=
   Module[{f, h, coeffs, expansion, e1, e2, eqs, mat, vec, result, 
     deriv, mat2, vec2, coefArrs}, 
     coeffs = Table[Symbol["c" <> ToString[n]], {n, 1, 2 m + 1}];
@@ -556,7 +604,7 @@ StandardCenteredDifferenceOperator[p_, m_, i_] :=
    using m1 grid points before and m2 grid points after the centre
    point. Return an error if this is not possible. *)
 
-StandardUpwindDifferenceOperator[p_, m1_, m2_, i_] := 
+StandardUpwindDifferenceOperator[p_, m1_Integer, m2_Integer, i_] :=
   Module[{f, h, coeffs, expansion, e1, e2, eqs, mat, vec, result, deriv, coefArrs},
     coeffs = Table[Symbol["c" <> ToString[n]], {n, 1, m1 + m2 + 1}];
     expansion = Apply[Plus, Thread[coeffs Table[f[n h], {n, -m1, +m2}]]];
@@ -614,6 +662,35 @@ testNewUpwindOps[] :=
 
 *)
 
+combineOpNameWithParameter[opName_, paramName_,value_] :=
+  Symbol["Global`"<> ToString@opName <>
+                     ToString@paramName <>
+                     ToString@value];
+
+expandDerivOpOverParameter[op_, intParam_] :=
+  Module[{paramName, values, ops},
+    (* Some historical duplication here *)
+    If[!ListQ[intParam], Return[{op}]];
+    paramName = lookup[intParam, Name];
+    If[Cases[op, paramName, Infinity] =!= {},
+      values = lookup[intParam, AllowedValues];
+      ops = Table[combineOpNameWithParameter[op[[1,0]],paramName,value]@@op[[1]] ->
+                   (op[[2]] /. (paramName -> value)),
+        {value, values}],
+      (* else *)
+      ops = {op}];
+    ops
+  ];
+
+expandDerivOpOverParameters[op_, intParams_] :=
+  Module[{usedParams},
+    If[Head[op] =!= Rule, Throw["Invalid partial derivative",op]];
+    usedParams = Select[intParams, Cases[op, getParamName[#], Infinity] =!= {} &];
+    If[Length[usedParams] > 1,
+      Throw["Partial derivatives can only depend on a single parameter"]];
+    If[usedParams === {},
+      {op},
+      expandDerivOpOverParameter[op, usedParams[[1]]]]];
 
 End[];
 

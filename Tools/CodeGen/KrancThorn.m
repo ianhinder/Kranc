@@ -206,7 +206,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     (* Write the differencing header file *)
     InfoMessage[Terse, "Creating differencing header file"];
-    {pDefs, diffHeader} = CreateDifferencingHeader[partialDerivs, OptionValue[ZeroDimensions], OptionValue[UseVectors]];
+    {pDefs, diffHeader} = CreateDifferencingHeader[partialDerivs, OptionValue[ZeroDimensions], OptionValue[UseVectors], OptionValue[IntParameters]];
     diffHeader = Join[
         If[OptionValue[UseVectors], {"#include <assert.h>\n",
                                      "#include \"vectors.h\"\n",

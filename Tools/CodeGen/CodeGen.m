@@ -136,6 +136,7 @@ Quote::usage = "Quote[x] returns x surrounded by quotes";
 DataType::usage = "DataType[] returns a string for the grid function data type (e.g. CCTK_REAL)";
 SetDataType::usage = "SetDataType[type] sets a string for the grid function data type (e.g. CCTK_REAL)";
 Conditional;
+SwitchStatement;
 
 Begin["`Private`"];
 
@@ -685,13 +686,13 @@ GenericGridLoopUsingLoopControl[functionName_, block_, vectorise_] :=
 
 switchOptions[{value_, block_}] :=
 {
-  "case ", value, ":\n", block, "break;\n"
+  "case ", value, ":\n", indentBlock[{block,"break;\n"}]
 }
 
 SwitchStatement[var_, pairs__] :=
 {
   "switch(", var, ")\n",
-  CBlock[{Map[switchOptions, {pairs}]}]
+  CBlock[{Riffle[Map[switchOptions, {pairs}],"\n"]}]
 }
 
 

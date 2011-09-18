@@ -40,7 +40,7 @@ PrintStructure[l_List, prefix_, suffix_] :=
       Map[PrintStructure[#, "  " <> prefix, ","] &, l];
       Print[prefix, "}"],
 
-      Print[prefix, ToString[l,OutputForm]]]];
+      Print[prefix, ToString[l,InputForm]]]];
 
 PrintStructure[s_, prefix_, suffix_] :=
   Print[prefix, s, suffix];

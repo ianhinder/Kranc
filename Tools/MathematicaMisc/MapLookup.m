@@ -36,7 +36,7 @@ lookup[map_, key_] :=
 
     values = Select[map, First[#] === key &];
     If[values == {},
-       ThrowError["lookup failure: key " <> ToString[key] <> " not found in map " <> ToString[map]]];
+       ThrowError["lookup failure: key " <> ToString[key] <> " not found in map " <> ToString[map,InputForm]]];
     If[Length[values] > 1,
        ThrowError["lookup failure: key ", key, " found multiple times in map", map]];
 

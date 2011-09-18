@@ -8,20 +8,21 @@ SetEnhancedTimes[False];
 
 derivatives =
 {
-  PDstandard2nd[i_] -> StandardCenteredDifferenceOperator[1,1,i],
-  PDstandard2nd[i_, i_] -> StandardCenteredDifferenceOperator[2,1,i],
-  PDstandard2nd[i_, j_] -> StandardCenteredDifferenceOperator[1,1,i] StandardCenteredDifferenceOperator[1,1,j],
-
-  PDstandard4th[i_] -> StandardCenteredDifferenceOperator[1,2,i],
-  PDstandard4th[i_, i_] -> StandardCenteredDifferenceOperator[2,2,i],
-  PDstandard4th[i_, j_] -> StandardCenteredDifferenceOperator[1,2,i] StandardCenteredDifferenceOperator[1,2,j],
+  PDstandard[i_] ->
+    StandardCenteredDifferenceOperator[1,fdOrder/2,i],
+  PDstandard[i_, i_] ->
+    StandardCenteredDifferenceOperator[2,fdOrder/2,i],
+  PDstandard[i_, j_] ->
+    StandardCenteredDifferenceOperator[1,fdOrder/2,i] StandardCenteredDifferenceOperator[1,fdOrder/2,j],
 
   PDonesided2nd[1] -> dir[1] (-shift[1]^(2 dir[1]) + 4 shift[1]^dir[1] - 3 )/(2 spacing[1]),
   PDonesided2nd[2] -> dir[2] (-shift[2]^(2 dir[2]) + 4 shift[2]^dir[2] - 3 )/(2 spacing[2]),
   PDonesided2nd[3] -> dir[3] (-shift[3]^(2 dir[3]) + 4 shift[3]^dir[3] - 3 )/(2 spacing[3]),
 
-  Diss2nd[] -> - diss Sum[spacing[i]^3 (DPlus[i] DMinus[i])^2, {i, 1, 3}],
-  Diss4th[] -> diss Sum[spacing[i]^5 (DPlus[i] DMinus[i])^3, {i, 1, 3}],
+  Diss[] -> 
+    Switch[fdOrder,
+      2, - diss Sum[spacing[i]^3 (DPlus[i] DMinus[i])^2, {i, 1, 3}],
+      4,   diss Sum[spacing[i]^5 (DPlus[i] DMinus[i])^3, {i, 1, 3}]],
 
   PDzero[i_] -> DZero[i],
   PDzero[i_, j_] -> DZero[i] DZero[j],
@@ -105,7 +106,7 @@ importerCalc =
 evolveEquations =
 {
   dot[phi] -> pi,
-  dot[pi]  -> PD[phi,li,lj] Euc[ui,uj]
+  dot[pi]  -> PDstandard[phi,li,lj] Euc[ui,uj]
 }
 
 evolveCalc = 
@@ -213,4 +214,5 @@ CreateKrancThornTT[groups, ".", "Wave",
   PartialDerivatives -> derivatives,
   ZeroDimensions -> zerodims,
   KeywordParameters -> keywordParameters,
-  RealParameters -> {wp, wa, {Name -> n1, Default -> 1}, n2, n3, nSigma, r0, t0, x0}]
+  RealParameters -> {wp, wa, {Name -> n1, Default -> 1}, n2, n3, nSigma, r0, t0, x0, diss},
+  IntParameters -> {{Name -> fdOrder, Default -> 2, AllowedValues -> {2, 4}}}]

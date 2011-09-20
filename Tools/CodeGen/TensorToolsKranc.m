@@ -22,13 +22,14 @@
 
 (* This package provides a TensorTools wrapper for Kranc *)
 
-BeginPackage["TensorToolsKranc`", {"Kranc`", "KrancGroups`", "TensorTools`"}];
+BeginPackage["TensorToolsKranc`", {"Kranc`", "KrancGroups`", "TensorTools`", "MapLookup`"}];
 
 CreateGroupFromTensor::usage = "";
 ReflectionSymmetries::usage = "Produce a list of reflection symmetries of a tensor.";
 ExpandComponents::usage = "ExpandComponents[expr] converts an expression containing abstract indices into one containing components instead."
 IncludeCharacter::usage = "IncludeCharacter is an option for makeExplicit which specifies whether the character should also be included in the generated variable names."
 TensorCharacterString::usage = "TensorCharacterString[tensor[inds]] returns a string consisting of a sequence of U's and D's representing the character of tensor."
+CheckCalculationTensors;
 
 Begin["`Private`"];
 

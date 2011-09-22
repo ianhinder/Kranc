@@ -1,16 +1,17 @@
-
 << "KrancThorn.m";
 
 groups = {{"evolved_group", {phi, pi}}};
 
-derivatives = {
+derivatives =
+{
   PDstandard2nd[i_] -> StandardCenteredDifferenceOperator[1,1,i],
   PDstandard2nd[i_, i_] -> StandardCenteredDifferenceOperator[2,1,i]
 };
 
 PD = PDstandard2nd;
 
-initialSineCalc = {
+initialSineCalc = 
+{
   Name -> "initial_sine",
   Schedule -> {"AT INITIAL"},
   Equations -> 
@@ -20,7 +21,8 @@ initialSineCalc = {
   }
 };
 
-evolveCalc = {
+evolveCalc = 
+{
   Name -> "calc_rhs",
   Schedule -> {"in MoL_CalcRHS"},
   Equations ->

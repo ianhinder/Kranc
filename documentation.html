@@ -15,18 +15,83 @@
 
 <H2>Documentation</H2>
 
-<p>We provide several example scripts which can be adapted to develop
-your own codes.  The short
-script <a href="SimpleWave.m">SimpleWave.m</a> generates a wave
-equation code.  There is also a <a href = "tutorial.html">tutorial</a>
-to guide you through the process of downloading Cactus and Kranc,
-installing Kranc into Cactus, and generating your first Kranc
-thorn.</p>
+<H3>Using Kranc</H3>
 
 <p>There is online <a href = "doc">HTML documentation for Kranc</a>.
 This is also available in the Doc directory of Kranc in LaTeX format.
 Type "make KrancDoc.pdf" to make the PDF version, or "make
 KrancDoc.html" to make the HTML version.</p>
+
+<H3>Tutorial</H3>
+
+<p>There is a <a href = "tutorial.html">tutorial</a>
+to guide you through the process of downloading Cactus and Kranc,
+installing Kranc into Cactus, and generating your first Kranc
+thorn.</p>
+
+<H3>Examples</H3>
+
+<p>We provide several example scripts which can be adapted to develop
+your own codes.  The short
+script <a href="SimpleWave.m">SimpleWave.m</a> (available in the Kranc
+package as Kranc/Examples/SimpleWave.m) generates a wave equation
+code.</p>
+
+<p>You can run the script using:</p>
+
+<pre>
+cd Kranc/Examples
+../Bin/kranc SimpleWave.m
+</pre>
+
+<p>It generates a Cactus thorn directory SimpleWave.  You can download
+<a href = "SimpleWave.tar.gz">SimpleWave.tar.gz</a> to see the code
+that is generated.</p>
+
+<h4>SimpleWave.m</h4>
+
+<pre>
+<< "KrancThorn.m";
+
+groups = {{"evolved_group", {phi, pi}}};
+
+derivatives =
+{
+  PDstandard2nd[i_] -> StandardCenteredDifferenceOperator[1,1,i],
+  PDstandard2nd[i_, i_] -> StandardCenteredDifferenceOperator[2,1,i]
+};
+
+PD = PDstandard2nd;
+
+initialSineCalc = 
+{
+  Name -> "initial_sine",
+  Schedule -> {"AT INITIAL"},
+  Equations -> 
+  {
+    phi -> Sin[2 Pi (x - t)],
+    pi -> -2 Pi Cos[2 Pi (x - t)]
+  }
+};
+
+evolveCalc = 
+{
+  Name -> "calc_rhs",
+  Schedule -> {"in MoL_CalcRHS"},
+  Equations ->
+  {
+    dot[phi] -> pi,
+    dot[pi]  -> Euc[ui,uj] PD[phi,li,lj]
+  }
+};
+
+CreateKrancThornTT[groups, ".", 
+  "SimpleWave", 
+  Calculations -> {initialSineCalc, evolveCalc},
+  PartialDerivatives -> derivatives,
+  DeclaredGroups -> {"evolved_group"}];
+</pre>
+
 
 </body>
 </html>

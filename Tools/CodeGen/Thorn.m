@@ -1382,7 +1382,8 @@ CreateThorn[thorn_] :=
                                                lookup[#, Contents]] &,
                                                lookup[thorn, Sources]];
 
-    GenerateFile[sourceDirectory <> "/make.code.defn", lookup[thorn, Makefile]]];
+    GenerateFile[sourceDirectory <> "/make.code.defn", lookup[thorn, Makefile]];
+    Print["Thorn ", thornDirectory, " created successfully"]];
 
 End[];
 

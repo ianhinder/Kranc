@@ -50,7 +50,6 @@ PrintError[err_] :=
       If[Head[err] === KrancError,
         Module[{},
           objs = err[[1]];
-          stack = err[[2]];
 
           Map[PrintStructure, objs];
 (*          Print["Error stack:"];
@@ -63,7 +62,7 @@ ThrowError[objects__] :=
   Module[{s = Stack[_], s2},
     
     s2 = removeBits[s];
-    Throw[KrancError[{objects}, s2], KrancError]];
+    Throw[KrancError[{objects}(*,s2*)], KrancError]];
 
 
 VerifyString[s_] := 

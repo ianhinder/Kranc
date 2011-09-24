@@ -11,7 +11,59 @@ Needs["KrancThorn`"];
 If[Environment["KRANCVERBOSE"] == "yes",
   SetDebugLevel[InfoFull]];
 
-exception = Catch[Get[script], KrancError];
-PrintError[exception];
+SetOptions["stdout", PageWidth -> Infinity];
 
-Quit[];
+(* I have not found a good way to abort on the first generated
+   message.  All the attempts below are triggered on messages which
+   have been Quieted and I don't know a way to silently skip these.
+   Note that some built-in Mathematica functions seem to Quiet
+   messages internally, so even though no Quieting is done in Kranc,
+   such messages still cause an abort with the below methods.
+   Instead, we let the computation finish after messages have been
+   generated, and then use Check to throw an exception. *)
+
+(* ThrowMessage[text_, id1_, pat:_[_[id_, args___]]] := *)
+(*   Module[{}, *)
+(*     Print["text = ", text]; *)
+(*     Print[StringForm[text,args], "Aborting due to message"]]; *)
+
+(* ThrowMessage2[args___] := *)
+(*   Module[{}, *)
+(*     Print["args = ", {args}]; *)
+(*     Quit[]]; *)
+
+(* exception = Catch[Catch[ *)
+(* Internal`HandlerBlock[ *)
+(*  (\* See http://groups.google.com/group/comp.soft-sys.math.mathematica/browse_thread/thread/6314f05952ff5028 *\) *)
+(*  {"MessageTextFilter", ThrowMessage[#1,#2,#3] &}, *)
+(*   Get[script];None]], _]; *)
+
+(* exception = Catch[Catch[ *)
+(* Internal`HandlerBlock[ *)
+(*  (\* See http://groups.google.com/group/comp.soft-sys.math.mathematica/browse_thread/thread/6314f05952ff5028 *\) *)
+(*  {"Message", Replace[#, _[_, True] :> ThrowMessage2[#]] &},  *)
+(*   Get[script];None]], _]; *)
+
+(* Unprotect[Message]; *)
+
+(* $AbortMessage = True; *)
+
+(* Message[args___] := *)
+(*   Block[{$AbortMessage = False}, *)
+(*      If[{args}[[1]] =!= $Off[],Print["Message: ", args]; *)
+(*      Message[args]]] /; $AbortMessage *)
+    
+(* Protect[Message]; *)
+
+(* Quiet[Message[InverseFunction::ifun]]; *)
+
+exception = Catch[Catch[
+  Check[
+    Get[script];None,
+    ThrowError["Messages were generated - aborted"]]], _];
+
+If[exception =!= None,
+  Print["Exception:"];
+  PrintError[exception];
+  Quit[1],
+  Quit[]];

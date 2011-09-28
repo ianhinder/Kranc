@@ -4,6 +4,7 @@ BeginPackage["MapLookup`", {"Errors`"}];
 lookup::usage = "";
 mapContains::usage = "";
 mapReplace::usage = "";
+mapReplaceAdd::usage = "";
 mapValueMap::usage = "";
 lookupDefault::usage = "";
 mapValueMapMultiple::usage = "";
@@ -58,6 +59,13 @@ mapReplace[map_, key_, value_] :=
   Module[{},
     VerifyMap[map];
     Map[If[First[#] === key, key -> value, #] &, map]];
+
+mapReplaceAdd[map_, key_, value_] :=
+  Module[{},
+    VerifyMap[map];
+  If[mapContains[map, key],
+     mapReplace[map, key, value],
+     mapAdd[map, key, value]]];
 
 mapAdd[map_, key_, value_] :=
   Module[{},

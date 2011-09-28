@@ -462,7 +462,7 @@ CreateCalculationFunction[calcp_, debug_, imp_, opts:OptionsPattern[]] :=
        "Calculation is:", cleancalc]];
 
   {
-  DefineFunction[bodyFunctionName, "static void", "cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const min[3], int const max[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[]",
+  DefineFunction[bodyFunctionName, "static void", "cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const imin[3], int const imax[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[]",
   {
     "DECLARE_CCTK_ARGUMENTS;\n",
     "DECLARE_CCTK_PARAMETERS;\n\n",

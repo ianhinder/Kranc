@@ -665,9 +665,9 @@ GenericGridLoop[functionName_, block_, opts:OptionsPattern[]] :=
 
 GenericGridLoopTraditional[block_] :=
   CommentedBlock["Loop over the grid points",
-   loopOverInteger["k", "min[2]", "max[2]",
-     loopOverInteger["j", "min[1]", "max[1]",
-       loopOverInteger["i", "min[0]", "max[0]",
+   loopOverInteger["k", "imin[2]", "imax[2]",
+     loopOverInteger["j", "imin[1]", "imax[1]",
+       loopOverInteger["i", "imin[0]", "imax[0]",
 
        { If[SOURCELANGUAGE == "C",  
             {
@@ -684,7 +684,7 @@ GenericGridLoopUsingLoopControl[functionName_, block_, vectorise_] :=
       {
         "#pragma omp parallel\n",
         If[vectorise, "LC_LOOP3VEC", "LC_LOOP3"] <> " (", functionName, ",\n",
-        "  i,j,k, min[0],min[1],min[2], max[0],max[1],max[2],\n",
+        "  i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],\n",
         "  cctk_lsh[0],cctk_lsh[1],cctk_lsh[2]", If[vectorise, {",\n",
         "  CCTK_REAL_VEC_SIZE"},""] <> ")\n",
         "{\n",

@@ -948,6 +948,9 @@ ReplacePowers[expr_, vectorise_] :=
 	     rhs = rhs /. -8/3 -> -keightthird;
              *)
 
+             (* Remove parentheses *)
+             rhs = rhs //. Parenthesis[xx_] -> xx;
+
              (* Avoid rational numbers *)
 	     rhs = rhs /. Rational[xx_,yy_] :> N[xx/yy, 30];
 

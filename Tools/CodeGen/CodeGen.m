@@ -71,6 +71,8 @@ StoreHighPartialVariableInLoop::usage = "StoreHighPartialVariableInLoop[dest_, s
   "that assigns 'src' to 'dest'.";
 StoreMiddlePartialVariableInLoop::usage = "StoreMiddlePartialVariableInLoop[dest_, src_, countLow_, countHigh_] returns a block of code " <>
   "that assigns 'src' to 'dest'.";
+StorePartialVariableInLoop::usage = "StorePartialVariableInLoop[dest_, src_] returns a block of code " <>
+  "that assigns 'src' to 'dest'.";
 DeclareAssignVariableInLoop::usage = "DeclareAssignVariableInLoop[type_, dest_, src_] returns a block of code " <>
   "that assigns 'src' to 'dest'.";
 MaybeAssignVariableInLoop::usage = "MaybeAssignVariableInLoop[dest_, src_, cond_] returns a block of code " <>
@@ -333,6 +335,9 @@ StoreHighPartialVariableInLoop[dest_, src_, count_] :=
 
 StoreMiddlePartialVariableInLoop[dest_, src_, countLow_, countHigh_] :=
   {"vec_store_nta_partial_mid(", dest, ",", src, ",", countLow, ",", countHigh, ")", EOL[]};
+
+StorePartialVariableInLoop[dest_, src_] :=
+  {"vec_store_nta_partial(", dest, ",", src, ")", EOL[]};
 
 DeclareAssignVariableInLoop[type_, dest_, src_] :=
   {type, " const ", dest, " = vec_load(", src, ")", EOL[]};

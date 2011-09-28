@@ -221,6 +221,7 @@ CreateConfiguration[opts:OptionsPattern[]] :=
   {whoWhen["CCL"],
    "REQUIRES GenericFD\n",
    If[OptionValue[UseLoopControl], "REQUIRES LoopControl\n", {}],
+   If[OptionValue[UseOpenCL], "REQUIRES OpenCL OpenCLRunTime\n", {}],
    If[OptionValue[UseVectors], "REQUIRES Vectors\n", {}]
   };
 
@@ -518,6 +519,7 @@ CreateSetterSource[calcs_, debug_, include_, imp_,
                          (*"precomputations.h",*) "GenericFD.h", "Differencing.h"},
                          include,
                          If[OptionValue[UseLoopControl], {"loopcontrol.h"}, {}],
+                         If[OptionValue[UseOpenCL], {"OpenCLRunTime.h"}, {}],
                          If[OptionValue[UseVectors], {"vectors.h"}, {}]]],
    calculationMacros[OptionValue[UseVectors]],
 

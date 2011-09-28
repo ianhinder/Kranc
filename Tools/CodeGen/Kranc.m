@@ -71,6 +71,7 @@ ThornOptions =
   ReflectionSymmetries -> {},
   ZeroDimensions -> {},
   UseLoopControl -> False,
+  UseOpenCL -> False,
   UseVectors -> False,
   ProhibitAssignmentToGridFunctionsRead -> False,
   IncludeFiles -> {},

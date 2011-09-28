@@ -377,7 +377,8 @@ CreateCalculationFunction[calcp_, debug_, imp_, opts:OptionsPattern[]] :=
   Module[{gfs, allSymbols, knownSymbols,
           shorts, eqs, parameters, parameterRules,
           functionName, dsUsed, groups, pddefs, cleancalc, eqLoop, where,
-          addToStencilWidth, pDefs, haveCondTextuals, condTextuals, calc},
+          addToStencilWidth, pDefs, haveCondTextuals, condTextuals, calc,
+          kernelCall},
 
   calc = If[OptionValue[UseJacobian], InsertJacobian[calcp, opts], calcp];
 
@@ -461,26 +462,41 @@ CreateCalculationFunction[calcp_, debug_, imp_, opts:OptionsPattern[]] :=
      ThrowError["Unknown symbols in calculation.  Symbols are:", unknownSymbols,
        "Calculation is:", cleancalc]];
 
+  kernelCall = Switch[where,
+    Everywhere,
+      "GenericFD_LoopOverEverything(cctkGH, &" <> bodyFunctionName <> ");\n",
+    Interior,
+      "GenericFD_LoopOverInterior(cctkGH, &" <> bodyFunctionName <> ");\n",
+    InteriorNoSync,
+      "GenericFD_LoopOverInterior(cctkGH, &" <> bodyFunctionName <> ");\n",
+    Boundary,
+      "GenericFD_LoopOverBoundary(cctkGH, &" <> bodyFunctionName <> ");\n",
+    BoundaryWithGhosts,
+      "GenericFD_LoopOverBoundaryWithGhosts(cctkGH, &" <> bodyFunctionName <> ");\n",
+    _,
+      ThrowError["Unknown 'Where' entry in calculation " <>
+        functionName <> ": " <> ToString[where]]];
+
   {
   DefineFunction[bodyFunctionName, "static void", "cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const imin[3], int const imax[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[]",
   {
     "DECLARE_CCTK_ARGUMENTS;\n",
     "DECLARE_CCTK_PARAMETERS;\n\n",
+
+    (* OpenCL kernel prologue *)
+    (* We could (or probably should) write this into a source file of its own *)
+    If[OptionValue[UseOpenCL],
+       {
+         "char const * const source =\n"
+       },
+       {
+       }],
+
+    If[OptionValue[UseOpenCL], Stringify, Identity][{
+
     If[!OptionValue[UseLoopControl], DeclareGridLoopVariables[], {}],
+
     DeclareFDVariables[],
-
-    ConditionalOnParameterTextual["verbose > 1",
-      "CCTK_VInfo(CCTK_THORNSTRING,\"Entering " <> bodyFunctionName <> "\");\n"],
-
-    ConditionalOnParameterTextual["cctk_iteration % " <> functionName <> "_calc_every != " <>
-      functionName <> "_calc_offset", "return;\n"],
-
-    CheckGroupStorage[groupsInCalculation[cleancalc, imp], functionName],
-
-    "\n",
-    CheckStencil[pddefs, eqs, functionName, lookup[{opts}, IntParameters, {}]],
-
-    If[haveCondTextuals, Map[ConditionalOnParameterTextual["!(" <> # <> ")", "return;\n"] &,condTextuals], {}],
 
     CommentedBlock["Include user-supplied include files",
       Map[IncludeFile, lookupDefault[cleancalc, DeclarationIncludes, {}]]],
@@ -499,34 +515,59 @@ CreateCalculationFunction[calcp_, debug_, imp_, opts:OptionsPattern[]] :=
       {
 	eqLoop = equationLoop[eqs, cleancalc, gfs, shorts, {}, groups,
           pddefs, where, addToStencilWidth, opts]},
-
-       ConditionalOnParameterTextual["verbose > 1",
-         "CCTK_VInfo(CCTK_THORNSTRING,\"Leaving " <> bodyFunctionName <> "\");\n"],
       {}]
+
     }],
-  Switch[where,
-    Everywhere,
-      DefineCCTKSubroutine[functionName,
-        "GenericFD_LoopOverEverything(cctkGH, &" <> bodyFunctionName <> ");\n"],
-    Interior,
-      DefineCCTKSubroutine[functionName,
-        "GenericFD_LoopOverInterior(cctkGH, &" <> bodyFunctionName <> ");\n"],
-    InteriorNoSync,
-      DefineCCTKSubroutine[functionName,
-        "GenericFD_LoopOverInterior(cctkGH, &" <> bodyFunctionName <> ");\n"],
-    Boundary,
-      DefineCCTKSubroutine[functionName,
-        "GenericFD_LoopOverBoundary(cctkGH, &" <> bodyFunctionName <> ");\n"],
-    BoundaryWithGhosts,
-      DefineCCTKSubroutine[functionName,
-        "GenericFD_LoopOverBoundaryWithGhosts(cctkGH, &" <> bodyFunctionName <> ");\n"],
-    PenaltyPrim2Char,
-      DefineFunction[functionName, "CCTK_INT",
-               "CCTK_POINTER_TO_CONST const cctkGH_, CCTK_INT const dir, CCTK_INT const face, CCTK_REAL const * restrict const base_, CCTK_INT const * restrict const lbnd, CCTK_INT const * restrict const lsh, CCTK_INT const * restrict const from, CCTK_INT const * restrict const to, CCTK_INT const rhs_flag, CCTK_INT const num_modes, CCTK_POINTER const * restrict const modes, CCTK_POINTER const * restrict const speeds",
-        "GenericFD_PenaltyPrim2Char(cctkGH, &" <> bodyFunctionName <> ");\n"],
-    _,
-      ThrowError["Unknown 'Where' entry in calculation " <>
-        functionName <> ": " <> ToString[where]]]}];
+
+    (* OpenCL kernel epologue *)
+    If[OptionValue[UseOpenCL],
+       {
+         ";\n\n",
+         Module[
+           {ignoreGroups, groupsNames, groupNameList},
+           ignoreGroups = {"TmunuBase::stress_energy_scalar",
+                           "TmunuBase::stress_energy_vector",
+                           "TmunuBase::stress_energy_tensor"};
+           groupNames = groupsInCalculation[cleancalc, imp];
+           groupNames = Select[groupNames, !MemberQ[ignoreGroups, #] &];
+           {
+             "char const * const groups[] = {",
+               Riffle[Join[Map[Quote, groupNames], {"NULL"}], ","],
+               "};\n\n"
+           }
+         ],
+         "static struct OpenCLKernel * kernel = NULL;\n",
+         "char const * const sources[] = {differencing, source, NULL};\n",
+         "OpenCLRunTime_CallKernel (cctkGH, CCTK_THORNSTRING, \"" <> functionName <> "\",\n",
+         "                          sources, groups, NULL, NULL, NULL, -1,\n",
+         "                          imin, imax, &kernel);\n\n"
+       },
+       {
+       }]
+    }],
+  
+    DefineCCTKSubroutine[functionName,
+      FlattenBlock[{
+        ConditionalOnParameterTextual["verbose > 1",
+          "CCTK_VInfo(CCTK_THORNSTRING,\"Entering " <> bodyFunctionName <> "\");\n"],
+
+        ConditionalOnParameterTextual["cctk_iteration % " <> functionName <> "_calc_every != " <>
+          functionName <> "_calc_offset", "return;\n"],
+  
+        CheckGroupStorage[groupsInCalculation[cleancalc, imp], functionName],
+        "\n",
+
+        CheckStencil[pddefs, eqs, functionName, lookup[{opts}, IntParameters, {}]],
+        "\n",
+  
+        If[haveCondTextuals, Map[ConditionalOnParameterTextual["!(" <> # <> ")", "return;\n"] &,condTextuals], {}],
+
+        kernelCall,
+
+        ConditionalOnParameterTextual["verbose > 1",
+          "CCTK_VInfo(CCTK_THORNSTRING,\"Leaving " <> bodyFunctionName <> "\");\n"]
+      }]]
+  }];
 
 Options[equationLoop] = ThornOptions;
 
@@ -681,35 +722,38 @@ equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
         Map[InfoVariable[#[[1]]] &, (eqs2 /. localMap)],
         ""],
 
-      If[OptionValue[UseVectors], {
-        CommentedBlock["If necessary, store only partial vectors after the first iteration",
-          ConditionalOnParameterTextual["CCTK_REAL_VEC_SIZE > 2 && CCTK_BUILTIN_EXPECT(i < lc_imin && i+CCTK_REAL_VEC_SIZE > lc_imax, 0)",
-            {
-              DeclareAssignVariable["ptrdiff_t", "elt_count_lo", "lc_imin-i"],
-              DeclareAssignVariable["ptrdiff_t", "elt_count_hi", "lc_imax-i"],
-              Map[StoreMiddlePartialVariableInLoop[GridName[#], localName[#], "elt_count_lo", "elt_count_hi"] &,
-                  gfsInLHS],
-              "break;\n"
-            }]],
-        CommentedBlock["If necessary, store only partial vectors after the first iteration",
-          ConditionalOnParameterTextual["CCTK_REAL_VEC_SIZE > 1 && CCTK_BUILTIN_EXPECT(i < lc_imin, 0)",
-            {
-              DeclareAssignVariable["ptrdiff_t", "elt_count", "lc_imin-i"],
-              Map[StoreHighPartialVariableInLoop[GridName[#], localName[#], "elt_count"] &,
-                  gfsInLHS],
-              "continue;\n"
-            }]],
-        CommentedBlock["If necessary, store only partial vectors after the last iteration",
-          ConditionalOnParameterTextual["CCTK_REAL_VEC_SIZE > 1 && CCTK_BUILTIN_EXPECT(i+CCTK_REAL_VEC_SIZE > lc_imax, 0)",
-            {
-              DeclareAssignVariable["ptrdiff_t", "elt_count", "lc_imax-i"],
-              Map[StoreLowPartialVariableInLoop[GridName[#], localName[#], "elt_count"] &,
-                  gfsInLHS],
-              "break;\n"
-            }]]}, {}],
-      CommentedBlock["Copy local copies back to grid functions",
-        Map[(If[OptionValue[UseVectors], StoreVariableInLoop, AssignVariableInLoop][GridName[#], localName[#]]) &,
-            gfsInLHS]],
+      Which[OptionValue[UseOpenCL],
+              CommentedBlock["Copy local copies back to grid functions",
+                Map[StorePartialVariableInLoop[GridName[#], localName[#]] &, gfsInLHS]],
+            OptionValue[UseVectors],
+              {
+                CommentedBlock["If necessary, store only partial vectors after the first iteration",
+                  ConditionalOnParameterTextual["CCTK_REAL_VEC_SIZE > 2 && CCTK_BUILTIN_EXPECT(i < lc_imin && i+CCTK_REAL_VEC_SIZE > lc_imax, 0)",
+                  {
+                    DeclareAssignVariable["ptrdiff_t", "elt_count_lo", "lc_imin-i"],
+                    DeclareAssignVariable["ptrdiff_t", "elt_count_hi", "lc_imax-i"],
+                    Map[StoreMiddlePartialVariableInLoop[GridName[#], localName[#], "elt_count_lo", "elt_count_hi"] &, gfsInLHS],
+                    "break;\n"
+                  }]],
+                CommentedBlock["If necessary, store only partial vectors after the first iteration",
+                  ConditionalOnParameterTextual["CCTK_REAL_VEC_SIZE > 1 && CCTK_BUILTIN_EXPECT(i < lc_imin, 0)",
+                  {
+                    DeclareAssignVariable["ptrdiff_t", "elt_count", "lc_imin-i"],
+                    Map[StoreHighPartialVariableInLoop[GridName[#], localName[#], "elt_count"] &, gfsInLHS],
+                    "continue;\n"
+                  }]],
+                CommentedBlock["If necessary, store only partial vectors after the last iteration",
+                  ConditionalOnParameterTextual["CCTK_REAL_VEC_SIZE > 1 && CCTK_BUILTIN_EXPECT(i+CCTK_REAL_VEC_SIZE > lc_imax, 0)",
+                  {
+                    DeclareAssignVariable["ptrdiff_t", "elt_count", "lc_imax-i"],
+                    Map[StoreLowPartialVariableInLoop[GridName[#], localName[#], "elt_count"] &, gfsInLHS],
+                    "break;\n"
+                  }]],
+                Map[StoreVariableInLoop[GridName[#], localName[#]] &, gfsInLHS]
+              },
+            True,
+              CommentedBlock["Copy local copies back to grid functions",
+                Map[AssignVariableInLoop[GridName[#], localName[#]] &, gfsInLHS]]],
 
       If[debugInLoop, Map[InfoVariable[GridName[#]] &, gfsInLHS], ""]}, opts]];
 

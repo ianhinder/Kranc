@@ -130,6 +130,8 @@ BoundaryLoop::usage = "";
 BoundaryWithGhostsLoop::usage = "";
 GenericGridLoop::usage = "";
 
+Stringify::usage = "";
+
 NameRoot::usage = "";
 PartitionVarList::usage = "";
 Quote::usage = "Quote[x] returns x surrounded by quotes";
@@ -213,6 +215,18 @@ NewlineSeparated[l_] :=
 CommaInitSeparated[l_] :=
   intersperse[Map[{#," = INITVALUE"} &, l], ", "];
 (*  intersperse[l, " = INITVALUE, "];*)
+
+
+
+(* Turn a section of code into a string:
+   1. quote all quotes (replace all quotes with backslash-quote)
+   2. break the string into lines to make it readable (replace all newlines
+      with quote-newline-quote)
+   3. surround the result with quotes *)
+Stringify[x_] := "\"" <>
+                 StringReplace[StringReplace[FlattenBlock[x],
+                   "\"" -> "\\\""], "\n" -> "\\n\"\n\""] <>
+                 "\"\n";
 
 
 

@@ -25,7 +25,7 @@ BeginPackage["Kranc`"];
 {INV, SQR, CUB, QAD, IfThen, Parenthesis, Scalar, ToReal,
  sqrt, exp, pow, fmax, fmin,
  kmadd, kmsub, knmadd, knmsub, kpos, kneg, kadd, ksub, kmul, kdiv,
- kfabs, kfmax, kfmin, ksqrt, kexp, klog, kpow,
+ kcos, kfabs, kfmax, kfmin, ksqrt, kexp, klog, kpow, ksin, ktan,
  dir1, dir2, dir3, dt, dx, dy, dz,
  khalf, kthird, ktwothird, kfourthird, keightthird};
 

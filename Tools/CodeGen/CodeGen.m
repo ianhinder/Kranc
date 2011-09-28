@@ -868,19 +868,25 @@ vectoriseExpression[exprp_] :=
       ksub[xx_,kneg[yy_]]     -> kadd[xx,yy],
       kneg[ksub[xx_,yy_]]     -> ksub[yy,xx],
       Abs[xx_]      -> kfabs[xx],
+      Cos[xx_]      -> kcos[xx],
       Log[xx_]      -> klog[xx],
+      Sin[xx_]      -> ksin[xx],
+      Tan[xx_]      -> ktan[xx],
+      exp[xx_]      -> kexp[xx],
       fabs[xx_]     -> kfabs[xx],
       fmax[xx_,yy_] -> kfmax[xx,yy],
       fmin[xx_,yy_] -> kfmin[xx,yy],
-      sqrt[xx_]     -> ksqrt[xx],
-      exp[xx_]      -> kexp[xx],
       log[xx_]      -> klog[xx],
       pow[xx_,yy_]  -> kpow[xx,yy],
-      kneg[kneg[xx_]]   -> xx,
+      sqrt[xx_]     -> ksqrt[xx],
+      kcos[kneg[xx_]]   -> kcos[xx],
       kfabs[kneg[xx_]]  -> kfabs[xx],
       kfnabs[kneg[xx_]] -> kfnabs[xx],
       kneg[kfabs[xx_]]  -> kfnabs[xx],
-      kneg[kfnabs[xx_]] -> kfabs[xx]
+      kneg[kfnabs[xx_]] -> kfabs[xx],
+      kneg[kneg[xx_]]   -> xx,
+      ksin[kneg[xx_]]   -> kneg[ksin[xx]],
+      ktan[kneg[xx_]]   -> kneg[ktan[xx]]
     };
     expr = expr //. arithRules;
 

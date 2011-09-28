@@ -43,6 +43,26 @@ extern "C" {
 #include "MathematicaCompat.h"
 
 #ifdef KRANC_C
+
+  /* Grid function access */
+  /* var is a pointer to a grid point (an lvalue), i,j,k are offsets
+     with respect to that point.
+     For example: KRANC_GFINDEX3D_OFFSET(&u[ind3d],-1,-1,0) */
+#ifndef VECTORISE
+  /* standard, no vectorisation */
+  /* simple implementation */
+  /* #  define KRANC_GFOFFSET3D(var,i,j,k) ((var)[di*(i)+dj*(j)+dk*(k)]) */
+  /* more efficient implementation for some compilers */
+#  define KRANC_GFOFFSET3D(var,i,j,k)                                   \
+  (*(CCTK_REAL const*)&((char const*)(var))[cdi*(i)+cdj*(j)+cdk*(k)])
+#else
+  /* vectorised version */
+#  define KRANC_GFOFFSET3D(var,i,j,k)                                   \
+  vec_loadu_maybe3((i),(j),(k),                                         \
+                   *(CCTK_REAL const*)&                                 \
+                   ((char const*)(var))[cdi*(i)+cdj*(j)+cdk*(k)])
+#endif
+
 int sgn(CCTK_REAL x);
 
 int GenericFD_GetBoundaryWidth(cGH const * restrict const cctkGH);

@@ -67,14 +67,6 @@ int sgn(CCTK_REAL x);
 
 int GenericFD_GetBoundaryWidth(cGH const * restrict const cctkGH);
 
-#ifdef __cplusplus
-// Define the restrict qualifier
-#  ifdef CCTK_CXX_RESTRICT
-#    undef restrict
-#    define restrict CCTK_CXX_RESTRICT
-#  endif
-#endif
-
 void GenericFD_GetBoundaryInfo(cGH const * restrict cctkGH,
                                int const * restrict cctk_lsh,
                                int const * restrict cctk_lssh,

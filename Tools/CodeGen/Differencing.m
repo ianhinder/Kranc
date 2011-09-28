@@ -503,20 +503,15 @@ DifferenceGFTerm[op_, i_, j_, k_, vectorise_] :=
     If[CodeGen`SOURCELANGUAGE == "C",
 
   If[vectorise,
-    remaining "vec_loadu_maybe3" <>
-      "(" <> ToString[CFormHideStrings[nx /. {dir1->1, dir2->1, dir3->1}]] <> "," <>
-             ToString[CFormHideStrings[ny /. {dir1->1, dir2->1, dir3->1}]] <> "," <>
-             ToString[CFormHideStrings[nz /. {dir1->1, dir2->1, dir3->1}]] <> "," <>
-      "*(CCTK_REAL const*)&((char const*)(u))" <>
-        "[cdi*(" <> ToString[CFormHideStrings[nx]] <> ")" <>
-        "+cdj*(" <> ToString[CFormHideStrings[ny]] <> ")" <>
-        "+cdk*(" <> ToString[CFormHideStrings[nz]] <> ")])",
+    remaining "KRANC_GFOFFSET3D(u," <>
+      ToString[CFormHideStrings[nx /. {dir1->1, dir2->1, dir3->1}]] <> "," <>
+      ToString[CFormHideStrings[ny /. {dir1->1, dir2->1, dir3->1}]] <> "," <>
+      ToString[CFormHideStrings[nz /. {dir1->1, dir2->1, dir3->1}]] <> ")",
 
-    remaining
-      "(*(CCTK_REAL const*)&((char const*)(u))" <>
-        "[cdi*(" <> ToString[CFormHideStrings[nx]] <> ")" <>
-        "+cdj*(" <> ToString[CFormHideStrings[ny]] <> ")" <>
-        "+cdk*(" <> ToString[CFormHideStrings[nz]] <> ")])"],
+    remaining "KRANC_GFOFFSET3D(u," <>
+      ToString[CFormHideStrings[nx]] <> "," <>
+      ToString[CFormHideStrings[ny]] <> "," <>
+      ToString[CFormHideStrings[nz]] <> ")"],
 
     remaining "u(" <> ToString[FortranForm[i+nx]] <> "," <> 
       ToString[FortranForm[j+ny]] <> "," <> ToString[FortranForm[k+nz]] <> ")"] ];

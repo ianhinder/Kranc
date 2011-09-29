@@ -79,10 +79,13 @@ makeCalculationExplicit[calc_] :=
      CollectList -> ExpandComponents,
      Equations -> ExpandComponents}];
 
+deleteDuplicates[l_] :=
+  Split[Sort[l]][[All, 1]];
+
 makeGroupExplicit[g_] :=
   Module[{variables, newVariables, newGroup},
     variables = groupVariables[g];
-    newVariables = DeleteDuplicates[ExpandComponents[variables]];
+    newVariables = deleteDuplicates[ExpandComponents[variables]];
     newGroup = SetGroupVariables[g, newVariables];
     newGroup];
 

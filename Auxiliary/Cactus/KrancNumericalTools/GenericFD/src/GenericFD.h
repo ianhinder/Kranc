@@ -45,11 +45,11 @@ extern "C" {
 #ifdef KRANC_C
 
   /* Grid function access */
-  /* var is a pointer to a grid point (an lvalue), i,j,k are offsets
-     with respect to that point.
+  /* var is a pointer to a grid point, i,j,k are offsets with respect
+     to that point.
      For example: KRANC_GFINDEX3D_OFFSET(&u[ind3d],-1,-1,0) */
 #ifndef VECTORISE
-  /* standard, no vectorisation */
+  /* standard, thorn Vectors is not used */
   /* simple implementation */
   /* #  define KRANC_GFOFFSET3D(var,i,j,k) ((var)[di*(i)+dj*(j)+dk*(k)]) */
   /* more efficient implementation for some compilers */

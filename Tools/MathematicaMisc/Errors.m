@@ -9,6 +9,7 @@ VerifyStringList;
 VerifyList;
 InfoMessage;
 SetDebugLevel;
+ErrorDefinition::usage = "ErrorDefinition[f] creates a default definition of a function f which throws an exception.  This can be used to catch programming errors where f is called with incorrect arguments.";
 
 DebugQuiet = 0;
 Warnings = 1
@@ -87,6 +88,10 @@ InfoMessage[level_, message__] :=
 
 SetDebugLevel[level_] :=
   debugLevel = level;
+
+ErrorDefinition[x_] :=
+  x[args___] :=
+    ThrowError["Invalid arguments to "<>ToString[x], {args}//FullForm];
 
 End[];
 

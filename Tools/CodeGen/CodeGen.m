@@ -526,7 +526,7 @@ InitialiseFDVariables[vectorise_] :=
       DeclareAssignVariable[DataType[], "hdzi", "0.5 * dzi"]}]}];
 
 GridName[x_] := If[SOURCELANGUAGE == "C",
-                   ToExpression[ToString[x] <> "[index]"],
+                   ToString[x] <> "[index]",
                    ToString[x] <> "(i,j,k)"
                 ];
 

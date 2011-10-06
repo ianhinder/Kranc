@@ -223,7 +223,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     (* Add the predefinitions into the calcs *)
     calcs = Map[Join[#, {PreDefinitions -> pDefs}] &, calcs];
 
-    ext = CodeGen`SOURCESUFFIX;
+    ext = CodeGenC`SOURCESUFFIX;
 
     (* Construct a source file for each calculation *)
     allParams = Join[Map[ParamName, realParamDefs],

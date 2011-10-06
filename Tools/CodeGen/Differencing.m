@@ -125,7 +125,7 @@ point. Should be checked by someone competent!
 
 *)
 
-BeginPackage["Differencing`", {"CodeGen`", "Kranc`", "MapLookup`", 
+BeginPackage["Differencing`", {"CodeGen`", "CodeGenC`", "CodeGenCactus`", "Kranc`", "MapLookup`", 
              (* "LinearAlgebra`MatrixManipulation`", *) "Errors`"}];
 
 CreateDifferencingHeader::usage = "";
@@ -500,7 +500,7 @@ DifferenceGFTerm[op_, i_, j_, k_, vectorise_] :=
     If[Cases[{remaining}, shift[_], Infinity] != {},
       ThrowError["Could not parse difference operator", op]];
     
-    If[CodeGen`SOURCELANGUAGE == "C",
+    If[CodeGenC`SOURCELANGUAGE == "C",
 
   If[vectorise,
     remaining "KRANC_GFOFFSET3D(u," <>

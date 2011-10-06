@@ -19,7 +19,7 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-BeginPackage["CalculationFunction`", {"CodeGen`",
+BeginPackage["CalculationFunction`", {"CodeGenCactus`", "CodeGenC`", "CodeGen`",
   "MapLookup`", "KrancGroups`", "Differencing`", "Errors`",
   "Helpers`", "Kranc`", "Optimize`", "Jacobian`"}];
 

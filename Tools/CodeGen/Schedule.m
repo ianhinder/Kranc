@@ -109,7 +109,7 @@ scheduleCalc[calc_, groups_] :=
         SynchronizedGroups -> If[StringMatchQ[#, "*MoL_CalcRHS*", IgnoreCase -> True] || StringMatchQ[#, "*MoL_RHSBoundaries*", IgnoreCase -> True],
                                  {},
                                  groupsToSync],
-        Language           -> CodeGen`SOURCELANGUAGE, 
+        Language           -> CodeGenC`SOURCELANGUAGE, 
         Comment            -> lookup[calc, Name]
       },
        If[triggered, {TriggerGroups -> lookup[calc, TriggerGroups]},
@@ -147,7 +147,7 @@ scheduleCalc[calc_, groups_] :=
       fnSched = {
         Name               -> lookup[calc, Name],
         SchedulePoint      -> "in " <> groupName,
-        Language           -> CodeGen`SOURCELANGUAGE,
+        Language           -> CodeGenC`SOURCELANGUAGE,
         Comment            -> lookup[calc, Name]
       };
 
@@ -165,7 +165,7 @@ scheduleCalc[calc_, groups_] :=
         SchedulePoint      -> "in " <> bcGroupName,
         SynchronizedGroups -> groupsToSync,
         Options               -> "level",
-        Language           -> CodeGen`SOURCELANGUAGE,
+        Language           -> CodeGenC`SOURCELANGUAGE,
         Comment            -> lookup[calc, Name] <> "_SelectBCs"
       };
 

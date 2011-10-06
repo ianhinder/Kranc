@@ -18,7 +18,8 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-BeginPackage["Jacobian`", {"Errors`", "Helpers`", "Kranc`", "Differencing`", "MapLookup`", "CodeGen`", "KrancGroups`"}];
+BeginPackage["Jacobian`", {"Errors`", "Helpers`", "Kranc`", "Differencing`", "MapLookup`",
+                           "CodeGen`", "CodeGenC`", "KrancGroups`"}];
 
 JacobianQ;
 InsertJacobian;

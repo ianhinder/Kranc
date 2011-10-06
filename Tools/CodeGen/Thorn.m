@@ -23,7 +23,7 @@
 (* This package provides a set of functions to create the various
    parts of a Cactus thorn and assemble them. *)
 
-BeginPackage["Thorn`", "CodeGen`", "CalculationFunction`",
+BeginPackage["Thorn`", "CodeGen`", "CodeGenC`", "CodeGenCactus`", "CalculationFunction`",
   "CalculationBoundaries`", "MapLookup`", "KrancGroups`", "Helpers`",
   "Errors`", "Kranc`"];
 
@@ -502,11 +502,11 @@ CreateSetterSource[calcs_, debug_, include_, imp_,
   If[!MatchQ[include, _List],
     Throw["CreateSetterSource: Include should be a list but is in fact " <> ToString[include]]];
 
-  {whoWhen[CodeGen`SOURCELANGUAGE],
+  {whoWhen[CodeGenC`SOURCELANGUAGE],
 
-   "#define KRANC_" <> ToUpperCase[CodeGen`SOURCELANGUAGE] <> "\n\n",
+   "#define KRANC_" <> ToUpperCase[CodeGenC`SOURCELANGUAGE] <> "\n\n",
 
-   If[CodeGen`SOURCELANGUAGE == "C",
+   If[CodeGenC`SOURCELANGUAGE == "C",
          {IncludeSystemFile["assert.h"],
           IncludeSystemFile["math.h"],
           IncludeSystemFile["stdio.h"],
@@ -593,8 +593,8 @@ CreateSymmetriesRegistrationSource[thornName_, implementationName_, GFs_, reflec
       Print["Registering Symmetries for: ", GFs];
     ];
 
-  lang = CodeGen`SOURCELANGUAGE;
-  CodeGen`SOURCELANGUAGE = "C";
+  lang = CodeGenC`SOURCELANGUAGE;
+  CodeGenC`SOURCELANGUAGE = "C";
 
   spec = Table[{FullName -> implementationName <> "::" <> ToString@GFs[[j]],
                 Sym      -> If[reflectionSymmetries === False,
@@ -617,7 +617,7 @@ CreateSymmetriesRegistrationSource[thornName_, implementationName_, GFs_, reflec
 ]
   };
 
-  CodeGen`SOURCELANGUAGE = lang;
+  CodeGenC`SOURCELANGUAGE = lang;
 
 tmp
 ];
@@ -644,8 +644,8 @@ CreateMoLRegistrationSource[spec_, debug_] :=
     Print["  Primitive Gridfunctions: ", lookup[spec, PrimitiveGFs] ];
     ];
 	
-    lang = CodeGen`SOURCELANGUAGE;
-    CodeGen`SOURCELANGUAGE= "C";
+    lang = CodeGenC`SOURCELANGUAGE;
+    CodeGenC`SOURCELANGUAGE= "C";
 
     tmp = {whoWhen["C"],
 
@@ -676,7 +676,7 @@ CreateMoLRegistrationSource[spec_, debug_] :=
           lookup[spec, PrimitiveGFs]]],  *)
 	"return;\n"}]};
 
-      CodeGen`SOURCELANGUAGE = lang;
+      CodeGenC`SOURCELANGUAGE = lang;
 
 tmp
 ];
@@ -909,8 +909,8 @@ CreateMoLBoundariesSource[spec_] :=
      "\n}\n"}];
 
 
-   lang = CodeGen`SOURCELANGUAGE;
-   CodeGen`SOURCELANGUAGE = "C";
+   lang = CodeGenC`SOURCELANGUAGE;
+   CodeGenC`SOURCELANGUAGE = "C";
 
   tmp = {whoWhen["C"],
 
@@ -960,7 +960,7 @@ CreateMoLBoundariesSource[spec_] :=
      "*/\n\n"
      };
 
-	 CodeGen`SOURCELANGUAGE = lang;
+	 CodeGenC`SOURCELANGUAGE = lang;
 tmp
 ];
 
@@ -972,8 +972,8 @@ CreateMoLExcisionSource[spec_] :=
  
   Print["Applying excision to GFs: ", gfs];
  
-  currentlang = CodeGen`SOURCELANGUAGE;
-  CodeGen`SOURCELANGUAGE = "Fortran";
+  currentlang = CodeGenC`SOURCELANGUAGE;
+  CodeGenC`SOURCELANGUAGE = "Fortran";
 
   excisionExtrap[gf_] :=  "  call ExcisionExtrapolate(ierr, "
     <> ToString@gf <> ", " <> ToString@gf
@@ -1057,7 +1057,7 @@ CreateMoLExcisionSource[spec_] :=
      "return\n"}]
 };
 
-CodeGen`SOURCELANGUAGE = currentlang;
+CodeGenC`SOURCELANGUAGE = currentlang;
 
 body
 ];
@@ -1244,8 +1244,8 @@ CreateMPCharSource[spec_, debug_] :=
 
   groups = Map[unqualifiedGroupName, lookup[spec, Groups]];
 
-  lang = CodeGen`SOURCELANGUAGE;
-  CodeGen`SOURCELANGUAGE = "C";
+  lang = CodeGenC`SOURCELANGUAGE;
+  CodeGenC`SOURCELANGUAGE = "C";
 
   tmp = {whoWhen["C"],
 
@@ -1307,7 +1307,7 @@ charInfoFunction["C2P", spec, debug],      "\n\n",
 charInfoFunction["WHATEVER", spec, debug]
 };
 
-CodeGen`SOURCELANGUAGE = lang;
+CodeGenC`SOURCELANGUAGE = lang;
 tmp
 ];
 
@@ -1334,8 +1334,8 @@ CreatePrecompMacros[functions_] :=
 CreateStartupFile[thornName_, bannerText_] :=
   Module[{tmp, lang},
   
-  lang = CodeGen`SOURCELANGUAGE;
-  CodeGen`SOURCELANGUAGE = "C";
+  lang = CodeGenC`SOURCELANGUAGE;
+  CodeGenC`SOURCELANGUAGE = "C";
 
   tmp = {whoWhen["C"],
 
@@ -1345,7 +1345,7 @@ CreateStartupFile[thornName_, bannerText_] :=
       "CCTK_RegisterBanner(banner);\n",
       "return 0;\n"}]};
 
-  CodeGen`SOURCELANGUAGE = lang;
+  CodeGenC`SOURCELANGUAGE = lang;
 
   tmp
    ];

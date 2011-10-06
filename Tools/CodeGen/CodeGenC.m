@@ -1,0 +1,243 @@
+
+(* $Id$ *)
+
+(*  Copyright 2004 Sascha Husa, Ian Hinder, Christiane Lechner
+
+    This file is part of Kranc.
+
+    Kranc is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    Kranc is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Kranc; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*)
+
+BeginPackage["CodeGenC`", {"Errors`", "Kranc`", "CodeGen`"}];
+
+SOURCELANGUAGE::usage = "global variable == \"C\" or \"Fortran\" determines language
+                        for code generation";
+SOURCESUFFIX::usage = "file suffix for source files";
+SetSourceLanguage::usage = "set the source language to  \"C\" or \"Fortran\"";
+
+EOL::usage = "the end of line termination string";
+
+CommentedBlock::usage = "CommentedBlock[comment, block] returns a block consisting " <>
+  "of 'comment' followed by 'block'.";
+CBlock::usage = "";
+SuffixedCBlock::usage = "";
+IncludeFile::usage = "IncludeFile[name] returns a block of code" <>
+  "that includes a header file (i.e '#include \"name\"').";
+IncludeSystemFile::usage = "IncludeFile[name] returns a block of code" <>
+  "that includes a system header file (i.e '#include <name>').";
+DeclareVariable::usage = "DeclareVariable[name, type] returns a block of code " <>
+  "that declares a variable of given name and type.  'name' and 'type' should be " <>
+  "strings.";
+DeclareVariableNoInit::usage = "DeclareVariableNoInit[name, type] returns a block of code " <>
+  "that declares a variable of given name and type without initialising it.  'name' and 'type' should be " <>
+  "strings.";
+DeclareVariables::usage = "DeclareVariables[names, type] returns a block of code " <>
+  "that declares a list of variables of given name and type.  'names' should be a list" <>
+  " of strings and 'type' should be a string string.";
+DeclarePointer::usage = "DeclarePointer[name, type] returns a block of code " <>
+  "that declares a pointer of given name and type.  'name' and 'type' should be " <>
+  "strings.";
+DeclarePointers::usage = "DeclarePointers[names, type] returns a block of code " <>
+  "that declares a list of pointers of given name and type.  'names' should be a list" <>
+  " of strings and 'type' should be a string string.";
+DefineVariable::usage = "DefineVariable[name, type, value] returns a block of " <>
+  "code that declares and initialised a variable 'name' of type 'type' to value 'value'.";
+AssignVariable::usage = "AssignVariable[dest_, src_] returns a block of code " <>
+  "that assigns 'src' to 'dest'.";
+DeclareAssignVariable::usage = "DeclareAssignVariable[type_, dest_, src_] returns a block of code " <>
+  "that declares and sets a constant variable of given name and type.";
+DeclareArray::usage = "";
+DefineFunction::usage = "";
+DefineSubroutine::usage = "";
+Conditional::usage = "";
+SwitchStatement::usage = "";
+CFormHideStrings::usage = "";
+
+Begin["`Private`"];
+
+SOURCELANGUAGE =  "C";
+SOURCESUFFIX   = ".cc";
+
+setSourceSuffix[lang_] :=
+  If[lang == "C", SOURCESUFFIX = ".cc", SOURCESUFFIX = ".F90"];
+
+SetSourceLanguage[lang_] :=
+  If[lang == "C" || lang == "Fortran",
+     SOURCELANGUAGE = lang;
+     setSourceSuffix[lang];
+     InfoMessage[Terse, "User set source language to " <> lang],
+     (* else *)
+     SOURCELANGUAGE = "C";
+     setSourceSuffix[".cc"];
+     InfoMessage[Terse, "Setting Source Language to C"]];
+
+EOL[dummy___] :=
+  If[SOURCELANGUAGE == "C" || SOURCELANGUAGE == "C++", ";\n", "\n"];
+
+IncludeFile[filename_String] :=
+  {"#include \"", filename, "\"\n"};
+ErrorDefinition[IncludeFile];
+
+IncludeSystemFile[filename_String] :=
+  {"#include <", filename, ">\n"};
+ErrorDefinition[IncludeSystemFile];
+
+DeclareVariable[name:(_String|_Symbol), type_String] :=
+  If[SOURCELANGUAGE == "C",
+     {type, " ",    name, " = INITVALUE" <> EOL[]},
+     {type, " :: ", name, EOL[]} (* no value init here to avoid implicit SAVE attribute *)];
+ErrorDefinition[DeclareVariable];
+
+DeclareVariableNoInit[name:(_String|_Symbol), type_String] :=
+  If[SOURCELANGUAGE == "C",
+     {type, " ",    name, EOL[]},
+     {type, " :: ", name, EOL[]} (* no value init here to avoid implicit SAVE attribute *)];
+ErrorDefinition[DeclareVariableNoInit];
+
+DeclareVariables[names_?ListQ, type_String] := 
+  If[SOURCELANGUAGE == "C",
+     {type, " ",    CommaSeparated@names, EOL[]},
+     {type, " :: ", CommaSeparated@names,     EOL[]} (* no value init avoids implicit SAVE attribute *)];
+ErrorDefinition[DeclareVariables];
+
+DeclarePointer[name:(_String|_Symbol), type_String] :=
+  If[SOURCELANGUAGE == "C",
+     {type, " *",    name, EOL[]},
+     {type, ", target :: ", name, EOL[]}];
+ErrorDefinition[DeclarePointer];
+
+DeclarePointers[names_?ListQ, type_String] :=
+  If[SOURCELANGUAGE == "C",
+     {type, " *",           CommaInitSeparated@names, EOL[]},
+     {type, ", target :: ", CommaSeparated@names,     EOL[]}];
+ErrorDefinition[DeclarePointers];
+
+DeclareArray[name:(_String|_Symbol), dim_Integer, type_String] :=
+  If[SOURCELANGUAGE == "C",
+     DeclareArrayC[name, dim, type],
+     DeclareArrayFortran[name, dim, type]];
+ErrorDefinition[DeclareArray];
+
+DeclareArrayC[name:(_String|_Symbol), dim_Integer, type_String] :=
+  {type, " ", name, "[", dim, "];","\n"};
+ErrorDefinition[DeclareArrayC];
+
+DeclareArrayFortran[name:(_String|_Symbol), dim_Integer, type_String] :=
+  {type, " :: ", name, "(", dim, ")","\n"};
+ErrorDefinition[DeclareArrayFortran];
+
+DefineVariable[name:(_String|_Symbol), type_String, value:CodeGenBlock] :=
+  {type, " ", name, " = ", value, EOL[]};
+ErrorDefinition[DefineVariable];
+
+AssignVariable[dest:(_String|_Symbol), src:CodeGenBlock] :=
+  {dest, " = ", src, EOL[]};
+ErrorDefinition[AssignVariable];
+
+DeclareAssignVariable[type_String, dest:(_String|_Symbol), src:CodeGenBlock] :=
+  {type, " const ", dest, " = ", src, EOL[]};
+ErrorDefinition[DeclareAssignVariable];
+
+(* comments are always done C-style because they are killed by cpp anyway *) 
+insertComment[text:CodeGenBlock] := {"/* ", text, " */\n"};
+ErrorDefinition[insertComment];
+
+CBlock[block:CodeGenBlock] :=
+  {"{\n",
+   IndentBlock[block],
+   "}\n"};
+ErrorDefinition[CBlock];
+
+SuffixedCBlock[block:CodeGenBlock, suffix_] :=
+  {"{\n",
+   IndentBlock[block],
+   "} ", suffix, "\n"};
+ErrorDefinition[SuffixedCBlock];
+
+CommentedBlock[comment:CodeGenBlock, block:CodeGenBlock] :=
+  SeparatedBlock[{insertComment[comment],
+                  block}];
+ErrorDefinition[CommentedBlock];
+
+(* FUNCTIONS *)
+
+defineFunctionC[name_String, type_String, args:CodeGenBlock, contents:CodeGenBlock] :=
+  SeparatedBlock[
+    {type, " ", name, "(", args, ")\n",
+     CBlock[contents]}];
+ErrorDefinition[defineFunctionC];
+     
+defineFunctionF[name_String, args:CodeGenBlock, contents:CodeGenBlock] :=
+  SeparatedBlock[
+    {"FUNCTION", " ", name, "(", args, ")\n",
+     IndentBlock[contents]}];
+ErrorDefinition[defineFunctionF];
+
+DefineFunction[name_String, type_String, args:CodeGenBlock, contents:CodeGenBlock] :=
+  If[SOURCELANGUAGE == "C",
+     defineFunctionC[name, type, args, contents],
+     defineFunctionF[name, args, contents]];
+ErrorDefinition[DefineFunction];
+
+(* SUBROUTINES *)
+
+DefineSubroutine[name_String, args:CodeGenBlock, contents:CodeGenBlock] :=
+  If[SOURCELANGUAGE == "C",
+     DefineSubroutineC[name, args, contents],
+     DefineSubroutineF[name, args, contents]];
+ErrorDefinition[DefineSubroutine];
+
+DefineSubroutineC[name_String, args:CodeGenBlock, contents:CodeGenBlock] :=
+  SeparatedBlock[
+    {"extern \"C\" void ", name, "(", args, ")", "\n",
+     CBlock[contents]}];
+ErrorDefinition[DefineSubroutineC];
+
+DefineSubroutineF[name_String, args:CodeGenBlock, contents:CodeGenBlock] :=
+  SeparatedBlock[
+    {"subroutine ", name, "(", args, ")", "\n",
+     "\nimplicit none\n\n",
+     contents,
+     "end subroutine\n"}];
+ErrorDefinition[DefineSubroutineF];
+
+switchOption[{value:(_String|_Symbol|_?NumberQ), block:CodeGenBlock}] :=
+  {"case ", value, ":\n", IndentBlock[{block,"break;\n"}]}; (* Outer list unnecessary? *)
+ErrorDefinition[switchOptions];
+
+SwitchStatement[var:(_String|_Symbol), pairs__] :=
+  {"switch(", var, ")\n",
+   CBlock[{Riffle[Map[switchOption, {pairs}],"\n"]}]};
+ErrorDefinition[SwitchStatement];
+
+Conditional[condition:CodeGenBlock, block:CodeGenBlock] :=
+  {"if (", condition, ")\n",
+   CBlock[block]};
+ErrorDefinition[Conditional];
+
+Conditional[condition:CodeGenBlock, block1:CodeGenBlock, block2:CodeGenBlock] :=
+  {"if (", condition, ")\n",
+   CBlock[block1], "else\n", CBlock[block2]};
+ErrorDefinition[Conditional];
+
+(* Convert an expression to CForm, but remove the quotes from any
+   strings present *)
+CFormHideStrings[x_, opts___] :=
+  StringReplace[ToString[CForm[x,opts]], "\"" -> ""];
+ErrorDefinition[CFormHideStrings];
+
+End[];
+
+EndPackage[];

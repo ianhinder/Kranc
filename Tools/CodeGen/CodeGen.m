@@ -176,7 +176,10 @@ DataType[] :=
 
 (* Code generation utilities; not specific to any language *)
 
-FlattenBlock[b_] := Apply[StringJoin,Map[ToString,If[! AtomQ[b], Flatten[b, Infinity], b]]];
+(* FlattenBlock *)
+FlattenBlock[x_String] := x;
+FlattenBlock[l_List] := StringJoin@@Map[FlattenBlock, l];
+FlattenBlock[a_?AtomQ] := ToString[a];
 
 indentBlock[block_] :=
   StringDrop["  " <> StringReplace[FlattenBlock[block], {"\n" -> "\n  "}],-2];

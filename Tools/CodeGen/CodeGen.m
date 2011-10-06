@@ -196,30 +196,20 @@ AddToFile[filename_, contents_] :=
       WriteString[fp, FlattenBlock[contents]];
           Close[fp]];
 
-intersperse[l_, x_] :=
-  If[l == {},
-    {},
-    If[Rest[l] == {},
-      {l[[1]]},
-      Join[{l[[1]]}, {x}, intersperse[Rest[l],x]]]];
+CommaNewlineSeparated[l_List] := Riffle[l, ",\n"];
 
-CommaNewlineSeparated[l_] := intersperse[l, ",\n"];
 
-SpaceSeparated[l_] := 
-  Module[{},
-  If[!ListQ[l],
-    ThrowError["SpaceSeparated: Expecting a list, but was given", l]];
-  intersperse[l, " "]];
+  Riffle[l, " "];
 
 CommaSeparated[l_] := 
-  intersperse[l, ", "];
+  Riffle[l, ", "];
 
 NewlineSeparated[l_] := 
-  intersperse[l, "\n"];
+  Riffle[l, "\n"];
 
 CommaInitSeparated[l_] :=
-  intersperse[Map[{#," = INITVALUE"} &, l], ", "];
-(*  intersperse[l, " = INITVALUE, "];*)
+  Riffle[Map[{#," = INITVALUE"} &, l], ", "];
+(*  Riffle[l, " = INITVALUE, "];*)
 
 
 

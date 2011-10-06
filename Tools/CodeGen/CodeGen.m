@@ -142,6 +142,10 @@ SetDataType::usage = "SetDataType[type] sets a string for the grid function data
 Conditional;
 SwitchStatement;
 
+CodeGenBlock := _String | _?AtomQ | List[(_?(MatchQ[#, CodeGenBlock] &)) ...];
+
+Boolean = (True | False);
+
 Begin["`Private`"];
 
 SOURCELANGUAGE =  "C";
@@ -176,40 +180,49 @@ DataType[] :=
 
 (* Code generation utilities; not specific to any language *)
 
-(* FlattenBlock *)
 FlattenBlock[x_String] := x;
 FlattenBlock[l_List] := StringJoin@@Map[FlattenBlock, l];
 FlattenBlock[a_?AtomQ] := ToString[a];
+ErrorDefinition[FlattenBlock];
 
-indentBlock[block_] :=
+indentBlock[block:CodeGenBlock] :=
   StringDrop["  " <> StringReplace[FlattenBlock[block], {"\n" -> "\n  "}],-2];
+ErrorDefinition[indentBlock];
 
-SeparatedBlock[block_] := {"\n", block};
+SeparatedBlock[block:CodeGenBlock] := {"\n", block};
+ErrorDefinition[SeparatedBlock];
 
-GenerateFile[filename_, contents_] :=
+GenerateFile[filename_String, contents:CodeGenBlock] :=
   Module[{fp = OpenWrite[filename]},
     WriteString[fp, FlattenBlock[contents]];
     Close[fp]];
+ErrorDefinition[GenerateFile];
 
-AddToFile[filename_, contents_] :=
+AddToFile[filename_String, contents:CodeGenBlock] :=
   Module[{fp = OpenAppend[filename]},
       WriteString[fp, FlattenBlock[contents]];
           Close[fp]];
+ErrorDefinition[AddToFile];
 
 CommaNewlineSeparated[l_List] := Riffle[l, ",\n"];
+ErrorDefinition[CommaNewlineSeparated];
 
-
+SpaceSeparated[l_List] := 
   Riffle[l, " "];
+ErrorDefinition[SpaceSeparated];
 
-CommaSeparated[l_] := 
+CommaSeparated[l_List] := 
   Riffle[l, ", "];
+ErrorDefinition[CommaSeparated];
 
-NewlineSeparated[l_] := 
+NewlineSeparated[l_List] := 
   Riffle[l, "\n"];
+ErrorDefinition[NewlineSeparated];
 
-CommaInitSeparated[l_] :=
+CommaInitSeparated[l_List] :=
   Riffle[Map[{#," = INITVALUE"} &, l], ", "];
 (*  Riffle[l, " = INITVALUE, "];*)
+ErrorDefinition[CommaInitSeparated];
 
 
 
@@ -218,22 +231,24 @@ CommaInitSeparated[l_] :=
    2. break the string into lines to make it readable (replace all newlines
       with quote-newline-quote)
    3. surround the result with quotes *)
-Stringify[x_] := "\"" <>
+Stringify[x:CodeGenBlock] := "\"" <>
                  StringReplace[StringReplace[FlattenBlock[x],
                    "\"" -> "\\\""], "\n" -> "\\n\"\n\""] <>
                  "\"\n";
+ErrorDefinition[Stringify];
 
 
 
-NameRoot[name_] := Module[{dropNumberRule, root},
+NameRoot[name_Symbol] := Module[{dropNumberRule, root},
 
       dropNumberRule = {"1" -> "", "2" -> "", "3" -> "", "4" -> "", "5" -> "",
                         "6" -> "", "7" -> "", "8" -> "", "9" -> "", "0" -> "", "rhs" -> ""};
 
       root = StringReplace[ToString@name, dropNumberRule]
       ];
+ErrorDefinition[NameRoot];
 
-PartitionVarList[list_]:= Module[{partition, split},
+PartitionVarList[list_List]:= Module[{partition, split},
 
 partition[locallist_] := Module[{cutoff},
   cutoff = 6;
@@ -245,70 +260,83 @@ split = Flatten[Map[partition, split], 1];
 
 split
 ];
+ErrorDefinition[PartitionVarList];
 
 
 (* Code generation for generic C and C-preprocessed Fortran *)
 
 EOL[dummy___] := If[SOURCELANGUAGE == "C" || SOURCELANGUAGE == "C++", ";\n", "\n"];
 
-IncludeFile[filename_] :=
+IncludeFile[filename_String] :=
   {"#include \"", filename, "\"\n"};
+ErrorDefinition[IncludeFile];
 
-IncludeSystemFile[filename_] :=
+IncludeSystemFile[filename_String] :=
   {"#include <", filename, ">\n"};
+ErrorDefinition[IncludeSystemFile];
 
-DeclareVariable[name_, type_] :=
+DeclareVariable[name:(_String|_Symbol), type_String] :=
 If[SOURCELANGUAGE == "C",
   {type, " ",    name, " = INITVALUE" <> EOL[]},
   {type, " :: ", name, EOL[]} (* no value init here to avoid implicit SAVE attribute *)
   ];
+ErrorDefinition[DeclareVariable];
 
-DeclareVariableNoInit[name_, type_] :=
+DeclareVariableNoInit[name:(_String|_Symbol), type_String] :=
 If[SOURCELANGUAGE == "C",
   {type, " ",    name, EOL[]},
   {type, " :: ", name, EOL[]} (* no value init here to avoid implicit SAVE attribute *)
   ];
+ErrorDefinition[DeclareVariableNoInit];
 
-
-DeclareVariables[names_?ListQ, type_] := 
+DeclareVariables[names_?ListQ, type_String] := 
 If[SOURCELANGUAGE == "C",
    {type, " ",    CommaSeparated@names, EOL[]},
    {type, " :: ", CommaSeparated@names,     EOL[]} (* no value init avoids implicit SAVE attribute *)
    ];
+ErrorDefinition[DeclareVariables];
 
-DeclarePointer[name_, type_] :=
+DeclarePointer[name:(_String|_Symbol), type_String] :=
 If[SOURCELANGUAGE == "C",
   {type, " *",    name, EOL[]},
   {type, ", target :: ", name, EOL[]}
   ];
+ErrorDefinition[DeclarePointer];
 
-DeclarePointers[names_?ListQ, type_] :=
+DeclarePointers[names_?ListQ, type_String] :=
 If[SOURCELANGUAGE == "C",
    {type, " *",           CommaInitSeparated@names, EOL[]},
    {type, ", target :: ", CommaSeparated@names,     EOL[]} 
    ];
+ErrorDefinition[DeclarePointers];
 
-DeclareArray[name_, dim_, type_] :=
+DeclareArray[name:(_String|_Symbol), dim_Integer, type_String] :=
   If[SOURCELANGUAGE == "C",
      DeclareArrayC[name, dim, type],
      DeclareArrayFortran[name, dim, type]];
+ErrorDefinition[DeclareArray];
 
-DeclareArrayC[name_, dim_, type_] :=
+DeclareArrayC[name:(_String|_Symbol), dim_Integer, type_String] :=
   {type, " ", name, "[", dim, "];","\n"};
+ErrorDefinition[DeclareArrayC];
 
-DeclareArrayFortran[name_, dim_, type_] :=
+DeclareArrayFortran[name:(_String|_Symbol), dim_Integer, type_String] :=
   {type, " :: ", name, "(", dim, ")","\n"};
+ErrorDefinition[DeclareArrayFortran];
 
-DefineVariable[name_, type_, value_] :=
+DefineVariable[name:(_String|_Symbol), type_String, value:CodeGenBlock] :=
   {type, " ", name, " = ", value, EOL[]};
+ErrorDefinition[DefineVariable];
 
-AssignVariable[dest_, src_] :=
+AssignVariable[dest:(_String|_Symbol), src:CodeGenBlock] :=
   {dest, " = ", src, EOL[]};
+ErrorDefinition[AssignVariable];
 
-DeclareAssignVariable[type_, dest_, src_] :=
+DeclareAssignVariable[type_String, dest:(_String|_Symbol), src:CodeGenBlock] :=
   {type, " const ", dest, " = ", src, EOL[]};
+ErrorDefinition[DeclareAssignVariable];
 
-AssignVariableInLoop[dest_, src_, vectorise_:False] :=
+AssignVariableInLoop[dest:(_String|_Symbol), src:CodeGenBlock, vectorise_:False] :=
   Module[{loader},
     loader[x_] := If[vectorise, {"vec_load(", x, ")"}, x];
     {dest, " = ", loader[src], EOL[]}];
@@ -316,38 +344,48 @@ AssignVariableInLoop[dest_, src_, vectorise_:False] :=
   {dest, " = ", src, EOL[],
    TestForNaN[dest]};
 *)
+ErrorDefinition[AssignVariableInLoop];
 
-StoreVariableInLoop[dest_, src_] :=
+StoreVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol)] :=
   {"vec_store_nta(", dest, ",", src, ")", EOL[]};
+ErrorDefinition[StoreVariableInLoop];
 
-StoreLowPartialVariableInLoop[dest_, src_, count_] :=
+StoreLowPartialVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol), count_String] :=
   {"vec_store_nta_partial_lo(", dest, ",", src, ",", count, ")", EOL[]};
+ErrorDefinition[StoreLowPartialVariableInLoop];
 
-StoreHighPartialVariableInLoop[dest_, src_, count_] :=
+StoreHighPartialVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol), count_String] :=
   {"vec_store_nta_partial_hi(", dest, ",", src, ",", count, ")", EOL[]};
+ErrorDefinition[StoreHighPartialVariableInLoop];
 
-StoreMiddlePartialVariableInLoop[dest_, src_, countLow_, countHigh_] :=
+StoreMiddlePartialVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol), countLow_String, countHigh_String] :=
   {"vec_store_nta_partial_mid(", dest, ",", src, ",", countLow, ",", countHigh, ")", EOL[]};
+ErrorDefinition[StoreMiddlePartialVariableInLoop];
 
-StorePartialVariableInLoop[dest_, src_] :=
+StorePartialVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol)] :=
   {"vec_store_nta_partial(", dest, ",", src, ")", EOL[]};
+ErrorDefinition[StorePartialVariableInLoop];
 
-DeclareAssignVariableInLoop[type_, dest_, src_] :=
+DeclareAssignVariableInLoop[type_String, dest:(_String|_Symbol), src:(_String|_Symbol)] :=
   {type, " const ", dest, " = vec_load(", src, ")", EOL[]};
+ErrorDefinition[DeclareAssignVariableInLoop];
 
-MaybeAssignVariableInLoop[dest_, src_, cond_] :=
+MaybeAssignVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol), cond:Boolean] :=
   If [cond,
       {dest, " = useMatter ? vec_load(", src, ") : ToReal(0.0)", EOL[]},
       {dest, " = vec_load(", src, ")", EOL[]}];
+ErrorDefinition[MaybeAssignVariableInLoop];
 
-DeclareMaybeAssignVariableInLoop[type_, dest_, src_, mmaCond_, codeCond_, vectorise_:False] :=
+DeclareMaybeAssignVariableInLoop[type_String, dest:(_String|_Symbol), src:(_String|_Symbol), mmaCond:Boolean, codeCond:CodeGenBlock,
+                                 vectorise:Boolean:False] :=
   Module[{loader},
     loader[x_] := If[vectorise, {"vec_load(", x, ")"}, x];
     If [mmaCond,
         {type, " ", dest, " = (", codeCond, ") ? ", loader[src], " : ToReal(0.0)", EOL[]},
         {type, " ", dest, " = ", loader[src], EOL[]}]];
+ErrorDefinition[DeclareMaybeAssignVariableInLoop];
 
-TestForNaN[expr_] :=
+TestForNaN[expr:CodeGenBlock] :=
   {"if (isnan(", expr, ")) {\n",
    "  CCTK_VInfo(CCTK_THORNSTRING, \"NaN found\");\n",
    "  CCTK_VInfo(CCTK_THORNSTRING, \"ipos: %d %d %d\", i, j, k);\n",
@@ -356,22 +394,26 @@ TestForNaN[expr_] :=
    "  CCTK_VInfo(CCTK_THORNSTRING, \"LSSH: %d %d %d\", CCTK_LSSH(0,0), CCTK_LSSH(0,1), CCTK_LSSH(0,2));\n",
    "  CCTK_VInfo(CCTK_THORNSTRING, \"", expr, ": %.17g\", (double)", expr, ");\n",
    "}\n"};
+ErrorDefinition[TestForNaN];
 
 (* comments are always done C-style because they are killed by cpp anyway *) 
-insertComment[text_] := {"/* ", text, " */\n"};
+insertComment[text:CodeGenBlock] := {"/* ", text, " */\n"};
+ErrorDefinition[insertComment];
 
-CBlock[block_] :=
+CBlock[block:CodeGenBlock] :=
  {"{\n",
   indentBlock[block],
   "}\n"};
+ErrorDefinition[CBlock];
 
-SuffixedCBlock[block_, suffix_] :=
+SuffixedCBlock[block:CodeGenBlock, suffix_] :=
  {"{\n",
   indentBlock[block],
   "} ", suffix, "\n"};
+ErrorDefinition[SuffixedCBlock];
 
 
-loopOverInteger[name_, start_, endplusone_, block_] :=
+loopOverInteger[name_String, start_String, endplusone_String, block_CodeGenBlock] :=
 If[SOURCELANGUAGE == "C" || SOURCELANGUAGE == "C++",
 
   {"for (", name, " = ", start, "; ", name, " < ", endplusone, "; ", name, "++)\n",
@@ -384,47 +426,55 @@ If[SOURCELANGUAGE == "C" || SOURCELANGUAGE == "C++",
    indentBlock[block],
    "End Do\n"}
 ];
+ErrorDefinition[loopOverInteger];
 
 
-CommentedBlock[comment_, block_] :=
+CommentedBlock[comment:CodeGenBlock, block:CodeGenBlock] :=
   SeparatedBlock[{insertComment[comment],
                   block}];
+ErrorDefinition[CommentedBlock];
 
 (* FUNCTIONS *)
 
-defineFunctionC[name_, type_, args_, contents_] :=
+defineFunctionC[name_String, type_String, args:CodeGenBlock, contents:CodeGenBlock] :=
   SeparatedBlock[
     {type, " ", name, "(", args, ")\n",
       CBlock[contents]}];
+ErrorDefinition[defineFunctionC];
      
-defineFunctionF[name_, args_, contents_] :=
+defineFunctionF[name_String, args:CodeGenBlock, contents:CodeGenBlock] :=
   SeparatedBlock[
     {"FUNCTION", " ", name, "(", args, ")\n",
       indentBlock[contents]}];
+ErrorDefinition[defineFunctionF];
 
-DefineFunction[name_, type_, args_, contents_] :=
+DefineFunction[name_String, type_String, args:CodeGenBlock, contents:CodeGenBlock] :=
   If[SOURCELANGUAGE == "C",
     defineFunctionC[name, type, args, contents],
     defineFunctionF[name, args, contents]];
+ErrorDefinition[DefineFunction];
 
 (* SUBROUTINES *)
 
-defineSubroutine[name_, args_, contents_] :=
+defineSubroutine[name_String, args:CodeGenBlock, contents:CodeGenBlock] :=
   If[SOURCELANGUAGE == "C",
     defineSubroutineC[name, args, contents],
     defineSubroutineF[name, args, contents]];
+ErrorDefinition[defineSubroutine];
 
-defineSubroutineC[name_, args_, contents_] :=
+defineSubroutineC[name_String, args:CodeGenBlock, contents:CodeGenBlock] :=
   SeparatedBlock[
     {"extern \"C\" void ", name, "(", args, ")", "\n",
      CBlock[contents]}];
+ErrorDefinition[defineSubroutineC];
 
-defineSubroutineF[name_, args_, contents_] :=
+defineSubroutineF[name_String, args:CodeGenBlock, contents:CodeGenBlock] :=
   SeparatedBlock[
     {"subroutine ", name, "(", args, ")", "\n",
      "\nimplicit none\n\n",
      contents,
      "end subroutine\n"}];
+ErrorDefinition[defineSubroutineF];
 
 
 
@@ -435,16 +485,17 @@ defineSubroutineF[name_, args_, contents_] :=
 
 
 (* This is a Cactus-callable function *)
-DefineCCTKFunction[name_, type_, contents_] :=
+DefineCCTKFunction[name_String, type_String, contents:CodeGenBlock] :=
   DefineFunction[name, "extern \"C\" " <> type, "CCTK_ARGUMENTS", 
     {
       "DECLARE_CCTK_ARGUMENTS;\n",
       "DECLARE_CCTK_PARAMETERS;\n\n",
       contents
     }];
+ErrorDefinition[DefineCCTKFunction];
 
 (* This is a Cactus-callable subroutine *)
-DefineCCTKSubroutine[name_, contents_] :=
+DefineCCTKSubroutine[name_String, contents:CodeGenBlock] :=
   defineSubroutine[
     name, "CCTK_ARGUMENTS", 
     {
@@ -452,6 +503,7 @@ DefineCCTKSubroutine[name_, contents_] :=
       "DECLARE_CCTK_PARAMETERS;\n\n",
       contents
     }];
+ErrorDefinition[DefineCCTKSubroutine];
 
 DeclareFDVariables[] := 
 (*
@@ -490,8 +542,7 @@ InitialiseFDSpacingVariablesFortran[] :=
     AssignVariable["dz", "CCTK_DELTA_SPACE(3)"]
   }
 
-
-InitialiseFDVariables[vectorise_] :=
+InitialiseFDVariables[vectorise:Boolean] :=
   CommentedBlock["Initialise finite differencing variables",
   { If[SOURCELANGUAGE == "Fortran",
        InitialiseFDSpacingVariablesFortran[],
@@ -517,11 +568,13 @@ InitialiseFDVariables[vectorise_] :=
       DeclareAssignVariable[DataType[], "hdxi", "0.5 * dxi"],
       DeclareAssignVariable[DataType[], "hdyi", "0.5 * dyi"],
       DeclareAssignVariable[DataType[], "hdzi", "0.5 * dzi"]}]}];
+ErrorDefinition[InitialiseFDVariables];
 
-GridName[x_] := If[SOURCELANGUAGE == "C",
+GridName[x_Symbol] := If[SOURCELANGUAGE == "C",
                    ToString[x] <> "[index]",
                    ToString[x] <> "(i,j,k)"
                 ];
+ErrorDefinition[GridName];
 
 DeclareGridLoopVariables[] :=
   SeparatedBlock[
@@ -538,22 +591,24 @@ DeclareGridLoopVariables[] :=
 
 (* Access an element of an array; syntax is different between C and
    Fortran.  Always give this function a C-style array index. *)
-arrayElement[var_, i_] :=
+arrayElement[var_String, i_String] :=
   If[SOURCELANGUAGE == "C",
      {var, "[", arrayIndex[i], "]"},
      {var, "(", arrayIndex[i], ")"}];
+ErrorDefinition[arrayElement];
 
 (* Given a C-style variable index, return the corresponding index for
    the language currently in use.  The idea is that the caller does not
    need to know what language is being used. *)
-arrayIndex[i_] :=
+arrayIndex[i:(_Integer|_String|_Symbol)] :=
   If[SOURCELANGUAGE == "C",
      i,
      If[NumberQ[i], i+1, {i, " + 1"}]];
+ErrorDefinition[arrayIndex];
 
 max[]:= If[SOURCELANGUAGE == "C", "IMAX", "max"];
 
-InitialiseGridLoopVariables[derivativesUsedSwitch_, addToStencilWidth_] :=
+InitialiseGridLoopVariables[derivativesUsedSwitch:Boolean, addToStencilWidth_Integer] :=
   CommentedBlock["Set up variables used in the grid loop for the physical grid points",
 
   If[ (derivativesUsedSwitch),
@@ -584,21 +639,24 @@ InitialiseGridLoopVariables[derivativesUsedSwitch_, addToStencilWidth_] :=
   AssignVariable["kend", "CCTK_LSSH(0,2)"]
   }]
 ];
+ErrorDefinition[InitialiseGridLoopVariables];
 
 
-ConditionalOnParameter[name_, value_, block_] :=
+ConditionalOnParameter[name_String, value_String, block:CodeGenBlock] :=
   SeparatedBlock[
   {"if (CCTK_EQUALS(", name, ", \"", value, "\"))\n",
    "{\n",
    indentBlock[block],
    "}\n"}];
+ErrorDefinition[ConditionalOnParameter];
 
-ConditionalOnParameterTextual[text_, block_] :=
+ConditionalOnParameterTextual[text:CodeGenBlock, block:CodeGenBlock] :=
   SeparatedBlock[
   {"if (", text, ")\n",
    "{\n",
    indentBlock[block],
    "}\n"}];
+ErrorDefinition[ConditionalOnParameterTextual];
 
 (*
 GridLoop[block_] :=
@@ -652,12 +710,13 @@ GridLoop[block_] :=
 
 Options[GenericGridLoop] = ThornOptions;
 
-GenericGridLoop[functionName_, block_, opts:OptionsPattern[]] :=
+GenericGridLoop[functionName_String, block:CodeGenBlock, opts:OptionsPattern[]] :=
   If[OptionValue[UseLoopControl],
     GenericGridLoopUsingLoopControl[functionName, block, OptionValue[UseVectors]],
     GenericGridLoopTraditional[block]];
+ErrorDefinition[GenericGridLoop];
 
-GenericGridLoopTraditional[block_] :=
+GenericGridLoopTraditional[block:CodeGenBlock] :=
   CommentedBlock["Loop over the grid points",
    loopOverInteger["k", "imin[2]", "imax[2]",
      loopOverInteger["j", "imin[1]", "imax[1]",
@@ -671,8 +730,9 @@ GenericGridLoopTraditional[block_] :=
 	 block
        }
         ]]]];
+ErrorDefinition[GenericGridLoopTraditional];
 
-GenericGridLoopUsingLoopControl[functionName_, block_, vectorise_] :=
+GenericGridLoopUsingLoopControl[functionName_String, block:CodeGenBlock, vectorise:Boolean] :=
   If[SOURCELANGUAGE == "C",  
     CommentedBlock["Loop over the grid points",
       {
@@ -696,21 +756,24 @@ GenericGridLoopUsingLoopControl[functionName_, block_, vectorise_] :=
     ],
     ""
   ];
+ErrorDefinition[GenericGridLoopUsingLoopControl];
 
-switchOptions[{value_, block_}] :=
+switchOptions[{value:(_String|_Symbol|_?NumberQ), block:CodeGenBlock}] :=
 {
   "case ", value, ":\n", indentBlock[{block,"break;\n"}]
 }
+ErrorDefinition[switchOptions];
 
-SwitchStatement[var_, pairs__] :=
+SwitchStatement[var:(_String|_Symbol), pairs__] :=
 {
   "switch(", var, ")\n",
   CBlock[{Riffle[Map[switchOptions, {pairs}],"\n"]}]
 }
+ErrorDefinition[SwitchStatement];
 
 
 
-BoundaryLoop[block_] :=
+BoundaryLoop[block:CodeGenBlock] :=
 {
   "\nGenericFD_GetBoundaryInfo(cctkGH, cctk_lsh, cctk_lssh, cctk_bbox, cctk_nghostzones, imin, imax, is_symbnd, is_physbnd, is_ipbnd);\n",
 
@@ -746,8 +809,9 @@ BoundaryLoop[block_] :=
       ]]]
       ]}
      ]]]};
+ErrorDefinition[BoundaryLoop];
 
-BoundaryWithGhostsLoop[block_] :=
+BoundaryWithGhostsLoop[block:CodeGenBlock] :=
 {
   "\nGenericFD_GetBoundaryInfo(cctkGH, cctk_lsh, cctk_lssh, cctk_bbox, cctk_nghostzones, imin, imax, is_symbnd, is_physbnd, is_ipbnd);\n",
 
@@ -783,42 +847,51 @@ BoundaryWithGhostsLoop[block_] :=
       ]]]
       ]}
      ]]]};
+ErrorDefinition[BoundaryWithGhostsLoop];
 
-Conditional[condition_, block_] :=
+Conditional[condition:CodeGenBlock, block:CodeGenBlock] :=
  {"if (", condition, ")\n",
   CBlock[block]};
+ErrorDefinition[Conditional];
 
-Conditional[condition_, block1_, block2_] :=
+Conditional[condition:CodeGenBlock, block1:CodeGenBlock, block2:CodeGenBlock] :=
  {"if (", condition, ")\n",
   CBlock[block1], "else\n", CBlock[block2]};
+ErrorDefinition[Conditional];
 
-onceInGridLoop[block_] :=
+onceInGridLoop[block:CodeGenBlock] :=
   Conditional["i == 5 && j == 5 && k == 5",
               block];
+ErrorDefinition[onceInGridLoop];
 
-InfoVariable[name_] :=
+InfoVariable[name_String] :=
  onceInGridLoop[
   { "char buffer[255];\n",
      "sprintf(buffer,\"" , name , " == %f\", " , name , ");\n",
      "CCTK_INFO(buffer);\n"}];
+ErrorDefinition[InfoVariable];
 
 (* Code generation for Cactus .par files *)
 
-activeThorns[list_] :=
+activeThorns[list:{_String...}] :=
   {"ActiveThorns = \"", SpaceSeparated[list], "\"\n"};
+ErrorDefinition[activeThorns];
 
-setParameter[thorn_, par_, value_] :=
+setParameter[thorn_String, par_String, value_] :=
   {thorn, " = ", If[NumberQ[value], ToString[value], "\"" <> value <> "\""], "\n"};
+ErrorDefinition[setParameter];
 
-setParametersForThorn[thorn_, map_] :=
+setParametersForThorn[thorn_String, map_List] :=
   Map[setParameter[thorn, #[[1]], #[[2]]] &, map];
+ErrorDefinition[setParametersForThorn];
 
-insertFile[name_] := 
+insertFile[name_String] := 
   Module[{istream_, contents_},
     istream = OpenRead[name];
     contents = ReadList[istream, String];
     Close[istream];
     contents];
+ErrorDefinition[insertFile];
 
 vectoriseExpression[exprp_] :=
   Module[{isNotMinusOneQ, isNotTimesMinusOneQ, fmaRules, isNotKneg, arithRules, undoRules, expr},
@@ -932,10 +1005,11 @@ vectoriseExpression[exprp_] :=
     expr = expr //. fmaRules;
     
     Return[expr]];
+ErrorDefinition[vectoriseExpression];
 
 (* Take an expression x and replace occurrences of Powers with the C
 macros SQR, CUB, QAD *)
-ReplacePowers[expr_, vectorise_] :=
+ReplacePowers[expr_, vectorise:Boolean] :=
   Module[{rhs},
     rhs = expr /. Power[xx_, -1] -> INV[xx];
 
@@ -1005,14 +1079,17 @@ ReplacePowers[expr_, vectorise_] :=
 (*       Print[rhs//FullForm];*)
     rhs
     ];
+ErrorDefinition[ReplacePowers];
 
 (* Convert an expression to CForm, but remove the quotes from any
    strings present *)
 CFormHideStrings[x_, opts___] := StringReplace[ToString[CForm[x,opts]], "\"" -> ""];
+ErrorDefinition[CFormHideStrings];
 
 
 
-Quote[x_] := {"\"", x, "\""};
+Quote[x:CodeGenBlock] := {"\"", x, "\""};
+ErrorDefinition[Quote];
 
 End[];
 

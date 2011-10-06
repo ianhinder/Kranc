@@ -673,7 +673,7 @@ GenericGridLoopTraditional[block_] :=
        { If[SOURCELANGUAGE == "C",  
             {
               DeclareAssignVariable["int", "index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"]
-            }
+            },
             ""],
 	 block
        }

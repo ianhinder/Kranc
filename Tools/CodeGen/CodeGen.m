@@ -46,12 +46,17 @@ Begin["`Private`"];
 
 (* Code generation utilities; not specific to any language *)
 
-CheckBlock[s_String] := s;
-CheckBlock[a_?AtomQ] := a;
-CheckBlock[l_List] := Map[CheckBlock, l];
-ErrorDefinition[CheckBlock];
+DefFn[
+  CheckBlock[s_String] := s];
 
-FlattenBlock[b_] :=
+DefFn[
+  CheckBlock[a_?AtomQ] := a];
+
+DefFn[
+  CheckBlock[l_List] := Map[CheckBlock, l]];
+
+DefFn[
+  FlattenBlock[b_] :=
   Module[
     {flattenBlock},
     flattenBlock[x_String] := x;
@@ -59,63 +64,63 @@ FlattenBlock[b_] :=
     flattenBlock[a_?AtomQ] := ToString[a];
 
     CheckBlock[b];
-    flattenBlock[b]];
-         
-ErrorDefinition[FlattenBlock];
+    flattenBlock[b]]];
 
-IndentBlock[block:CodeGenBlock] :=
-  StringDrop["  " <> StringReplace[FlattenBlock[block], {"\n" -> "\n  "}],-2];
-ErrorDefinition[IndentBlock];
+DefFn[
+  IndentBlock[block:CodeGenBlock] :=
+  StringDrop["  " <> StringReplace[FlattenBlock[block], {"\n" -> "\n  "}],-2]];
 
-SeparatedBlock[block:CodeGenBlock] := {"\n", block};
+DefFn[
+  SeparatedBlock[block:CodeGenBlock] := {"\n", block}];
 ErrorDefinition[SeparatedBlock];
 
-GenerateFile[filename_String, contents_] :=
+DefFn[
+  GenerateFile[filename_String, contents_] :=
   Module[
     {fp = OpenWrite[filename]},
     CheckBlock[contents];
     WriteString[fp, FlattenBlock[contents]];
-    Close[fp]];
-ErrorDefinition[GenerateFile];
+    Close[fp]]];
 
-AddToFile[filename_String, contents:CodeGenBlock] :=
+DefFn[
+  AddToFile[filename_String, contents:CodeGenBlock] :=
   Module[
     {fp = OpenAppend[filename]},
     WriteString[fp, FlattenBlock[contents]];
-    Close[fp]];
-ErrorDefinition[AddToFile];
+    Close[fp]]];
 
-CommaNewlineSeparated[l_List] :=
-  Riffle[l, ",\n"];
-ErrorDefinition[CommaNewlineSeparated];
+DefFn[
+  CommaNewlineSeparated[l_List] :=
+  Riffle[l, ",\n"]];
 
-SpaceSeparated[l_List] :=
-  Riffle[l, " "];
-ErrorDefinition[SpaceSeparated];
+DefFn[
+  SpaceSeparated[l_List] :=
+  Riffle[l, " "]];
 
-CommaSeparated[l_List] :=
-  Riffle[l, ", "];
-ErrorDefinition[CommaSeparated];
+DefFn[
+  CommaSeparated[l_List] :=
+  Riffle[l, ", "]];
 
-NewlineSeparated[l_List] :=
-  Riffle[l, "\n"];
-ErrorDefinition[NewlineSeparated];
+DefFn[
+  NewlineSeparated[l_List] :=
+  Riffle[l, "\n"]];
 
-CommaInitSeparated[l_List] :=
-  Riffle[Map[{#," = INITVALUE"} &, l], ", "];
-ErrorDefinition[CommaInitSeparated];
+DefFn[
+  CommaInitSeparated[l_List] :=
+  Riffle[Map[{#," = INITVALUE"} &, l], ", "]];
 
 (* Turn a section of code into a string:
    1. quote all quotes (replace all quotes with backslash-quote)
    2. break the string into lines to make it readable (replace all newlines
       with quote-newline-quote)
    3. surround the result with quotes *)
-Stringify[x:CodeGenBlock] :=
+DefFn[
+  Stringify[x:CodeGenBlock] :=
   "\"" <> StringReplace[StringReplace[FlattenBlock[x], "\"" -> "\\\""],
-                        "\n" -> "\\n\"\n\""] <> "\"\n";
-ErrorDefinition[Stringify];
+                        "\n" -> "\\n\"\n\""] <> "\"\n"];
 
-PartitionVarList[list_List] :=
+DefFn[
+  PartitionVarList[list_List] :=
   Module[
     {partition, split},
 
@@ -129,29 +134,28 @@ PartitionVarList[list_List] :=
     split = Split[list, NameRoot[#1] == NameRoot[#2] &];
     split = Flatten[Map[partition, split], 1];
 
-    split];
-ErrorDefinition[PartitionVarList];
+    split]];
 
-insertFile[name_String] :=
+DefFn[
+  insertFile[name_String] :=
   Module[
     {istream_, contents_},
     istream = OpenRead[name];
     contents = ReadList[istream, String];
     Close[istream];
-    contents];
-ErrorDefinition[insertFile];
+    contents]];
 
-NameRoot[name_Symbol] :=
+DefFn[
+  NameRoot[name_Symbol] :=
   Module[
     {dropNumberRule, root},
     dropNumberRule = {"1" -> "", "2" -> "", "3" -> "", "4" -> "", "5" -> "",
                       "6" -> "", "7" -> "", "8" -> "", "9" -> "", "0" -> "", "rhs" -> ""};
-    root = StringReplace[ToString@name, dropNumberRule]];
-ErrorDefinition[NameRoot];
+    root = StringReplace[ToString@name, dropNumberRule]]];
 
-Quote[x:CodeGenBlock] :=
-  {"\"", x, "\""};
-ErrorDefinition[Quote];
+DefFn[
+  Quote[x:CodeGenBlock] :=
+  {"\"", x, "\""}];
 
 End[];
 

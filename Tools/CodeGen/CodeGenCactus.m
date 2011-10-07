@@ -80,52 +80,55 @@ SetDataType::usage = "SetDataType[type] sets a string for the grid function data
 
 Begin["`Private`"];
 
-SetDataType[type_String] :=
-  dataType = type;
+DefFn[
+  SetDataType[type_String] :=
+  dataType = type];
 
-DataType[] :=
+DefFn[
+  DataType[] :=
   If[dataType === Symbol["datatype"],
      Throw["DataType: Have not set a data type"],
-     dataType];
+     dataType]];
 
-AssignVariableInLoop[dest:(_String|_Symbol), src:CodeGenBlock, vectorise_:False] :=
+DefFn[
+  AssignVariableInLoop[dest:(_String|_Symbol), src:CodeGenBlock, vectorise_:False] :=
   Module[
     {loader},
     loader[x_] := If[vectorise, {"vec_load(", x, ")"}, x];
-    {dest, " = ", loader[src], EOL[]}];
-ErrorDefinition[AssignVariableInLoop];
+    {dest, " = ", loader[src], EOL[]}]];
 
-StoreVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol)] :=
-  {"vec_store_nta(", dest, ",", src, ")", EOL[]};
-ErrorDefinition[StoreVariableInLoop];
+DefFn[
+  StoreVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol)] :=
+  {"vec_store_nta(", dest, ",", src, ")", EOL[]}];
 
-StoreLowPartialVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol), count_String] :=
-  {"vec_store_nta_partial_lo(", dest, ",", src, ",", count, ")", EOL[]};
-ErrorDefinition[StoreLowPartialVariableInLoop];
+DefFn[
+  StoreLowPartialVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol), count_String] :=
+  {"vec_store_nta_partial_lo(", dest, ",", src, ",", count, ")", EOL[]}];
 
-StoreHighPartialVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol), count_String] :=
-  {"vec_store_nta_partial_hi(", dest, ",", src, ",", count, ")", EOL[]};
-ErrorDefinition[StoreHighPartialVariableInLoop];
+DefFn[
+  StoreHighPartialVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol), count_String] :=
+  {"vec_store_nta_partial_hi(", dest, ",", src, ",", count, ")", EOL[]}];
 
-StoreMiddlePartialVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol), countLow_String, countHigh_String] :=
-  {"vec_store_nta_partial_mid(", dest, ",", src, ",", countLow, ",", countHigh, ")", EOL[]};
-ErrorDefinition[StoreMiddlePartialVariableInLoop];
+DefFn[
+  StoreMiddlePartialVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol), countLow_String, countHigh_String] :=
+  {"vec_store_nta_partial_mid(", dest, ",", src, ",", countLow, ",", countHigh, ")", EOL[]}];
 
-StorePartialVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol)] :=
-  {"vec_store_nta_partial(", dest, ",", src, ")", EOL[]};
-ErrorDefinition[StorePartialVariableInLoop];
+DefFn[
+  StorePartialVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol)] :=
+  {"vec_store_nta_partial(", dest, ",", src, ")", EOL[]}];
 
-DeclareAssignVariableInLoop[type_String, dest:(_String|_Symbol), src:(_String|_Symbol)] :=
-  {type, " const ", dest, " = vec_load(", src, ")", EOL[]};
-ErrorDefinition[DeclareAssignVariableInLoop];
+DefFn[
+  DeclareAssignVariableInLoop[type_String, dest:(_String|_Symbol), src:(_String|_Symbol)] :=
+  {type, " const ", dest, " = vec_load(", src, ")", EOL[]}];
 
-MaybeAssignVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol), cond:Boolean] :=
+DefFn[
+  MaybeAssignVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol), cond:Boolean] :=
   If[cond,
      {dest, " = useMatter ? vec_load(", src, ") : ToReal(0.0)", EOL[]},
-     {dest, " = vec_load(", src, ")", EOL[]}];
-ErrorDefinition[MaybeAssignVariableInLoop];
+     {dest, " = vec_load(", src, ")", EOL[]}]];
 
-DeclareMaybeAssignVariableInLoop[type_String, dest:(_String|_Symbol), src:(_String|_Symbol),
+DefFn[
+  DeclareMaybeAssignVariableInLoop[type_String, dest:(_String|_Symbol), src:(_String|_Symbol),
                                  mmaCond:Boolean, codeCond:CodeGenBlock,
                                  vectorise:Boolean:False] :=
   Module[
@@ -133,10 +136,10 @@ DeclareMaybeAssignVariableInLoop[type_String, dest:(_String|_Symbol), src:(_Stri
     loader[x_] := If[vectorise, {"vec_load(", x, ")"}, x];
     If[mmaCond,
        {type, " ", dest, " = (", codeCond, ") ? ", loader[src], " : ToReal(0.0)", EOL[]},
-       {type, " ", dest, " = ", loader[src], EOL[]}]];
-ErrorDefinition[DeclareMaybeAssignVariableInLoop];
+       {type, " ", dest, " = ", loader[src], EOL[]}]]];
 
-TestForNaN[expr:CodeGenBlock] :=
+DefFn[
+  TestForNaN[expr:CodeGenBlock] :=
   {"if (isnan(", expr, ")) {\n",
    "  CCTK_VInfo(CCTK_THORNSTRING, \"NaN found\");\n",
    "  CCTK_VInfo(CCTK_THORNSTRING, \"ipos: %d %d %d\", i, j, k);\n",
@@ -144,10 +147,10 @@ TestForNaN[expr:CodeGenBlock] :=
    "  CCTK_VInfo(CCTK_THORNSTRING, \"lsh: %d %d %d\", cctk_lsh[0], cctk_lsh[1], cctk_lsh[2]);\n",
    "  CCTK_VInfo(CCTK_THORNSTRING, \"LSSH: %d %d %d\", CCTK_LSSH(0,0), CCTK_LSSH(0,1), CCTK_LSSH(0,2));\n",
    "  CCTK_VInfo(CCTK_THORNSTRING, \"", expr, ": %.17g\", (double)", expr, ");\n",
-   "}\n"};
-ErrorDefinition[TestForNaN];
+   "}\n"}];
 
-loopOverInteger[name_String, start_String, endplusone_String, block_CodeGenBlock] :=
+DefFn[
+  loopOverInteger[name_String, start_String, endplusone_String, block_CodeGenBlock] :=
   If[SOURCELANGUAGE == "C" || SOURCELANGUAGE == "C++",
      {"for (", name, " = ", start, "; ", name, " < ", endplusone, "; ", name, "++)\n",
       "{\n",
@@ -158,32 +161,32 @@ loopOverInteger[name_String, start_String, endplusone_String, block_CodeGenBlock
       "\n",
       IndentBlock[block],
       "End Do\n"}
-    ];
-ErrorDefinition[loopOverInteger];
+    ]];
 
 (* This is a Cactus-callable function *)
-DefineCCTKFunction[name_String, type_String, contents:CodeGenBlock] :=
+DefFn[
+  DefineCCTKFunction[name_String, type_String, contents:CodeGenBlock] :=
   DefineFunction[
     name, "extern \"C\" " <> type, "CCTK_ARGUMENTS", 
     {
       "DECLARE_CCTK_ARGUMENTS;\n",
       "DECLARE_CCTK_PARAMETERS;\n\n",
       contents
-    }];
-ErrorDefinition[DefineCCTKFunction];
+    }]];
 
 (* This is a Cactus-callable subroutine *)
-DefineCCTKSubroutine[name_String, contents:CodeGenBlock] :=
+DefFn[
+  DefineCCTKSubroutine[name_String, contents:CodeGenBlock] :=
   DefineSubroutine[
     name, "CCTK_ARGUMENTS", 
     {
       "DECLARE_CCTK_ARGUMENTS;\n",
       "DECLARE_CCTK_PARAMETERS;\n\n",
       contents
-    }];
-ErrorDefinition[DefineCCTKSubroutine];
+    }]];
 
-DeclareFDVariables[] := 
+DefFn[
+  DeclareFDVariables[] := 
 (*
   CommentedBlock["Declare finite differencing variables",
     {Map[DeclareVariables[#, "CCTK_REAL"] &, {{"dx", "dy", "dz"}, 
@@ -194,9 +197,10 @@ DeclareFDVariables[] :=
     {Map[DeclareVariables[#, "ptrdiff_t"] &, {{"di", "dj", "dk"}}],
      "\n"}];
 *)
-  CommentedBlock["Declare finite differencing variables", {}];
+  CommentedBlock["Declare finite differencing variables", {}]];
 
-InitialiseFDSpacingVariablesC[] :=
+DefFn[
+  InitialiseFDSpacingVariablesC[] :=
   {
     (* DeclareAssignVariable["ptrdiff_t", "di", "CCTK_GFINDEX3D(cctkGH,1,0,0) - CCTK_GFINDEX3D(cctkGH,0,0,0)"], *)
     DeclareAssignVariable["ptrdiff_t", "di", "1"],
@@ -209,18 +213,19 @@ InitialiseFDSpacingVariablesC[] :=
     DeclareAssignVariable[DataType[], "dy", "ToReal(CCTK_DELTA_SPACE(1))"],
     DeclareAssignVariable[DataType[], "dz", "ToReal(CCTK_DELTA_SPACE(2))"],
     DeclareAssignVariable[DataType[], "dt", "ToReal(CCTK_DELTA_TIME)"],
-    DeclareAssignVariable[DataType[], "t", "ToReal(cctk_time)"]
-  };
+    DeclareAssignVariable[DataType[], "t", "ToReal(cctk_time)"]}];
 
-InitialiseFDSpacingVariablesFortran[] := 
+DefFn[
+  InitialiseFDSpacingVariablesFortran[] := 
   {
     AssignVariable["dt", "CCTK_DELTA_TIME"],
     AssignVariable["dx", "CCTK_DELTA_SPACE(1)"],
     AssignVariable["dy", "CCTK_DELTA_SPACE(2)"],
     AssignVariable["dz", "CCTK_DELTA_SPACE(3)"]
-  };
+  }];
 
-InitialiseFDVariables[vectorise:Boolean] :=
+DefFn[
+  InitialiseFDVariables[vectorise:Boolean] :=
   CommentedBlock[
     "Initialise finite differencing variables",
     {
@@ -248,16 +253,16 @@ InitialiseFDVariables[vectorise:Boolean] :=
           DeclareAssignVariable[DataType[], "keightthird", "8.0/3.0"],
           DeclareAssignVariable[DataType[], "hdxi", "0.5 * dxi"],
           DeclareAssignVariable[DataType[], "hdyi", "0.5 * dyi"],
-          DeclareAssignVariable[DataType[], "hdzi", "0.5 * dzi"]}]}];
-ErrorDefinition[InitialiseFDVariables];
+          DeclareAssignVariable[DataType[], "hdzi", "0.5 * dzi"]}]}]];
 
-GridName[x_Symbol] :=
+DefFn[
+  GridName[x_Symbol] :=
   If[SOURCELANGUAGE == "C",
      ToString[x] <> "[index]",
-     ToString[x] <> "(i,j,k)"];
-ErrorDefinition[GridName];
+     ToString[x] <> "(i,j,k)"]];
 
-DeclareGridLoopVariables[] :=
+DefFn[
+  DeclareGridLoopVariables[] :=
   SeparatedBlock[
     {insertComment["Declare the variables used for looping over grid points"],
      Map[DeclareVariables[#, "CCTK_INT"] &, 
@@ -267,28 +272,30 @@ DeclareGridLoopVariables[] :=
             {"index_offset_x", "index_offset_y", "index_offset_z", "dir", "face"} *)}]
      (*, Map[DeclareArray[#, 6, "CCTK_INT"] &, {"is_symbnd", "is_physbnd", "is_ipbnd"}],
        Map[DeclareArray[#, 3, "CCTK_INT"] &, {"imin", "imax", "bmin", "bmax"}] *), 
-     If[SOURCELANGUAGE == "C", DeclareVariable["index", "// CCTK_INT"], "\n"]}];
+     If[SOURCELANGUAGE == "C", DeclareVariable["index", "// CCTK_INT"], "\n"]}]];
 
 (* Access an element of an array; syntax is different between C and
    Fortran.  Always give this function a C-style array index. *)
-arrayElement[var_String, i_String] :=
+DefFn[
+  arrayElement[var_String, i_String] :=
   If[SOURCELANGUAGE == "C",
      {var, "[", arrayIndex[i], "]"},
-     {var, "(", arrayIndex[i], ")"}];
-ErrorDefinition[arrayElement];
+     {var, "(", arrayIndex[i], ")"}]];
 
 (* Given a C-style variable index, return the corresponding index for
    the language currently in use.  The idea is that the caller does not
    need to know what language is being used. *)
-arrayIndex[i:(_Integer|_String|_Symbol)] :=
+DefFn[
+  arrayIndex[i:(_Integer|_String|_Symbol)] :=
   If[SOURCELANGUAGE == "C",
      i,
-     If[NumberQ[i], i+1, {i, " + 1"}]];
-ErrorDefinition[arrayIndex];
+     If[NumberQ[i], i+1, {i, " + 1"}]]];
 
-max[]:= If[SOURCELANGUAGE == "C", "IMAX", "max"];
+DefFn[
+  max[]:= If[SOURCELANGUAGE == "C", "IMAX", "max"]];
 
-InitialiseGridLoopVariables[derivativesUsedSwitch:Boolean, addToStencilWidth_Integer] :=
+DefFn[
+  InitialiseGridLoopVariables[derivativesUsedSwitch:Boolean, addToStencilWidth_Integer] :=
   CommentedBlock[
     "Set up variables used in the grid loop for the physical grid points",
 
@@ -311,24 +318,23 @@ InitialiseGridLoopVariables[derivativesUsedSwitch:Boolean, addToStencilWidth_Int
         "\n",
         AssignVariable["iend", "CCTK_LSSH(0,0)"],
         AssignVariable["jend", "CCTK_LSSH(0,1)"],
-        AssignVariable["kend", "CCTK_LSSH(0,2)"]}]];
-ErrorDefinition[InitialiseGridLoopVariables];
+        AssignVariable["kend", "CCTK_LSSH(0,2)"]}]]];
 
-ConditionalOnParameter[name_String, value_String, block:CodeGenBlock] :=
+DefFn[
+  ConditionalOnParameter[name_String, value_String, block:CodeGenBlock] :=
   SeparatedBlock[
     {"if (CCTK_EQUALS(", name, ", \"", value, "\"))\n",
      "{\n",
      IndentBlock[block],
-     "}\n"}];
-ErrorDefinition[ConditionalOnParameter];
+     "}\n"}]];
 
-ConditionalOnParameterTextual[text:CodeGenBlock, block:CodeGenBlock] :=
+DefFn[
+  ConditionalOnParameterTextual[text:CodeGenBlock, block:CodeGenBlock] :=
   SeparatedBlock[
     {"if (", text, ")\n",
      "{\n",
      IndentBlock[block],
-     "}\n"}];
-ErrorDefinition[ConditionalOnParameterTextual];
+     "}\n"}]];
 
 (*
 GridLoop[block_] :=
@@ -382,13 +388,14 @@ GridLoop[block_] :=
 
 Options[GenericGridLoop] = ThornOptions;
 
-GenericGridLoop[functionName_String, block:CodeGenBlock, opts:OptionsPattern[]] :=
+DefFn[
+  GenericGridLoop[functionName_String, block:CodeGenBlock, opts:OptionsPattern[]] :=
   If[OptionValue[UseLoopControl],
      GenericGridLoopUsingLoopControl[functionName, block, OptionValue[UseVectors]],
-     GenericGridLoopTraditional[block]];
-ErrorDefinition[GenericGridLoop];
+     GenericGridLoopTraditional[block]]];
 
-GenericGridLoopTraditional[block:CodeGenBlock] :=
+DefFn[
+  GenericGridLoopTraditional[block:CodeGenBlock] :=
   CommentedBlock[
     "Loop over the grid points",
     loopOverInteger[
@@ -400,10 +407,10 @@ GenericGridLoopTraditional[block:CodeGenBlock] :=
           {If[SOURCELANGUAGE == "C",
               DeclareAssignVariable["int", "index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"],
               ""],
-            block}]]]];
-ErrorDefinition[GenericGridLoopTraditional];
+            block}]]]]];
 
-GenericGridLoopUsingLoopControl[functionName_String, block:CodeGenBlock, vectorise:Boolean] :=
+DefFn[
+  GenericGridLoopUsingLoopControl[functionName_String, block:CodeGenBlock, vectorise:Boolean] :=
   If[SOURCELANGUAGE == "C",  
      CommentedBlock[
        "Loop over the grid points",
@@ -422,10 +429,10 @@ GenericGridLoopUsingLoopControl[functionName_String, block:CodeGenBlock, vectori
            block}], "}\n",
         If[vectorise, "LC_ENDLOOP3VEC", "LC_ENDLOOP3"] <> " (", functionName, ");\n"}],
      (* else *)
-     ""];
-ErrorDefinition[GenericGridLoopUsingLoopControl];
+     ""]];
 
-BoundaryLoop[block:CodeGenBlock] :=
+DefFn[
+  BoundaryLoop[block:CodeGenBlock] :=
   {
     "\nGenericFD_GetBoundaryInfo(cctkGH, cctk_lsh, cctk_lssh, cctk_bbox, cctk_nghostzones, imin, imax, is_symbnd, is_physbnd, is_ipbnd);\n",
 
@@ -461,11 +468,11 @@ BoundaryLoop[block:CodeGenBlock] :=
                  loopOverInteger[
                    "i", arrayElement["bmin",0], arrayElement["bmax",0],
                    {If[SOURCELANGUAGE == "C", AssignVariable["index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"], ""],
-                    block}]]]]}]]]};
-ErrorDefinition[BoundaryLoop];
+                    block}]]]]}]]]}];
 
-BoundaryWithGhostsLoop[block:CodeGenBlock] :=
-{
+DefFn[
+  BoundaryWithGhostsLoop[block:CodeGenBlock] :=
+  {
   "\nGenericFD_GetBoundaryInfo(cctkGH, cctk_lsh, cctk_lssh, cctk_bbox, cctk_nghostzones, imin, imax, is_symbnd, is_physbnd, is_ipbnd);\n",
 
   CommentedBlock[
@@ -501,37 +508,37 @@ BoundaryWithGhostsLoop[block:CodeGenBlock] :=
                "i", arrayElement["bmin",0], arrayElement["bmax",0],
 
          {If[SOURCELANGUAGE == "C", AssignVariable["index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"], ""],
-	   block}]]]]}]]]};
-ErrorDefinition[BoundaryWithGhostsLoop];
+	   block}]]]]}]]]}];
 
-onceInGridLoop[block:CodeGenBlock] :=
+DefFn[
+  onceInGridLoop[block:CodeGenBlock] :=
   Conditional[
     "i == 5 && j == 5 && k == 5",
-    block];
-ErrorDefinition[onceInGridLoop];
+    block]];
 
-InfoVariable[name_String] :=
+DefFn[
+  InfoVariable[name_String] :=
   onceInGridLoop[
     {"char buffer[255];\n",
      "sprintf(buffer,\"" , name , " == %f\", " , name , ");\n",
-     "CCTK_INFO(buffer);\n"}];
-ErrorDefinition[InfoVariable];
+     "CCTK_INFO(buffer);\n"}]];
 
 (* Code generation for Cactus .par files *)
 
-activeThorns[list:{_String...}] :=
-  {"ActiveThorns = \"", SpaceSeparated[list], "\"\n"};
-ErrorDefinition[activeThorns];
+DefFn[
+  activeThorns[list:{_String...}] :=
+  {"ActiveThorns = \"", SpaceSeparated[list], "\"\n"}];
 
-setParameter[thorn_String, par_String, value_] :=
-  {thorn, " = ", If[NumberQ[value], ToString[value], "\"" <> value <> "\""], "\n"};
-ErrorDefinition[setParameter];
+DefFn[
+  setParameter[thorn_String, par_String, value_] :=
+  {thorn, " = ", If[NumberQ[value], ToString[value], "\"" <> value <> "\""], "\n"}];
 
-setParametersForThorn[thorn_String, map_List] :=
-  Map[setParameter[thorn, #[[1]], #[[2]]] &, map];
-ErrorDefinition[setParametersForThorn];
+DefFn[
+  setParametersForThorn[thorn_String, map_List] :=
+  Map[setParameter[thorn, #[[1]], #[[2]]] &, map]];
 
-vectoriseExpression[exprp_] :=
+DefFn[
+  vectoriseExpression[exprp_] :=
   Module[
     {isNotMinusOneQ, isNotTimesMinusOneQ, fmaRules, isNotKneg, arithRules, undoRules, expr},
     expr = exprp;
@@ -642,12 +649,12 @@ vectoriseExpression[exprp_] :=
          *)};
     expr = expr //. fmaRules;
     
-    Return[expr]];
-ErrorDefinition[vectoriseExpression];
+    Return[expr]]];
 
 (* Take an expression x and replace occurrences of Powers with the C
-macros SQR, CUB, QAD *)
-ReplacePowers[expr_, vectorise:Boolean] :=
+  macros SQR, CUB, QAD *)
+DefFn[
+  ReplacePowers[expr_, vectorise:Boolean] :=
   Module[
     {rhs},
     rhs = expr /. Power[xx_, -1] -> INV[xx];
@@ -719,8 +726,7 @@ ReplacePowers[expr_, vectorise:Boolean] :=
        (* else *)
        rhs = rhs /. Power[xx_, power_] -> xx^power];
     (*       Print[rhs//FullForm];*)
-    rhs];
-ErrorDefinition[ReplacePowers];
+    rhs]];
 
 End[];
 

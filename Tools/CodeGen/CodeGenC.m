@@ -86,157 +86,158 @@ SetSourceLanguage[lang_] :=
 EOL[dummy___] :=
   If[SOURCELANGUAGE == "C" || SOURCELANGUAGE == "C++", ";\n", "\n"];
 
-IncludeFile[filename_String] :=
-  {"#include \"", filename, "\"\n"};
-ErrorDefinition[IncludeFile];
+DefFn[
+  IncludeFile[filename_String] :=
+  {"#include \"", filename, "\"\n"}];
 
-IncludeSystemFile[filename_String] :=
-  {"#include <", filename, ">\n"};
-ErrorDefinition[IncludeSystemFile];
+DefFn[
+  IncludeSystemFile[filename_String] :=
+  {"#include <", filename, ">\n"}];
 
-DeclareVariable[name:(_String|_Symbol), type_String] :=
+DefFn[
+  DeclareVariable[name:(_String|_Symbol), type_String] :=
   If[SOURCELANGUAGE == "C",
      {type, " ",    name, " = INITVALUE" <> EOL[]},
-     {type, " :: ", name, EOL[]} (* no value init here to avoid implicit SAVE attribute *)];
-ErrorDefinition[DeclareVariable];
+     {type, " :: ", name, EOL[]} (* no value init here to avoid implicit SAVE attribute *)]];
 
-DeclareVariableNoInit[name:(_String|_Symbol), type_String] :=
+DefFn[
+  DeclareVariableNoInit[name:(_String|_Symbol), type_String] :=
   If[SOURCELANGUAGE == "C",
      {type, " ",    name, EOL[]},
-     {type, " :: ", name, EOL[]} (* no value init here to avoid implicit SAVE attribute *)];
-ErrorDefinition[DeclareVariableNoInit];
+     {type, " :: ", name, EOL[]} (* no value init here to avoid implicit SAVE attribute *)]];
 
-DeclareVariables[names_?ListQ, type_String] := 
+DefFn[
+  DeclareVariables[names_?ListQ, type_String] := 
   If[SOURCELANGUAGE == "C",
      {type, " ",    CommaSeparated@names, EOL[]},
-     {type, " :: ", CommaSeparated@names,     EOL[]} (* no value init avoids implicit SAVE attribute *)];
-ErrorDefinition[DeclareVariables];
+     {type, " :: ", CommaSeparated@names,     EOL[]} (* no value init avoids implicit SAVE attribute *)]];
 
-DeclarePointer[name:(_String|_Symbol), type_String] :=
+DefFn[
+  DeclarePointer[name:(_String|_Symbol), type_String] :=
   If[SOURCELANGUAGE == "C",
      {type, " *",    name, EOL[]},
-     {type, ", target :: ", name, EOL[]}];
-ErrorDefinition[DeclarePointer];
+     {type, ", target :: ", name, EOL[]}]];
 
-DeclarePointers[names_?ListQ, type_String] :=
+DefFn[
+  DeclarePointers[names_?ListQ, type_String] :=
   If[SOURCELANGUAGE == "C",
      {type, " *",           CommaInitSeparated@names, EOL[]},
-     {type, ", target :: ", CommaSeparated@names,     EOL[]}];
-ErrorDefinition[DeclarePointers];
+     {type, ", target :: ", CommaSeparated@names,     EOL[]}]];
 
-DeclareArray[name:(_String|_Symbol), dim_Integer, type_String] :=
+DefFn[
+  DeclareArray[name:(_String|_Symbol), dim_Integer, type_String] :=
   If[SOURCELANGUAGE == "C",
      DeclareArrayC[name, dim, type],
-     DeclareArrayFortran[name, dim, type]];
-ErrorDefinition[DeclareArray];
+     DeclareArrayFortran[name, dim, type]]];
 
-DeclareArrayC[name:(_String|_Symbol), dim_Integer, type_String] :=
-  {type, " ", name, "[", dim, "];","\n"};
-ErrorDefinition[DeclareArrayC];
+DefFn[
+  DeclareArrayC[name:(_String|_Symbol), dim_Integer, type_String] :=
+  {type, " ", name, "[", dim, "];","\n"}];
 
-DeclareArrayFortran[name:(_String|_Symbol), dim_Integer, type_String] :=
-  {type, " :: ", name, "(", dim, ")","\n"};
-ErrorDefinition[DeclareArrayFortran];
+DefFn[
+  DeclareArrayFortran[name:(_String|_Symbol), dim_Integer, type_String] :=
+  {type, " :: ", name, "(", dim, ")","\n"}];
 
-DefineVariable[name:(_String|_Symbol), type_String, value:CodeGenBlock] :=
-  {type, " ", name, " = ", value, EOL[]};
-ErrorDefinition[DefineVariable];
+DefFn[
+  DefineVariable[name:(_String|_Symbol), type_String, value:CodeGenBlock] :=
+  {type, " ", name, " = ", value, EOL[]}];
 
-AssignVariable[dest:(_String|_Symbol), src:CodeGenBlock] :=
-  {dest, " = ", src, EOL[]};
-ErrorDefinition[AssignVariable];
+DefFn[
+  AssignVariable[dest:(_String|_Symbol), src:CodeGenBlock] :=
+  {dest, " = ", src, EOL[]}];
 
-DeclareAssignVariable[type_String, dest:(_String|_Symbol), src:CodeGenBlock] :=
-  {type, " const ", dest, " = ", src, EOL[]};
-ErrorDefinition[DeclareAssignVariable];
+DefFn[
+  DeclareAssignVariable[type_String, dest:(_String|_Symbol), src:CodeGenBlock] :=
+  {type, " const ", dest, " = ", src, EOL[]}];
 
 (* comments are always done C-style because they are killed by cpp anyway *) 
-insertComment[text:CodeGenBlock] := {"/* ", text, " */\n"};
-ErrorDefinition[insertComment];
+DefFn[
+  insertComment[text:CodeGenBlock] := {"/* ", text, " */\n"}];
 
-CBlock[block:CodeGenBlock] :=
+DefFn[
+  CBlock[block:CodeGenBlock] :=
   {"{\n",
    IndentBlock[block],
-   "}\n"};
-ErrorDefinition[CBlock];
+   "}\n"}];
 
-SuffixedCBlock[block:CodeGenBlock, suffix_] :=
+DefFn[
+  SuffixedCBlock[block:CodeGenBlock, suffix_] :=
   {"{\n",
    IndentBlock[block],
-   "} ", suffix, "\n"};
-ErrorDefinition[SuffixedCBlock];
+   "} ", suffix, "\n"}];
 
-CommentedBlock[comment:CodeGenBlock, block:CodeGenBlock] :=
+DefFn[
+  CommentedBlock[comment:CodeGenBlock, block:CodeGenBlock] :=
   SeparatedBlock[{insertComment[comment],
-                  block}];
-ErrorDefinition[CommentedBlock];
+                  block}]];
 
 (* FUNCTIONS *)
 
-defineFunctionC[name_String, type_String, args:CodeGenBlock, contents:CodeGenBlock] :=
+DefFn[
+  defineFunctionC[name_String, type_String, args:CodeGenBlock, contents:CodeGenBlock] :=
   SeparatedBlock[
     {type, " ", name, "(", args, ")\n",
-     CBlock[contents]}];
-ErrorDefinition[defineFunctionC];
+     CBlock[contents]}]];
      
-defineFunctionF[name_String, args:CodeGenBlock, contents:CodeGenBlock] :=
+DefFn[
+  defineFunctionF[name_String, args:CodeGenBlock, contents:CodeGenBlock] :=
   SeparatedBlock[
     {"FUNCTION", " ", name, "(", args, ")\n",
-     IndentBlock[contents]}];
-ErrorDefinition[defineFunctionF];
+     IndentBlock[contents]}]];
 
-DefineFunction[name_String, type_String, args:CodeGenBlock, contents:CodeGenBlock] :=
+DefFn[
+  DefineFunction[name_String, type_String, args:CodeGenBlock, contents:CodeGenBlock] :=
   If[SOURCELANGUAGE == "C",
      defineFunctionC[name, type, args, contents],
-     defineFunctionF[name, args, contents]];
-ErrorDefinition[DefineFunction];
+     defineFunctionF[name, args, contents]]];
 
 (* SUBROUTINES *)
 
-DefineSubroutine[name_String, args:CodeGenBlock, contents:CodeGenBlock] :=
+DefFn[
+  DefineSubroutine[name_String, args:CodeGenBlock, contents:CodeGenBlock] :=
   If[SOURCELANGUAGE == "C",
      DefineSubroutineC[name, args, contents],
-     DefineSubroutineF[name, args, contents]];
-ErrorDefinition[DefineSubroutine];
+     DefineSubroutineF[name, args, contents]]];
 
-DefineSubroutineC[name_String, args:CodeGenBlock, contents:CodeGenBlock] :=
+DefFn[
+  DefineSubroutineC[name_String, args:CodeGenBlock, contents:CodeGenBlock] :=
   SeparatedBlock[
     {"extern \"C\" void ", name, "(", args, ")", "\n",
-     CBlock[contents]}];
-ErrorDefinition[DefineSubroutineC];
+     CBlock[contents]}]];
 
-DefineSubroutineF[name_String, args:CodeGenBlock, contents:CodeGenBlock] :=
+DefFn[
+  DefineSubroutineF[name_String, args:CodeGenBlock, contents:CodeGenBlock] :=
   SeparatedBlock[
     {"subroutine ", name, "(", args, ")", "\n",
      "\nimplicit none\n\n",
      contents,
-     "end subroutine\n"}];
-ErrorDefinition[DefineSubroutineF];
+     "end subroutine\n"}]];
 
-switchOption[{value:(_String|_Symbol|_?NumberQ), block:CodeGenBlock}] :=
-  {"case ", value, ":\n", IndentBlock[{block,"break;\n"}]}; (* Outer list unnecessary? *)
-ErrorDefinition[switchOptions];
+DefFn[
+  switchOption[{value:(_String|_Symbol|_?NumberQ), block:CodeGenBlock}] :=
+  {"case ", value, ":\n", IndentBlock[{block,"break;\n"}]}];
+(* Outer list unnecessary? *)
 
-SwitchStatement[var:(_String|_Symbol), pairs__] :=
+DefFn[
+  SwitchStatement[var:(_String|_Symbol), pairs__] :=
   {"switch(", var, ")\n",
-   CBlock[{Riffle[Map[switchOption, {pairs}],"\n"]}]};
-ErrorDefinition[SwitchStatement];
+   CBlock[{Riffle[Map[switchOption, {pairs}],"\n"]}]}];
 
-Conditional[condition:CodeGenBlock, block:CodeGenBlock] :=
+DefFn[
+  Conditional[condition:CodeGenBlock, block:CodeGenBlock] :=
   {"if (", condition, ")\n",
-   CBlock[block]};
-ErrorDefinition[Conditional];
+   CBlock[block]}];
 
-Conditional[condition:CodeGenBlock, block1:CodeGenBlock, block2:CodeGenBlock] :=
+DefFn[
+  Conditional[condition:CodeGenBlock, block1:CodeGenBlock, block2:CodeGenBlock] :=
   {"if (", condition, ")\n",
-   CBlock[block1], "else\n", CBlock[block2]};
-ErrorDefinition[Conditional];
+   CBlock[block1], "else\n", CBlock[block2]}];
 
 (* Convert an expression to CForm, but remove the quotes from any
    strings present *)
-CFormHideStrings[x_, opts___] :=
-  StringReplace[ToString[CForm[x,opts]], "\"" -> ""];
-ErrorDefinition[CFormHideStrings];
+DefFn[
+  CFormHideStrings[x_, opts___] :=
+  StringReplace[ToString[CForm[x,opts]], "\"" -> ""]];
 
 End[];
 

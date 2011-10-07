@@ -16,6 +16,7 @@ Warnings = 1
 Terse = 2;
 Info = 3;
 InfoFull = 4;
+DefFn;
 
 Begin["`Private`"];
 
@@ -92,6 +93,14 @@ SetDebugLevel[level_] :=
 ErrorDefinition[x_] :=
   x[args___] :=
     ThrowError["Invalid arguments to "<>ToString[x], {args}//FullForm];
+
+SetAttributes[DefFn, HoldAll];
+
+DefFn[def:(fn_[args___] := body_)] :=
+  Module[
+    {},
+    ErrorDefinition[fn];
+    def];   
 
 End[];
 

@@ -21,7 +21,7 @@
 
 BeginPackage["CalculationFunction`", {"CodeGenCactus`", "CodeGenC`", "CodeGen`",
   "MapLookup`", "KrancGroups`", "Differencing`", "Errors`",
-  "Helpers`", "Kranc`", "Optimize`", "Jacobian`"}];
+  "Helpers`", "Kranc`", "Optimize`", "Jacobian`", "Profile`"}];
 
 CreateCalculationFunction::usage = "";
 VerifyCalculation::usage = "";
@@ -241,7 +241,7 @@ simpCollect[collectList_, eqrhs_, localvar_, debug_] :=
     collectCoeff = Collect[rhs, localCollectList];
     InfoMessage[InfoFull, "ByteCount[terms collected]: ", ByteCount@collectCoeff];
 
-    all = Collect[rhs, localCollectList, Simplify];
+    all = Profile["Collect/Simplify", Collect[rhs, localCollectList, Simplify]];
     InfoMessage[InfoFull, "ByteCount[simplified rhs]: ", ByteCount@all];
 
     all];

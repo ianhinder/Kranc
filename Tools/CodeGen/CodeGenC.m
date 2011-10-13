@@ -64,6 +64,7 @@ DefineSubroutine::usage = "";
 Conditional::usage = "";
 SwitchStatement::usage = "";
 CFormHideStrings::usage = "";
+InsertComment::usage = "";
 
 Begin["`Private`"];
 
@@ -152,7 +153,7 @@ DefFn[
 
 (* comments are always done C-style because they are killed by cpp anyway *) 
 DefFn[
-  insertComment[text:CodeGenBlock] := {"/* ", text, " */\n"}];
+  InsertComment[text:CodeGenBlock] := {"/* ", text, " */\n"}];
 
 DefFn[
   CBlock[block:CodeGenBlock] :=
@@ -168,7 +169,7 @@ DefFn[
 
 DefFn[
   CommentedBlock[comment:CodeGenBlock, block:CodeGenBlock] :=
-  SeparatedBlock[{insertComment[comment],
+  SeparatedBlock[{InsertComment[comment],
                   block}]];
 
 (* FUNCTIONS *)

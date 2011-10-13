@@ -264,7 +264,7 @@ DefFn[
 DefFn[
   DeclareGridLoopVariables[] :=
   SeparatedBlock[
-    {insertComment["Declare the variables used for looping over grid points"],
+    {InsertComment["Declare the variables used for looping over grid points"],
      Map[DeclareVariables[#, "CCTK_INT"] &, 
          {{"i", "j", "k"}
           (*, {"istart", "jstart", "kstart"}, 

@@ -150,7 +150,7 @@ DefFn[
    "}\n"}];
 
 DefFn[
-  loopOverInteger[name_String, start_String, endplusone_String, block_CodeGenBlock] :=
+  loopOverInteger[name_String, start_String, endplusone_String, block:CodeGenBlock] :=
   If[SOURCELANGUAGE == "C" || SOURCELANGUAGE == "C++",
      {"for (", name, " = ", start, "; ", name, " < ", endplusone, "; ", name, "++)\n",
       "{\n",

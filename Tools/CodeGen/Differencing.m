@@ -160,17 +160,18 @@ DefFn[
     derivOps = Flatten[Map[expandDerivOpOverParameters[#, intParams] &, derivOps1],1];
 
     Map[DerivativeOperatorVerify, derivOps];
-    zeroDimRules = Map[shift[#] -> 1 &, zeroDims];
 
-    componentDerivOps = Flatten[Map[DerivativeOperatorToComponents, derivOps]];
+    componentDerivOps = Flatten[Map[DerivativeOperatorToComponents[#,zeroDims] &,
+                                    derivOps]];
 
-    componentDerivOps2 = componentDerivOps /. zeroDimRules;
+    componentDerivOps2 = componentDerivOps;
 
     dupsRemoved = Block[{$RecursionLimit = Infinity}, RemoveDuplicateRules[componentDerivOps2]];
 
     mDefPairs = Map[ComponentDerivativeOperatorMacroDefinition[#, vectorise] &, dupsRemoved];
 
     pDefs = Union[Flatten[Map[First, mDefPairs]]];
+
     expressions = Flatten[Map[#[[2]]&, mDefPairs]];
 
     {pDefs, Map[{#, "\n"} &, expressions]}]];
@@ -182,10 +183,10 @@ getParamName[p_List] := lookup[p,Name];
 getParamName[p_] := p;
 
 DefFn[
-  PrecomputeDerivatives[derivOps_, expr_, intParams_] :=
+  PrecomputeDerivatives[derivOps_, expr_, intParams_, zeroDims_] :=
   Module[{componentDerivOps, gfds, sortedgfds, opNames, intParamNames, paramsInOps,
           paramName, opsWithParam, opNamesWithParam, replace, param},
-    gfds = GridFunctionDerivativesInExpression[derivOps, expr];
+    gfds = GridFunctionDerivativesInExpression[derivOps, expr, zeroDims];
     sortedgfds = Sort[gfds, ordergfds];
 
     opNames = Union[Map[Head, sortedgfds]];
@@ -223,11 +224,11 @@ DefFn[
      Map[DeclareDerivative, sortedgfds]}]];
 
 DefFn[
-  ReplaceDerivatives[derivOps_, expr_, precompute_] :=
+  ReplaceDerivatives[derivOps_, expr_, precompute_, zeroDims_] :=
   Module[{componentDerivOps, gfds},
     Map[DerivativeOperatorVerify, derivOps];
-    componentDerivOps = Flatten[Map[DerivativeOperatorToComponents, derivOps]];
-    gfds = GridFunctionDerivativesInExpression[derivOps, expr];
+    componentDerivOps = Flatten[Map[DerivativeOperatorToComponents[#,zeroDims] &, derivOps]];
+    gfds = GridFunctionDerivativesInExpression[derivOps, expr, zeroDims];
 
     If[precompute,
       rules = Map[# :> GridFunctionDerivativeName[#] &, gfds],
@@ -237,10 +238,10 @@ DefFn[
 (* Generate code to ensure that there are sufficient ghost and
    boundary points for the passed derivative operators used in eqs *)
 DefFn[
-  CheckStencil[derivOps_, eqs_, name_] :=
+  CheckStencil[derivOps_, eqs_, name_, zeroDims_] :=
   Module[{gfds, rgzList, rgz},
-    gfds = Map[GridFunctionDerivativesInExpression[{#}, eqs] &, derivOps];
-    rgzList = MapThread[If[Length[#2] > 0, DerivativeOperatorStencilWidth[#1], {0,0,0}] &, {derivOps, gfds}];
+    gfds = Map[GridFunctionDerivativesInExpression[{#}, eqs, zeroDims] &, derivOps];
+    rgzList = MapThread[If[Length[#2] > 0, DerivativeOperatorStencilWidth[#1,zeroDims], {0,0,0}] &, {derivOps, gfds}];
     If[Length[rgzList] === 0, Return[{}]];
     rgz = Map[Max, Transpose[rgzList]];
     If[Max[rgz] == 0, {},
@@ -251,17 +252,17 @@ parametersUsedInOps[derivOps_, intParams_] :=
                     intParams], 1];
 
 DefFn[
-  CheckStencil[derivOps_, eqs_, name_, intParams_] :=
+  CheckStencil[derivOps_, eqs_, name_, zeroDims_, intParams_] :=
   Module[{psUsed, p},
     psUsed = parametersUsedInOps[derivOps, intParams];
     If[Length[psUsed] > 1, Throw["Too many parameters in partial derivatives"]];
     If[psUsed === {},
-      CheckStencil[derivOps,eqs,name],
+      CheckStencil[derivOps,eqs,name,zeroDims],
       p = psUsed[[1]];
       SwitchStatement[getParamName[p],
         Sequence@@Table[{value,
                          CheckStencil[derivOps/.getParamName[p]->value, eqs,
-                                      name]},
+                                      name, zeroDims]},
                         {value, lookup[p, AllowedValues]}]]]]];
 
 (*************************************************************)
@@ -300,18 +301,18 @@ DefFn[
 
 
 DefFn[
-  GridFunctionDerivativesInExpression[derivOps_, expr_] := 
+  GridFunctionDerivativesInExpression[derivOps_, expr_, zeroDims_] := 
   Module[{componentDerivOps, derivs, patterns, dupsRemoved},
-    componentDerivOps = Flatten[Map[DerivativeOperatorToComponents, derivOps]];
+    componentDerivOps = Flatten[Map[DerivativeOperatorToComponents[#,zeroDims]&, derivOps]];
     dupsRemoved = RemoveDuplicateRules[componentDerivOps];
     derivs = Map[First, dupsRemoved];
     patterns = Map[# /. x_[inds___] -> x[y_, inds] &, derivs];
     Flatten[Map[Union[Cases[{expr}, #, Infinity]] &, patterns]]]];
 
 (* Return the definition associated with a grid function derivative *)
-GridFunctionDerivativeToDef[pd_[gf_, inds___], derivOps_] :=
+GridFunctionDerivativeToDef[pd_[gf_, inds___], derivOps_, zeroDims] :=
   Module[{componentDerivOps},
-    componentDerivOps = Flatten[Map[DerivativeOperatorToComponents, derivOps]];
+    componentDerivOps = Flatten[Map[DerivativeOperatorToComponents[#,zeroDims]&, derivOps]];
     pd[inds] /. componentDerivOps];
 
 (*************************************************************)
@@ -462,8 +463,9 @@ ComponentDerivativeOperatorMacroName[componentDerivOp:(name_[inds___] -> expr_)]
     stringName = StringJoin[Map[ToString, Join[{name}, {inds}]]];
     stringName];
 
-DerivativeOperatorStencilWidth[derivOp_] :=
-  Map[Max, Transpose[Map[ComponentDerivativeOperatorStencilWidth, DerivativeOperatorToComponents[derivOp]]]];
+DerivativeOperatorStencilWidth[derivOp_,zeroDims_] :=
+  Map[Max, Transpose[Map[ComponentDerivativeOperatorStencilWidth, 
+                         DerivativeOperatorToComponents[derivOp,zeroDims]]]];
 
 DefFn[
   ComponentDerivativeOperatorStencilWidth[componentDerivOp:(name_[inds___] -> expr_)] :=
@@ -491,7 +493,7 @@ DifferenceGF[op_, i_, j_, k_, vectorise_] :=
     
     If[Head[expanded] === Plus,
       Apply[Plus, Map[DifferenceGFTerm[#, i, j, k, vectorise] &, expanded]],
-      DifferenceGFTerm[expanded, i, j, k]]];
+      DifferenceGFTerm[expanded, i, j, k, vectorise]]];
 
 
 (* Return the fragment of a macro definition for defining a derivative
@@ -534,9 +536,11 @@ DifferenceGFTerm[op_, i_, j_, k_, vectorise_] :=
 DerivativeOperatorGFDs[gf_];
 
 DefFn[
-  DerivativeOperatorToComponents[name_[indPatterns___] -> expr_] :=
-  Module[{ips, symbols, symbolRanges, symbolLHS, table},
+  DerivativeOperatorToComponents[name_[indPatterns___] -> expr_, zeroDims_] :=
+  Module[{ips, symbols, symbolRanges, symbolLHS, table, zeroDimRules},
     ips = {indPatterns};
+
+    zeroDimRules = Map[shift[#] -> 1 &, zeroDims];
 
     If[MatchQ[ips, List[ (_Pattern) ...]],
 
@@ -544,11 +548,11 @@ DefFn[
       symbolRanges = Map[{#, 1, 3} &, Union[symbols]];
       symbolLHS = name[Apply[Sequence, symbols]];
       table = Apply[Table, Join[{symbolLHS -> expr}, symbolRanges]];
-      Return[Flatten[table]]];
+      Return[Flatten[table/.zeroDimRules]]];
 
 
     If[MatchQ[ips, List[ (_ ? NumberQ) ...]],
-      Return[{name[indPatterns] -> expr}]];
+      Return[{name[indPatterns] -> expr/.zeroDimRules}]];
 
     Throw["DerivativeOperatorToComponents: Expecting indices which are symbolic patterns or numbers"];
 ]];

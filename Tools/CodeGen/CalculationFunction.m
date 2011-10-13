@@ -557,7 +557,8 @@ CreateCalculationFunction[calcp_, debug_, imp_, opts:OptionsPattern[]] :=
         CheckGroupStorage[groupsInCalculation[cleancalc, imp], functionName],
         "\n",
 
-        CheckStencil[pddefs, eqs, functionName, lookup[{opts}, IntParameters, {}]],
+        CheckStencil[pddefs, eqs, functionName, lookup[{opts}, IntParameters, {}],
+                     OptionValue[ZeroDimensions]],
         "\n",
   
         If[haveCondTextuals, Map[ConditionalOnParameterTextual["!(" <> # <> ")", "return;\n"] &,condTextuals], {}],
@@ -604,10 +605,12 @@ equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
     localMap = Map[# -> localName[#] &, gfs];
 
     derivSwitch =
-      GridFunctionDerivativesInExpression[pddefs, eqsOrdered] != {};
+      GridFunctionDerivativesInExpression[pddefs, eqsOrdered,
+                                          OptionValue[ZeroDimensions]] != {};
 
     gfsDifferentiated = Map[First,
-      GridFunctionDerivativesInExpression[pddefs, eqsOrdered]];
+      GridFunctionDerivativesInExpression[pddefs, eqsOrdered,
+                                          OptionValue[ZeroDimensions]]];
 
     gfsDifferentiatedAndOnLHS = Intersection[gfsDifferentiated, gfsInLHS];
 
@@ -620,8 +623,9 @@ equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
 
     (* Replace the partial derivatives *)
     {defsWithoutShorts, defsWithShorts} = splitPDDefsWithShorthands[pddefs, shorts];
-    eqs2 = ReplaceDerivatives[defsWithoutShorts, eqsOrdered, True];
-    eqs2 = ReplaceDerivatives[defsWithShorts, eqs2, False];
+    eqs2 = ReplaceDerivatives[defsWithoutShorts, eqsOrdered, True,
+                              OptionValue[ZeroDimensions]];
+    eqs2 = ReplaceDerivatives[defsWithShorts, eqs2, False, OptionValue[ZeroDimensions]];
 
     checkEquationAssignmentOrder[eqs2, shorts];
     functionName = ToString@lookup[cleancalc, Name];
@@ -714,7 +718,9 @@ equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
         Map[IncludeFile, incs]],
 
       CommentedBlock["Precompute derivatives",
-        PrecomputeDerivatives[defsWithoutShorts, eqsOrdered, lookup[{opts}, IntParameters, {}]]],
+        PrecomputeDerivatives[defsWithoutShorts, eqsOrdered, 
+                              lookup[{opts}, IntParameters, {}],
+                              OptionValue[ZeroDimensions]]],
 
       CommentedBlock["Calculate temporaries and grid functions", calcCode],
 

@@ -8,6 +8,7 @@ $Path = Join[$Path,
    krancDir <> "/Tools/External"}];
 Needs["Errors`"];
 Needs["KrancThorn`"];
+Needs["Profile`"];
 If[Environment["KRANCVERBOSE"] == "yes",
   SetDebugLevel[InfoFull]];
 
@@ -59,7 +60,23 @@ SetOptions["stdout", PageWidth -> Infinity];
 
 exception = Catch[Catch[
   Check[
-    Get[script];None,
+    Block[
+      {$RecursionLimit = Infinity},
+      (*{result,timers} =  GetTimers[ *) Get[script](*]*)];
+
+    (* Put[timers, "timer-output-1.m"]; *)
+
+    (* timers = CoalesceTimers[timers]; *)
+    (* Put[timers, "timer-output-2.m"]; *)
+
+    (* timers = ThresholdTimers[timers,0.1]; *)
+    (* Put[timers, "timer-output-3.m"]; *)
+
+    (* (\* Put[timers2, "timer-output-2.m"]; *\) *)
+
+    (* PrintTimerTree[timers]; *)
+
+    None,
     ThrowError["Messages were generated - aborted"]]], _];
 
 If[exception =!= None,

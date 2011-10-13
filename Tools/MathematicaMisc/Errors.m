@@ -100,7 +100,7 @@ DefFn[def:(fn_[args___] := body_)] :=
   Module[
     {},
     ErrorDefinition[fn];
-    def];   
+    fn[args] := (*Profile[fn,*)body(*]*)];
 
 End[];
 

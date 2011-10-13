@@ -30,6 +30,8 @@
 #define Cosh(x)       (cosh(x))
 #define Tanh(x)       (tanh(x))
 
+#define Csch(x)       (1./sinh(x))
+
 #ifdef KRANC_C
 #  define Sign(x)     (copysign(1.0,(x)))
 #  define ToReal(x)   ((CCTK_REAL)(x))

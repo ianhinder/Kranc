@@ -381,15 +381,16 @@ DefFn[
        Print["Sequenced: ", Apply[SequenceForm,Simplify[1/(ss /. spacings2)],{0,Infinity}]];*)
 
        liName = "p" <> signModifier <> quotient <> ToString[Apply[SequenceForm,Simplify[1/(ss /. spacings2)],{0,Infinity}]];
-(*       Print["liName == ", liName];*)
+       pDefs = {{liName -> CFormHideStrings[ReplacePowers[num / den ss /. spacings2, vectorise]]}};
 
        rhs = rhs /. pat -> Times[liName, rest],
 (*       Print["!!!!!!!!DOES NOT MATCH!!!!!!!!!"];*)
-       rhs = rhs];
+       rhs = rhs;
+       pDefs = {};
+       liName = rhs];
 
 (*    Print["rhs3 == ", FullForm[rhs]];*)
 
-    pDefs = {{liName -> CFormHideStrings[ReplacePowers[num / den ss /. spacings2, vectorise]]}};
 
 (*    rhs = Factor[rhs];*)
     rhs = rhs //. (x_ a_ + x_ b_) -> x (a+b);

@@ -373,7 +373,8 @@ pdCanonicalOrdering[name_[inds___] -> x_] :=
 
 Options[CreateCalculationFunction] = ThornOptions;
 
-CreateCalculationFunction[calcp_, debug_, imp_, opts:OptionsPattern[]] :=
+DefFn[
+  CreateCalculationFunction[calcp_, debug_, imp_, opts:OptionsPattern[]] :=
   Module[{gfs, allSymbols, knownSymbols,
           shorts, eqs, parameters, parameterRules,
           functionName, dsUsed, groups, pddefs, cleancalc, eqLoop, where,
@@ -568,11 +569,12 @@ CreateCalculationFunction[calcp_, debug_, imp_, opts:OptionsPattern[]] :=
         ConditionalOnParameterTextual["verbose > 1",
           "CCTK_VInfo(CCTK_THORNSTRING,\"Leaving " <> bodyFunctionName <> "\");\n"]
       }]]
-  }];
+  }]];
 
 Options[equationLoop] = ThornOptions;
 
-equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
+DefFn[
+  equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
              where_, addToStencilWidth_,
              opts:OptionsPattern[]] :=
   Module[{rhss, lhss, gfsInRHS, gfsInLHS, gfsOnlyInRHS, localGFs,
@@ -761,7 +763,7 @@ equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
               CommentedBlock["Copy local copies back to grid functions",
                 Map[AssignVariableInLoop[GridName[#], localName[#]] &, gfsInLHS]]],
 
-      If[debugInLoop, Map[InfoVariable[GridName[#]] &, gfsInLHS], ""]}, opts]];
+      If[debugInLoop, Map[InfoVariable[GridName[#]] &, gfsInLHS], ""]}, opts]]];
 
 End[];
 

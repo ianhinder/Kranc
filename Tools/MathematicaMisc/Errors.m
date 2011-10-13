@@ -1,5 +1,5 @@
 
-BeginPackage["Errors`"];
+BeginPackage["Errors`", {"Profile`"}];
 
 PrintError::usage = "";
 ThrowError::usage = "";

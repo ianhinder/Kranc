@@ -1,0 +1,91 @@
+
+Cactus::cctk_final_time = 1
+Cactus::terminate = "time"
+
+ActiveThorns = "IOUtil Carpet CarpetLib CarpetSlab CoordBase CoordBase SymBase CartGrid3D Slab CarpetIOBasic CarpetIOASCII CarpetIOScalar Laplace Time MoL Boundary GenericFD CarpetReduce LoopControl CarpetIOHDF5 HDF5"
+
+CoordBase::domainsize                   = minmax
+
+CoordBase::boundary_size_x_lower        = 1
+CoordBase::boundary_size_y_lower        = 1
+CoordBase::boundary_size_z_lower        = 0
+CoordBase::boundary_shiftout_x_lower    = 0
+CoordBase::boundary_shiftout_y_lower    = 0
+CoordBase::boundary_shiftout_z_lower    = 1
+
+CoordBase::boundary_size_x_upper        = 1
+CoordBase::boundary_size_y_upper        = 1
+CoordBase::boundary_size_z_upper        = 0
+CoordBase::boundary_shiftout_x_upper    = 0
+CoordBase::boundary_shiftout_y_upper    = 0
+CoordBase::boundary_shiftout_z_upper    = 1
+
+CartGrid3D::type                        = "coordbase"
+CartGrid3D::domain                      = "full"
+CartGrid3D::avoid_origin                = "no"
+
+CoordBase::xmin                         = 0
+CoordBase::ymin                         = 0
+CoordBase::zmin                         = 0
+CoordBase::xmax                         = 1
+CoordBase::ymax                         = 1
+CoordBase::zmax                         = 0
+CoordBase::dx                           = 0.02
+CoordBase::dy                           = 0.02
+CoordBase::dz                           = 0.02
+
+driver::ghost_size_x = 1
+driver::ghost_size_y = 1
+driver::ghost_size_z = 0
+
+Carpet::domain_from_coordbase           = "yes"
+Carpet::poison_new_timelevels           = "yes"
+Carpet::check_for_poison                = "no"
+
+Carpet::max_refinement_levels = 1
+Carpet::prolongation_order_space = 3
+Carpet::prolongation_order_time = 2
+Carpet::init_each_timelevel = no
+Carpet::print_timestats_every = 0
+
+Time::timestep = 0.0001
+Time::timestep_method                   = "given"
+
+MethodOfLines::ode_method             = "generic"
+MethodOfLines::generic_type             = "RK"
+MethodOfLines::MoL_Intermediate_Steps = 1
+MethodOfLines::MoL_Num_Scratch_Levels = 1
+
+# MethodOfLines::ode_method             = "RK2"
+# MethodOfLines::MoL_NaN_Check          = "no"
+# MethodOfLines::initial_data_is_crap   = "yes"
+# MethodOfLines::MoL_Intermediate_Steps = 2
+# MethodOfLines::MoL_Num_Scratch_Levels = 1
+
+IO::out_dir = $parfile
+
+IOBasic::outInfo_every                  = 100
+IOBasic::outInfo_reductions             = "minimum maximum"
+IOBasic::outInfo_vars                   = "
+  Carpet::physical_time_per_hour
+  Laplace::phi
+  Laplace::phirhs
+"
+
+IOScalar::outScalar_every               = 10
+IOScalar::outScalar_reductions          = "norm2"
+IOScalar::outScalar_vars                = "Laplace::phirhs"
+
+Laplace::Lx = 1
+Laplace::Ly = 1
+Laplace::phi0 = 1
+Laplace::mu = 1
+
+IOHDF5::out_every                       = 100
+IOHDF5::out_vars                        = "
+  Laplace::phi
+  Laplace::phirhs
+"
+
+# TimerReport::out_every = 0
+# TimerReport::n_top_timers = 50

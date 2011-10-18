@@ -69,7 +69,7 @@ VerifyListContent[l_, type_, while_] :=
   Module[{types},
     If[!(Head[l] === List),
       ThrowError["Expecting a list of ", type,
-        " objects, but found the following, which is not a List object: ", l, while]];
+        " objects, but found the following, which is not a List object.  Error occured ", while, l]];
     types = Union[Map[Head, l]];
     If [!(types === {type}) && !(types === {}),
       ThrowError["Expecting a list of ", type ,

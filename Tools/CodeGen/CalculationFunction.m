@@ -558,8 +558,8 @@ DefFn[
         CheckGroupStorage[groupsInCalculation[cleancalc, imp], functionName],
         "\n",
 
-        CheckStencil[pddefs, eqs, functionName, lookup[{opts}, IntParameters, {}],
-                     OptionValue[ZeroDimensions]],
+        CheckStencil[pddefs, eqs, functionName, OptionValue[ZeroDimensions],
+                     lookup[{opts}, IntParameters, {}]],
         "\n",
   
         If[haveCondTextuals, Map[ConditionalOnParameterTextual["!(" <> # <> ")", "return;\n"] &,condTextuals], {}],

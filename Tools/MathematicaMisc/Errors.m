@@ -37,7 +37,7 @@ PrintStructure[x_]:=
 
 PrintStructure[l_List, prefix_, suffix_] :=
   Module[{},
-    If[StringLength[ToString[l] <> prefix] > 50,
+    If[StringLength[ToString[l,InputForm] <> prefix] > 50,
       Print[prefix, "{"];
       Map[PrintStructure[#, "  " <> prefix, ","] &, l];
       Print[prefix, "}"],
@@ -45,7 +45,7 @@ PrintStructure[l_List, prefix_, suffix_] :=
       Print[prefix, ToString[l,InputForm]]]];
 
 PrintStructure[s_, prefix_, suffix_] :=
-  Print[prefix, s, suffix];
+  Print[prefix, s//InputForm, suffix];
 
 PrintError[err_] :=
   Module[{},

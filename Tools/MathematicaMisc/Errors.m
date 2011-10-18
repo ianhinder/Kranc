@@ -84,7 +84,7 @@ VerifyList[l_] :=
 InfoMessage[level_, message__] :=
   Module[{args = {message}},
     If[level <= debugLevel,
-      Map[PrintStructure, args]];
+      Map[Print, args]];
   ];
 
 SetDebugLevel[level_] :=

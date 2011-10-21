@@ -79,8 +79,9 @@ makeCalculationExplicit[calc_] :=
      CollectList -> ExpandComponents,
      Equations -> ExpandComponents}];
 
+(* DeleteDuplicates is not available in Mathematica before version 7 *)
 deleteDuplicates[l_] :=
-  Split[Sort[l]][[All, 1]];
+ Tally[Join@l][[All, 1]];
 
 makeGroupExplicit[g_] :=
   Module[{variables, newVariables, newGroup},

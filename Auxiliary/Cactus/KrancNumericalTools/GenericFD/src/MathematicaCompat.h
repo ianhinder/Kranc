@@ -30,44 +30,14 @@
 #define Cosh(x)       (cosh(x))
 #define Tanh(x)       (tanh(x))
 
+#define Csch(x)       (1./sinh(x))
+
 #ifdef KRANC_C
 #  define Sign(x)     (copysign(1.0,(x)))
 #  define ToReal(x)   ((CCTK_REAL)(x))
 #else
 #  define Sign(x)     (sgn(x))
 #  define ToReal(x)   (real((x),kind(khalf)))
-#endif
-
-#if 0
-
-/* TODO: use fma(x,y,z) to implement fmadd and friends?  Note that fma
-   may be unsupported, or may be slow.  */
-
-/* #define fmadd(x,y,z)  ((x)*(y)+(z)) */
-/* #define fmsub(x,y,z)  ((x)*(y)-(z)) */
-/* #define fnmadd(x,y,z) (-(z)-(x)*(y)) */
-/* #define fnmsub(x,y,z) (+(z)-(x)*(y)) */
-
-#define fpos(x)   (+(x))
-#define fneg(x)   (-(x))
-#define fmul(x,y) ((x)*(y))
-#define fdiv(x,y) ((x)/(y))
-#define fadd(x,y) ((x)+(y))
-#define fsub(x,y) ((x)-(y))
-
-#define fmadd(x,y,z)  (fadd(fmul(x,y),z))
-#define fmsub(x,y,z)  (fsub(fmul(x,y),z))
-#define fnmadd(x,y,z) (fsub(fneg(z),fmul(x,y)))
-#define fnmsub(x,y,z) (fsub(z,fmul(x,y)))
-
-#define kexp(x)    (exp(x))
-#define kfabs(x)   (fabs(x))
-#define kfmax(x,y) (fmax(x,y))
-#define kfmin(x,y) (fmin(x,y))
-#define klog(x)    (log(x))
-#define kpow(x,y)  (pow(x,y))
-#define ksqrt(x)   (sqrt(x))
-
 #endif
 
 #ifdef KRANC_C

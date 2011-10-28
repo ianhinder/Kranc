@@ -18,7 +18,8 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-BeginPackage["Jacobian`", {"Errors`", "Helpers`", "Kranc`", "Differencing`", "MapLookup`", "CodeGen`", "KrancGroups`"}];
+BeginPackage["Jacobian`", {"Errors`", "Helpers`", "Kranc`", "Differencing`", "MapLookup`",
+                           "CodeGen`", "CodeGenC`", "KrancGroups`"}];
 
 JacobianQ;
 InsertJacobian;
@@ -69,11 +70,11 @@ shorthandsInDerivDef[def_, shorthands_] :=
 
 (* Insert a Jacobian shorthand definition into a list of equations
    after all the shorthands that it uses *)
-insertDerivInEqs[deriv_, defs_, eqs_, shorthands_] :=
+insertDerivInEqs[deriv_, defs_, eqs_, shorthands_, zeroDims_] :=
   Module[{shortsUsed, lhss, positions, positions2, position, newShort, derivsInShort, defsUsed},
     newShort = jacobianShorthand[deriv]; (* Definition expression for new shorthand *)
-    derivsInShort = GridFunctionDerivativesInExpression[defs, newShort]; (* Derivatives needed *)
-    defsUsed = Map[GridFunctionDerivativeToDef[#, defs] &, derivsInShort]; (* Definitions of those derivatives *)
+    derivsInShort = GridFunctionDerivativesInExpression[defs, newShort, zeroDims]; (* Derivatives needed *)
+    defsUsed = Map[GridFunctionDerivativeToDef[#, defs, zeroDims] &, derivsInShort]; (* Definitions of those derivatives *)
     shortsUsed = Union[Flatten[Map[shorthandsInDerivDef[#, shorthands] &, defsUsed],1]];
     lhss = Map[First, eqs];
     positions = Map[Position[lhss, #, {1}, 1] &, shortsUsed];
@@ -94,7 +95,8 @@ InsertJacobian[calc_List, opts:OptionsPattern[]] :=
           shorts},
     shorts = lookupDefault[calc, Shorthands, {}];
     pdDefs = OptionValue[PartialDerivatives];
-    derivs = GridFunctionDerivativesInExpression[pdDefs, lookup[calc, Equations]];
+    derivs = GridFunctionDerivativesInExpression[pdDefs, lookup[calc, Equations],
+                                                 OptionValue[ZeroDimensions]];
     If[Length[derivs] === 0, Return[calc]];
     newShortDefs = Map[jacobianShorthand, derivs];
     newShorts = Map[First, newShortDefs];
@@ -104,7 +106,8 @@ InsertJacobian[calc_List, opts:OptionsPattern[]] :=
     combinedEqs = newEqs;
 
     Do[
-      combinedEqs = insertDerivInEqs[derivs[[i]], pdDefs, combinedEqs, shorts],
+      combinedEqs = insertDerivInEqs[derivs[[i]], pdDefs, combinedEqs, shorts,
+                                     OptionValue[ZeroDimensions]],
       {i, Length[derivs], 1, -1}];
 
     combinedCalc = mapReplace[mapReplace[mapEnsureKey[calc, Shorthands, {}], Shorthands, combinedShorts], Equations, combinedEqs];

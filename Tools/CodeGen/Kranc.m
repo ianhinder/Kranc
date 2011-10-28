@@ -22,10 +22,11 @@ BeginPackage["Kranc`"];
 
 (* CodeGen.m *)
 
-{INV, SQR, CUB, QAD, IfThen, Scalar, ToReal, sqrt, exp, pow, fmax, fmin,
+{INV, SQR, CUB, QAD, IfThen, Parenthesis, Scalar, ToReal,
+ sqrt, exp, pow, fmax, fmin,
  kmadd, kmsub, knmadd, knmsub, kpos, kneg, kadd, ksub, kmul, kdiv,
- kfabs, kfmax, kfmin, ksqrt, kexp, klog, kpow,
- dir1, dir2, dir3, dt, dx, dy, dz,
+ kcos, kfabs, kfmax, kfmin, ksqrt, kexp, klog, kpow, ksin, ktan,
+ dir1, dir2, dir3, dt, dx, dy, dz, t,
  khalf, kthird, ktwothird, kfourthird, keightthird};
 
 (* Helpers.m *)
@@ -38,7 +39,7 @@ dummy;
 LoopPreIncludes, GroupImplementations, PartialDerivatives, NoSimplify,
 Boundary, Interior, InteriorNoSync, Where, AddToStencilWidth,
 Everywhere, normal1, normal2, normal3, INV, SQR, CUB, QAD, dot, pow,
-exp, dt, dx, dy, dz, idx, idy, idz}
+exp, dt, dx, dy, dz, idx, idy, idz, t}
 
 {ConditionalOnKeyword, ConditionalOnKeywords, CollectList, Interior,
 InteriorNoSync, Boundary, BoundaryWithGhosts, Where, PreDefinitions,
@@ -70,6 +71,7 @@ ThornOptions =
   ReflectionSymmetries -> {},
   ZeroDimensions -> {},
   UseLoopControl -> False,
+  UseOpenCL -> False,
   UseVectors -> False,
   ProhibitAssignmentToGridFunctionsRead -> False,
   IncludeFiles -> {},

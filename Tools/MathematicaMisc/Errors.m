@@ -1,5 +1,5 @@
 
-BeginPackage["Errors`"];
+BeginPackage["Errors`", {"Profile`"}];
 
 PrintError::usage = "";
 ThrowError::usage = "";
@@ -9,12 +9,14 @@ VerifyStringList;
 VerifyList;
 InfoMessage;
 SetDebugLevel;
+ErrorDefinition::usage = "ErrorDefinition[f] creates a default definition of a function f which throws an exception.  This can be used to catch programming errors where f is called with incorrect arguments.";
 
 DebugQuiet = 0;
 Warnings = 1
 Terse = 2;
 Info = 3;
 InfoFull = 4;
+DefFn;
 
 Begin["`Private`"];
 
@@ -35,7 +37,7 @@ PrintStructure[x_]:=
 
 PrintStructure[l_List, prefix_, suffix_] :=
   Module[{},
-    If[StringLength[ToString[l] <> prefix] > 50,
+    If[StringLength[ToString[l,InputForm] <> prefix] > 50,
       Print[prefix, "{"];
       Map[PrintStructure[#, "  " <> prefix, ","] &, l];
       Print[prefix, "}"],
@@ -43,7 +45,7 @@ PrintStructure[l_List, prefix_, suffix_] :=
       Print[prefix, ToString[l,InputForm]]]];
 
 PrintStructure[s_, prefix_, suffix_] :=
-  Print[prefix, s, suffix];
+  Print[prefix, s//InputForm, suffix];
 
 PrintError[err_] :=
   Module[{},
@@ -82,11 +84,23 @@ VerifyList[l_] :=
 InfoMessage[level_, message__] :=
   Module[{args = {message}},
     If[level <= debugLevel,
-      Map[PrintStructure, args]];
+      Map[Print, args]];
   ];
 
 SetDebugLevel[level_] :=
   debugLevel = level;
+
+ErrorDefinition[x_] :=
+  x[args___] :=
+    ThrowError["Invalid arguments to "<>ToString[x], {args}//FullForm];
+
+SetAttributes[DefFn, HoldAll];
+
+DefFn[def:(fn_[args___] := body_)] :=
+  Module[
+    {},
+    ErrorDefinition[fn];
+    fn[args] := (*Profile[fn,*)body(*]*)];
 
 End[];
 

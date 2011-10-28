@@ -208,16 +208,22 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     InfoMessage[Terse, "Creating differencing header file"];
     {pDefs, diffHeader} = CreateDifferencingHeader[partialDerivs, OptionValue[ZeroDimensions], OptionValue[UseVectors], OptionValue[IntParameters]];
     diffHeader = Join[
-        If[OptionValue[UseVectors], {"#include <assert.h>\n",
-                                     "#include \"vectors.h\"\n",
-                                     "\n"},
-                                    {}],
+        If[OptionValue[UseVectors] && ! OptionValue[UseOpenCL],
+           {"#include <assert.h>\n",
+            "#include \"vectors.h\"\n",
+            "\n"},
+           {}],
         diffHeader];
+    diffHeader = If[OptionValue[UseOpenCL],
+                    "static char const * const differencing =\n" <>
+                    Stringify[diffHeader] <>
+                    ";\n",
+                    diffHeader];
 
     (* Add the predefinitions into the calcs *)
     calcs = Map[Join[#, {PreDefinitions -> pDefs}] &, calcs];
 
-    ext = CodeGen`SOURCESUFFIX;
+    ext = CodeGenC`SOURCESUFFIX;
 
     (* Construct a source file for each calculation *)
     allParams = Join[Map[ParamName, realParamDefs],
@@ -249,7 +255,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
                   {Filename -> "Startup.cc", Contents -> startup}, 
                   {Filename -> "RegisterMoL.cc", Contents -> molregister},
                   {Filename -> "RegisterSymmetries.cc", Contents -> symregister},
-                 {Filename -> "Differencing.h", Contents -> diffHeader}},
+                  {Filename -> "Differencing.h", Contents -> diffHeader}},
                   MapThread[{Filename -> #1, Contents -> #2} &, 
                             {calcFilenames, calcSources}], boundarySources]};
     InfoMessage[Terse, "Creating thorn"];

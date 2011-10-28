@@ -7,3 +7,7 @@ PROVIDES GenericFD
   SCRIPT
   LANG
 }
+
+OPTIONAL Vectors
+{
+}

@@ -49,6 +49,8 @@ DefineCCTKSubroutine::usage = "DefineCCTKSubroutine[name, block] returns a block
   "of code that defines a CCTK Fortran subroutine of name 'name' with body 'block'.";
 GridName::usage = "GridName[variable] returns the name needed to access variable " <>
   "assuming it is a grid variable when inside a grid loop.";
+ArrayName::usage = "ArrayName[variable] returns the name needed to access variable " <>
+  "assuming it is an array variable when inside a grid function.";
 DeclareGridLoopVariables::usage = "DeclareGridLoopVariables[] returns a block " <>
   "that defines the variables needed during a grid loop.";
 InitialiseGridLoopVariables::usage = "InitialiseGridLoopVariables[] returns a block " <>
@@ -260,6 +262,12 @@ DefFn[
   If[SOURCELANGUAGE == "C",
      ToString[x] <> "[index]",
      ToString[x] <> "(i,j,k)"]];
+
+DefFn[
+  ArrayName[x_Symbol] :=
+  If[SOURCELANGUAGE == "C",
+     ToString[x] <> "[0]",
+     ToString[x] <> "(1)"]];
 
 DefFn[
   DeclareGridLoopVariables[] :=

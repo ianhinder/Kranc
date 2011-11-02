@@ -251,6 +251,8 @@ interfaceGroupBlock[spec_] :=
      " type=", lookup[spec,GridType],
      " timelevels=", lookup[spec, Timelevels], 
      If[mapContains[spec,Tags], {" tags='", interfaceTags[lookupDefault[spec,Tags, {}]], "'"}, ""], 
+     If[mapContains[spec,Dim], {" dim=", lookup[spec,Dim] }, ""], 
+     If[mapContains[spec,Size], {" size=", lookup[spec,Size] }, ""], 
      "\n",
    SuffixedCBlock[{CommaNewlineSeparated[lookup[spec, Variables]],"\n"}, 
                   "\"" <> lookup[spec, Comment] <> "\""]};
@@ -664,6 +666,11 @@ CreateMoLRegistrationSource[spec_, debug_] :=
       Map[{"ierr += MoLRegisterEvolved(CCTK_VarIndex(\"", #, "\"),  CCTK_VarIndex(\"",
             #, "rhs\"));\n"} &,
           lookup[spec, EvolvedGFs]]],
+
+      CommentedBlock["Register all the evolved Array functions with MoL",
+      Map[{"ierr += MoLRegisterEvolved(CCTK_VarIndex(\"", #, "\"),  CCTK_VarIndex(\"",
+            #, "rhs\"));\n"} &,
+          lookup[spec, EvolvedArrays]]],
 
       (* Registering all the remaining variables as constrained is
       just plain wrong.  Read the MoL documentation.  It is also not

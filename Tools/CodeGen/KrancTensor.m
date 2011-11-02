@@ -54,9 +54,11 @@ CreateKrancThornTT[groups_, parentDirectory_, thornName_, opts___] :=
     options = Join[DeleteCases[options, PartialDerivatives -> _], {PartialDerivatives -> expDerivs}];
 
     declaredGroups = lookupDefault[{opts}, DeclaredGroups, {}];
+    odeGroups = lookupDefault[{opts}, ODEGroups, {}];
     evolutionTimelevels = lookupDefault[{opts}, EvolutionTimelevels, 3];
     defaultEvolutionTimelevels = lookupDefault[{opts}, DefaultEvolutionTimelevels, evolutionTimelevels];
     InfoMessage[Info, "Declared groups: " <> ToString[declaredGroups]];
+    InfoMessage[Info, "ODE groups: " <> ToString[odeGroups]];
     InfoMessage[Terse, "Computing reflection symmetries"];
     reflectionSymmetries = computeReflectionSymmetries[declaredGroups, groups];
     InfoMessage[Info, "Reflection symmetries: ", reflectionSymmetries];

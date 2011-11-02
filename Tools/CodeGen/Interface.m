@@ -40,6 +40,20 @@ nonevolvedGroupInterfaceStructure[group_] :=
   Variables -> groupVariables[group]
 }
 
+nonevolvedODEGroupInterfaceStructure[group_] := 
+{
+  Name -> groupName[group], 
+  VariableType -> "CCTK_REAL",
+  Timelevels -> NonevolvedTimelevels[group],
+  GridType -> "array",
+  Comment -> groupName[group], 
+  Visibility -> "public",
+  Tags -> Join[GroupTags[group]],
+  Dim -> 1,
+  Size -> 1,
+  Variables -> groupVariables[group]
+}
+
 evolvedGroupInterfaceStructure[group_, timelevels_] := 
 {
   Name -> groupName[group], 
@@ -49,6 +63,20 @@ evolvedGroupInterfaceStructure[group_, timelevels_] :=
   Comment -> groupName[group], 
   Visibility -> "public",
   Tags -> GroupTags[group],
+  Variables -> groupVariables[group]
+}
+
+evolvedODEGroupInterfaceStructure[group_, timelevels_] := 
+{
+  Name -> groupName[group], 
+  VariableType -> "CCTK_REAL",
+  Timelevels -> timelevels, 
+  GridType -> "array",
+  Comment -> groupName[group], 
+  Visibility -> "public",
+  Tags -> GroupTags[group],
+  Dim -> 1,
+  Size -> 1,
   Variables -> groupVariables[group]
 }
 
@@ -64,19 +92,37 @@ rhsGroupInterfaceStructure[group_, timelevels_] :=
   Variables -> groupVariables[group]
 }
 
+rhsODEGroupInterfaceStructure[group_, timelevels_] := 
+{
+  Name -> groupName[group], 
+  VariableType -> "CCTK_REAL",
+  Timelevels -> timelevels, 
+  GridType -> "array",
+  Comment -> groupName[group], 
+  Visibility -> "public",
+  Tags -> GroupTags[group],
+  Dim -> 1,
+  Size -> 1,
+  Variables -> groupVariables[group]
+}
 
 Options[CreateKrancInterface] = ThornOptions;
 
-CreateKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_, groups_,
+CreateKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_,
+  nonevolvedODEGroups_, evolvedODEGroups_, rhsODEGroups_, groups_,
   implementation_, inheritedImplementations_,
   includeFiles_, opts:OptionsPattern[]] :=
 
   Module[{registerEvolved, (*registerConstrained,*)
     nonevolvedGroupStructures, evolvedGroupStructures, rhsGroupStructures,
+    nonevolvedODEGroupStructures, evolvedODEGroupStructures, rhsODEGroupStructures,
     groupStructures, interface, getMap},
     VerifyGroupNames[nonevolvedGroups];
     VerifyGroupNames[evolvedGroups];
     VerifyGroupNames[rhsGroups];
+    VerifyGroupNames[nonevolvedODEGroups];
+    VerifyGroupNames[evolvedODEGroups];
+    VerifyGroupNames[rhsODEGroups];
     VerifyGroups[groups];
     VerifyString[implementation];
     VerifyStringList[inheritedImplementations];
@@ -129,8 +175,22 @@ CreateKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_, groups_,
       Map[rhsGroupInterfaceStructure[groupFromName[#, groups],
           OptionValue[EvolutionTimelevels]] &, rhsGroups];
 
+    nonevolvedODEGroupStructures = 
+      Map[nonevolvedODEGroupInterfaceStructure[groupFromName[#, groups]] &, 
+          nonevolvedODEGroups];
+
+    evolvedODEGroupStructures =
+      Map[evolvedODEGroupInterfaceStructure[groupFromName[#, groups],
+          OptionValue[EvolutionTimelevels]] &, evolvedODEGroups];
+
+    rhsODEGroupStructures =
+      Map[rhsODEGroupInterfaceStructure[groupFromName[#, groups],
+          OptionValue[EvolutionTimelevels]] &, rhsODEGroups];
+
     groupStructures = Join[nonevolvedGroupStructures,
-                           evolvedGroupStructures, rhsGroupStructures];
+                           evolvedGroupStructures, rhsGroupStructures,
+                           nonevolvedODEGroupStructures,
+                           evolvedODEGroupStructures, rhsODEGroupStructures];
 
     interface = CreateInterface[implementation, inheritedImplementations, 
       Join[includeFiles, {CactusBoundary`GetIncludeFiles[]},
@@ -139,7 +199,8 @@ CreateKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_, groups_,
            If[OptionValue[UseVectors], {"vectors.h"}, {}]],
       groupStructures,
       UsesFunctions ->
-        Join[{registerEvolved, (*registerConstrained,*) diffCoeff, getMap}, 
+        Join[{registerEvolved, (*registerConstrained,*)
+                diffCoeff, getMap}, 
              CactusBoundary`GetUsedFunctions[]]];
     Return[interface]];
 

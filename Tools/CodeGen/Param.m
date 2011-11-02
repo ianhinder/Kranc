@@ -119,13 +119,15 @@ extendParameters[imp_, reals_, ints_, keywords_] :=
       Return[{}]]];
 
 Options[CreateKrancParam] = ThornOptions;
-CreateKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_, 
+CreateKrancParam[evolvedGroups_, nonevolvedGroups_,
+  evolvedODEGroups_, nonevolvedODEGroups_, groups_, thornName_, 
   reals_, ints_, keywords_,
   inheritedReals_, inheritedInts_, inheritedKeywords_,
   extendedReals_, extendedInts_, extendedKeywords_,
   evolutionTimelevels_, defaultEvolutionTimelevels_,
   calcs_, opts:OptionsPattern[]] :=
   Module[{nEvolved, evolvedMoLParam, evolvedGFs,
+     nEvolvedODE, evolvedODEMoLParam,
     (*constrainedMoLParam,*) genericfdStruct, realStructs, intStructs,
     allInherited, allExtended, implementationNames, molImplementation,
     userImplementations, implementations, params, paramspec, param,
@@ -150,6 +152,21 @@ CreateKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_,
       AccumulatorBase -> "MethodofLines::MoL_Num_Evolved_Vars",
       AllowedValues -> {{Value -> ToString[nEvolved] <> ":" <> ToString[nEvolved] , 
                          Description -> "Number of evolved variables used by this thorn"}},
+      Steerable -> Recover
+    };
+
+    nEvolvedODE   = Length[variablesFromGroups[evolvedODEGroups, groups]];
+
+    evolvedODEMoLParam =
+    {
+      Name -> thornName <> "_MaxNumArrayEvolvedVars",
+      Type -> "CCTK_INT",
+      Default -> nEvolvedODE,
+      Description -> "Number of Array evolved variables used by this thorn",
+      Visibility -> "restricted",
+      AccumulatorBase -> "MethodofLines::MoL_Num_ArrayEvolved_Vars",
+      AllowedValues -> {{Value -> ToString[nEvolvedODE] <> ":" <> ToString[nEvolvedODE] , 
+                         Description -> "Number of Array evolved variables used by this thorn"}},
       Steerable -> Recover
     };
 
@@ -216,7 +233,8 @@ CreateKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_,
       Name -> "MethodOfLines",
       UsedParameters -> 
       {
-        {Name -> "MoL_Num_Evolved_Vars",     Type -> "CCTK_INT"}
+        {Name -> "MoL_Num_Evolved_Vars",        Type -> "CCTK_INT"},
+        {Name -> "MoL_Num_ArrayEvolved_Vars",   Type -> "CCTK_INT"}
         (* {Name -> "MoL_Num_Constrained_Vars", Type -> "CCTK_INT"} *)
       }
     };
@@ -230,7 +248,8 @@ CreateKrancParam[evolvedGroups_, nonevolvedGroups_, groups_, thornName_,
     userImplementations2 = If[userImplementations2=={{}},{},userImplementations2];
 
     implementations = Join[userImplementations, userImplementations2, {genericfdStruct, molImplementation}];
-    params = Join[{verboseStruct}, realStructs, intStructs, keywordStructs, {evolvedMoLParam, (*constrainedMoLParam,*) timelevelsParam, rhsTimelevelsParam},
+    params = Join[{verboseStruct}, realStructs, intStructs, keywordStructs, {evolvedMoLParam,
+                  evolvedODEMoLParam, (*constrainedMoLParam,*) timelevelsParam, rhsTimelevelsParam},
                   calcEveryStructs, calcOffsetStructs,
       CactusBoundary`GetParameters[evolvedGFs, evolvedGroups]];
 

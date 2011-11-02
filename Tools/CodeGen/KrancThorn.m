@@ -81,7 +81,7 @@ replaceDots[x_] :=
 Options[CreateKrancThorn] = ThornOptions;
 
 CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[]] :=
-  Module[{calcs, declaredGroups, implementation,
+  Module[{calcs, declaredGroups, odeGroups, implementation,
     inheritedImplementations, includeFiles,
     evolutionTimelevels, defaultEvolutionTimelevels,
     realParams, intParams, keywordParams,
@@ -90,6 +90,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     configuration,
     partialDerivs, coordGroup, evolvedGroups, rhsGroups, nonevolvedGroups,
     interface, evolvedGroupDefinitions, rhsGroupDefinitions, thornspec,
+    evolvedODEGroups, nonevolvedODEGroups,
+    evolvedODEGroupDefinitions, rhsODEGroupDefinitions, rhsODEGroups,
     allParams, boundarySources, reflectionSymmetries,
     realParamDefs, intParamDefs,
     pDefs},
@@ -101,6 +103,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     calcs = OptionValue[Calculations];
     declaredGroups = OptionValue[DeclaredGroups];
+    odeGroups = OptionValue[ODEGroups];
     implementation = 
       If[OptionValue[Implementation] =!= None, 
         OptionValue[Implementation],
@@ -141,6 +144,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     VerifyString[thornName];
     VerifyString[implementation];
     VerifyGroupNames[declaredGroups];
+    VerifyGroupNames[odeGroups];
 
     If[OptionValue[UseJacobian], JacobianCheckGroups[groups]];
 
@@ -151,6 +155,9 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     evolvedGroups = extractEvolvedGroups[declaredGroups, calcs, groups];
     nonevolvedGroups = extractNonevolvedGroups[declaredGroups, calcs, groups];
 
+    evolvedODEGroups = extractEvolvedGroups[odeGroups, calcs, groups];
+    nonevolvedODEGroups = extractNonevolvedGroups[odeGroups, calcs, groups];
+
     (* Replace the dots in the calculation *)
     calcs = replaceDots[calcs];
 
@@ -159,10 +166,15 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     rhsGroupDefinitions = Map[evolvedGroupToRHSGroup[#, evolvedGroupDefinitions] &, evolvedGroups];
     groups = Join[groups, rhsGroupDefinitions];
 
+    evolvedODEGroupDefinitions = Map[groupFromName[#, groups] &, evolvedODEGroups];
+    rhsODEGroupDefinitions = Map[evolvedGroupToRHSGroup[#, evolvedODEGroupDefinitions] &, evolvedODEGroups];
+    groups = Join[groups, rhsODEGroupDefinitions];
+
     (* Add the groups into the calcs *)
     calcs = Map[Join[#, {Groups -> groups}] &, calcs];
 
     rhsGroups = Map[groupName, rhsGroupDefinitions];
+    rhsODEGroups = Map[groupName, rhsODEGroupDefinitions];
 
     (* Construct the configuration file *)
     InfoMessage[Terse, "Creating configuration file"];
@@ -171,12 +183,15 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     (* Construct the interface file *)
     InfoMessage[Terse, "Creating interface file"];
     interface = CreateKrancInterface[nonevolvedGroups,
-      evolvedGroups, rhsGroups, groups,
+      evolvedGroups, rhsGroups, nonevolvedODEGroups, evolvedODEGroups,
+      rhsODEGroups, groups,
       implementation, inheritedImplementations, includeFiles, opts];
 
     (* Construct the param file *)
     InfoMessage[Terse, "Creating param file"];
-    param = CreateKrancParam[evolvedGroups, nonevolvedGroups, groups, thornName,
+    param = CreateKrancParam[evolvedGroups, nonevolvedGroups,
+      evolvedODEGroups, nonevolvedODEGroups,
+      groups, thornName,
       realParamDefs, intParamDefs, keywordParams,
       inheritedRealParams, inheritedIntParams, inheritedKeywordParams,
       extendedRealParams, extendedIntParams, extendedKeywordParams,
@@ -185,8 +200,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     (* Construct the schedule file *)
     InfoMessage[Terse, "Creating schedule file"];
-    schedule = CreateKrancScheduleFile[calcs, groups, evolvedGroups,
-      rhsGroups, nonevolvedGroups, thornName,
+    schedule = CreateKrancScheduleFile[calcs, groups, Join[evolvedGroups,evolvedODEGroups],
+      Join[rhsGroups,rhsODEGroups], Join[nonevolvedGroups,nonevolvedODEGroups], thornName,
       evolutionTimelevels];
 
     boundarySources = CactusBoundary`GetSources[evolvedGroups, groups, 
@@ -196,7 +211,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        even if it does not evolve any variables). This could be fixed
        later. *)
     InfoMessage[Terse, "Creating MoL registration file"];
-    molregister = createKrancMoLRegister[evolvedGroups, nonevolvedGroups, groups, implementation, thornName];
+    molregister = createKrancMoLRegister[evolvedGroups, nonevolvedGroups, evolvedODEGroups, nonevolvedODEGroups, groups, implementation, thornName];
 
     Module[{allGFs = Join[variablesFromGroups[evolvedGroups, groups],
                           variablesFromGroups[nonevolvedGroups, groups]]},
@@ -234,7 +249,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     InfoMessage[Terse, "Creating calculation source files"];
     calcSources = Map[CreateSetterSource[
-      {Join[#, {Parameters -> allParams, PartialDerivatives -> partialDerivs}]},
+      {Join[#, {ODEGroups -> Join[odeGroups, rhsODEGroups],
+                Parameters -> allParams, PartialDerivatives -> partialDerivs}]},
       False, {}, implementation, opts] &, calcs];
     calcFilenames = Map[lookup[#, Name] <> ext &, calcs];
 
@@ -279,7 +295,9 @@ extractEvolvedGroups[declaredGroups_, calcs_, groups_] :=
     VerifyGroups[groups];
     VerifyList[calcs];
     Map[VerifyNewCalculation, calcs];
+    allVars = variablesFromGroups[declaredGroups, groups];
     evolvedVars = Apply[Join, Map[CalculationEvolvedVars, calcs]];
+    evolvedVars = Intersection[allVars, evolvedVars];
     evolvedGroups = containingGroups[evolvedVars, groups];
     Return[evolvedGroups]];
 
@@ -307,16 +325,19 @@ getConstrainedVariables[evolvedGroupNames_, groups_] :=
     constrainedVariables = Complement[allVariables, Join[evolvedGFs, Map[Symbol[addrhs[#]] &, evolvedGFs]]];
     constrainedVariables];
 
-createKrancMoLRegister[evolvedGroupNames_, nonevolvedGroupNames_, groups_, implementation_, thornName_] :=
-  Module[{molspec, evolvedGFs, constrainedVariables},
+createKrancMoLRegister[evolvedGroupNames_, nonevolvedGroupNames_, evolvedODEGroupNames_, nonevolvedODEGroupNames_, groups_, implementation_, thornName_] :=
+  Module[{molspec, evolvedGFs, evolvedArrays, constrainedVariables},
     evolvedGFs = variablesFromGroups[evolvedGroupNames, groups];
+    evolvedArrays = variablesFromGroups[evolvedODEGroupNames, groups];
     nonevolvedGFs = variablesFromGroups[nonevolvedGroupNames, groups];
+    nonevolvedArrays = variablesFromGroups[nonevolvedGroupNames, groups];
 
     constrainedVariables = getConstrainedVariables[evolvedGroupNames, groups];
     
     molspec =
     {
       EvolvedGFs   -> Map[qualifyGFName[#, groups, implementation]& , evolvedGFs], 
+      EvolvedArrays -> Map[qualifyGFName[#, groups, implementation]& , evolvedArrays], 
       PrimitiveGFs -> Map[qualifyGFName[#, groups, implementation]& , constrainedVariables],
       BaseImplementation -> implementation, 
       ThornName -> thornName

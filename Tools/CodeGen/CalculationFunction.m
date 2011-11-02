@@ -376,7 +376,7 @@ Options[CreateCalculationFunction] = ThornOptions;
 DefFn[
   CreateCalculationFunction[calcp_, debug_, imp_, opts:OptionsPattern[]] :=
   Module[{gfs, allSymbols, knownSymbols,
-          shorts, eqs, parameters, parameterRules,
+          shorts, eqs, parameters, parameterRules, odeGroups,
           functionName, dsUsed, groups, pddefs, cleancalc, eqLoop, where,
           addToStencilWidth, pDefs, haveCondTextuals, condTextuals, calc,
           kernelCall},
@@ -392,6 +392,7 @@ DefFn[
   eqs    = lookup[cleancalc, Equations];
   parameters = lookupDefault[cleancalc, Parameters, {}];
   groups = lookup[cleancalc, Groups];
+  odeGroups = lookupDefault[cleancalc, ODEGroups, {}];
   If[OptionValue[UseJacobian], groups = Join[groups, JacobianGroups[]]];
   pddefs = lookupDefault[cleancalc, PartialDerivatives, {}];
   where = lookupDefault[cleancalc, Where, Everywhere];
@@ -514,7 +515,7 @@ DefFn[
 
     If[gfs != {},
       {
-	eqLoop = equationLoop[eqs, cleancalc, gfs, shorts, {}, groups,
+	eqLoop = equationLoop[eqs, cleancalc, gfs, shorts, {}, groups, odeGroups,
           pddefs, where, addToStencilWidth, opts]},
       {}]
 
@@ -574,13 +575,14 @@ DefFn[
 Options[equationLoop] = ThornOptions;
 
 DefFn[
-  equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, pddefs_,
+  equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, odeGroups_, pddefs_,
              where_, addToStencilWidth_,
              opts:OptionsPattern[]] :=
   Module[{rhss, lhss, gfsInRHS, gfsInLHS, gfsOnlyInRHS, localGFs,
           localMap, eqs2, derivSwitch, code, functionName, calcCode,
           loopFunction, gfsInBoth, gfsDifferentiated,
           gfsDifferentiatedAndOnLHS, declare, eqsReplaced,
+          arraysInRHS, arraysInLHS, arraysOnlyInRHS, odeVars,
           generateEquationCode, groupedIfs, IfThenGroup},
 
     rhss = Map[#[[2]] &, eqs];
@@ -588,6 +590,8 @@ DefFn[
 
     orderings = Flatten[Map[pdCanonicalOrdering, pddefs], 1];
     eqsOrdered = (eqs //. orderings);
+
+    odeVars = variablesFromGroups[odeGroups, groups];
 
     gfsInRHS = Union[Cases[rhss, _ ? (MemberQ[gfs,#] &), Infinity]];
     gfsInLHS = Union[Cases[lhss, _ ? (MemberQ[gfs,#] &), Infinity]];
@@ -677,10 +681,13 @@ DefFn[
         ret
     ];
 
-    calcCode = Riffle[generateEquationCode /@ groupedIfs, "\n"];
-      
+    groupedIfsArrays = Select[groupedIfs, MemberQ[Map[localName, odeVars], #[[2]][[1]]]  &];
+    groupedIfs = Select[groupedIfs, !MemberQ[Map[localName, odeVars], #[[2]][[1]]]  &];
 
-    assignLocalGridFunctions[gs_, useVectors_, useJacobian_] :=
+    calcCode = Riffle[generateEquationCode /@ groupedIfs, "\n"];
+    calcCodeArrays = Riffle[generateEquationCode /@ groupedIfsArrays, "\n"];
+
+    assignLocalFunctions[gs_, useVectors_, useJacobian_, NameFunc_] :=
       Module[{conds, varPatterns, varsInConds, simpleVars, code},
         conds =
           {{"eT" ~~ _ ~~ _, "*stress_energy_state", "ToReal(0.0)"}}; (* This should be passed as an option *)
@@ -692,7 +699,7 @@ DefFn[
         simpleVars = Complement[gs, Flatten[varsInConds]];
         code = {"\n",
          Map[DeclareMaybeAssignVariableInLoop[
-              DataType[], localName[#], GridName[#],
+              DataType[], localName[#], NameFunc[#],
               False,"", useVectors] &, simpleVars],
          {"\n",
          Riffle[
@@ -700,7 +707,7 @@ DefFn[
              If[Length[#2] > 0,
                {DeclareVariables[localName/@#2, DataType[]],"\n",
                 Conditional[#1,
-                  Table[AssignVariableInLoop[localName[var], GridName[var], useVectors], {var, #2}],
+                  Table[AssignVariableInLoop[localName[var], NameFunc[var], useVectors], {var, #2}],
                   Sequence@@If[#3 =!= None, {Table[AssignVariableInLoop[localName[var], #3, False (*useVectors*)], {var, #2}]}, {}]]},
                (* else *)
                {}] &,
@@ -708,6 +715,26 @@ DefFn[
          code
       ];
 
+    assignLocalGridFunctions[gs_, useVectors_, useJacobian_] := assignLocalFunctions[gs, useVectors, useJacobian, GridName];
+    assignLocalArrayFunctions[gs_] := assignLocalFunctions[gs, False, False, ArrayName];
+
+    (* separate grid and array variables *)
+    arraysInRHS = Intersection[odeVars, gfsInRHS];
+    arraysInLHS = Intersection[odeVars, gfsInLHS];
+    arraysOnlyInRHS = Complement[arraysInRHS, arraysInLHS];
+
+    gfsInRHS = Complement[gfsInRHS, odeVars];
+    gfsInLHS = Complement[gfsInLHS, odeVars];
+    gfsOnlyInRHS = Complement[gfsInRHS, gfsInLHS];
+
+    {
+    CommentedBlock["Assign local copies of arrays functions",
+      assignLocalArrayFunctions[arraysInRHS]],
+
+    CommentedBlock["Calculate temporaries and arrays functions", calcCodeArrays],
+
+    CommentedBlock["Copy local copies back to grid functions",
+        Map[AssignVariableInLoop[ArrayName[#], localName[#]] &, arraysInLHS]],
 
     GenericGridLoop[functionName,
     {
@@ -763,7 +790,7 @@ DefFn[
               CommentedBlock["Copy local copies back to grid functions",
                 Map[AssignVariableInLoop[GridName[#], localName[#]] &, gfsInLHS]]],
 
-      If[debugInLoop, Map[InfoVariable[GridName[#]] &, gfsInLHS], ""]}, opts]]];
+      If[debugInLoop, Map[InfoVariable[GridName[#]] &, gfsInLHS], ""]}, opts]}]];
 
 End[];
 

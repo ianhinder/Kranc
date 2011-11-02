@@ -64,4 +64,6 @@ CarpetIOBasic::outInfo_vars = "SimpleWaveODE::phi SimpleWaveODE::a SimpleWaveODE
  
 IOASCII::out1D_every = 1
 IOASCII::out1D_vars = "SimpleWaveODE::phi SimpleWaveODE::pi"
+IOASCII::out0D_every = 1
+IOASCII::out0D_vars = "SimpleWaveODE::a SimpleWaveODE::b"
 SimpleWaveODE::evolved_group_bound = "none"

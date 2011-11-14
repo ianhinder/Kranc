@@ -662,7 +662,7 @@ DefFn[
 (* Take an expression x and replace occurrences of Powers with the C
   macros SQR, CUB, QAD *)
 DefFn[
-  ReplacePowers[expr_, vectorise:Boolean] :=
+  ReplacePowers[expr_, vectorise:Boolean, noSimplify:Boolean : False] :=
   Module[
     {rhs},
     rhs = expr /. Power[xx_, -1] -> INV[xx];
@@ -712,8 +712,9 @@ DefFn[
         IfThen[cond1, Simplify[ff1 xx1 + ff2 xx2], Simplify[ff1 yy1 + ff2 yy2]];
 
         (* Is this still a good idea when FMA instructions are used? *)
-        rhs = rhs //. xx_ yy_ + xx_ zz_ -> xx (yy+zz);
-        rhs = rhs //. xx_ yy_ - xx_ zz_ -> xx (yy-zz);
+        If[!noSimplify,
+           rhs = rhs //. xx_ yy_ + xx_ zz_ -> xx (yy+zz);
+           rhs = rhs //. xx_ yy_ - xx_ zz_ -> xx (yy-zz)];
 
         rhs = rhs /. Power[E, power_] -> exp[power];
 

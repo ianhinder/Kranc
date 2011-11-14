@@ -247,11 +247,11 @@ simpCollect[collectList_, eqrhs_, localvar_, debug_] :=
     all];
 
 (* Return a CodeGen block which assigns dest by evaluating expr *)
-assignVariableFromExpression[dest_, expr_, declare_, vectorise_] :=
+assignVariableFromExpression[dest_, expr_, declare_, vectorise_, noSimplify:Boolean : False] :=
   Module[{tSym, type, cleanExpr, code},
     tSym = Unique[];
     type = If[StringMatchQ[ToString[dest], "dir*"], "ptrdiff_t", DataType[]];
-    cleanExpr = ReplacePowers[expr, vectorise] /. Kranc`t -> tSym;
+    cleanExpr = ReplacePowers[expr, vectorise, noSimplify] /. Kranc`t -> tSym;
 
     If[SOURCELANGUAGE == "C",
       code = If[declare, type <> " ", ""] <> ToString[dest] <> " = " <>
@@ -278,10 +278,10 @@ assignVariableFromExpression[dest_, expr_, declare_, vectorise_] :=
     {code}];
 
 (* This and assignVariableFromExpression should be combined *)
-generateCodeFromExpression[expr_, vectorise_] :=
+generateCodeFromExpression[expr_, vectorise_, noSimplify:Boolean : False] :=
   Module[{tSym, type, cleanExpr, code},
     tSym = Unique[];
-    cleanExpr = ReplacePowers[expr, vectorise] /. Kranc`t -> tSym;
+    cleanExpr = ReplacePowers[expr, vectorise, noSimplify] /. Kranc`t -> tSym;
 
     If[SOURCELANGUAGE == "C",
       code =
@@ -583,7 +583,8 @@ DefFn[
           loopFunction, gfsInBoth, gfsDifferentiated,
           gfsDifferentiatedAndOnLHS, declare, eqsReplaced,
           arraysInRHS, arraysInLHS, arraysOnlyInRHS, odeVars,
-          generateEquationCode, groupedIfs, IfThenGroup},
+          generateEquationCode, groupedIfs, IfThenGroup, noSimplify},
+
 
     rhss = Map[#[[2]] &, eqs];
     lhss = Map[#[[1]] &, eqs];
@@ -658,7 +659,9 @@ DefFn[
        {x___, {deca_, IfThenGroup[cond_, at_, af_]}, {decb_, IfThenGroup[cond_, bt_, bf_]}, y___} :>
          {x, {Join[deca, decb], IfThenGroup[cond, Join[at, bt], Join[af, bf]]}, y}};
 
-    (* Generace actual code strings. Try to declare variables as they are assigned, but
+    noSimplify = lookupDefault[cleancalc, NoSimplify, False];
+
+    (* Generate actual code strings. Try to declare variables as they are assigned, but
        it is only possible to do this outside all if(){} statements. *)
     generateEquationCode[{declare2_, eq2_}] :=
       Module[{ret, vars, preDeclare, cond, vectorize},
@@ -666,17 +669,17 @@ DefFn[
         Which[
         SameQ[Head[eq2[[2]]], IfThen],
           ret = assignVariableFromExpression[eq2[[1]],
-            eq2[[2]] /. IfThen[cond_, x__]:> IfThen[Scalar[cond], x], declare2, vectorize];,
+            eq2[[2]] /. IfThen[cond_, x__]:> IfThen[Scalar[cond], x], declare2, vectorize, noSimplify];,
         SameQ[Head[eq2], IfThenGroup],
           vars = eq2[[2,All,1]];
           cond = eq2[[1]];
           preDeclare = Pick[vars, declare2];
           ret = {Map[DeclareVariableNoInit[#, DataType[]] &, Complement[Union[preDeclare], localName/@gfsInRHS]], {"\n"},
                  Conditional[generateCodeFromExpression[Scalar[cond], False],
-                  Riffle[assignVariableFromExpression[#[[1]], #[[2]], False, vectorize]& /@ eq2[[2]], "\n"],
-                  Riffle[assignVariableFromExpression[#[[1]], #[[2]], False, vectorize]& /@ eq2[[3]], "\n"]]};,
+                  Riffle[assignVariableFromExpression[#[[1]], #[[2]], False, vectorize, noSimplify]& /@ eq2[[2]], "\n"],
+                  Riffle[assignVariableFromExpression[#[[1]], #[[2]], False, vectorize, noSimplify]& /@ eq2[[3]], "\n"]]};,
         True,
-          ret = assignVariableFromExpression[eq2[[1]], eq2[[2]], declare2, OptionValue[UseVectors]];
+          ret = assignVariableFromExpression[eq2[[1]], eq2[[2]], declare2, OptionValue[UseVectors], noSimplify];
         ];
         ret
     ];

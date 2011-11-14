@@ -151,6 +151,7 @@ removeUnusedShorthands[calc_] :=
     rhsShorthands = calculationRHSUsedShorthands[calc];
     lhsShorthands = calculationLHSUsedShorthands[calc];
     unusedButAssignedShorthands = Complement[lhsShorthands, rhsShorthands];
+    InfoMessage[InfoFull, "Removing definitions for shorthands: "<>ToString[unusedButAssignedShorthands,InputForm]];
     eqs = lookup[calc, Equations];
     neweqs = removeShorts[eqs];
     newCalc = mapReplace[calc, Equations, neweqs];
@@ -381,6 +382,13 @@ DefFn[
           addToStencilWidth, pDefs, haveCondTextuals, condTextuals, calc,
           kernelCall},
 
+  functionName = ToString@lookup[calcp, Name];
+  bodyFunctionName = functionName <> "_Body";
+
+  InfoMessage[Terse, "Creating calculation function: " <> functionName];
+
+  InfoMessage[InfoFull, "Calculation sets "<>ToString[Map[First,lookup[calcp, Equations]]]];
+
   calc = If[OptionValue[UseJacobian], InsertJacobian[calcp, opts], calcp];
 
   cleancalc = removeUnusedShorthands[calc];
@@ -405,10 +413,6 @@ DefFn[
   VerifyCalculation[cleancalc];
 
   gfs = allGroupVariables[groups];
-  functionName = ToString@lookup[cleancalc, Name];
-  bodyFunctionName = functionName <> "_Body";
-
-  InfoMessage[Terse, "Creating calculation function: " <> functionName];
 
   InfoMessage[InfoFull, " ", Length@shorts, " shorthands"];
   InfoMessage[InfoFull, " ", Length@gfs, " grid functions"];
@@ -425,7 +429,7 @@ DefFn[
               eqs],
 
     If[!lookupDefault[cleancalc, NoSimplify, False],
-       InfoMessage[InfoFull, "Simplifying equations", eqs];
+       InfoMessage[InfoFull, "Simplifying equations", eqs//InputForm];
        eqs = Simplify[eqs, {r>=0}]]];
 
   InfoMessage[InfoFull, "Equations:"];
@@ -434,7 +438,9 @@ DefFn[
   parameterRules = Map[(#->ToReal[#])&, parameters];
   eqs = eqs /. Prepend[parameterRules, IfThen[cond_, x_, y_] :> IfThen[cond, x/.parameterRules, y/.parameterRules]];
 
-  Map[printEq, eqs];
+  (* Map[printEq, eqs]; *)
+
+  Scan[InfoMessage[InfoFull, "  " <> ToString@First[#]<>" = ..."] &, eqs];
 
   (* Check all the function names *)
   functionsPresent = functionsInCalculation[cleancalc]; (* Not currently used *)
@@ -479,6 +485,7 @@ DefFn[
       ThrowError["Unknown 'Where' entry in calculation " <>
         functionName <> ": " <> ToString[where]]];
 
+  InfoMessage[InfoFull,"Generating function"];
   {
   DefineFunction[bodyFunctionName, "static void", "cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const imin[3], int const imax[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[]",
   {
@@ -585,6 +592,7 @@ DefFn[
           arraysInRHS, arraysInLHS, arraysOnlyInRHS, odeVars,
           generateEquationCode, groupedIfs, IfThenGroup, noSimplify},
 
+    InfoMessage[InfoFull, "Equation loop"];
 
     rhss = Map[#[[2]] &, eqs];
     lhss = Map[#[[1]] &, eqs];
@@ -666,6 +674,7 @@ DefFn[
     generateEquationCode[{declare2_, eq2_}] :=
       Module[{ret, vars, preDeclare, cond, vectorize},
         vectorize = OptionValue[UseVectors];
+        InfoMessage[InfoFull, "Generating code for " <> ToString[eq2[[1]], InputForm]];
         Which[
         SameQ[Head[eq2[[2]]], IfThen],
           ret = assignVariableFromExpression[eq2[[1]],
@@ -689,6 +698,7 @@ DefFn[
 
     calcCode = Riffle[generateEquationCode /@ groupedIfs, "\n"];
     calcCodeArrays = Riffle[generateEquationCode /@ groupedIfsArrays, "\n"];
+    InfoMessage[InfoFull, "Finished generating equation code"];
 
     assignLocalFunctions[gs_, useVectors_, useJacobian_, NameFunc_] :=
       Module[{conds, varPatterns, varsInConds, simpleVars, code},

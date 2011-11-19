@@ -717,6 +717,7 @@ DefFn[
            rhs = rhs //. xx_ yy_ - xx_ zz_ -> xx (yy-zz)];
 
         rhs = rhs /. Power[E, power_] -> exp[power];
+        rhs = rhs /. ArcTan[x_, y_] -> ArcTan2[x,y];
 
         (* there have been some problems doing the Max/Min
            replacement via the preprocessor for C, so we do it

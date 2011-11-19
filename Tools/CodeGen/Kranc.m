@@ -27,7 +27,7 @@ BeginPackage["Kranc`"];
  kmadd, kmsub, knmadd, knmsub, kpos, kneg, kadd, ksub, kmul, kdiv,
  kcos, kfabs, kfmax, kfmin, ksqrt, kexp, klog, kpow, ksin, ktan,
  dir1, dir2, dir3, dt, dx, dy, dz, t,
- khalf, kthird, ktwothird, kfourthird, keightthird};
+ khalf, kthird, ktwothird, kfourthird, keightthird, ArcTan2};
 
 (* Helpers.m *)
 

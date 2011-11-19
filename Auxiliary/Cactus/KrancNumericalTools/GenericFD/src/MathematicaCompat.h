@@ -25,6 +25,7 @@
 #define ArcSin(x)     (asin(x))
 #define ArcCos(x)     (acos(x))
 #define ArcTan(x)     (atan(x))
+#define ArcTan2(x,y)  (atan2(y,x))
 
 #define Sinh(x)       (sinh(x))
 #define Cosh(x)       (cosh(x))

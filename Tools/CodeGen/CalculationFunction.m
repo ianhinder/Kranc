@@ -427,10 +427,9 @@ DefFn[
                                       Last[#],
                                       First[#], debug] &,
               eqs],
-
+    (* else *)
     If[!lookupDefault[cleancalc, NoSimplify, False],
-       InfoMessage[InfoFull, "Simplifying equations", eqs//InputForm];
-       eqs = Simplify[eqs, {r>=0}]]];
+       eqs = Map[(InfoMessage[InfoFull, "Simplifying "<>ToString[#[[1]], InputForm]<>" -> ..."]; Simplify[#, {r>=0}]) &, eqs]]];
 
   InfoMessage[InfoFull, "Equations:"];
 

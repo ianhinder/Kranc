@@ -239,6 +239,13 @@ defineIndices[] :=
 
 defineIndices[];
 
+tensorCharacter[inds_List] :=
+  Map[If[Head[#]===TensorIndex, Last[#], #] &, inds];
+
+charactersMatch[c1_,c2_] :=
+  Length[c1] === Length[c2] &&
+  And@@MapThread[NumberQ[#1] || NumberQ[#2] || #1 === #2 &, {c1,c2}];
+
 (* -------------------------------------------------------------------------- 
    Tensor
    -------------------------------------------------------------------------- *)
@@ -256,7 +263,19 @@ DefineTensor[T_] :=
 (*    Format[Tensor[T, is:((TensorIndex[_,_] | _Integer) ..) ], InputForm] := 
       HoldForm[T[is]];*)
 
-    T[is:((TensorIndex[_,_] | _Integer) ..)] := Tensor[T, is];
+    T[is:((TensorIndex[_,_] | _Integer) ..)] :=
+      Module[
+        {c},
+        c = tensorCharacter[{is}];
+        If[!ValueQ[TensorCharacter[T]],
+           TensorCharacter[T] = c,
+           (* else *)
+           If[!charactersMatch[c,TensorCharacter[T]],
+              ThrowError["Tensor indices in "<>ToString[Tensor[T,is],OutputForm]<>
+                         " do not match those used previously: "<>ToString[T]<>"["<>StringJoin[Riffle[c,","]]<>"]"]]];
+
+        Tensor[T, is]];
+
     TensorAttributes[T] = {TensorWeight -> 0, Symmetries -> {}};
     T];
 
@@ -671,6 +690,16 @@ MatrixOfComponents[Tensor[K_, i_, j_]] :=
 
 tensorDeterminant[Tensor[K_, i_, j_]] :=
   Det[MatrixOfComponents[Tensor[K,i,j]]];
+
+SetAttributes[MatrixInverse, HoldFirst];
+
+MatrixInverse[(K:Except[Tensor])[inds__]] :=
+  Module[
+    {inds2, t, t2},
+    inds2 = toggleIndex /@ {inds};
+    t = K@@inds2;
+    t2 = t /. (i_TensorIndex :> toggleIndex[i]);
+    MatrixInverse[Evaluate[t2]]];
 
 MatrixInverse[Tensor[K_, i_Integer, j_Integer]] :=
   Inverse[MatrixOfComponents[Tensor[K,ua,ub]]][[Abs[i],Abs[j]]];

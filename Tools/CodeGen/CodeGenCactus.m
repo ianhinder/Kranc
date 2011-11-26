@@ -26,12 +26,8 @@ AssignVariableInLoop::usage = "AssignVariableInLoop[dest_, src_] returns a block
   "that assigns 'src' to 'dest'.";
 StoreVariableInLoop::usage = "StoreVariableInLoop[dest_, src_] returns a block of code " <>
   "that assigns 'src' to 'dest'.";
-StoreLowPartialVariableInLoop::usage = "StoreLowPartialVariableInLoop[dest_, src_, count_] returns a block of code " <>
-  "that assigns 'src' to 'dest'.";
-StoreHighPartialVariableInLoop::usage = "StoreHighPartialVariableInLoop[dest_, src_, count_] returns a block of code " <>
-  "that assigns 'src' to 'dest'.";
-StoreMiddlePartialVariableInLoop::usage = "StoreMiddlePartialVariableInLoop[dest_, src_, countLow_, countHigh_] returns a block of code " <>
-  "that assigns 'src' to 'dest'.";
+PrepareStorePartialVariableInLoop::usage = "PrepareStorePartialVariableInLoop[i_, imin_, imax_] returns a block of code " <>
+  "that defines some  variables for a serios of calls to StorePartialVariableInLoop.";
 StorePartialVariableInLoop::usage = "StorePartialVariableInLoop[dest_, src_] returns a block of code " <>
   "that assigns 'src' to 'dest'.";
 DeclareAssignVariableInLoop::usage = "DeclareAssignVariableInLoop[type_, dest_, src_] returns a block of code " <>
@@ -103,6 +99,7 @@ DefFn[
   StoreVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol)] :=
   {"vec_store_nta(", dest, ",", src, ")", EOL[]}];
 
+(*
 DefFn[
   StoreLowPartialVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol), count_String] :=
   {"vec_store_nta_partial_lo(", dest, ",", src, ",", count, ")", EOL[]}];
@@ -114,6 +111,13 @@ DefFn[
 DefFn[
   StoreMiddlePartialVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol), countLow_String, countHigh_String] :=
   {"vec_store_nta_partial_mid(", dest, ",", src, ",", countLow, ",", countHigh, ")", EOL[]}];
+*)
+
+DefFn[
+  PrepareStorePartialVariableInLoop[i:(_String|_Symbol),
+                                    ilo:(_String|_Symbol),
+                                    ihi:(_String|_Symbol)] :=
+  {"vec_store_partial_prepare(", i, ",", ilo, ",", ihi, ")", EOL[]}];
 
 DefFn[
   StorePartialVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol)] :=
@@ -214,8 +218,9 @@ DefFn[
     DeclareAssignVariable[DataType[], "dx", "ToReal(CCTK_DELTA_SPACE(0))"],
     DeclareAssignVariable[DataType[], "dy", "ToReal(CCTK_DELTA_SPACE(1))"],
     DeclareAssignVariable[DataType[], "dz", "ToReal(CCTK_DELTA_SPACE(2))"],
-    DeclareAssignVariable[DataType[], "dt", "ToReal(CCTK_DELTA_TIME)"],
-    DeclareAssignVariable[DataType[], "t", "ToReal(cctk_time)"]}];
+    DeclareAssignVariable[DataType[], "dt", "ToReal(CCTK_DELTA_TIME)"]
+    (* DeclareAssignVariable[DataType[], "t", "ToReal(cctk_time)"]*)
+    }];
 
 DefFn[
   InitialiseFDSpacingVariablesFortran[] := 

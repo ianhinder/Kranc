@@ -387,6 +387,14 @@ scheduleUnconditionalFunction[spec_] :=
 
       Map[{"TRIGGERS: ", #, "\n"} &, lookupDefault[spec, TriggerGroups, {}]],
 
+      (* TODO: Expect a set of keyword/value pairs instead of a string *)
+      If[lookupDefault[spec, Tags, ""] != "",
+         "TAGS: " <> lookup[spec, Tags] <> "\n",
+         ""],
+
+      Map[{"REQUIRES: ", #, "\n"} &, lookupDefault[spec, RequiredGroups, {}]],
+      Map[{"PROVIDES: ", #, "\n"} &, lookupDefault[spec, ProvidedGroups, {}]],
+
       (* Insert a storage block for each group we want to allocate
          storage for *)
       Map[groupStorage, lookupDefault[spec, StorageGroups, {}]]},

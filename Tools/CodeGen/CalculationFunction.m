@@ -273,7 +273,7 @@ assignVariableFromExpression[dest_, expr_, declare_, vectorise_, noSimplify:Bool
     code = StringReplace[code, "normal2"     -> "normal[1]"];
     code = StringReplace[code, "normal3"     -> "normal[2]"];
     code = StringReplace[code, "BesselJ"-> "gsl_sf_bessel_Jn"];
-    code = StringReplace[code, ToString@tSym -> "cctk_time"];
+    code = StringReplace[code, ToString@tSym -> "ToReal(cctk_time)"];
     code = StringReplace[code, "\"" -> ""];
 
     {code}];
@@ -301,7 +301,7 @@ generateCodeFromExpression[expr_, vectorise_, noSimplify:Boolean : False] :=
     code = StringReplace[code, "normal2"     -> "normal[1]"];
     code = StringReplace[code, "normal3"     -> "normal[2]"];
     code = StringReplace[code, "BesselJ"-> "gsl_sf_bessel_Jn"];
-    code = StringReplace[code, ToString@tSym -> "cctk_time"];
+    code = StringReplace[code, ToString@tSym -> "ToReal(cctk_time)"];
     code = StringReplace[code, "\"" -> ""];
 
     {code}];
@@ -778,38 +778,13 @@ DefFn[
         Map[InfoVariable[#[[1]]] &, (eqs2 /. localMap)],
         ""],
 
-      Which[OptionValue[UseOpenCL],
-              CommentedBlock["Copy local copies back to grid functions",
-                Map[StorePartialVariableInLoop[GridName[#], localName[#]] &, gfsInLHS]],
-            OptionValue[UseVectors],
-              {
-                CommentedBlock["If necessary, store only partial vectors after the first iteration",
-                  ConditionalOnParameterTextual["CCTK_REAL_VEC_SIZE > 2 && CCTK_BUILTIN_EXPECT(i < lc_imin && i+CCTK_REAL_VEC_SIZE > lc_imax, 0)",
-                  {
-                    DeclareAssignVariable["ptrdiff_t", "elt_count_lo", "lc_imin-i"],
-                    DeclareAssignVariable["ptrdiff_t", "elt_count_hi", "lc_imax-i"],
-                    Map[StoreMiddlePartialVariableInLoop[GridName[#], localName[#], "elt_count_lo", "elt_count_hi"] &, gfsInLHS],
-                    "break;\n"
-                  }]],
-                CommentedBlock["If necessary, store only partial vectors after the first iteration",
-                  ConditionalOnParameterTextual["CCTK_REAL_VEC_SIZE > 1 && CCTK_BUILTIN_EXPECT(i < lc_imin, 0)",
-                  {
-                    DeclareAssignVariable["ptrdiff_t", "elt_count", "lc_imin-i"],
-                    Map[StoreHighPartialVariableInLoop[GridName[#], localName[#], "elt_count"] &, gfsInLHS],
-                    "continue;\n"
-                  }]],
-                CommentedBlock["If necessary, store only partial vectors after the last iteration",
-                  ConditionalOnParameterTextual["CCTK_REAL_VEC_SIZE > 1 && CCTK_BUILTIN_EXPECT(i+CCTK_REAL_VEC_SIZE > lc_imax, 0)",
-                  {
-                    DeclareAssignVariable["ptrdiff_t", "elt_count", "lc_imax-i"],
-                    Map[StoreLowPartialVariableInLoop[GridName[#], localName[#], "elt_count"] &, gfsInLHS],
-                    "break;\n"
-                  }]],
-                Map[StoreVariableInLoop[GridName[#], localName[#]] &, gfsInLHS]
-              },
-            True,
-              CommentedBlock["Copy local copies back to grid functions",
-                Map[AssignVariableInLoop[GridName[#], localName[#]] &, gfsInLHS]]],
+      If[OptionValue[UseVectors] || OptionValue[UseOpenCL],
+         CommentedBlock["Copy local copies back to grid functions",
+           { PrepareStorePartialVariableInLoop["i", "lc_imin", "lc_imax"],
+             Map[StorePartialVariableInLoop[GridName[#], localName[#]] &,
+                 gfsInLHS] }],
+         CommentedBlock["Copy local copies back to grid functions",
+           Map[AssignVariableInLoop[GridName[#], localName[#]] &, gfsInLHS]]],
 
       If[debugInLoop, Map[InfoVariable[GridName[#]] &, gfsInLHS], ""]}, opts]}]];
 

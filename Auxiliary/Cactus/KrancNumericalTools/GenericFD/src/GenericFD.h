@@ -48,20 +48,11 @@ extern "C" {
   /* var is a pointer to a grid point, i,j,k are offsets with respect
      to that point.
      For example: KRANC_GFINDEX3D_OFFSET(&u[ind3d],-1,-1,0) */
-#ifndef VECTORISE
-  /* standard, thorn Vectors is not used */
   /* simple implementation */
-  /* #  define KRANC_GFOFFSET3D(var,i,j,k) ((var)[di*(i)+dj*(j)+dk*(k)]) */
+  /* #define KRANC_GFOFFSET3D(var,i,j,k) ((var)[di*(i)+dj*(j)+dk*(k)]) */
   /* more efficient implementation for some compilers */
-#  define KRANC_GFOFFSET3D(var,i,j,k)                                   \
+#define KRANC_GFOFFSET3D(var,i,j,k)                                     \
   (*(CCTK_REAL const*)&((char const*)(var))[cdi*(i)+cdj*(j)+cdk*(k)])
-#else
-  /* vectorised version */
-#  define KRANC_GFOFFSET3D(var,i,j,k)                                   \
-  vec_loadu_maybe3((i),(j),(k),                                         \
-                   *(CCTK_REAL const*)&                                 \
-                   ((char const*)(var))[cdi*(i)+cdj*(j)+cdk*(k)])
-#endif
 
 int sgn(CCTK_REAL x);
 

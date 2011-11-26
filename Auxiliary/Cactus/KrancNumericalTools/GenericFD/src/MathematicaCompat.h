@@ -32,6 +32,7 @@
 #define Tanh(x)       (tanh(x))
 
 #define Csch(x)       (1./sinh(x))
+#define Sech(x)       (1./cosh(x))
 
 #ifdef KRANC_C
 #  define Sign(x)     (copysign(1.0,(x)))

@@ -25,7 +25,7 @@ CactusBase/Fortran
 CactusBase/IOBasic
 CactusBase/IOUtil
 CactusBase/InitBase
-CactusBase/LocalInterp
+CactusNumerical/LocalInterp
 CactusBase/SymBase
 CactusBase/Time
 

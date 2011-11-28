@@ -272,7 +272,7 @@ DefineTensor[T_] :=
            (* else *)
            If[!charactersMatch[c,TensorCharacter[T]],
               ThrowError["Tensor indices in "<>ToString[Tensor[T,is],OutputForm]<>
-                         " do not match those used previously: "<>ToString[T]<>"["<>StringJoin[Riffle[c,","]]<>"]"]]];
+                         " do not match those used previously: "<>ToString[T]<>"["<>StringJoin[Riffle[TensorCharacter[T],","]]<>"]"]]];
 
         Tensor[T, is]];
 

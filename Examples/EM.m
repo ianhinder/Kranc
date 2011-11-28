@@ -121,7 +121,7 @@ energyCalc =
   Name -> "EM_energy",
   Equations -> 
   {
-    rho -> El[la] El[ua]/2 + B[la] B[ua]/2
+    rho -> Euc[ua,ub] El[la] El[lb]/2 + Euc[ua,ub] B[la] B[lb]/2
   }
 }
 

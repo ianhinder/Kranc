@@ -12,6 +12,7 @@ NanChecker
 Periodic
 PUGH
 PUGHReduce
+LocalReduce
 PUGHSlab
 SimpleWave
 Slab

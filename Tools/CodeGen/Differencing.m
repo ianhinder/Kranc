@@ -141,6 +141,8 @@ shift::usage = "";
 spacing::usage = "";
 ComponentDerivativeOperatorStencilWidth::usage = "";
 CheckStencil::usage = "";
+StencilSize::usage = "";
+
 GridFunctionDerivativeToDef;
 
 Begin["`Private`"];
@@ -264,6 +266,30 @@ DefFn[
                          CheckStencil[derivOps/.getParamName[p]->value, eqs,
                                       name, zeroDims]},
                         {value, lookup[p, AllowedValues]}]]]]];
+
+(* It would be good to refactor StencilSize and CheckStencil as much
+   of the logic is repeated *)
+DefFn[
+  StencilSize[derivOps_, eqs_, name_, zeroDims_] :=
+  Module[{gfds, rgzList, rgz},
+    gfds = Map[GridFunctionDerivativesInExpression[{#}, eqs, zeroDims] &, derivOps];
+    rgzList = MapThread[If[Length[#2] > 0, DerivativeOperatorStencilWidth[#1,zeroDims], {0,0,0}] &, {derivOps, gfds}];
+    If[Length[rgzList] === 0, Return[{0,0,0}]];
+    rgz = Map[Max, Transpose[rgzList]]]];
+
+DefFn[
+  StencilSize[derivOps_, eqs_, name_, zeroDims_, intParams_] :=
+  Module[{psUsed, p},
+    psUsed = parametersUsedInOps[derivOps, intParams];
+    If[Length[psUsed] > 1, Throw["Too many parameters in partial derivatives"]];
+    If[psUsed === {},
+      StencilSize[derivOps,eqs,name,zeroDims],
+      p = psUsed[[1]];
+      {getParamName[p],
+        Table[{value,
+               StencilSize[derivOps/.getParamName[p]->value, eqs,
+                           name, zeroDims]},
+              {value, lookup[p, AllowedValues]}]}]]];
 
 (*************************************************************)
 (* Misc *)

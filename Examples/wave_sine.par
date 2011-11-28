@@ -6,16 +6,16 @@ ActiveThorns = "IOUtil Carpet CarpetLib CarpetSlab CoordBase CoordBase SymBase C
 
 CoordBase::domainsize                   = minmax
 
-CoordBase::boundary_size_x_lower        = 1
-CoordBase::boundary_size_y_lower        = 1
-CoordBase::boundary_size_z_lower        = 1
+CoordBase::boundary_size_x_lower        = 2
+CoordBase::boundary_size_y_lower        = 2
+CoordBase::boundary_size_z_lower        = 2
 CoordBase::boundary_shiftout_x_lower    = 1
 CoordBase::boundary_shiftout_y_lower    = 1
 CoordBase::boundary_shiftout_z_lower    = 1
 
-CoordBase::boundary_size_x_upper        = 1
-CoordBase::boundary_size_y_upper        = 1
-CoordBase::boundary_size_z_upper        = 1
+CoordBase::boundary_size_x_upper        = 2
+CoordBase::boundary_size_y_upper        = 2
+CoordBase::boundary_size_z_upper        = 2
 CoordBase::boundary_shiftout_x_upper    = 0
 CoordBase::boundary_shiftout_y_upper    = 0
 CoordBase::boundary_shiftout_z_upper    = 0
@@ -34,7 +34,7 @@ CoordBase::dx                           = 0.05
 CoordBase::dy                           = 0.05
 CoordBase::dz                           = 0.05
 
-driver::ghost_size = 1
+driver::ghost_size = 2
 Carpet::domain_from_coordbase           = "yes"
 Carpet::poison_new_timelevels           = "yes"
 Carpet::check_for_poison                = "no"

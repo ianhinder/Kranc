@@ -25,6 +25,7 @@ evolveCalc =
 {
   Name -> "calc_rhs",
   Schedule -> {"in MoL_CalcRHS"},
+  Where -> Interior,
   Equations ->
   {
     dot[phi] -> pi,

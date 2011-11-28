@@ -90,6 +90,7 @@ evolCalc =
 {
   Name -> "EM_evol",
   Schedule -> {"in MoL_CalcRHS"},
+  Where -> Interior,
   Equations -> 
   {
     dot[El[la]] -> (Eps[la,lb,lc] Euc[ub,ue] Euc[uc,uf] PD[B[lf],le]),
@@ -104,6 +105,7 @@ evolCalc =
 constraintsCalc =
 {
   Name -> "EM_constraints",
+  Where -> Interior,
   Equations -> 
   {
     CEl -> PD[El[la],lb] Euc[ua,ub], CB -> PD[B[la],lb] Euc[ua,ub]

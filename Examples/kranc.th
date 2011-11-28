@@ -26,6 +26,7 @@ CactusBase/IOBasic
 CactusBase/IOUtil
 CactusBase/InitBase
 CactusNumerical/LocalInterp
+CactusNumerical/LocalReduce
 CactusBase/SymBase
 CactusBase/Time
 

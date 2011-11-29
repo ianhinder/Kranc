@@ -23,11 +23,13 @@ BeginPackage["Kranc`"];
 (* CodeGen.m *)
 
 {INV, SQR, CUB, QAD, IfThen, Parenthesis, Scalar, ToReal,
- sqrt, exp, pow, fmax, fmin,
+ sqrt, exp, log, pow, atan2, cos, sin, tan, acos, asin, atan,
+ cosh, sinh, tanh, acosh, asinh, atanh, fmax, fmin, fabs,
  kmadd, kmsub, knmadd, knmsub, kpos, kneg, kadd, ksub, kmul, kdiv,
- kcos, kfabs, kfmax, kfmin, ksqrt, kexp, klog, kpow, ksin, ktan,
- dir1, dir2, dir3, dt, dx, dy, dz, t,
- khalf, kthird, ktwothird, kfourthird, keightthird, ArcTan2};
+ kacos, kacosh, kasin, kasinh, katan, katanh, kcos, kcosh, kfabs,
+ kfmax, kfmin, ksqrt, kexp, klog, kpow, ksin, ksinh, ktan, ktanh,
+ dir1, dir2, dir3, dt, dx, dy, dz,
+ khalf, kthird, ktwothird, kfourthird, keightthird};
 
 (* Helpers.m *)
 

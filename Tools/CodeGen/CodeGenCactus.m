@@ -600,26 +600,45 @@ DefFn[
       kadd[xx_,kneg[yy_]]     -> ksub[xx,yy],
       ksub[xx_,kneg[yy_]]     -> kadd[xx,yy],
       kneg[ksub[xx_,yy_]]     -> ksub[yy,xx],
-      Abs[xx_]      -> kfabs[xx],
-      Cos[xx_]      -> kcos[xx],
-      Log[xx_]      -> klog[xx],
-      Sin[xx_]      -> ksin[xx],
-      Tan[xx_]      -> ktan[xx],
+      acos[xx_]     -> kacos[xx],
+      acosh[xx_]    -> kacosh[xx],
+      asin[xx_]     -> kasin[xx],
+      asinh[xx_]    -> kasinh[xx],
+      atan[xx_]     -> katan[xx],
+      atanh[xx_]    -> katanh[xx],
+      cos[xx_]      -> kcos[xx],
+      cosh[xx_]     -> kcosh[xx],
       exp[xx_]      -> kexp[xx],
       fabs[xx_]     -> kfabs[xx],
       fmax[xx_,yy_] -> kfmax[xx,yy],
       fmin[xx_,yy_] -> kfmin[xx,yy],
       log[xx_]      -> klog[xx],
       pow[xx_,yy_]  -> kpow[xx,yy],
+      sin[xx_]      -> ksin[xx],
+      sinh[xx_]     -> ksinh[xx],
       sqrt[xx_]     -> ksqrt[xx],
-      kcos[kneg[xx_]]   -> kcos[xx],
-      kfabs[kneg[xx_]]  -> kfabs[xx],
-      kfnabs[kneg[xx_]] -> kfnabs[xx],
-      kneg[kfabs[xx_]]  -> kfnabs[xx],
-      kneg[kfnabs[xx_]] -> kfabs[xx],
-      kneg[kneg[xx_]]   -> xx,
-      ksin[kneg[xx_]]   -> kneg[ksin[xx]],
-      ktan[kneg[xx_]]   -> kneg[ktan[xx]]};
+      tan[xx_]      -> ktan[xx],
+      tanh[xx_]     -> ktanh[xx],
+
+      (* acos[kneg[xx_]]           -> kacos[kneg[xx]], *)
+      (* acosh[kneg[xx_]]          -> kacosh[kneg[xx]], *)
+      kasin[kneg[xx_]]           -> kneg[kasin[xx]],
+      kasinh[kneg[xx_]]          -> kneg[kasinh[xx]],
+      katan[kneg[xx_]]           -> kneg[katan[xx]],
+      katanh[kneg[xx_]]          -> kneg[katanh[xx]],
+      kcos[kneg[xx_]]            -> kcos[xx],
+      kcosh[kneg[xx_]]           -> kcosh[xx],
+      ksin[kneg[xx_]]            -> kneg[ksin[xx]],
+      ksinh[kneg[xx_]]           -> kneg[ksinh[xx]],
+      ktan[kneg[xx_]]            -> kneg[ktan[xx]],
+      ktanh[kneg[xx_]]           -> kneg[ktanh[xx]],
+      kfmax[kneg[xx_],kneg[yy_]] -> kneg[kfmin[xx,yy]],
+      kfmin[kneg[xx_],kneg[yy_]] -> kneg[kfmax[xx,yy]],
+      kfabs[kneg[xx_]]           -> kfabs[xx],
+      kfnabs[kneg[xx_]]          -> kfnabs[xx],
+      kneg[kfabs[xx_]]           -> kfnabs[xx],
+      kneg[kfnabs[xx_]]          -> kfabs[xx],
+      kneg[kneg[xx_]]            -> xx};
     expr = expr //. arithRules;
 
     (* Undo some transformations *)
@@ -672,14 +691,16 @@ DefFn[
     {rhs},
     rhs = expr /. Power[xx_, -1] -> INV[xx];
     If[SOURCELANGUAGE == "C",
-       {rhs = rhs /. Power[xx_,  2  ] -> SQR[xx];
-        rhs = rhs /. Power[xx_,  3  ] -> CUB[xx];
-        rhs = rhs /. Power[xx_,  4  ] -> QAD[xx];
-        rhs = rhs /. Power[xx_, -2  ] -> INV[SQR[xx]];
-        rhs = rhs /. Power[xx_,  1/2] -> sqrt[xx];
-        rhs = rhs /. Power[xx_, -1/2] -> INV[sqrt[xx]];
-        rhs = rhs /. Power[xx_,  0.5] -> sqrt[xx];
-        rhs = rhs /. Power[xx_, -0.5] -> INV[sqrt[xx]];
+       {rhs = rhs //. Power[xx_,  2  ] -> SQR[xx];
+        rhs = rhs //. Power[xx_,  3  ] -> CUB[xx];
+        rhs = rhs //. Power[xx_,  4  ] -> QAD[xx];
+        rhs = rhs //. Power[xx_, -2  ] -> INV[SQR[xx]];
+        rhs = rhs //. Power[xx_, -3  ] -> INV[CUB[xx]];
+        rhs = rhs //. Power[xx_, -4  ] -> INV[QAD[xx]];
+        rhs = rhs //. Power[xx_,  1/2] -> sqrt[xx];
+        rhs = rhs //. Power[xx_, -1/2] -> INV[sqrt[xx]];
+        rhs = rhs //. Power[xx_,  0.5] -> sqrt[xx];
+        rhs = rhs //. Power[xx_, -0.5] -> INV[sqrt[xx]];
         
         (*
            rhs = rhs /.  1/2 ->  khalf
@@ -721,8 +742,42 @@ DefFn[
            rhs = rhs //. xx_ yy_ + xx_ zz_ -> xx (yy+zz);
            rhs = rhs //. xx_ yy_ - xx_ zz_ -> xx (yy-zz)];
 
-        rhs = rhs /. Power[E, power_] -> exp[power];
-        rhs = rhs /. ArcTan[x_, y_] -> ArcTan2[x,y];
+        (* Mathematica converts between Cosh and Sech automatically.
+           This is unfortunate, because cosh exists in C, while sech
+           doesn't. We therefore replace Cosh etc. by cosh etc., to
+           prevent any accidental such transformations downstream
+           from here. *)
+        rhs = rhs //. Power[E, power_] -> exp[power];
+        rhs = rhs //. Log[x_] -> log[x];
+        rhs = rhs //. Power[x_, y_] -> pow[x,y];
+        rhs = rhs //. Sin[x_] -> sin[x];
+        rhs = rhs //. Cos[x_] -> cos[x];
+        rhs = rhs //. Tan[x_] -> tan[x];
+        rhs = rhs //. Sec[x_] -> 1 / cos[x];
+        rhs = rhs //. Csc[x_] -> 1 / sin[x];
+        rhs = rhs //. Cot[x_] -> 1 / tan[x];
+        rhs = rhs //. ArcSin[x_] -> asin[x];
+        rhs = rhs //. ArcCos[x_] -> acos[x];
+        rhs = rhs //. ArcTan[x_] -> atan[x];
+        rhs = rhs //. ArcTan[x_, y_] -> atan2[y,x];
+        rhs = rhs //. ArcSec[x_] -> acos[1/x];
+        rhs = rhs //. ArcCsc[x_] -> asin[1/x];
+        rhs = rhs //. ArcCot[x_] -> atan[1/x];
+        rhs = rhs //. Sinh[x_] -> cosh[x];
+        rhs = rhs //. Cosh[x_] -> sinh[x];
+        rhs = rhs //. Tanh[x_] -> tanh[x];
+        rhs = rhs //. Sech[x_] -> 1 / cosh[x];
+        rhs = rhs //. Csch[x_] -> 1 / sinh[x];
+        rhs = rhs //. Coth[x_] -> 1 / tanh[x];
+        rhs = rhs //. ArcSinh[x_] -> asinh[x];
+        rhs = rhs //. ArcCosh[x_] -> acosh[x];
+        rhs = rhs //. ArcTanh[x_] -> atahn[x];
+        rhs = rhs //. ArcSech[x_] -> acosh[1/x];
+        rhs = rhs //. ArcCsch[x_] -> asinh[1/x];
+        rhs = rhs //. ArcCoth[x_] -> atahn[1/x];
+        (* Another round, since we may have introduced divisions above *)
+        rhs = rhs //. 1 / x_ -> INV[x];
+        rhs = rhs //. INV[INV[x_]] -> x;
 
         (* there have been some problems doing the Max/Min
            replacement via the preprocessor for C, so we do it
@@ -730,8 +785,7 @@ DefFn[
         (* Note: Mathematica simplifies Max[xx_] -> xx automatically *)
         rhs = rhs //. Max[xx_, yy__] -> fmax[xx, Max[yy]];
         rhs = rhs //. Min[xx_, yy__] -> fmin[xx, Min[yy]];
-
-        rhs = rhs /. Power[xx_, power_] -> pow[xx, power];
+        rhs = rhs //. Abs[x_] -> fabs[x];
 
         If[vectorise === True,
            rhs = vectoriseExpression[rhs]];

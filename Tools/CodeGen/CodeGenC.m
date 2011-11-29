@@ -78,11 +78,10 @@ SetSourceLanguage[lang_] :=
   If[lang == "C" || lang == "Fortran",
      SOURCELANGUAGE = lang;
      setSourceSuffix[lang];
-     InfoMessage[Terse, "User set source language to " <> lang],
+     If[lang =!= "C", InfoMessage[Terse, "User set source language to " <> lang]],
      (* else *)
      SOURCELANGUAGE = "C";
-     setSourceSuffix[".cc"];
-     InfoMessage[Terse, "Setting Source Language to C"]];
+     setSourceSuffix[".cc"]];
 
 EOL[dummy___] :=
   If[SOURCELANGUAGE == "C" || SOURCELANGUAGE == "C++", ";\n", "\n"];

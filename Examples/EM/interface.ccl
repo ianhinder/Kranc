@@ -1,0 +1,72 @@
+# File produced by Kranc
+
+implements: EM
+
+inherits:   Grid GenericFD Boundary
+
+
+
+USES INCLUDE: GenericFD.h
+USES INCLUDE: Symmetry.h
+USES INCLUDE: sbp_calc_coeffs.h
+USES INCLUDE: Boundary.h
+
+CCTK_INT FUNCTION MoLRegisterEvolved(CCTK_INT IN EvolvedIndex, CCTK_INT IN RHSIndex)
+USES FUNCTION MoLRegisterEvolved
+
+SUBROUTINE Diff_coeff(CCTK_POINTER_TO_CONST IN cctkGH, CCTK_INT IN dir, CCTK_INT IN nsize, CCTK_INT OUT ARRAY imin, CCTK_INT OUT ARRAY imax, CCTK_REAL OUT ARRAY q, CCTK_INT IN table_handle)
+USES FUNCTION Diff_coeff
+
+CCTK_INT FUNCTION MultiPatch_GetMap(CCTK_POINTER_TO_CONST IN cctkGH)
+USES FUNCTION MultiPatch_GetMap
+
+CCTK_INT FUNCTION Boundary_SelectGroupForBC(CCTK_POINTER_TO_CONST IN GH, CCTK_INT IN faces, CCTK_INT IN boundary_width, CCTK_INT IN table_handle, CCTK_STRING IN group_name, CCTK_STRING IN bc_name)
+USES FUNCTION Boundary_SelectGroupForBC
+
+CCTK_INT FUNCTION Boundary_SelectVarForBC(CCTK_POINTER_TO_CONST IN GH, CCTK_INT IN faces, CCTK_INT IN boundary_width, CCTK_INT IN table_handle, CCTK_STRING IN var_name, CCTK_STRING IN bc_name)
+USES FUNCTION Boundary_SelectVarForBC
+
+public:
+CCTK_REAL constraints type=GF timelevels=1 tags=''
+{
+  CEl,
+  CB
+} "constraints"
+
+public:
+CCTK_REAL endens type=GF timelevels=1 tags=''
+{
+  rho
+} "endens"
+
+public:
+CCTK_REAL B_group type=GF timelevels=3 tags='tensortypealias="D" tensorweight=0'
+{
+  B1,
+  B2,
+  B3
+} "B_group"
+
+public:
+CCTK_REAL El_group type=GF timelevels=3 tags='tensortypealias="D" tensorweight=0'
+{
+  El1,
+  El2,
+  El3
+} "El_group"
+
+public:
+CCTK_REAL B_grouprhs type=GF timelevels=3 tags='tensortypealias="D" tensorweight=0'
+{
+  B1rhs,
+  B2rhs,
+  B3rhs
+} "B_grouprhs"
+
+public:
+CCTK_REAL El_grouprhs type=GF timelevels=3 tags='tensortypealias="D" tensorweight=0'
+{
+  El1rhs,
+  El2rhs,
+  El3rhs
+} "El_grouprhs"

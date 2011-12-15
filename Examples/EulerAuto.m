@@ -66,6 +66,8 @@ eulerCons =
 {
   Name -> "eulerauto_cons_calc",
 
+  Primitives -> {rho, v[ui], p},
+
   Equations ->
   {
     flux[Den,ui] -> rho v[ui],

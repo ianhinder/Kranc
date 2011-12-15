@@ -88,11 +88,11 @@ initialShockCalc =
   ConditionalOnKeyword -> {"initial_data", "shock"},
   Equations ->
   {
-    rho -> rhoR0 UnitStep[x-0.5] + rhoL0 (1-UnitStep[x-0.5]),
-    v[1] -> vR0 UnitStep[x-0.5] + vL0 (1-UnitStep[x-0.5]),
+    rho -> rhoR0 StepFunction[x-0.5] + rhoL0 (1-StepFunction[x-0.5]),
+    v[1] -> vR0 StepFunction[x-0.5] + vL0 (1-StepFunction[x-0.5]),
     v[2] -> 0,
     v[3] -> 0,
-    p -> pR0 UnitStep[x-0.5] + pL0 (1-UnitStep[x-0.5])
+    p -> pR0 StepFunction[x-0.5] + pL0 (1-StepFunction[x-0.5])
   }
 };
 

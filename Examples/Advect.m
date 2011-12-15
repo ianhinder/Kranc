@@ -79,7 +79,7 @@ initialShockCalc =
     v1 -> v0,
     v2 -> 0,
     v3 -> 0,
-    rho -> amp UnitStep[x-0.5]
+    rho -> amp StepFunction[x-0.5]
   }
 };
 

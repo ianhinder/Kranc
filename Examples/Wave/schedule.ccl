@@ -1,0 +1,136 @@
+# File produced by Kranc
+
+
+STORAGE: errors[3]
+
+STORAGE: exact[3]
+
+STORAGE: norms[3]
+
+if (timelevels == 1)
+{
+  STORAGE: evolved[1]
+}
+if (timelevels == 2)
+{
+  STORAGE: evolved[2]
+}
+if (timelevels == 3)
+{
+  STORAGE: evolved[3]
+}
+
+if (rhs_timelevels == 1)
+{
+  STORAGE: evolvedrhs[1]
+}
+if (rhs_timelevels == 2)
+{
+  STORAGE: evolvedrhs[2]
+}
+if (rhs_timelevels == 3)
+{
+  STORAGE: evolvedrhs[3]
+}
+
+schedule Wave_Startup at STARTUP
+{
+  LANG: C
+  OPTIONS: meta
+} "create banner"
+
+schedule Wave_RegisterVars in MoL_Register
+{
+  LANG: C
+  OPTIONS: meta
+} "Register Variables for MoL"
+
+schedule Wave_RegisterSymmetries in SymmetryRegister
+{
+  LANG: C
+  OPTIONS: meta
+} "register symmetries"
+
+
+if (CCTK_EQUALS(initial_data, "sine"))
+{
+  schedule wave_exact_sine AT INITIAL before import_exact
+  {
+    LANG: C
+  } "wave_exact_sine"
+}
+
+
+if (CCTK_EQUALS(initial_data, "sine"))
+{
+  schedule wave_exact_sine AT POSTSTEP before calc_errors
+  {
+    LANG: C
+  } "wave_exact_sine"
+}
+
+
+if (CCTK_EQUALS(initial_data, "gaussian"))
+{
+  schedule wave_exact_gaussian AT INITIAL before import_exact
+  {
+    LANG: C
+  } "wave_exact_gaussian"
+}
+
+
+if (CCTK_EQUALS(initial_data, "gaussian"))
+{
+  schedule wave_exact_gaussian AT POSTSTEP before calc_errors
+  {
+    LANG: C
+  } "wave_exact_gaussian"
+}
+
+schedule wave_import_exact at INITIAL as import_exact
+{
+  LANG: C
+} "wave_import_exact"
+
+schedule wave_evolve in MoL_CalcRHS as evolve
+{
+  LANG: C
+} "wave_evolve"
+
+schedule wave_calc_errors at ANALYSIS as calc_errors
+{
+  LANG: C
+} "wave_calc_errors"
+
+schedule wave_calc_norm at ANALYSIS as calc_norm
+{
+  LANG: C
+  SYNC: norms
+} "wave_calc_norm"
+
+
+if (CCTK_EQUALS(boundary_condition, "radiative"))
+{
+  schedule wave_boundary in MoL_RHSBoundaries
+  {
+    LANG: C
+  } "wave_boundary"
+}
+
+schedule Wave_SelectBoundConds in MoL_PostStep
+{
+  LANG: C
+  OPTIONS: level
+  SYNC: evolved
+} "select boundary conditions"
+
+schedule Wave_CheckBoundaries at BASEGRID
+{
+  LANG: C
+  OPTIONS: meta
+} "check boundaries treatment"
+
+schedule group ApplyBCs as Wave_ApplyBCs in MoL_PostStep after Wave_SelectBoundConds
+{
+  # no language specified
+} "Apply boundary conditions controlled by thorn Boundary"

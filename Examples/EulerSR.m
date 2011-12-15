@@ -113,8 +113,13 @@ eulerCons =
 
     f -> 10,
 
-    Sequence@@Map[#[[1]] -> IfThen[f > 10.^-12, #[[2]], #[[1]]] &,
+    (* This should be some sort of while loop so you run until f <
+       1e-12.  A naive implementation in terms of IfThen has subtle
+       problems. Ideally, Kranc would support the iterative solution
+       of equations directly. Instead, we always run 5 iterations and
+       hope that this is enough. *)
 
+    Sequence@@Join@@Table[
     {Z -> tau + Den + pBar,
     Ssq -> S[li] S[lj] Euc[ui,uj],
     vsq -> Ssq/Z^2,
@@ -126,7 +131,8 @@ eulerCons =
     f -> pEOS - pBar,
     cs -> Sqrt[gamma (gamma-1) epsi/h],
     df -> vsq cs^2 - 1,
-    pBar -> pBar - f/df}],
+    pBar -> pBar - f/df},
+      {i, 1, 5}],
 
     (* end of loop *)
 

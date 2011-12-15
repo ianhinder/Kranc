@@ -146,7 +146,7 @@ fluxCalc[calc_, i_] :=
     ApplyBCs -> True,
     Where -> Interior,
     Schedule -> {"in MoL_CalcRHS after " <> lookup[calc,Name] <>
-      "_conserved_flux_" <> ToString[i]},
+      "_intercell_conserved_" <> ToString[i]},
     Shorthands -> Join[Map[leftSymbol[fluxSymbol[#]]&, consVars[calc]],
       Map[rightSymbol[fluxSymbol[#]]&, consVars[calc]]],
     Equations ->

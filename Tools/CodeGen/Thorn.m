@@ -1393,7 +1393,12 @@ CreateThorn[thorn_] :=
                                                lookup[#, Contents]] &,
                                                lookup[thorn, Sources]];
 
-    GenerateFile[sourceDirectory <> "/make.code.defn", lookup[thorn, Makefile]]];
+    GenerateFile[sourceDirectory <> "/make.code.defn", lookup[thorn, Makefile]];
+
+    (* Update thorn directory timestamp so that it can be used in makefiles *)
+    GenerateFile[thornDirectory <> "/temp", {}];
+    DeleteFile[thornDirectory <> "/temp"];
+];
 
 End[];
 

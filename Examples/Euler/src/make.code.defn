@@ -1,0 +1,3 @@
+# File produced by Kranc
+
+SRCS = Startup.cc RegisterMoL.cc RegisterSymmetries.cc euler_initial_shock.cc euler_primitives.cc euler_conserved.cc euler_zero_rhs.cc euler_reconstruct_1.cc euler_conserved_flux_1.cc euler_flux_1.cc euler_rhs_1.cc Boundaries.cc 

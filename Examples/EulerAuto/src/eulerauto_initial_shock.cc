@@ -93,17 +93,17 @@ static void eulerauto_initial_shock_Body(cGH const * restrict const cctkGH, int 
         /* Precompute derivatives */
         
         /* Calculate temporaries and grid functions */
-        CCTK_REAL rhoL = Piecewise(List(List(ToReal(rhoL0),xL < 0.5)),0. + 
-          ToReal(rhoR0));
+        CCTK_REAL rhoL = ToReal(rhoL0) + StepFunction(-0.5 + 
+          xL)*(-ToReal(rhoL0) + ToReal(rhoR0));
         
-        CCTK_REAL v1L = Piecewise(List(List(ToReal(vL0),xL < 0.5)),0. + 
+        CCTK_REAL v1L = ToReal(vL0) + StepFunction(-0.5 + xL)*(-ToReal(vL0) + 
           ToReal(vR0));
         
         CCTK_REAL v2L = 0;
         
         CCTK_REAL v3L = 0;
         
-        CCTK_REAL pL = Piecewise(List(List(ToReal(pL0),xL < 0.5)),0. + 
+        CCTK_REAL pL = ToReal(pL0) + StepFunction(-0.5 + xL)*(-ToReal(pL0) + 
           ToReal(pR0));
         
         /* Copy local copies back to grid functions */

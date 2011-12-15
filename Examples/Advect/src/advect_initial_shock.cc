@@ -120,7 +120,7 @@ static void advect_initial_shock_Body(cGH const * restrict const cctkGH, int con
         
         CCTK_REAL v3L = 0;
         
-        CCTK_REAL rhoL = ToReal(amp)*UnitStep(-0.5 + xL);
+        CCTK_REAL rhoL = StepFunction(-0.5 + xL)*ToReal(amp);
         
         /* Copy local copies back to grid functions */
         rho[index] = rhoL;

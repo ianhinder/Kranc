@@ -93,7 +93,7 @@ static void burgers_initial_shock_Body(cGH const * restrict const cctkGH, int co
         /* Precompute derivatives */
         
         /* Calculate temporaries and grid functions */
-        CCTK_REAL uL = Piecewise(List(List(ToReal(uL0),xL < 0.5)),0. + 
+        CCTK_REAL uL = ToReal(uL0) + StepFunction(-0.5 + xL)*(-ToReal(uL0) + 
           ToReal(uR0));
         
         /* Copy local copies back to grid functions */

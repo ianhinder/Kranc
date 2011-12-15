@@ -168,8 +168,6 @@ calculations =
   initialShockCalc
 } ~Join~ makeConservationCalcs[burgersFlux];
 
-Print[calculations];
-
 CreateKrancThornTT[groups, ".", "Burgers", 
   Calculations -> calculations,
   DeclaredGroups -> declaredGroupNames,

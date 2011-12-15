@@ -65,11 +65,11 @@ LSUThorns/Vectors
 
 # Kranc support thorn
 KrancHydroNumericalTools/GenericFD
-# KrancHydroExamples/Euler
-# KrancHydroExamples/EulerAuto
+KrancHydroExamples/Euler
+KrancHydroExamples/EulerAuto
 KrancHydroExamples/EulerSR
-# KrancHydroExamples/Advect
-# KrancHydroExamples/Burgers
+KrancHydroExamples/Advect
+KrancHydroExamples/Burgers
 
 Carpet/CarpetIOHDF5
 ExternalLibraries/HDF5

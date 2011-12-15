@@ -167,7 +167,7 @@ primitivesCalc[calc_, thornName_] :=
   Name -> lookup[calc, Name] <> "_primitives",
   Schedule -> {"in MoL_PostStep after " <> thornName <>"_ApplyBCs"},
   Equations -> lookup[calc, PrimitiveEquations],
-  Shorthands -> lookup[calc, Shorthands]
+  Shorthands -> lookupDefault[calc, Shorthands, {}]
 };
 
 conservedCalc[calc_] :=
@@ -175,7 +175,7 @@ conservedCalc[calc_] :=
   Name -> lookup[calc, Name] <> "_conserved",
   Schedule -> {"at POSTINITIAL"},
   Equations -> lookup[calc, ConservedEquations],
-  Shorthands -> lookup[calc, Shorthands]
+  Shorthands -> lookupDefault[calc, Shorthands, {}]
 };
 
 conservedIntercellCalc[calc_, i_] :=
@@ -183,7 +183,7 @@ conservedIntercellCalc[calc_, i_] :=
   Name -> lookup[calc, Name] <> "_intercell_conserved_" <> ToString[i],
   Schedule -> {"in MoL_CalcRHS after " <> lookup[calc, Name] <> "_reconstruct_" <> ToString[i]},
 
-  Shorthands -> lookup[calc, Shorthands],
+  Shorthands -> lookupDefault[calc, Shorthands, {}],
   Equations ->
     Module[{vars = Join[primitiveVars[calc], consVars[calc]]},
       Join[lookup[calc, ConservedEquations] /. (Map[# -> leftSymbol[#] &, vars]),

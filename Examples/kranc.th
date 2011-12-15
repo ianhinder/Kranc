@@ -61,6 +61,8 @@ Carpet/CarpetReduce
 Carpet/CarpetSlab
 Carpet/LoopControl
 
+LSUThorns/Vectors
+
 # Kranc support thorn
 KrancHydroNumericalTools/GenericFD
 # KrancHydroExamples/Euler

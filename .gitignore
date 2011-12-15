@@ -15,7 +15,3 @@
 *.xref
 *.png
 *.pdf
-Examples/Advect
-Examples/Burgers
-Examples/Euler
-Examples/EulerAuto

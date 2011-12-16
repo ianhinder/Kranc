@@ -203,7 +203,7 @@ schedule eulerauto_cons_calc_intercell_conserved_1 in MoL_CalcRHS after euleraut
   LANG: C
 } "eulerauto_cons_calc_intercell_conserved_1"
 
-schedule group eulerauto_cons_calc_flux_1_group in MoL_CalcRHS after eulerauto_cons_calc_conserved_flux_1
+schedule group eulerauto_cons_calc_flux_1_group in MoL_CalcRHS after eulerauto_cons_calc_intercell_conserved_1
 {
   # no language specified
 } "eulerauto_cons_calc_flux_1"
@@ -295,7 +295,7 @@ schedule eulerauto_cons_calc_intercell_conserved_2 in MoL_CalcRHS after euleraut
   LANG: C
 } "eulerauto_cons_calc_intercell_conserved_2"
 
-schedule group eulerauto_cons_calc_flux_2_group in MoL_CalcRHS after eulerauto_cons_calc_conserved_flux_2
+schedule group eulerauto_cons_calc_flux_2_group in MoL_CalcRHS after eulerauto_cons_calc_intercell_conserved_2
 {
   # no language specified
 } "eulerauto_cons_calc_flux_2"
@@ -387,7 +387,7 @@ schedule eulerauto_cons_calc_intercell_conserved_3 in MoL_CalcRHS after euleraut
   LANG: C
 } "eulerauto_cons_calc_intercell_conserved_3"
 
-schedule group eulerauto_cons_calc_flux_3_group in MoL_CalcRHS after eulerauto_cons_calc_conserved_flux_3
+schedule group eulerauto_cons_calc_flux_3_group in MoL_CalcRHS after eulerauto_cons_calc_intercell_conserved_3
 {
   # no language specified
 } "eulerauto_cons_calc_flux_3"

@@ -98,21 +98,6 @@ DefFn[
 DefFn[
   StoreVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol)] :=
   {"vec_store_nta(", dest, ",", src, ")", EOL[]}];
-
-(*
-DefFn[
-  StoreLowPartialVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol), count_String] :=
-  {"vec_store_nta_partial_lo(", dest, ",", src, ",", count, ")", EOL[]}];
-
-DefFn[
-  StoreHighPartialVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol), count_String] :=
-  {"vec_store_nta_partial_hi(", dest, ",", src, ",", count, ")", EOL[]}];
-
-DefFn[
-  StoreMiddlePartialVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol), countLow_String, countHigh_String] :=
-  {"vec_store_nta_partial_mid(", dest, ",", src, ",", countLow, ",", countHigh, ")", EOL[]}];
-*)
-
 DefFn[
   PrepareStorePartialVariableInLoop[i:(_String|_Symbol),
                                     ilo:(_String|_Symbol),
@@ -219,7 +204,6 @@ DefFn[
     DeclareAssignVariable[DataType[], "dy", "ToReal(CCTK_DELTA_SPACE(1))"],
     DeclareAssignVariable[DataType[], "dz", "ToReal(CCTK_DELTA_SPACE(2))"],
     DeclareAssignVariable[DataType[], "dt", "ToReal(CCTK_DELTA_TIME)"]
-    (* DeclareAssignVariable[DataType[], "t", "ToReal(cctk_time)"]*)
     }];
 
 DefFn[

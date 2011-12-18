@@ -384,7 +384,6 @@ scheduleUnconditionalFunction[spec_] :=
       (* Insert a SYNC line for each group we want to synchronize. *)
       Map[{"SYNC: ", #, "\n"}     &, lookupDefault[spec, SynchronizedGroups, {}]],
 
-
       Map[{"TRIGGERS: ", #, "\n"} &, lookupDefault[spec, TriggerGroups, {}]],
 
       (* TODO: Expect a set of keyword/value pairs instead of a string *)
@@ -399,7 +398,7 @@ scheduleUnconditionalFunction[spec_] :=
          storage for *)
       Map[groupStorage, lookupDefault[spec, StorageGroups, {}]]},
 
-     Quote[lookup[spec, Comment]]]};
+      Quote[lookup[spec, Comment]]]};
 
 (* Handle the aspect of scheduling the function conditionally *)
 scheduleFunction[spec_] :=

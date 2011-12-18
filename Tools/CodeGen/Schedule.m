@@ -55,9 +55,18 @@ groupsSetInCalc[calc_, groups_] :=
     eqs = lookup[calc, Equations];
     lhss = Map[First, eqs];
     gfsInLHS = Union[Cases[lhss, _ ? (MemberQ[gfs,#] &), Infinity]];
-
     lhsGroupNames = containingGroups[gfsInLHS, groups];
     Return[lhsGroupNames]
+  ];
+
+groupsReadInCalc[calc_, groups_] :=
+  Module[{gfs, eqs, lhss, gfsInLHS, lhsGroupNames},
+    gfs = allGroupVariables[groups];
+    eqs = lookup[calc, Equations];
+    rhss = Map[Last, eqs];
+    gfsInRHS = Union[Cases[rhss, _ ? (MemberQ[gfs,#] &), Infinity]];
+    rhsGroupNames = containingGroups[gfsInRHS, groups];
+    Return[rhsGroupNames]
   ];
 
 (* Each calculation can be scheduled at multiple points, so this
@@ -100,19 +109,13 @@ scheduleCalc[calc_, groups_, thornName_, OptionsPattern[]] :=
 
     (* TODO: Pass this as {keyword,value} pair instead of a string,
        once Thorn.m understands this format *)
-    (* TODO: This doesn't work -- I don't know how to access
-       OptionValue[] in this file.
     tags = If[OptionValue[UseOpenCL], "OpenCL=1", ""];
-    *)
-    tags = "OpenCL=1";
     
     prefixWithScope[group_] :=
       If[StringMatchQ[ToString[group], __~~"::"~~__],
          ToString[group],
          thornName <> "::" <> ToString[group]];
-    (* TODO: Don't blindly require/provide all groups, check the
-       equations instead *)
-    groupsToRequire = prefixWithScope /@ Map[First, groups];
+    groupsToRequire = prefixWithScope /@ groupsReadInCalc[calc, groups];
     groupsToProvide = prefixWithScope /@ groupsSetInCalc[calc, groups];
 
     before = lookupDefault[calc, Before, None];

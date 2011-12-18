@@ -135,7 +135,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     CheckGroups[groupsOrig];
 
-    groups = Join[groupsOrig, {coordGroup}];
+    groups = Union[Join[groupsOrig, {coordGroup}]];
     includeFiles = Join[includeFiles, {"GenericFD.h", "Symmetry.h", "sbp_calc_coeffs.h"}];
 
     inheritedImplementations = Join[inheritedImplementations, {"Grid",

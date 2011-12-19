@@ -685,6 +685,11 @@ DefFn[
         rhs = rhs //. Power[xx_, -1/2] -> INV[sqrt[xx]];
         rhs = rhs //. Power[xx_,  0.5] -> sqrt[xx];
         rhs = rhs //. Power[xx_, -0.5] -> INV[sqrt[xx]];
+        rhs = rhs //. SQR[x_] SQR[y_] -> SQR[x y];
+        rhs = rhs //. CUB[x_] CUB[y_] -> CUB[x y];
+        rhs = rhs //. QAD[x_] QAD[y_] -> QAD[x y];
+        rhs = rhs //. INV[x_] INV[y_] -> INV[x y];
+        rhs = rhs //. sqrt[x_] sqrt[y_] -> sqrt[x y];
         
         (*
            rhs = rhs /.  1/2 ->  khalf

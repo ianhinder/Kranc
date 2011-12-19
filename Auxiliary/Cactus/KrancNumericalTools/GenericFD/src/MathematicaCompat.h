@@ -1,4 +1,5 @@
 #ifdef KRANC_C
+#  define pown(x,y)     pow(x,y)
 #  define IfThen(x,y,z) ((x) ? (y) : (z))
 #else
 #  define Abs(x)        (abs(x))

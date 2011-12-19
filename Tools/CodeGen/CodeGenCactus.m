@@ -733,6 +733,7 @@ DefFn[
            from here. *)
         rhs = rhs //. Power[E, power_] -> exp[power];
         rhs = rhs //. Log[x_] -> log[x];
+        rhs = rhs //. Power[x_, n_Integer] -> pown[x,y];
         rhs = rhs //. Power[x_, y_] -> pow[x,y];
         rhs = rhs //. Sin[x_] -> sin[x];
         rhs = rhs //. Cos[x_] -> cos[x];

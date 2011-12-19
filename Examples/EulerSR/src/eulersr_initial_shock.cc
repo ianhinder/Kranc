@@ -86,7 +86,6 @@ static void eulersr_initial_shock_Body(cGH const * restrict const cctkGH, int co
         /* Assign local copies of grid functions */
         
         CCTK_REAL xL = x[index];
-        CCTK_REAL yL = y[index];
         
         
         /* Include user supplied include files */
@@ -94,7 +93,7 @@ static void eulersr_initial_shock_Body(cGH const * restrict const cctkGH, int co
         /* Precompute derivatives */
         
         /* Calculate temporaries and grid functions */
-        CCTK_REAL X = xL + yL;
+        CCTK_REAL X = xL;
         
         CCTK_REAL rhoL = ToReal(rhoL0) + StepFunction(X)*(-ToReal(rhoL0) + 
           ToReal(rhoR0));

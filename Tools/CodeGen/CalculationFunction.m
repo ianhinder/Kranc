@@ -380,7 +380,7 @@ DefFn[
           shorts, eqs, parameters, parameterRules, odeGroups,
           functionName, dsUsed, groups, pddefs, cleancalc, eqLoop, where,
           addToStencilWidth, pDefs, haveCondTextuals, condTextuals, calc,
-          kernelCall},
+          kernelCall, DGFEDefs, DGFECall},
 
   functionName = ToString@lookup[calcp, Name];
   bodyFunctionName = functionName <> "_Body";
@@ -414,9 +414,9 @@ DefFn[
 
   gfs = allGroupVariables[groups];
 
-  InfoMessage[InfoFull, " ", Length@shorts, " shorthands"];
-  InfoMessage[InfoFull, " ", Length@gfs, " grid functions"];
-  InfoMessage[InfoFull, " ", Length@groups, " groups"];
+  InfoMessage[InfoFull, " " <> ToString[Length@shorts] <> " shorthands"];
+  InfoMessage[InfoFull, " " <> ToString[Length@gfs] <> " grid functions"];
+  InfoMessage[InfoFull, " " <> ToString[Length@groups] <> " groups"];
 
   InfoMessage[InfoFull, "Shorthands: ", shorts];
   InfoMessage[InfoFull, "Grid functions: ", gfs];
@@ -484,8 +484,208 @@ DefFn[
       ThrowError["Unknown 'Where' entry in calculation " <>
         functionName <> ": " <> ToString[where]]];
 
+  DGFEDefs =
+    If[OptionValue[UseDGFE] && lookupDefault[cleancalc, UseDGFE, False],
+       Module[
+         {name, lhss, gfsInLHS, vars},
+         InfoMessage[InfoFull, "Generating DGFE boilerplate"];
+         name = lookup[cleancalc, Name];
+         lhss = Map[#[[1]] &, eqs];
+         gfsInLHS = Union[Cases[lhss, _ ? (MemberQ[gfs,#] &), Infinity]];
+         InfoMessage[InfoFull, "gfsInLHS:" <> Map[" "<>ToString[#] &, gfsInLHS]];
+         (* TODO: do this in a better way, don't examine the variable names *)
+         vars = Select[gfsInLHS,
+                       StringMatchQ[ToString[#],
+                                    RegularExpression[".*rhs.*"]] &];
+         vars = Map[Symbol[StringReplace[ToString[#], "rhs"->""]] &, vars];
+         InfoMessage[InfoFull, "DGFE variables:" <> Map[" "<>ToString[#] &, vars]];
+         {
+           "",
+           "",
+           "",
+           "/* DGFE Definitions */",
+           "",
+           "#include <hrscc.hh>",
+           "",
+           "/*** WENO reconstruction ***/", (* TODO: do we need this? *)
+           "",
+           "/* Configuration */",
+           "#define config_eno_width    3",
+           "#define config_weno_type    hrscc::policy::standard",
+           "#define config_weno_optim   hrscc::policy::order",
+           "#define config_weno_limiter hrscc::policy::dummy",
+           "#define config_tvd_limiter  hrscc::limiters::minmod",
+           "",
+           "/* Export definitions */",
+           "#define "<>name<>"_eno_stencil           hrscc::ENOStencil<config_eno_width>",
+           "#define "<>name<>"_weno_weights          hrscc::WENOWeights<config_eno_width>",
+           "#define "<>name<>"_weno_stencil          hrscc::WENOStencil<config_eno_width, config_weno_type, config_weno_optim>",
+           "#define "<>name<>"_weno_limiter          hrscc::WENOLimiter<config_eno_width, "<>name<>"_weno_stencil::width, config_weno_limiter>",
+           "#define "<>name<>"_weno_reconstruction   hrscc::WENOReconstruction<"<>name<>"_eno_stencil, "<>name<>"_weno_limiter, "<>name<>"_weno_stencil, "<>name<>"_weno_weights>",
+           "#define "<>name<>"_tvd_reconstruction    hrscc::TVDReconstruction<config_tvd_limiter>",
+           "#define "<>name<>"_mp5_reconstruction    hrscc::MP5Reconstruction",
+           "#define "<>name<>"_upwind_reconstruction hrscc::UpwindReconstruction",
+           "#define "<>name<>"_reconstruction        "<>name<>"_weno_reconstruction",
+           "",
+           "/*** Flux splitting ***/", (* TODO: do we need this? *)
+           "",
+           "/* Configuration */",
+           "#define config_entropy_fix  hrscc::NoEntropyFix",
+           "#define config_flux_split   hrscc::RoeFS<"<>name<>"_reconstruction, config_entropy_fix>",
+           "#define config_system_split hrscc::ComponentSplit<DGFE_"<>name<>", config_flux_split>",
+           "",
+           "/* Export definitions */",
+           "#define "<>name<>"_flux_split   config_flux_split",
+           "#define "<>name<>"_system_split config_system_split",
+           "#define "<>name<>"_fd_method    hrscc::FiniteDifference<DGFE_"<>name<>", "<>name<>"_system_split>",
+           "",
+           "/*** SDG method ***/", (* TODO: do we need this? *)
+           "",
+           "/* Configuration */",
+           "#define config_sdg_order      5", (* TODO: make this a parameter *)
+           "#define config_riemann_solver hrscc::LaxFriedrichsRS<DGFE_"<>name<>", false>",
+           "",
+           "/* Export definitions */",
+           "#define "<>name<>"_sdg_grid   hrscc::GNIGrid<hrscc::GLLElement<config_sdg_order> >",
+           "#define "<>name<>"_sdg_method hrscc::SDGMethod<DGFE_"<>name<>", "<>name<>"_sdg_grid, config_riemann_solver>",
+           "",
+           "/*** Numerical scheme ***/",
+           "",
+           "/* Configuration */",
+           "#define config_method "<>name<>"_sdg_method",
+           "",
+           "/* Export definitions */",
+           "#define "<>name<>"_method config_method",
+           "#define "<>name<>"_solver hrscc::CLawSolver<DGFE_"<>name<>", config_method>",
+           "",
+           "",
+           "",
+           "class DGFE_"<>name<>";",
+           "",
+           "namespace hrscc {",
+           "  template<>",
+           "  struct traits<DGFE_"<>name<>"> {",
+           "    // All state vector variables",
+           "    enum state_t {" <> Map["i"<>ToString[#]<>", " &, vars] <> "nvars};",
+           "    enum {nequations = nvars};",
+           "    enum {nexternal = 0};",
+           "    enum {nbitmasks = 0};",
+           "    static bool const pure = false;",
+           "  };",
+           "} // namespace",
+           "",
+           "",
+           "",
+           "class DGFE_"<>name<>": public hrscc::CLaw<DGFE_"<>name<>"> {",
+           "public:",
+           "  typedef hrscc::CLaw<DGFE_"<>name<>"> claw;",
+           "  typedef hrscc::traits<DGFE_"<>name<>">::state_t state_t;",
+           "  static int const nvars = state_t::nvars;",
+           "  ",
+           "  DGFE_"<>name<>"();",
+           "  ",
+           "  inline void prim_to_all(hrscc::Observer<claw> & observer) const",
+           "  {",
+           "  }",
+           "  ",
+           "  template<hrscc::policy::direction_t dir>",
+           "  inline void fluxes(hrscc::Observer<claw> & observer) const",
+           "  {",
+           "    cGH const *const cctkGH = observer.cctkGH;",
+           "    DECLARE_CCTK_ARGUMENTS;",
+           "    ",
+           "    int const i = observer.index[0];",
+           "    int const j = observer.index[1];",
+           "    int const k = observer.index[2];",
+           "    int const ind3d = CCTK_GFINDEX3D(cctkGH, i,j,k);",
+           "    ",
+           Map["    CCTK_REAL flux"<>ToString[#]<>"L;" &, vars],
+           "    ",
+           "    switch (dir) {",
+           Table[{
+             "    case hrscc::policy::" <> {"x", "y", "z"}[[dir]] <> ": {",
+             Map["      flux"<>ToString[#]<>"L = flux"<>ToString[#]<>ToString[dir]<>"[ind3d];" &, vars],
+             "      break;",
+             "    }"},
+                 {dir, 1, 3}],
+           "    default:",
+           "      assert(0);",
+           "    }",
+           "    ",
+           Map["    observer.flux[dir][state_t::i"<>ToString[#]<>"] = - flux"<>ToString[#]<>"L;" &, vars],
+           "  }",
+           "  ",
+           "  template<hrscc::policy::direction_t dir>",
+           "  inline void eigenvalues(hrscc::Observer<claw> & observer) const",
+           "  {",
+           "    assert(0);",
+           "  }",
+           "  ",
+           "  template<hrscc::policy::direction_t dir>",
+           "  inline void eig(hrscc::Observer<claw> & observer) const",
+           "  {",
+           "    assert(0);",
+           "  }",
+           "};",
+           "",
+           "",
+           "",
+           "namespace hrscc {",
+           "  template<> int CLaw<DGFE_"<>name<>">::conserved_idx[DGFE_"<>name<>"::nvars] = {};",
+           "  template<> int CLaw<DGFE_"<>name<>">::primitive_idx[DGFE_"<>name<>"::nvars] = {};",
+           "  template<> int CLaw<DGFE_"<>name<>">::rhs_idx[DGFE_"<>name<>"::nvars] = {};",
+           "  template<> int CLaw<DGFE_"<>name<>">::field_idx[0] = {};",
+           "  template<> int CLaw<DGFE_"<>name<>">::bitmask_idx[0] = {};",
+           
+           "} // namespace hrscc",
+           "",
+           "",
+           "",
+           "namespace {",
+           "  int varindex(char const* const varname)",
+           "  {",
+           "    int const vi = CCTK_VarIndex(varname);",
+           "    if (vi<0) CCTK_WARN(CCTK_WARN_ABORT, \"Internal error\");",
+           "    return vi;",
+           "  }",
+           "}",
+           "",
+           "DGFE_"<>name<>"::DGFE_"<>name<>"()",
+           "{",
+           "  using namespace hrscc;",
+           "  ",
+           Map["  CLaw<DGFE_"<>name<>">::conserved_idx[state_t::i"<>ToString[#]<>"] = varindex(CCTK_THORNSTRING \"::"<>ToString[#]<>"\");" &, vars],
+           Map["  CLaw<DGFE_"<>name<>">::primitive_idx[state_t::i"<>ToString[#]<>"] = varindex(CCTK_THORNSTRING \"::"<>ToString[#]<>"\");" &, vars],
+           "  ",
+           Map["  CLaw<DGFE_"<>name<>">::rhs_idx[state_t::i"<>ToString[#]<>"] = varindex(CCTK_THORNSTRING \"::"<>ToString[#]<>"rhs\");" &, vars],
+           "}",
+           "",
+           "",
+           ""
+         } // Flatten // Map[# <> "\n" &, #] &],
+       {}
+      ];
+
+  DGFECall =
+    If[OptionValue[UseDGFE] && lookupDefault[cleancalc, UseDGFE, False],
+       Module[
+         {name},
+         name = lookup[cleancalc, Name];
+         {
+           "",
+           "{",
+           "  static "<>name<>"_solver *solver = NULL;",
+           "  if (not solver) solver = new "<>name<>"_method(cctkGH);",
+           "  solver->compute_rhs();",
+           "  // delete solver;",
+           "}"
+         } // Flatten // Map[# <> "\n" &, #] &],
+       {}
+      ];
+
   InfoMessage[InfoFull,"Generating function"];
   {
+  DGFEDefs,
   DefineFunction[bodyFunctionName, "static void", "cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const imin[3], int const imax[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[]",
   {
     "DECLARE_CCTK_ARGUMENTS;\n",
@@ -581,6 +781,8 @@ DefFn[
         If[haveCondTextuals, Map[ConditionalOnParameterTextual["!(" <> # <> ")", "return;\n"] &,condTextuals], {}],
 
         kernelCall,
+
+        DGFECall,
 
         ConditionalOnParameterTextual["verbose > 1",
           "CCTK_VInfo(CCTK_THORNSTRING,\"Leaving " <> bodyFunctionName <> "\");\n"]

@@ -220,6 +220,7 @@ Options[CreateConfiguration] = ThornOptions;
 CreateConfiguration[opts:OptionsPattern[]] :=
   {whoWhen["CCL"],
    "REQUIRES GenericFD\n",
+   If[OptionValue[UseDGFE], "REQUIRES Boost CPPUtils FDCore HRSCCore\n", {}],
    If[OptionValue[UseLoopControl], "REQUIRES LoopControl\n", {}],
    If[OptionValue[UseOpenCL], "REQUIRES OpenCL OpenCLRunTime\n", {}],
    If[OptionValue[UseVectors], "REQUIRES Vectors\n", {}]

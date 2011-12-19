@@ -73,6 +73,7 @@ ThornOptions =
   PartialDerivatives -> {},
   ReflectionSymmetries -> {},
   ZeroDimensions -> {},
+  UseDGFE -> False,
   UseLoopControl -> False,
   UseOpenCL -> False,
   UseVectors -> False,

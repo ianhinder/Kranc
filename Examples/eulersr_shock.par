@@ -149,24 +149,6 @@ EulerSR::rho
 EulerSR::v1
 EulerSR::epsi
 EulerSR::p
-
-EulerSR::DenLeft
-EulerSR::S1Left
-EulerSR::tauLeft
-EulerSR::rhoLeft
-EulerSR::v1Left
-EulerSR::epsiLeft
-
-EulerSR::DenRight
-EulerSR::S1Right
-EulerSR::tauRight
-EulerSR::rhoRight
-EulerSR::v1Right
-EulerSR::epsiRight
-
-EulerSR::DenFlux
-EulerSR::S1Flux
-EulerSR::tauFlux
 "
 
 # IOASCII::out1D_every          = 1

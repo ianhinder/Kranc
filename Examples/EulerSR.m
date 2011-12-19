@@ -37,7 +37,7 @@ initialShockCalc =
   Shorthands -> {X},
   Equations ->
   {
-    X -> x+y (*+y+z*),
+    X -> x,
     rho -> rhoR0 StepFunction[X] + rhoL0 (1-StepFunction[X]),
     v[1] -> vR0 StepFunction[X] + vL0 (1-StepFunction[X]),
     v[2] -> vR0 StepFunction[X] + vL0 (1-StepFunction[X]),

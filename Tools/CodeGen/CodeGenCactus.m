@@ -258,13 +258,13 @@ DefFn[
           DeclareAssignVariable[DataType[], "hdzi", "0.5 * dzi"]}]}]];
 
 DefFn[
-  GridName[x_Symbol] :=
+  GridName[x:(_Symbol|_String)] :=
   If[SOURCELANGUAGE == "C",
      ToString[x] <> "[index]",
      ToString[x] <> "(i,j,k)"]];
 
 DefFn[
-  ArrayName[x_Symbol] :=
+  ArrayName[x:(_Symbol|_String)] :=
   If[SOURCELANGUAGE == "C",
      ToString[x] <> "[0]",
      ToString[x] <> "(1)"]];

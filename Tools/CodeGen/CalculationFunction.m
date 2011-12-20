@@ -192,7 +192,7 @@ removeRHS[x_] :=
 (* Take a grid function name and return a name suitable for use in a local
    computation *)
 localName[x_] :=
-  ToExpression[ToString[x] <> "L"];
+  ToString[x] <> "L";
 
 (* --------------------------------------------------------------------------
    Predefinitions

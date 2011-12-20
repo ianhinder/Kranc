@@ -71,9 +71,9 @@ VerifyString[s_] :=
   If[! StringQ[s],
    ThrowError["Not a string:", s]];
 
-VerifyStringList[l_] := 
+VerifyStringList[l_, err_:None] := 
   If[! MatchQ[l, {___String}],
-   ThrowError["Not a list of strings:", l]];
+   ThrowError[If[err===None,"",ToString[err]<>" - "]<>"Not a list of strings:", l]];
 
 
 VerifyList[l_] := 

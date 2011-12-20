@@ -125,8 +125,8 @@ CreateKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_,
     VerifyGroupNames[rhsODEGroups];
     VerifyGroups[groups];
     VerifyString[implementation];
-    VerifyStringList[inheritedImplementations];
-    VerifyStringList[includeFiles];
+    VerifyStringList[inheritedImplementations, "InheritedImplementations"];
+    VerifyStringList[includeFiles, "IncludeFiles"];
     (* These are the aliased functions that are USED by this thorn from other thorns *)
     registerEvolved = 
     {

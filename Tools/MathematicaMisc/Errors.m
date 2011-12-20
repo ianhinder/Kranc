@@ -42,10 +42,10 @@ PrintStructure[l_List, prefix_, suffix_] :=
       Map[PrintStructure[#, "  " <> prefix, ","] &, l];
       Print[prefix, "}"],
 
-      Print[prefix, ToString[l,InputForm]]]];
+      Print[prefix, If[Head[l]===FullForm,ToString[l],ToString[l,InputForm]]]]];
 
 PrintStructure[s_, prefix_, suffix_] :=
-  Print[prefix, s//InputForm, suffix];
+  Print[prefix, If[Head[s]===FullForm,ToString[s],ToString[s,InputForm]], suffix];
 
 PrintError[err_] :=
   Module[{},

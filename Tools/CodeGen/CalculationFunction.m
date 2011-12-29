@@ -687,7 +687,7 @@ DefFn[
   InfoMessage[InfoFull,"Generating function"];
   {
   DGFEDefs,
-  DefineFunction[bodyFunctionName, "static void", "cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const imin[3], int const imax[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[]",
+  DefineFunction[bodyFunctionName, "static void", "cGH const *restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const imin[3], int const imax[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[]",
   {
     "DECLARE_CCTK_ARGUMENTS;\n",
     "DECLARE_CCTK_PARAMETERS;\n\n",
@@ -696,7 +696,7 @@ DefFn[
     (* We could (or probably should) write this into a source file of its own *)
     If[OptionValue[UseOpenCL],
        {
-         "char const * const source =\n"
+         "char const *const source =\n"
        },
        {
        }],
@@ -740,16 +740,16 @@ DefFn[
            groupNames = groupsInCalculation[cleancalc, imp];
            groupNames = Select[groupNames, !MemberQ[ignoreGroups, #] &];
            {
-             "char const * const groups[] = {",
+             "char const *const groups[] = {",
                Riffle[Join[Map[Quote, groupNames], {"NULL"}], ","],
                "};\n\n"
            }
          ],
-         "static struct OpenCLKernel * kernel = NULL;\n",
-         "char const * const sources[] = {differencing, source, NULL};\n",
-         "OpenCLRunTime_CallKernel (cctkGH, CCTK_THORNSTRING, \"" <> functionName <> "\",\n",
-         "                          sources, groups, NULL, NULL, NULL, -1,\n",
-         "                          imin, imax, &kernel);\n\n"
+         "static struct OpenCLKernel *kernel = NULL;\n",
+         "char const *const sources[] = {differencing, source, NULL};\n",
+         "OpenCLRunTime_CallKernel(cctkGH, CCTK_THORNSTRING, \"" <> functionName <> "\",\n",
+         "                         sources, groups, NULL, NULL, NULL, -1,\n",
+         "                         imin, imax, &kernel);\n\n"
        },
        {
        }]

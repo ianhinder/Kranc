@@ -634,7 +634,9 @@ DefFn[
       ToReal[ksub[xx_,yy_]] -> ToReal[xx-yy],
       ToReal[kmul[xx_,yy_]] -> ToReal[xx*yy],
       ToReal[xx_*kadd[yy_,zz_]] -> ToReal[xx*(yy+zz)],
-      kpow[xx_, kneg[power_]] -> kpow[xx, -power]};
+      kpow[xx_, ToReal[yy_]] -> kpow[xx, yy],
+      kpow[xx_, kneg[yy_]] -> kpow[xx, -yy],
+      kpow[xx_, kadd[yy_,zz_]] -> kpow[xx, yy+zz]};
     expr = expr //. undoRules;
     
     (* FMA (fused multiply-add) instructions *)

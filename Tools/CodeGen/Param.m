@@ -208,6 +208,18 @@ CreateKrancParam[evolvedGroups_, nonevolvedGroups_,
       Steerable -> Recover
     };
 
+    otherTimelevelsParam =
+    {
+      Name -> "other_timelevels",
+      Type -> "CCTK_INT",
+      Default -> 1,
+      Description -> "Number of active timelevels for non-evolved grid functions",
+      Visibility -> "restricted",
+      AllowedValues -> {{Value -> ToString[0] <> ":" <> ToString[evolutionTimelevels],
+                         Description -> ""}},
+      Steerable -> Recover
+    };
+
     genericfdStruct =
     {
       Name -> "GenericFD",
@@ -249,7 +261,7 @@ CreateKrancParam[evolvedGroups_, nonevolvedGroups_,
 
     implementations = Join[userImplementations, userImplementations2, {genericfdStruct, molImplementation}];
     params = Join[{verboseStruct}, realStructs, intStructs, keywordStructs, {evolvedMoLParam,
-                  evolvedODEMoLParam, (*constrainedMoLParam,*) timelevelsParam, rhsTimelevelsParam},
+                  evolvedODEMoLParam, (*constrainedMoLParam,*) timelevelsParam, rhsTimelevelsParam, otherTimelevelsParam},
                   calcEveryStructs, calcOffsetStructs,
       CactusBoundary`GetParameters[evolvedGFs, evolvedGroups]];
 

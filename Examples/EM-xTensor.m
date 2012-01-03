@@ -101,6 +101,7 @@ evolCalc =
 {
   Name -> "EM_evol",
   Schedule -> {"in MoL_CalcRHS"},
+  Where -> Interior,
   Equations -> 
   {
     dot[ToBasis[Euclidean][El[-a]]] -> ToBasis[Euclidean][(epsilong[-a,e,f]  CD[-e][B[-f]])],
@@ -115,6 +116,7 @@ evolCalc =
 constraintsCalc =
 {
   Name -> "EM_constraints",
+  Where -> Interior,
   Equations -> 
   {
     CEl -> ToBasis[Euclidean][g[a,b]CD[-b][El[-a]]],

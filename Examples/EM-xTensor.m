@@ -151,7 +151,7 @@ calculations =
   energyCalc
 };
 
-CreateKrancThornTT[groups, ".", "EM-xTensor", 
+CreateKrancThornTT[groups, "xTensor", "EM", 
   Calculations -> calculations,
   DeclaredGroups -> declaredGroupNames,
   PartialDerivatives -> derivatives,

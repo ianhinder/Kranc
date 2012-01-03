@@ -133,7 +133,7 @@ energyCalc =
   Name -> "EM_energy",
   Equations -> 
   {
-    rho -> ToBasis[Euclidean][El[-a] El[a]/2 + B[-a] B[a]/2]
+    rho -> ToBasis[Euclidean][g[a,b] El[-a] El[-b]/2 + g[a,b] B[-a] B[-b]/2]
   }
 };
 

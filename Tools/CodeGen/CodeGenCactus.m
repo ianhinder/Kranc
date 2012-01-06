@@ -548,116 +548,102 @@ DefFn[
 DefFn[
   vectoriseExpression[exprp_] :=
   Module[
-    {isNotMinusOneQ, isNotTimesMinusOneQ, fmaRules, isNotKneg, arithRules, undoRules, expr},
+    {expr, undoVect, undoSomeVect},
     expr = exprp;
-
-    (* Constants *)
-    (* expr = expr /. xx_Integer/; xx!=-1 :> ToReal[xx]; *)
-    expr = expr /. xx_Integer -> ToReal[xx];
-    expr = expr /. xx_Real -> ToReal[xx];
-
-    removeToRealRules =
-    {-ToReal[xx_] -> ToReal[- xx],
-     ToReal[xx_] + ToReal[yy_] -> ToReal[xx + yy],
-     ToReal[xx_] - ToReal[yy_] -> ToReal[xx - yy],
-     ToReal[xx_] * ToReal[yy_] -> ToReal[xx * yy],
-     ToReal[xx_] == ToReal[yy_] -> ToReal[xx == yy],
-     ToReal[xx_] != ToReal[yy_] -> ToReal[xx != yy],
-     pow[xx_, ToReal[power_]] -> pow[xx, power]};
-
-    expr = expr //. removeToRealRules;
-
-    (* Replace all operators and functions *)
-    (* kneg, kadd, ksub, kmul, kdiv *)
-    isNotKneg[n_] := ! MatchQ[n,kneg[_]];
-
-    arithRules =
-    { - xx_ -> kneg[xx],
-      xx_ * yy_ -> kmul[xx,yy],
-      xx_ / yy_ -> kdiv[xx,yy],
-      xx_ + yy_ -> kadd[xx,yy],
-      xx_ - yy_ -> ksub[xx,yy],
-      kmul[-1,xx_]            -> kneg[xx],
-      kmul[xx_,-1]            -> kneg[xx],
-      kmul[ToReal[-1],xx_]    -> kneg[xx],
-      kmul[xx_,ToReal[-1]]    -> kneg[xx],
-      ToReal[- xx_]           -> kneg[ToReal[xx]],
-      (* kmul[xx_,INV[yy_]]      -> kdiv[xx,yy], *)
-      (* kmul[INV[xx_],yy_]      -> kdiv[yy,xx], *)
-      kdiv[xx_,kdiv[yy_,zz_]] -> kdiv[kmul[xx,zz],yy],
-      kdiv[kdiv[xx_,yy_],zz_] -> kdiv[xx,kmul[yy,zz]],
-      kmul[kneg[xx_],yy_]     -> kneg[kmul[xx,yy]],
-      kmul[xx_,kneg[yy_]]     -> kneg[kmul[xx,yy]],
-      kdiv[kneg[xx_],yy_]     -> kneg[kdiv[xx,yy]],
-      kdiv[xx_,kneg[yy_]]     -> kneg[kdiv[xx,yy]],
-      kadd[kneg[xx_],yy_]     -> ksub[yy,xx],
-      ksub[kneg[xx_],yy_]     -> kneg[kadd[xx,yy]],
-      kadd[xx_,kneg[yy_]]     -> ksub[xx,yy],
-      ksub[xx_,kneg[yy_]]     -> kadd[xx,yy],
-      kneg[ksub[xx_,yy_]]     -> ksub[yy,xx],
-      Abs[xx_]      -> kfabs[xx],
-      Cos[xx_]      -> kcos[xx],
-      Log[xx_]      -> klog[xx],
-      Sin[xx_]      -> ksin[xx],
-      Tan[xx_]      -> ktan[xx],
-      exp[xx_]      -> kexp[xx],
-      fabs[xx_]     -> kfabs[xx],
-      fmax[xx_,yy_] -> kfmax[xx,yy],
-      fmin[xx_,yy_] -> kfmin[xx,yy],
-      log[xx_]      -> klog[xx],
-      pow[xx_,yy_]  -> kpow[xx,yy],
-      sqrt[xx_]     -> ksqrt[xx],
-      kcos[kneg[xx_]]   -> kcos[xx],
-      kfabs[kneg[xx_]]  -> kfabs[xx],
-      kfnabs[kneg[xx_]] -> kfnabs[xx],
-      kneg[kfabs[xx_]]  -> kfnabs[xx],
-      kneg[kfnabs[xx_]] -> kfabs[xx],
-      kneg[kneg[xx_]]   -> xx,
-      ksin[kneg[xx_]]   -> kneg[ksin[xx]],
-      ktan[kneg[xx_]]   -> kneg[ktan[xx]]};
-    expr = expr //. arithRules;
-
-    (* Undo some transformations *)
-    undoRules = 
-    { IfThen[_, aa_, aa_] -> aa,
-      IfThen[xx_?IntegerQ, aa_, bb_] /; xx!=0 :> aa,
-      IfThen[xx_?IntegerQ, aa_, bb_] /; xx==0 :> bb,
-      IfThen[kmul[xx_,yy_], aa_, bb_] -> IfThen[xx*yy, aa, bb],
-      IfThen[kmul[xx_,yy_] != zz_, aa_, bb_] -> IfThen[xx*yy!=zz, aa, bb],
-      IfThen[ToReal[xx_], aa_, bb_] -> IfThen[xx, aa, bb],
-      Scalar[kmul[xx_,yy_]] -> Scalar[xx*yy],
-      Scalar[kmul[xx_,yy_] != zz_] -> Scalar[xx*yy!=zz],
-      Scalar[ToReal[xx_]] -> Scalar[xx],
-      Scalar[xx_ != ToReal[yy_]] -> Scalar[xx != yy],
-      ToReal[kneg[xx_]] -> ToReal[-xx],
-      ToReal[kadd[xx_,yy_]] -> ToReal[xx+yy],
-      ToReal[ksub[xx_,yy_]] -> ToReal[xx-yy],
-      ToReal[kmul[xx_,yy_]] -> ToReal[xx*yy],
-      ToReal[xx_*kadd[yy_,zz_]] -> ToReal[xx*(yy+zz)],
-      kpow[xx_, ToReal[yy_]] -> kpow[xx, yy],
-      kpow[xx_, kneg[yy_]] -> kpow[xx, -yy],
-      kpow[xx_, kadd[yy_,zz_]] -> kpow[xx, yy+zz]};
-    expr = expr //. undoRules;
     
-    (* FMA (fused multiply-add) instructions *)
+    (* Constants *)
+    expr = expr /. {
+      x_Integer -> ToReal[x],
+      x_Real    -> ToReal[x]};
+    
+    (* Operators *)
+    expr = expr //. {
+      -x_                 -> kneg[x],
+      kmul[-1,x_]         -> kneg[x],
+      kmul[x_,-1]         -> kneg[x],
+      kmul[ToReal[-1],x_] -> kneg[x],
+      kmul[x_,ToReal[-1]] -> kneg[x],
+      kneg[kneg[x_]]      -> x,
+      
+      x_ + y_           -> kadd[x,y],
+      x_ - y_           -> ksub[x,y],
+      kadd[kneg[x_],y_] -> ksub[y,x],
+      ksub[kneg[x_],y_] -> kneg[kadd[x,y]],
+      kadd[x_,kneg[y_]] -> ksub[x,y],
+      ksub[x_,kneg[y_]] -> kadd[x,y],
+      kneg[ksub[x_,y_]] -> ksub[y,x],
+      ksub[x_,x_]       -> ToReal[0],
+      
+      x_ * y_              -> kmul[x,y],
+      x_ / y_              -> kdiv[x,y],
+      kdiv[x_,kdiv[y_,z_]] -> kdiv[kmul[x,z],y],
+      kdiv[kdiv[x_,y_],z_] -> kdiv[x,kmul[y,z]],
+      kmul[kneg[x_],y_]    -> kneg[kmul[x,y]],
+      kmul[x_,kneg[y_]]    -> kneg[kmul[x,y]],
+      kdiv[kneg[x_],y_]    -> kneg[kdiv[x,y]],
+      kdiv[x_,kneg[y_]]    -> kneg[kdiv[x,y]],
+      kdiv[x_,x_]          -> ToReal[1],
+      
+      Abs[x_] -> kfabs[x],
+      Cos[x_] -> kcos[x],
+      Log[x_] -> klog[x],
+      Sin[x_] -> ksin[x],
+      Tan[x_] -> ktan[x],
+      
+      exp[x_]     -> kexp[x],
+      fabs[x_]    -> kfabs[x],
+      fmax[x_,y_] -> kfmax[x,y],
+      fmin[x_,y_] -> kfmin[x,y],
+      log[x_]     -> klog[x],
+      pow[x_,y_]  -> kpow[x,y],
+      sqrt[x_]    -> ksqrt[x],
+      kcos[kneg[x_]]   -> kcos[x],
+      kfabs[kneg[x_]]  -> kfabs[x],
+      kfnabs[kneg[x_]] -> kfnabs[x],
+      kneg[kfabs[x_]]  -> kfnabs[x],
+      kneg[kfnabs[x_]] -> kfabs[x],
+      ksin[kneg[x_]]   -> kneg[ksin[x]],
+      ktan[kneg[x_]]   -> kneg[ktan[x]]};
+    
+    (* FMA (fused multiply-add) *)
     (* kmadd (x,y,z) =   xy+z
        kmsub (x,y,z) =   xy-z
        knmadd(x,y,z) = -(xy+z)
        knmsub(x,y,z) = -(xy-z) *)
-    fmaRules =
-    { kadd[kmul[xx_,yy_],zz_] -> kmadd[xx,yy,zz],
-      kadd[zz_,kmul[xx_,yy_]] -> kmadd[xx,yy,zz],
-      ksub[kmul[xx_,yy_],zz_] -> kmsub[xx,yy,zz],
-      ksub[zz_,kmul[xx_,yy_]] -> knmsub[xx,yy,zz],
-      kneg[kmadd [xx_,yy_,zz_]] -> knmadd[xx,yy,zz],
-      kneg[kmsub [xx_,yy_,zz_]] -> knmsub[xx,yy,zz],
-      kneg[knmadd[xx_,yy_,zz_]] -> kmadd [xx,yy,zz],
-      kneg[knmsub[xx_,yy_,zz_]] -> kmsub [xx,yy,zz]
+    expr = expr //. {
+      kadd[kmul[x_,y_],z_] -> kmadd[x,y,z],
+      kadd[z_,kmul[x_,y_]] -> kmadd[x,y,z],
+      ksub[kmul[x_,y_],z_] -> kmsub[x,y,z],
+      ksub[z_,kmul[x_,y_]] -> knmsub[x,y,z],
+      kneg[kmadd [x_,y_,z_]] -> knmadd[x,y,z],
+      kneg[kmsub [x_,y_,z_]] -> knmsub[x,y,z],
+      kneg[knmadd[x_,y_,z_]] -> kmadd [x,y,z],
+      kneg[knmsub[x_,y_,z_]] -> kmsub [x,y,z]
       (* we could match this and similar patterns
-         kmul[xx_, kadd[yy_, ToReal[+1]]] -> kmadd[xx, yy, xx],
-         kmul[xx_, kadd[yy_, ToReal[-1]]] -> kmsub[xx, yy, xx],
+         kmul[x_, kadd[y_, ToReal[+1]]] -> kmadd[x, y, x],
+         kmul[x_, kadd[y_, ToReal[-1]]] -> kmsub[x, y, x],
          *)};
-    expr = expr //. fmaRules;
+    
+    (* Undo some transformations *)
+    undoVect[expr_] := expr //. {
+      ToReal[x_] -> x,
+      
+      kneg[x_] -> -x,
+      
+      kadd[x_,y_] -> x+y,
+      ksub[x_,y_] -> x-y,
+      kmul[x_,y_] -> x*y,
+      kdiv[x_,y_] -> x/y};
+    
+    undoSomeVect[expr_] := (
+      expr
+      /. ToReal[a_] :> ToReal[undoVect[a]]
+      /. Scalar[a_] :> Scalar[undoVect[a]]
+      /. (IfThen[a_,x_,y_] :> 
+          IfThen[undoVect[a], undoSomeVect[x], undoSomeVect[y]])
+      /. kpow[x_,a_] :> kpow[undoSomeVect[x], undoVect[a]]);
+    
+    expr = undoSomeVect[expr];
     
     Return[expr]]];
 
@@ -700,35 +686,31 @@ DefFn[
 
         (* Avoid rational numbers *)
         rhs = rhs /. Rational[xx_,yy_] :> N[xx/yy, 30];
-        
-        rhs = rhs //. IfThen[cond1_,xx1_,yy1_] + IfThen[cond2_,xx2_,yy2_] /; cond1==cond2 :> 
-        IfThen[cond1, Simplify[    xx1 +     xx2], Simplify[    yy1 +     yy2]];
 
-        rhs = rhs //. ff1_ IfThen[cond1_,xx1_,yy1_] + IfThen[cond2_,xx2_,yy2_] /; cond1==cond2 :>
-        IfThen[cond1, Simplify[ff1 xx1 +     xx2], Simplify[ff1 yy1 +     yy2]];
+        (* Simple optimisations *)
+        rhs = rhs /. IfThen[_, aa_, aa_] -> aa;
+        rhs = rhs /. IfThen[xx_?IntegerQ, aa_, bb_] /; xx!=0 :> aa;
+        rhs = rhs /. IfThen[xx_?IntegerQ, aa_, bb_] /; xx==0 :> bb;
+        rhs = rhs /. IfThen[True , aa_, bb_] -> aa;
+        rhs = rhs /. IfThen[False, aa_, bb_] -> bb;
 
-        rhs = rhs //.      IfThen[cond1_,xx1_,yy1_] + ff2_ IfThen[cond2_,xx2_,yy2_] /; cond1==cond2 :> 
-        IfThen[cond1, Simplify[    xx1 + ff2 xx2], Simplify[    yy1 + ff2 yy2]];
-
-        rhs = rhs //. ff1_ IfThen[cond1_,xx1_,yy1_] + ff2_ IfThen[cond2_,xx2_,yy2_] /; cond1==cond2 :> 
-        IfThen[cond1, Simplify[ff1 xx1 + ff2 xx2], Simplify[ff1 yy1 + ff2 yy2]];
+        (* Complex optimisations *)
+        rhs = rhs //.      IfThen[cond1_,xx1_,yy1_] +      IfThen[cond2_,xx2_,yy2_] /; cond1==cond2 :> IfThen[cond1, Simplify[    xx1 +     xx2], Simplify[    yy1 +     yy2]];
+        rhs = rhs //. ff1_ IfThen[cond1_,xx1_,yy1_] +      IfThen[cond2_,xx2_,yy2_] /; cond1==cond2 :> IfThen[cond1, Simplify[ff1 xx1 +     xx2], Simplify[ff1 yy1 +     yy2]];
+        rhs = rhs //.      IfThen[cond1_,xx1_,yy1_] + ff2_ IfThen[cond2_,xx2_,yy2_] /; cond1==cond2 :> IfThen[cond1, Simplify[    xx1 + ff2 xx2], Simplify[    yy1 + ff2 yy2]];
+        rhs = rhs //. ff1_ IfThen[cond1_,xx1_,yy1_] + ff2_ IfThen[cond2_,xx2_,yy2_] /; cond1==cond2 :> IfThen[cond1, Simplify[ff1 xx1 + ff2 xx2], Simplify[ff1 yy1 + ff2 yy2]];
 
         (* Is this still a good idea when FMA instructions are used? *)
         If[!noSimplify,
            rhs = rhs //. xx_ yy_ + xx_ zz_ -> xx (yy+zz);
            rhs = rhs //. xx_ yy_ - xx_ zz_ -> xx (yy-zz)];
 
-        rhs = rhs /. Power[E, power_] -> exp[power];
         rhs = rhs /. ArcTan[x_, y_] -> ArcTan2[x,y];
-
-        (* there have been some problems doing the Max/Min
-           replacement via the preprocessor for C, so we do it
-           here *)
+        rhs = rhs /. Power[E, power_] -> exp[power];
+        rhs = rhs /. Power[xx_, power_] -> pow[xx, power];
         (* Note: Mathematica simplifies Max[xx_] -> xx automatically *)
         rhs = rhs //. Max[xx_, yy__] -> fmax[xx, Max[yy]];
         rhs = rhs //. Min[xx_, yy__] -> fmin[xx, Min[yy]];
-
-        rhs = rhs /. Power[xx_, power_] -> pow[xx, power];
 
         If[vectorise === True,
            rhs = vectoriseExpression[rhs]];

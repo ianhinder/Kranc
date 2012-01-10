@@ -71,7 +71,7 @@ ThornOptions =
   PartialDerivatives -> {},
   ReflectionSymmetries -> {},
   ZeroDimensions -> {},
-  UseLoopControl -> False,
+  UseLoopControl -> False, (* ignored *)
   UseOpenCL -> False,
   UseVectors -> False,
   ProhibitAssignmentToGridFunctionsRead -> False,

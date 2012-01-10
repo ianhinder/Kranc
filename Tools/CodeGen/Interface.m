@@ -194,7 +194,7 @@ CreateKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_,
 
     interface = CreateInterface[implementation, inheritedImplementations, 
       Join[includeFiles, {CactusBoundary`GetIncludeFiles[]},
-           If[OptionValue[UseLoopControl], {"loopcontrol.h"}, {}],
+           {"loopcontrol.h"},
            If[OptionValue[UseOpenCL], {"OpenCLRunTime.h"}, {}],
            If[OptionValue[UseVectors], {"vectors.h"}, {}]],
       groupStructures,

@@ -398,24 +398,8 @@ Options[GenericGridLoop] = ThornOptions;
 
 DefFn[
   GenericGridLoop[functionName_String, block:CodeGenBlock, opts:OptionsPattern[]] :=
-  If[OptionValue[UseLoopControl],
-     GenericGridLoopUsingLoopControl[functionName, block, OptionValue[UseVectors]],
-     GenericGridLoopTraditional[block]]];
-
-DefFn[
-  GenericGridLoopTraditional[block:CodeGenBlock] :=
-  CommentedBlock[
-    "Loop over the grid points",
-    loopOverInteger[
-      "k", "imin[2]", "imax[2]",
-      loopOverInteger[
-        "j", "imin[1]", "imax[1]",
-        loopOverInteger[
-          "i", "imin[0]", "imax[0]",
-          {If[SOURCELANGUAGE == "C",
-              DeclareAssignVariable["int", "index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"],
-              ""],
-            block}]]]]];
+     GenericGridLoopUsingLoopControl[functionName, block, OptionValue[UseVectors]]
+     ];
 
 DefFn[
   GenericGridLoopUsingLoopControl[functionName_String, block:CodeGenBlock, vectorise:Boolean] :=
@@ -423,7 +407,7 @@ DefFn[
      CommentedBlock[
        "Loop over the grid points",
        {"#pragma omp parallel\n",
-        If[vectorise, "LC_LOOP3VEC", "LC_LOOP3"],
+        If[vectorise, "LC_LOOP3VEC", "CCTK_LOOP3"],
         " (", functionName, ",\n",
         "  i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],\n",
         "  cctk_lsh[0],cctk_lsh[1],cctk_lsh[2]",
@@ -435,7 +419,7 @@ DefFn[
            (* DeclareAssignVariable["int", "index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"], *)
            DeclareAssignVariable["ptrdiff_t", "index", "di*i + dj*j + dk*k"],
            block}], "}\n",
-        If[vectorise, "LC_ENDLOOP3VEC", "LC_ENDLOOP3"] <> " (", functionName, ");\n"}],
+        If[vectorise, "LC_ENDLOOP3VEC", "CCTK_ENDLOOP3"] <> " (", functionName, ");\n"}],
      (* else *)
      ""]];
 

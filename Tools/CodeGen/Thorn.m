@@ -220,7 +220,8 @@ Options[CreateConfiguration] = ThornOptions;
 CreateConfiguration[opts:OptionsPattern[]] :=
   {whoWhen["CCL"],
    "REQUIRES GenericFD\n",
-   If[OptionValue[UseLoopControl], "REQUIRES LoopControl\n", {}],
+   If[OptionValue[UseVectors], 
+      "REQUIRES LoopControl\n", "OPTIONAL LoopControl\n{\n}\n"],
    If[OptionValue[UseOpenCL], "REQUIRES OpenCL OpenCLRunTime\n", {}],
    If[OptionValue[UseVectors], "REQUIRES Vectors\n", {}]
   };
@@ -520,7 +521,7 @@ CreateSetterSource[calcs_, debug_, include_, imp_,
    Map[IncludeFile, Join[{"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h",
                          (*"precomputations.h",*) "GenericFD.h", "Differencing.h"},
                          include,
-                         If[OptionValue[UseLoopControl], {"loopcontrol.h"}, {}],
+                         {"cctk_Loop.h", "loopcontrol.h"},
                          If[OptionValue[UseOpenCL], {"OpenCLRunTime.h"}, {}],
                          If[OptionValue[UseVectors], {"vectors.h"}, {}]]],
    calculationMacros[OptionValue[UseVectors]],

@@ -502,8 +502,6 @@ DefFn[
 
     If[OptionValue[UseOpenCL], Stringify, Identity][{
 
-    If[!OptionValue[UseLoopControl], DeclareGridLoopVariables[], {}],
-
     DeclareFDVariables[],
 
     CommentedBlock["Include user-supplied include files",

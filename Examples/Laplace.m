@@ -1,4 +1,6 @@
 
+SetEnhancedTimes[False];
+
 groups = {{"phi_group", {phi}}};
 
 derivatives =

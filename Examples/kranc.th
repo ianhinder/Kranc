@@ -76,6 +76,8 @@ KrancExamples/EulerAuto
 KrancExamples/EulerSR
 KrancExamples/Advect
 KrancExamples/Burgers
+KrancExamples/Laplace
+KrancExamples/SimpleWaveODE
 
 CactusPUGH/PUGH
 CactusPUGH/PUGHReduce

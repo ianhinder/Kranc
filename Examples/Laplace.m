@@ -41,6 +41,7 @@ evolveCalc =
 {
   Name -> "Laplace_relax",
   Schedule -> {"in MoL_CalcRHS", "AT ANALYSIS"},
+  Where -> Interior,
   Equations ->
   {
     dot[phi] -> mu Euc[ui,uj] PD[phi,li,lj]

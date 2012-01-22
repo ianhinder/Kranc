@@ -1409,9 +1409,8 @@ CreateThorn[thorn_] :=
     GenerateFile[thornDirectory <> "/temp", {}];
     DeleteFile[thornDirectory <> "/temp"];
 
-    Print["Thorn ", thornDirectory, " created successfully"]];
+    Print["Thorn ", thornDirectory, " created successfully"];
 ];
->>>>>>> hydro
 
 End[];
 

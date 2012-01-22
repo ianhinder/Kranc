@@ -1,0 +1,539 @@
+# File produced by Kranc
+
+
+shares: GenericFD
+
+
+
+shares: MethodOfLines
+
+USES CCTK_INT MoL_Num_Evolved_Vars
+
+restricted:
+CCTK_INT verbose "verbose" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 0
+
+restricted:
+CCTK_REAL sigma "sigma"
+{
+  "*:*" :: ""
+} 0
+
+restricted:
+CCTK_REAL v0 "v0"
+{
+  "*:*" :: ""
+} 0
+
+restricted:
+CCTK_REAL amp "amp"
+{
+  "*:*" :: ""
+} 0
+
+restricted:
+CCTK_REAL rhoR0 "rhoR0"
+{
+  "*:*" :: ""
+} 0
+
+restricted:
+CCTK_REAL rhoL0 "rhoL0"
+{
+  "*:*" :: ""
+} 0
+
+restricted:
+CCTK_REAL vR0 "vR0"
+{
+  "*:*" :: ""
+} 0
+
+restricted:
+CCTK_REAL vL0 "vL0"
+{
+  "*:*" :: ""
+} 0
+
+restricted:
+CCTK_REAL pR0 "pR0"
+{
+  "*:*" :: ""
+} 0
+
+restricted:
+CCTK_REAL pL0 "pL0"
+{
+  "*:*" :: ""
+} 0
+
+restricted:
+CCTK_REAL gamma "gamma"
+{
+  "*:*" :: ""
+} 0
+
+restricted:
+CCTK_REAL hlleAlpha "hlleAlpha"
+{
+  "*:*" :: ""
+} 0
+
+private:
+KEYWORD initial_data "initial_data"
+{
+  "shock" :: "shock"
+} "shock"
+
+restricted:
+CCTK_INT EulerAuto_MaxNumEvolvedVars "Number of evolved variables used by this thorn" ACCUMULATOR-BASE=MethodofLines::MoL_Num_Evolved_Vars STEERABLE=RECOVER
+{
+  5:5 :: "Number of evolved variables used by this thorn"
+} 5
+
+restricted:
+CCTK_INT timelevels "Number of active timelevels" STEERABLE=RECOVER
+{
+  0:3 :: ""
+} 3
+
+restricted:
+CCTK_INT rhs_timelevels "Number of active RHS timelevels" STEERABLE=RECOVER
+{
+  0:3 :: ""
+} 1
+
+restricted:
+CCTK_INT eulerauto_initial_shock_calc_every "eulerauto_initial_shock_calc_every" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 1
+
+restricted:
+CCTK_INT eulerauto_cons_calc_zero_rhs_calc_every "eulerauto_cons_calc_zero_rhs_calc_every" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 1
+
+restricted:
+CCTK_INT eulerauto_cons_calc_conserved_calc_every "eulerauto_cons_calc_conserved_calc_every" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 1
+
+restricted:
+CCTK_INT eulerauto_cons_calc_primitives_calc_every "eulerauto_cons_calc_primitives_calc_every" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 1
+
+restricted:
+CCTK_INT eulerauto_cons_calc_reconstruct_1_calc_every "eulerauto_cons_calc_reconstruct_1_calc_every" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 1
+
+restricted:
+CCTK_INT eulerauto_cons_calc_intercell_conserved_1_calc_every "eulerauto_cons_calc_intercell_conserved_1_calc_every" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 1
+
+restricted:
+CCTK_INT eulerauto_cons_calc_flux_1_calc_every "eulerauto_cons_calc_flux_1_calc_every" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 1
+
+restricted:
+CCTK_INT eulerauto_cons_calc_rhs_1_calc_every "eulerauto_cons_calc_rhs_1_calc_every" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 1
+
+restricted:
+CCTK_INT eulerauto_cons_calc_reconstruct_2_calc_every "eulerauto_cons_calc_reconstruct_2_calc_every" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 1
+
+restricted:
+CCTK_INT eulerauto_cons_calc_intercell_conserved_2_calc_every "eulerauto_cons_calc_intercell_conserved_2_calc_every" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 1
+
+restricted:
+CCTK_INT eulerauto_cons_calc_flux_2_calc_every "eulerauto_cons_calc_flux_2_calc_every" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 1
+
+restricted:
+CCTK_INT eulerauto_cons_calc_rhs_2_calc_every "eulerauto_cons_calc_rhs_2_calc_every" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 1
+
+restricted:
+CCTK_INT eulerauto_cons_calc_reconstruct_3_calc_every "eulerauto_cons_calc_reconstruct_3_calc_every" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 1
+
+restricted:
+CCTK_INT eulerauto_cons_calc_intercell_conserved_3_calc_every "eulerauto_cons_calc_intercell_conserved_3_calc_every" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 1
+
+restricted:
+CCTK_INT eulerauto_cons_calc_flux_3_calc_every "eulerauto_cons_calc_flux_3_calc_every" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 1
+
+restricted:
+CCTK_INT eulerauto_cons_calc_rhs_3_calc_every "eulerauto_cons_calc_rhs_3_calc_every" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 1
+
+restricted:
+CCTK_INT eulerauto_initial_shock_calc_offset "eulerauto_initial_shock_calc_offset" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 0
+
+restricted:
+CCTK_INT eulerauto_cons_calc_zero_rhs_calc_offset "eulerauto_cons_calc_zero_rhs_calc_offset" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 0
+
+restricted:
+CCTK_INT eulerauto_cons_calc_conserved_calc_offset "eulerauto_cons_calc_conserved_calc_offset" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 0
+
+restricted:
+CCTK_INT eulerauto_cons_calc_primitives_calc_offset "eulerauto_cons_calc_primitives_calc_offset" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 0
+
+restricted:
+CCTK_INT eulerauto_cons_calc_reconstruct_1_calc_offset "eulerauto_cons_calc_reconstruct_1_calc_offset" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 0
+
+restricted:
+CCTK_INT eulerauto_cons_calc_intercell_conserved_1_calc_offset "eulerauto_cons_calc_intercell_conserved_1_calc_offset" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 0
+
+restricted:
+CCTK_INT eulerauto_cons_calc_flux_1_calc_offset "eulerauto_cons_calc_flux_1_calc_offset" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 0
+
+restricted:
+CCTK_INT eulerauto_cons_calc_rhs_1_calc_offset "eulerauto_cons_calc_rhs_1_calc_offset" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 0
+
+restricted:
+CCTK_INT eulerauto_cons_calc_reconstruct_2_calc_offset "eulerauto_cons_calc_reconstruct_2_calc_offset" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 0
+
+restricted:
+CCTK_INT eulerauto_cons_calc_intercell_conserved_2_calc_offset "eulerauto_cons_calc_intercell_conserved_2_calc_offset" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 0
+
+restricted:
+CCTK_INT eulerauto_cons_calc_flux_2_calc_offset "eulerauto_cons_calc_flux_2_calc_offset" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 0
+
+restricted:
+CCTK_INT eulerauto_cons_calc_rhs_2_calc_offset "eulerauto_cons_calc_rhs_2_calc_offset" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 0
+
+restricted:
+CCTK_INT eulerauto_cons_calc_reconstruct_3_calc_offset "eulerauto_cons_calc_reconstruct_3_calc_offset" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 0
+
+restricted:
+CCTK_INT eulerauto_cons_calc_intercell_conserved_3_calc_offset "eulerauto_cons_calc_intercell_conserved_3_calc_offset" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 0
+
+restricted:
+CCTK_INT eulerauto_cons_calc_flux_3_calc_offset "eulerauto_cons_calc_flux_3_calc_offset" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 0
+
+restricted:
+CCTK_INT eulerauto_cons_calc_rhs_3_calc_offset "eulerauto_cons_calc_rhs_3_calc_offset" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 0
+
+private:
+KEYWORD Den_bound "Boundary condition to implement" STEERABLE=ALWAYS
+{
+  "flat" :: "Flat boundary condition"
+  "none" :: "No boundary condition"
+  "static" :: "Boundaries held fixed"
+  "radiative" :: "Radiation boundary condition"
+  "scalar" :: "Dirichlet boundary condition"
+  "newrad" :: "Improved radiative boundary condition"
+  "skip" :: "skip boundary condition code"
+} "skip"
+
+private:
+KEYWORD En_bound "Boundary condition to implement" STEERABLE=ALWAYS
+{
+  "flat" :: "Flat boundary condition"
+  "none" :: "No boundary condition"
+  "static" :: "Boundaries held fixed"
+  "radiative" :: "Radiation boundary condition"
+  "scalar" :: "Dirichlet boundary condition"
+  "newrad" :: "Improved radiative boundary condition"
+  "skip" :: "skip boundary condition code"
+} "skip"
+
+private:
+KEYWORD S1_bound "Boundary condition to implement" STEERABLE=ALWAYS
+{
+  "flat" :: "Flat boundary condition"
+  "none" :: "No boundary condition"
+  "static" :: "Boundaries held fixed"
+  "radiative" :: "Radiation boundary condition"
+  "scalar" :: "Dirichlet boundary condition"
+  "newrad" :: "Improved radiative boundary condition"
+  "skip" :: "skip boundary condition code"
+} "skip"
+
+private:
+KEYWORD S2_bound "Boundary condition to implement" STEERABLE=ALWAYS
+{
+  "flat" :: "Flat boundary condition"
+  "none" :: "No boundary condition"
+  "static" :: "Boundaries held fixed"
+  "radiative" :: "Radiation boundary condition"
+  "scalar" :: "Dirichlet boundary condition"
+  "newrad" :: "Improved radiative boundary condition"
+  "skip" :: "skip boundary condition code"
+} "skip"
+
+private:
+KEYWORD S3_bound "Boundary condition to implement" STEERABLE=ALWAYS
+{
+  "flat" :: "Flat boundary condition"
+  "none" :: "No boundary condition"
+  "static" :: "Boundaries held fixed"
+  "radiative" :: "Radiation boundary condition"
+  "scalar" :: "Dirichlet boundary condition"
+  "newrad" :: "Improved radiative boundary condition"
+  "skip" :: "skip boundary condition code"
+} "skip"
+
+private:
+KEYWORD Den_group_bound "Boundary condition to implement" STEERABLE=ALWAYS
+{
+  "flat" :: "Flat boundary condition"
+  "none" :: "No boundary condition"
+  "static" :: "Boundaries held fixed"
+  "radiative" :: "Radiation boundary condition"
+  "scalar" :: "Dirichlet boundary condition"
+  "newrad" :: "Improved radiative boundary condition"
+  "skip" :: "skip boundary condition code"
+} "none"
+
+private:
+KEYWORD En_group_bound "Boundary condition to implement" STEERABLE=ALWAYS
+{
+  "flat" :: "Flat boundary condition"
+  "none" :: "No boundary condition"
+  "static" :: "Boundaries held fixed"
+  "radiative" :: "Radiation boundary condition"
+  "scalar" :: "Dirichlet boundary condition"
+  "newrad" :: "Improved radiative boundary condition"
+  "skip" :: "skip boundary condition code"
+} "none"
+
+private:
+KEYWORD S_group_bound "Boundary condition to implement" STEERABLE=ALWAYS
+{
+  "flat" :: "Flat boundary condition"
+  "none" :: "No boundary condition"
+  "static" :: "Boundaries held fixed"
+  "radiative" :: "Radiation boundary condition"
+  "scalar" :: "Dirichlet boundary condition"
+  "newrad" :: "Improved radiative boundary condition"
+  "skip" :: "skip boundary condition code"
+} "none"
+
+private:
+CCTK_REAL Den_bound_speed "characteristic speed at boundary" STEERABLE=ALWAYS
+{
+  "0:*" :: "outgoing characteristic speed > 0"
+} 1.
+
+private:
+CCTK_REAL En_bound_speed "characteristic speed at boundary" STEERABLE=ALWAYS
+{
+  "0:*" :: "outgoing characteristic speed > 0"
+} 1.
+
+private:
+CCTK_REAL S1_bound_speed "characteristic speed at boundary" STEERABLE=ALWAYS
+{
+  "0:*" :: "outgoing characteristic speed > 0"
+} 1.
+
+private:
+CCTK_REAL S2_bound_speed "characteristic speed at boundary" STEERABLE=ALWAYS
+{
+  "0:*" :: "outgoing characteristic speed > 0"
+} 1.
+
+private:
+CCTK_REAL S3_bound_speed "characteristic speed at boundary" STEERABLE=ALWAYS
+{
+  "0:*" :: "outgoing characteristic speed > 0"
+} 1.
+
+private:
+CCTK_REAL Den_group_bound_speed "characteristic speed at boundary" STEERABLE=ALWAYS
+{
+  "0:*" :: "outgoing characteristic speed > 0"
+} 1.
+
+private:
+CCTK_REAL En_group_bound_speed "characteristic speed at boundary" STEERABLE=ALWAYS
+{
+  "0:*" :: "outgoing characteristic speed > 0"
+} 1.
+
+private:
+CCTK_REAL S_group_bound_speed "characteristic speed at boundary" STEERABLE=ALWAYS
+{
+  "0:*" :: "outgoing characteristic speed > 0"
+} 1.
+
+private:
+CCTK_REAL Den_bound_limit "limit value for r -> infinity" STEERABLE=ALWAYS
+{
+  "*:*" :: "value of limit value is unrestricted"
+} 0.
+
+private:
+CCTK_REAL En_bound_limit "limit value for r -> infinity" STEERABLE=ALWAYS
+{
+  "*:*" :: "value of limit value is unrestricted"
+} 0.
+
+private:
+CCTK_REAL S1_bound_limit "limit value for r -> infinity" STEERABLE=ALWAYS
+{
+  "*:*" :: "value of limit value is unrestricted"
+} 0.
+
+private:
+CCTK_REAL S2_bound_limit "limit value for r -> infinity" STEERABLE=ALWAYS
+{
+  "*:*" :: "value of limit value is unrestricted"
+} 0.
+
+private:
+CCTK_REAL S3_bound_limit "limit value for r -> infinity" STEERABLE=ALWAYS
+{
+  "*:*" :: "value of limit value is unrestricted"
+} 0.
+
+private:
+CCTK_REAL Den_group_bound_limit "limit value for r -> infinity" STEERABLE=ALWAYS
+{
+  "*:*" :: "value of limit value is unrestricted"
+} 0.
+
+private:
+CCTK_REAL En_group_bound_limit "limit value for r -> infinity" STEERABLE=ALWAYS
+{
+  "*:*" :: "value of limit value is unrestricted"
+} 0.
+
+private:
+CCTK_REAL S_group_bound_limit "limit value for r -> infinity" STEERABLE=ALWAYS
+{
+  "*:*" :: "value of limit value is unrestricted"
+} 0.
+
+private:
+CCTK_REAL Den_bound_scalar "Dirichlet boundary value" STEERABLE=ALWAYS
+{
+  "*:*" :: "unrestricted"
+} 0.
+
+private:
+CCTK_REAL En_bound_scalar "Dirichlet boundary value" STEERABLE=ALWAYS
+{
+  "*:*" :: "unrestricted"
+} 0.
+
+private:
+CCTK_REAL S1_bound_scalar "Dirichlet boundary value" STEERABLE=ALWAYS
+{
+  "*:*" :: "unrestricted"
+} 0.
+
+private:
+CCTK_REAL S2_bound_scalar "Dirichlet boundary value" STEERABLE=ALWAYS
+{
+  "*:*" :: "unrestricted"
+} 0.
+
+private:
+CCTK_REAL S3_bound_scalar "Dirichlet boundary value" STEERABLE=ALWAYS
+{
+  "*:*" :: "unrestricted"
+} 0.
+
+private:
+CCTK_REAL Den_group_bound_scalar "Dirichlet boundary value" STEERABLE=ALWAYS
+{
+  "*:*" :: "unrestricted"
+} 0.
+
+private:
+CCTK_REAL En_group_bound_scalar "Dirichlet boundary value" STEERABLE=ALWAYS
+{
+  "*:*" :: "unrestricted"
+} 0.
+
+private:
+CCTK_REAL S_group_bound_scalar "Dirichlet boundary value" STEERABLE=ALWAYS
+{
+  "*:*" :: "unrestricted"
+} 0.
+

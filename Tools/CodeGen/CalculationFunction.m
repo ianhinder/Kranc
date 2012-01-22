@@ -25,6 +25,8 @@ BeginPackage["CalculationFunction`", {"CodeGenCactus`", "CodeGenC`", "CodeGen`",
 
 CreateCalculationFunction::usage = "";
 VerifyCalculation::usage = "";
+calculationSymbols::usage = "";
+GridFunctionsInExpression;
 
 Begin["`Private`"];
 
@@ -810,6 +812,11 @@ DefFn[
                 Map[AssignVariableInLoop[GridName[#], localName[#]] &, gfsInLHS]]],
 
       If[debugInLoop, Map[InfoVariable[GridName[#]] &, gfsInLHS], ""]}, opts]}]];
+
+(* Unsorted *)
+
+GridFunctionsInExpression[x_, groups_] :=
+  Union[Cases[x, _ ? (MemberQ[allGroupVariables[groups],#] &), Infinity]];
 
 End[];
 

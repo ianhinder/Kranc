@@ -1,0 +1,269 @@
+# File produced by Kranc
+
+
+STORAGE: DenF_group[1]
+
+STORAGE: DenLeft_group[1]
+
+STORAGE: DenRight_group[1]
+
+STORAGE: EnF_group[1]
+
+STORAGE: EnLeft_group[1]
+
+STORAGE: EnRight_group[1]
+
+STORAGE: p_group[1]
+
+STORAGE: pLeft_group[1]
+
+STORAGE: pRight_group[1]
+
+STORAGE: rho_group[1]
+
+STORAGE: rhoLeft_group[1]
+
+STORAGE: rhoRight_group[1]
+
+STORAGE: SF_group[1]
+
+STORAGE: SLeft_group[1]
+
+STORAGE: SRight_group[1]
+
+STORAGE: v_group[1]
+
+STORAGE: vLeft_group[1]
+
+STORAGE: vRight_group[1]
+
+if (timelevels == 1)
+{
+  STORAGE: Den_group[1]
+}
+if (timelevels == 2)
+{
+  STORAGE: Den_group[2]
+}
+if (timelevels == 3)
+{
+  STORAGE: Den_group[3]
+}
+
+if (timelevels == 1)
+{
+  STORAGE: En_group[1]
+}
+if (timelevels == 2)
+{
+  STORAGE: En_group[2]
+}
+if (timelevels == 3)
+{
+  STORAGE: En_group[3]
+}
+
+if (timelevels == 1)
+{
+  STORAGE: S_group[1]
+}
+if (timelevels == 2)
+{
+  STORAGE: S_group[2]
+}
+if (timelevels == 3)
+{
+  STORAGE: S_group[3]
+}
+
+if (rhs_timelevels == 1)
+{
+  STORAGE: Den_grouprhs[1]
+}
+if (rhs_timelevels == 2)
+{
+  STORAGE: Den_grouprhs[2]
+}
+if (rhs_timelevels == 3)
+{
+  STORAGE: Den_grouprhs[3]
+}
+
+if (rhs_timelevels == 1)
+{
+  STORAGE: En_grouprhs[1]
+}
+if (rhs_timelevels == 2)
+{
+  STORAGE: En_grouprhs[2]
+}
+if (rhs_timelevels == 3)
+{
+  STORAGE: En_grouprhs[3]
+}
+
+if (rhs_timelevels == 1)
+{
+  STORAGE: S_grouprhs[1]
+}
+if (rhs_timelevels == 2)
+{
+  STORAGE: S_grouprhs[2]
+}
+if (rhs_timelevels == 3)
+{
+  STORAGE: S_grouprhs[3]
+}
+
+schedule Euler_Startup at STARTUP
+{
+  LANG: C
+  OPTIONS: meta
+} "create banner"
+
+schedule Euler_RegisterVars in MoL_Register
+{
+  LANG: C
+  OPTIONS: meta
+} "Register Variables for MoL"
+
+schedule Euler_RegisterSymmetries in SymmetryRegister
+{
+  LANG: C
+  OPTIONS: meta
+} "register symmetries"
+
+
+if (CCTK_EQUALS(initial_data, "shock"))
+{
+  schedule euler_initial_shock at CCTK_INITIAL as euler_initial
+  {
+    LANG: C
+  } "euler_initial_shock"
+}
+
+schedule euler_primitives in MoL_PostStep after Euler_ApplyBCs
+{
+  LANG: C
+} "euler_primitives"
+
+schedule euler_conserved at INITIAL after euler_initial
+{
+  LANG: C
+} "euler_conserved"
+
+schedule euler_zero_rhs in MoL_CalcRHS
+{
+  LANG: C
+} "euler_zero_rhs"
+
+schedule group euler_reconstruct_1_group in MoL_CalcRHS after euler_zero_rhs
+{
+  # no language specified
+} "euler_reconstruct_1"
+
+schedule euler_reconstruct_1 in euler_reconstruct_1_group
+{
+  LANG: C
+} "euler_reconstruct_1"
+
+schedule euler_reconstruct_1_SelectBCs in euler_reconstruct_1_bc_group
+{
+  LANG: C
+  OPTIONS: level
+  SYNC: pLeft_group
+  SYNC: pRight_group
+  SYNC: rhoLeft_group
+  SYNC: rhoRight_group
+  SYNC: vLeft_group
+  SYNC: vRight_group
+} "euler_reconstruct_1_SelectBCs"
+
+schedule group ApplyBCs as euler_reconstruct_1_ApplyBCs in euler_reconstruct_1_bc_group after euler_reconstruct_1_SelectBCs
+{
+  # no language specified
+} "Apply BCs for groups set in euler_reconstruct_1"
+
+schedule group euler_reconstruct_1_bc_group in euler_reconstruct_1_group after euler_reconstruct_1
+{
+  # no language specified
+} "euler_reconstruct_1"
+
+schedule group euler_reconstruct_1_bc_group at CCTK_POSTRESTRICT
+{
+  # no language specified
+} "euler_reconstruct_1"
+
+schedule group euler_reconstruct_1_bc_group at CCTK_POSTRESTRICTINITIAL
+{
+  # no language specified
+} "euler_reconstruct_1"
+
+schedule euler_conserved_flux_1 in MoL_CalcRHS after euler_reconstruct_1
+{
+  LANG: C
+} "euler_conserved_flux_1"
+
+schedule group euler_flux_1_group in MoL_CalcRHS after euler_conserved_flux_1
+{
+  # no language specified
+} "euler_flux_1"
+
+schedule euler_flux_1 in euler_flux_1_group
+{
+  LANG: C
+} "euler_flux_1"
+
+schedule euler_flux_1_SelectBCs in euler_flux_1_bc_group
+{
+  LANG: C
+  OPTIONS: level
+  SYNC: DenF_group
+  SYNC: EnF_group
+  SYNC: SF_group
+} "euler_flux_1_SelectBCs"
+
+schedule group ApplyBCs as euler_flux_1_ApplyBCs in euler_flux_1_bc_group after euler_flux_1_SelectBCs
+{
+  # no language specified
+} "Apply BCs for groups set in euler_flux_1"
+
+schedule group euler_flux_1_bc_group in euler_flux_1_group after euler_flux_1
+{
+  # no language specified
+} "euler_flux_1"
+
+schedule group euler_flux_1_bc_group at CCTK_POSTRESTRICT
+{
+  # no language specified
+} "euler_flux_1"
+
+schedule group euler_flux_1_bc_group at CCTK_POSTRESTRICTINITIAL
+{
+  # no language specified
+} "euler_flux_1"
+
+schedule euler_rhs_1 in MoL_CalcRHS after euler_flux_1
+{
+  LANG: C
+} "euler_rhs_1"
+
+schedule Euler_SelectBoundConds in MoL_PostStep
+{
+  LANG: C
+  OPTIONS: level
+  SYNC: Den_group
+  SYNC: En_group
+  SYNC: S_group
+} "select boundary conditions"
+
+schedule Euler_CheckBoundaries at BASEGRID
+{
+  LANG: C
+  OPTIONS: meta
+} "check boundaries treatment"
+
+schedule group ApplyBCs as Euler_ApplyBCs in MoL_PostStep after Euler_SelectBoundConds
+{
+  # no language specified
+} "Apply boundary conditions controlled by thorn Boundary"

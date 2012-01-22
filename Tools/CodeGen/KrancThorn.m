@@ -28,7 +28,8 @@
 BeginPackage["KrancThorn`", {"CodeGen`", "Thorn`",
  "MapLookup`", "KrancGroups`", "Differencing`",
  "CalculationFunction`", "Errors`", "Helpers`", "CactusBoundary`",
- "KrancTensor`", "Param`", "Schedule`", "Interface`", "Kranc`", "Jacobian`"}];
+ "KrancTensor`", "Param`", "Schedule`", "Interface`", "Kranc`", "Jacobian`",
+ "ConservationCalculation`"}];
 
 CreateKrancThorn::usage = "Construct a Kranc thorn";
 
@@ -94,7 +95,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     evolvedODEGroupDefinitions, rhsODEGroupDefinitions, rhsODEGroups,
     allParams, boundarySources, reflectionSymmetries,
     realParamDefs, intParamDefs,
-    pDefs},
+    pDefs, consCalcs, consCalcsIn, consGroups},
 
     (* Parse named arguments *)
 
@@ -112,7 +113,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     includeFiles = OptionValue[IncludeFiles];
     evolutionTimelevels = OptionValue[EvolutionTimelevels]; (* Redundant *)
     defaultEvolutionTimelevels = lookupDefault[{opts}, DefaultEvolutionTimelevels, evolutionTimelevels];
-    realParams = OptionValue[RealParameters];
+    realParams = OptionValue[RealParameters] ~Join~ ConservationDifferencingRealParameters[];
     intParams = OptionValue[IntParameters];
     realParamDefs = MakeFullParamDefs[realParams];
     intParamDefs = MakeFullParamDefs[intParams];
@@ -123,7 +124,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     extendedRealParams = OptionValue[ExtendedRealParameters];
     extendedIntParams = OptionValue[ExtendedIntParameters];
     extendedKeywordParams = OptionValue[ExtendedKeywordParameters];
-    partialDerivs = OptionValue[PartialDerivatives];
+    partialDerivs = OptionValue[PartialDerivatives] ~Join~
+      ConservationDifferencingOperators[];
     reflectionSymmetries = OptionValue[ReflectionSymmetries];
 
     coordGroup = {"grid::coordinates", {Kranc`x,Kranc`y,Kranc`z,Kranc`r}};
@@ -150,6 +152,22 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     InfoMessage[Terse, "Creating startup file"];
     startup = CreateStartupFile[thornName, thornName];
+
+    consCalcsIn = Append[#,Groups -> groups]& /@
+                    OptionValue[ConservationCalculations];
+
+    (* Add in calculations to solve any conservation laws that have
+       been provided *)
+    calcs = Join[calcs,
+      consCalcs = Flatten[Map[ProcessConservationCalculation[#,thornName] &,
+        consCalcsIn],1]];
+    (* Print["consCalcs = ", consCalcs]; *)
+
+    consGroups = Union@Flatten[
+      Map[ConservationCalculationDeclaredGroups, consCalcsIn],1];
+
+    groups = Join[groups, consGroups];
+    declaredGroups = Join[declaredGroups, Map[groupName, consGroups]];
 
     (* Get the different types of group *)
     evolvedGroups = extractEvolvedGroups[declaredGroups, calcs, groups];

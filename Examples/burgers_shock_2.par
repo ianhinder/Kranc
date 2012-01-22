@@ -1,0 +1,134 @@
+#!/usr/bin/perl -W
+
+ActiveThorns = "
+Boundary
+Carpet
+CarpetIOASCII
+CarpetIOBasic
+CarpetIOScalar
+CarpetLib
+CarpetReduce
+CarpetSlab
+CartGrid3d
+CoordBase
+Dissipation
+GenericFD
+IOUtil
+LoopControl
+MoL
+NanChecker
+Periodic
+Burgers
+Slab
+SpaceMask
+SphericalSurface
+SymBase
+Time
+"
+
+#############################################################
+# Grid
+#############################################################
+
+CoordBase::domainsize                   = minmax
+
+CoordBase::xmin                         = -1
+CoordBase::ymin                         = 0
+CoordBase::zmin                         = 0
+
+CoordBase::xmax                         = 2
+CoordBase::ymax                         = 0.1
+CoordBase::zmax                         = 0.1
+
+CoordBase::dx                           = 0.02
+CoordBase::dy                           = 0.1
+CoordBase::dz                           = 0.1
+
+CoordBase::boundary_size_x_lower        = 2
+CoordBase::boundary_size_y_lower        = 2
+CoordBase::boundary_size_z_lower        = 2
+CoordBase::boundary_shiftout_x_lower    = 1
+CoordBase::boundary_shiftout_y_lower    = 1
+CoordBase::boundary_shiftout_z_lower    = 1
+
+CoordBase::boundary_size_x_upper        = 2
+CoordBase::boundary_size_y_upper        = 2
+CoordBase::boundary_size_z_upper        = 2
+CoordBase::boundary_shiftout_x_upper    = 0
+CoordBase::boundary_shiftout_y_upper    = 0
+CoordBase::boundary_shiftout_z_upper    = 0
+
+CartGrid3D::type                        = "coordbase"
+CartGrid3D::domain                      = "full"
+CartGrid3D::avoid_origin                = "no"
+
+Periodic::periodic = "yes"
+
+#############################################################
+# Carpet
+#############################################################
+
+Carpet::ghost_size                      = 2
+Carpet::domain_from_coordbase           = "yes"
+Carpet::max_refinement_levels           = 1
+#Carpet::init_each_timelevel             = "yes"
+Carpet::num_integrator_substeps         = 4
+
+#############################################################
+# Time integration
+#############################################################
+
+Cactus::terminate                     = "time"
+Cactus::cctk_final_time               = 2
+
+Time::dtfac                           = 0.25
+MethodOfLines::ode_method             = "RK4"
+MethodOfLines::MoL_Intermediate_Steps = 4
+MethodOfLines::MoL_Num_Scratch_Levels = 1
+MethodOfLines::MoL_NaN_Check          = "yes"
+
+# MethodOfLines::ode_method             = "generic"
+# MethodOfLines::generic_type             = "RK"
+# MethodOfLines::MoL_Intermediate_Steps = 1
+
+Dissipation::vars = ""
+Dissipation::order = 1
+Dissipation::epsdis = 0.5
+
+Burgers::uL0 = 1
+Burgers::uR0 = 0
+Burgers::alpha = 1
+Burgers::initial_data = "shock"
+
+#############################################################
+# Boundary conditions
+#############################################################
+
+Burgers::u_group_bound   = "none"
+
+Carpet::poison_new_timelevels           = yes
+Carpet::poison_value                    = 100
+CarpetLib::poison_new_memory            = yes
+CarpetLib::poison_value                 = 200
+Carpet::check_for_poison                = no
+
+#############################################################
+# Output
+#############################################################
+
+IO::out_dir                   = $parfile
+IO::out_fileinfo              = "all"
+
+CarpetIOBasic::outInfo_every        = 1
+CarpetIOBasic::outInfo_vars         = "Burgers::u Burgers::uF Burgers::uR Burgers::uLeft Burgers::urhs"
+
+CarpetIOScalar::outScalar_every = 1
+CarpetIOScalar::outScalar_vars = ""
+CarpetIOScalar::outScalar_reductions = "minimum maximum norm2"
+
+IOASCII::out1D_every          = 2
+IOASCII::out1D_x              = "yes"
+IOASCII::out1D_vars           = "Burgers::u Burgers::uF Burgers::uR Burgers::uLeft Burgers::urhs"
+
+CarpetIOASCII::out_precision = 19
+CarpetIOASCII::out3D_ghosts   = "yes"

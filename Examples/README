@@ -1,0 +1,50 @@
+
+Kranc Examples
+==============
+
+This directory contains example Kranc scripts.  Type
+
+  make <thorn>
+
+to make an individual example, where <thorn> is the name of the script
+with the extension removed.  You can also type 
+
+  make
+
+to make all the thorns, or
+
+  make clean
+
+to remove all the generated thorns.
+
+EM.m
+----
+
+An implementation of Maxwell's equations.
+
+SimpleWave.m
+------------
+
+A minimalistic example of a wave equation.
+
+Wave.m
+------
+
+A comprehensive example of a wave equation.
+
+EulerAuto.m
+-----------
+
+Newtonian Euler equation using the conservation law feature of Kranc.
+
+EulerSR.m
+---------
+
+Special-relativistic Euler equation using the conservation law feature
+of Kranc.
+
+Others
+------
+
+The examples Advect.m, Burgers.m, EM-xTensor.m and Euler.m are either
+experimental or were used during development of Kranc.

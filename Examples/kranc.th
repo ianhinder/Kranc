@@ -22,7 +22,7 @@ CactusBase/Boundary
 CactusBase/CartGrid3D
 CactusBase/CoordBase
 CactusBase/Fortran
-CactusBase/IOBasic
+# CactusBase/IOBasic
 CactusBase/IOUtil
 CactusBase/InitBase
 CactusNumerical/LocalInterp
@@ -33,6 +33,9 @@ CactusBase/Time
 CactusNumerical/MoL
 CactusNumerical/Periodic
 CactusNumerical/Slab
+CactusNumerical/Dissipation
+CactusNumerical/SpaceMask
+CactusNumerical/SphericalSurface
 
 CactusUtils/NaNChecker
 
@@ -60,13 +63,26 @@ Carpet/CarpetSlab
 Carpet/LoopControl
 LSUThorns/Vectors
 
+LSUThorns/Vectors
+
 # Kranc support thorn
 KrancNumericalTools/GenericFD
+
 KrancExamples/Wave
 KrancExamples/SimpleWave
 KrancExamples/EM
+KrancExamples/Euler
+KrancExamples/EulerAuto
+KrancExamples/EulerSR
+KrancExamples/Advect
+KrancExamples/Burgers
 
 CactusPUGH/PUGH
 CactusPUGH/PUGHReduce
 CactusPUGH/PUGHSlab
 CactusBase/IOASCII
+Carpet/CarpetIOHDF5
+ExternalLibraries/HDF5
+ExternalLibraries/zlib
+CactusUtils/TimerReport
+

@@ -1,0 +1,63 @@
+# File produced by Kranc
+
+implements: Advect
+
+inherits:   Grid GenericFD Boundary
+
+
+
+USES INCLUDE: GenericFD.h
+USES INCLUDE: Symmetry.h
+USES INCLUDE: sbp_calc_coeffs.h
+USES INCLUDE: Boundary.h
+
+CCTK_INT FUNCTION MoLRegisterEvolved(CCTK_INT IN EvolvedIndex, CCTK_INT IN RHSIndex)
+USES FUNCTION MoLRegisterEvolved
+
+SUBROUTINE Diff_coeff(CCTK_POINTER_TO_CONST IN cctkGH, CCTK_INT IN dir, CCTK_INT IN nsize, CCTK_INT OUT ARRAY imin, CCTK_INT OUT ARRAY imax, CCTK_REAL OUT ARRAY q, CCTK_INT IN table_handle)
+USES FUNCTION Diff_coeff
+
+CCTK_INT FUNCTION MultiPatch_GetMap(CCTK_POINTER_TO_CONST IN cctkGH)
+USES FUNCTION MultiPatch_GetMap
+
+CCTK_INT FUNCTION Boundary_SelectGroupForBC(CCTK_POINTER_TO_CONST IN GH, CCTK_INT IN faces, CCTK_INT IN boundary_width, CCTK_INT IN table_handle, CCTK_STRING IN group_name, CCTK_STRING IN bc_name)
+USES FUNCTION Boundary_SelectGroupForBC
+
+CCTK_INT FUNCTION Boundary_SelectVarForBC(CCTK_POINTER_TO_CONST IN GH, CCTK_INT IN faces, CCTK_INT IN boundary_width, CCTK_INT IN table_handle, CCTK_STRING IN var_name, CCTK_STRING IN bc_name)
+USES FUNCTION Boundary_SelectVarForBC
+
+public:
+CCTK_REAL F2rho_group type=GF timelevels=1 tags='tensortypealias="U" tensorweight=0'
+{
+  F2rho1,
+  F2rho2,
+  F2rho3
+} "F2rho_group"
+
+public:
+CCTK_REAL Frho_group type=GF timelevels=1 tags='tensortypealias="U" tensorweight=0'
+{
+  Frho1,
+  Frho2,
+  Frho3
+} "Frho_group"
+
+public:
+CCTK_REAL v_group type=GF timelevels=1 tags='tensortypealias="U" tensorweight=0'
+{
+  v1,
+  v2,
+  v3
+} "v_group"
+
+public:
+CCTK_REAL rho_group type=GF timelevels=3 tags='tensortypealias="Scalar" tensorweight=0'
+{
+  rho
+} "rho_group"
+
+public:
+CCTK_REAL rho_grouprhs type=GF timelevels=3 tags='tensortypealias="Scalar" tensorweight=0'
+{
+  rhorhs
+} "rho_grouprhs"

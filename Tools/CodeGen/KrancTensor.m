@@ -23,9 +23,10 @@
 (****************************************************************************)
 (* Wrapper providing tensor support to Kranc (from TensorTools or xTensor)  *)
 (****************************************************************************)
-If[!ValueQ[$KrancTensorPackage], $KrancTensorPackage = "TensorToolsKranc`"];
 
-BeginPackage["KrancTensor`", {"Errors`", "KrancThorn`", "MapLookup`", "KrancGroups`", "Kranc`", $KrancTensorPackage}];
+$KrancTensorPackage = "TensorToolsKranc`";
+
+BeginPackage["KrancTensor`", {"Errors`", "KrancThorn`", "MapLookup`", "KrancGroups`", "Kranc`", $KrancTensorPackage, "ConservationCalculation`", "TensorTools`"}];
 
 CreateKrancThornTT::usage = "Construct a Kranc thorn using tensor expressions.";
 
@@ -38,13 +39,15 @@ Begin["`Private`"];
    -------------------------------------------------------------------------- *)
 
 CreateKrancThornTT[groups_, parentDirectory_, thornName_, opts___] :=
-  Module[{calcs, expCalcs, expGroups, options, derivs, expDerivs, reflectionSymmetries, declaredGroups},
+  Module[{calcs, expCalcs, expGroups, options, derivs, expDerivs, reflectionSymmetries, declaredGroups, consCalcs, expConsCalcs},
     InfoMessage[Terse, "Creating thorn "<>thornName];
     InfoMessage[Terse, "Processing tensorial arguments"];
     calcs = lookup[{opts}, Calculations];
+    consCalcs = lookupDefault[{opts}, ConservationCalculations, {}];
     derivs = lookupDefault[{opts}, PartialDerivatives, {}];
     Map[CheckCalculationTensors, calcs];
     expCalcs = Map[makeCalculationExplicit, calcs];
+    expConsCalcs = Map[makeCalculationExplicit, consCalcs];
 
     InfoMessage[Info, "Group definitions:", groups];
     VerifyGroups[groups];
@@ -52,6 +55,8 @@ CreateKrancThornTT[groups_, parentDirectory_, thornName_, opts___] :=
     expDerivs = Flatten[Map[ExpandComponents,derivs],1];
     expGroups = Map[makeGroupExplicit, groups];
     options = Join[DeleteCases[{opts}, Calculations -> _], {Calculations -> expCalcs}];
+    options = Join[DeleteCases[options, ConservationCalculations -> _],
+      {ConservationCalculations -> expConsCalcs}];
     options = Join[DeleteCases[options, PartialDerivatives -> _], {PartialDerivatives -> expDerivs}];
 
     declaredGroups = lookupDefault[{opts}, DeclaredGroups, {}];
@@ -80,7 +85,10 @@ makeCalculationExplicit[calc_] :=
   mapValueMapMultiple[calc, 
     {Shorthands -> ExpandComponents,
      CollectList -> ExpandComponents,
-     Equations -> ExpandComponents}];
+     Equations -> ExpandComponents,
+     PrimitiveEquations -> MakeExplicit,
+     ConservedEquations -> MakeExplicit,
+     Primitives -> MakeExplicit}];
 
 (* DeleteDuplicates is not available in Mathematica before version 7 *)
 deleteDuplicates[l_] :=

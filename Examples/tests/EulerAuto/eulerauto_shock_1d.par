@@ -1,0 +1,145 @@
+
+ActiveThorns = "
+Boundary
+Carpet
+CarpetIOASCII
+CarpetIOBasic
+CarpetIOScalar
+CarpetLib
+CarpetReduce
+CarpetSlab
+CartGrid3d
+CoordBase
+Dissipation
+GenericFD
+IOUtil
+LoopControl
+MoL
+NanChecker
+Periodic
+EulerAuto
+Slab
+SpaceMask
+SphericalSurface
+SymBase
+Time
+"
+
+#############################################################
+# Grid
+#############################################################
+
+CoordBase::domainsize                   = minmax
+
+CoordBase::xmin                         = -1
+CoordBase::ymin                         = 0
+CoordBase::zmin                         = 0
+
+CoordBase::xmax                         = 2
+CoordBase::ymax                         = 0.1
+CoordBase::zmax                         = 0.1
+
+CoordBase::dx                           = 0.0025
+CoordBase::dy                           = 0.1
+CoordBase::dz                           = 0.1
+
+CoordBase::boundary_size_x_lower        = 2
+CoordBase::boundary_size_y_lower        = 2
+CoordBase::boundary_size_z_lower        = 2
+CoordBase::boundary_shiftout_x_lower    = 1
+CoordBase::boundary_shiftout_y_lower    = 1
+CoordBase::boundary_shiftout_z_lower    = 1
+
+CoordBase::boundary_size_x_upper        = 2
+CoordBase::boundary_size_y_upper        = 2
+CoordBase::boundary_size_z_upper        = 2
+CoordBase::boundary_shiftout_x_upper    = 0
+CoordBase::boundary_shiftout_y_upper    = 0
+CoordBase::boundary_shiftout_z_upper    = 0
+
+CartGrid3D::type                        = "coordbase"
+CartGrid3D::domain                      = "full"
+CartGrid3D::avoid_origin                = "no"
+
+Periodic::periodic = "yes"
+
+#############################################################
+# Carpet
+#############################################################
+
+Carpet::ghost_size                      = 2
+Carpet::domain_from_coordbase           = "yes"
+Carpet::max_refinement_levels           = 1
+Carpet::num_integrator_substeps         = 4
+
+#############################################################
+# Time integration
+#############################################################
+
+Cactus::terminate                     = "iteration"
+Cactus::cctk_itlast               = 2
+
+Time::dtfac                           = 0.25
+MethodOfLines::ode_method             = "RK4"
+MethodOfLines::MoL_Intermediate_Steps = 4
+MethodOfLines::MoL_Num_Scratch_Levels = 1
+MethodOfLines::MoL_NaN_Check          = "yes"
+
+EulerAuto::rhoL0 = 1
+EulerAuto::rhoR0 = 0.125
+EulerAuto::vL0 = 0
+EulerAuto::vR0 = 0
+EulerAuto::pL0 = 1
+EulerAuto::pR0 = 0.1
+EulerAuto::hlleAlpha = 3
+EulerAuto::gamma = 1.4
+EulerAuto::initial_data = "shock"
+
+#############################################################
+# Boundary conditions
+#############################################################
+
+EulerAuto::Den_group_bound   = "none"
+EulerAuto::S_group_bound   = "none"
+EulerAuto::En_group_bound   = "none"
+
+Carpet::poison_new_timelevels           = yes
+Carpet::poison_value                    = 100
+Carpet::check_for_poison                = no
+
+#############################################################
+# Output
+#############################################################
+
+IO::out_dir                   = $parfile
+IO::out_fileinfo              = "none"
+
+CarpetIOBasic::outInfo_every        = 1
+CarpetIOBasic::outInfo_vars         = "
+EulerAuto::rho
+EulerAuto::v1
+EulerAuto::p
+EulerAuto::Den
+EulerAuto::S1
+EulerAuto::En"
+
+CarpetIOScalar::outScalar_every = 1
+CarpetIOScalar::outScalar_vars = ""
+CarpetIOScalar::outScalar_reductions = "minimum maximum norm2"
+
+IOASCII::out1D_every          = 2
+IOASCII::out1D_x              = "yes"
+IOASCII::out1D_y              = "no"
+IOASCII::out1D_z              = "no"
+IOASCII::out1D_d              = "no"
+IOASCII::out1D_vars           = "
+EulerAuto::Den
+EulerAuto::S1
+EulerAuto::En
+EulerAuto::rho
+EulerAuto::v1
+EulerAuto::p
+"
+
+CarpetIOASCII::out_precision = 19
+CarpetIOASCII::out3D_ghosts   = "yes"

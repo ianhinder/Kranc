@@ -100,8 +100,10 @@ scheduleCalc[calc_, groups_] :=
     relStr = If[before =!= None, " before " <> before, ""]
              <> If[after =!= None, " after " <> after, ""];
 
+    applyBCs = lookupDefault[calc, ApplyBCs, False];
     userSchedule = lookupDefault[calc, Schedule, Automatic];
-    If[userSchedule =!= Automatic,
+
+    If[userSchedule =!= Automatic && !applyBCs,
     Return[Map[
       Join[
       {
@@ -138,7 +140,7 @@ scheduleCalc[calc_, groups_] :=
 
       groupSched = {
         Name               -> "group " <> groupName,
-        SchedulePoint      -> "in MoL_PseudoEvolution" <> relStr,
+        SchedulePoint      -> If[applyBCs, First[userSchedule] <> relStr, "in MoL_PseudoEvolution" <> relStr],
         SynchronizedGroups -> {},
         Language           -> "None",
         Comment            -> lookup[calc, Name]

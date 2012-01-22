@@ -39,11 +39,11 @@ dummy;
 LoopPreIncludes, GroupImplementations, PartialDerivatives, NoSimplify,
 Boundary, Interior, InteriorNoSync, Where, AddToStencilWidth,
 Everywhere, normal1, normal2, normal3, INV, SQR, CUB, QAD, dot, pow,
-exp, dt, dx, dy, dz, idx, idy, idz, t}
+exp, dt, dx, dy, dz, idx, idy, idz, t, MinMod, VanLeer}
 
 {ConditionalOnKeyword, ConditionalOnKeywords, CollectList, Interior,
 InteriorNoSync, Boundary, BoundaryWithGhosts, Where, PreDefinitions,
-AllowedSymbols, Parameters, ConditionalOnTextuals};
+AllowedSymbols, Parameters, ConditionalOnTextuals, ApplyBCs};
 
 (* Differencing.m *)
 
@@ -53,6 +53,7 @@ AllowedSymbols, Parameters, ConditionalOnTextuals};
 
 ThornOptions =
  {Calculations -> {},
+  ConservationCalculations -> {},
   DeclaredGroups -> {},
   ODEGroups -> {},
   Implementation -> None,
@@ -93,12 +94,15 @@ Contents, ThornName, BaseImplementation, EvolvedGFs, EvolvedArrays, PrimitiveGFs
 Groups, Calculation, GridFunctions, Shorthands, Equations, Parameter,
 Value, UsesFunctions, ArgString, Conditional, Conditionals, D1, D2, D3, D11, D22,
 D33, D21, D31, D32, Textual, TriggerGroups, Include, RHSGroups, Tags, 
-Steerable, Never, Always, Recover};
+Steerable, Never, Always, Recover, Primitives};
 
 {ExcisionGFs};
 
 (* TensorTools.m *)
 
 {D1, D2, D3, D11, D22, D33, D21, D31, D32, D12, D13, D23, dot, Eps, Zero3}
+
+(* ConservationCalculation.m *)
+{flux, slopeL, slopeR, slope};
 
 EndPackage[];

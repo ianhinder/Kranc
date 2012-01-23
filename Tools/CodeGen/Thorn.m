@@ -613,7 +613,7 @@ CreateSymmetriesRegistrationSource[thornName_, implementationName_, GFs_, reflec
   spec = Table[{FullName -> implementationName <> "::" <> ToString@GFs[[j]],
                 Sym      -> If[reflectionSymmetries === False,
                               calcSymmetry[GFs[[j]]],
-                              calcSymmetry[GFs[[j]], reflectionSymmetries]]}, {j, 1, Length@GFs}];
+                              calcSymmetry[GFs[[j]], Union@reflectionSymmetries]]}, {j, 1, Length@GFs}];
 
   tmp = {whoWhen["C"],
 

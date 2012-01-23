@@ -17,5 +17,7 @@ extern "C" void Euler_RegisterVars(CCTK_ARGUMENTS)
   ierr += MoLRegisterEvolved(CCTK_VarIndex("Euler::S1"),  CCTK_VarIndex("Euler::S1rhs"));
   ierr += MoLRegisterEvolved(CCTK_VarIndex("Euler::S2"),  CCTK_VarIndex("Euler::S2rhs"));
   ierr += MoLRegisterEvolved(CCTK_VarIndex("Euler::S3"),  CCTK_VarIndex("Euler::S3rhs"));
+  
+  /* Register all the evolved Array functions with MoL */
   return;
 }

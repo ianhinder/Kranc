@@ -12,6 +12,8 @@
 #include "cctk_Parameters.h"
 #include "GenericFD.h"
 #include "Differencing.h"
+#include "cctk_Loop.h"
+#include "loopcontrol.h"
 
 /* Define macros used in calculations */
 #define INITVALUE (42)
@@ -32,32 +34,13 @@ extern "C" void wave_calc_norm_SelectBCs(CCTK_ARGUMENTS)
   return;
 }
 
-static void wave_calc_norm_Body(cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const min[3], int const max[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[])
+static void wave_calc_norm_Body(cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const imin[3], int const imax[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[])
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
   
-  /* Declare the variables used for looping over grid points */
-  CCTK_INT i, j, k;
-  // CCTK_INT index = INITVALUE;
-  
   /* Declare finite differencing variables */
-  
-  if (verbose > 1)
-  {
-    CCTK_VInfo(CCTK_THORNSTRING,"Entering wave_calc_norm_Body");
-  }
-  
-  if (cctk_iteration % wave_calc_norm_calc_every != wave_calc_norm_calc_offset)
-  {
-    return;
-  }
-  
-  const char *groups[] = {"Wave::errors","Wave::evolved","Wave::norms"};
-  GenericFD_AssertGroupStorage(cctkGH, "wave_calc_norm", 3, groups);
-  
-  GenericFD_EnsureStencilFits(cctkGH, "wave_calc_norm", 1, 1, 1);
   
   /* Include user-supplied include files */
   
@@ -65,10 +48,14 @@ static void wave_calc_norm_Body(cGH const * restrict const cctkGH, int const dir
   ptrdiff_t const di = 1;
   ptrdiff_t const dj = CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0);
   ptrdiff_t const dk = CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0);
+  ptrdiff_t const cdi = sizeof(CCTK_REAL) * di;
+  ptrdiff_t const cdj = sizeof(CCTK_REAL) * dj;
+  ptrdiff_t const cdk = sizeof(CCTK_REAL) * dk;
   CCTK_REAL const dx = ToReal(CCTK_DELTA_SPACE(0));
   CCTK_REAL const dy = ToReal(CCTK_DELTA_SPACE(1));
   CCTK_REAL const dz = ToReal(CCTK_DELTA_SPACE(2));
   CCTK_REAL const dt = ToReal(CCTK_DELTA_TIME);
+  CCTK_REAL const t = ToReal(cctk_time);
   CCTK_REAL const dxi = INV(dx);
   CCTK_REAL const dyi = INV(dy);
   CCTK_REAL const dzi = INV(dz);
@@ -112,51 +99,72 @@ static void wave_calc_norm_Body(cGH const * restrict const cctkGH, int const dir
   CCTK_REAL const pm1o2dy = -0.5*INV(dy);
   CCTK_REAL const pm1o2dz = -0.5*INV(dz);
   
+  /* Assign local copies of arrays functions */
+  
+  
+  
+  /* Calculate temporaries and arrays functions */
+  
+  /* Copy local copies back to grid functions */
+  
   /* Loop over the grid points */
-  for (k = min[2]; k < max[2]; k++)
+  #pragma omp parallel
+  CCTK_LOOP3 (wave_calc_norm,
+    i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
+    cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
   {
-    for (j = min[1]; j < max[1]; j++)
+    ptrdiff_t const index = di*i + dj*j + dk*k;
+    
+    /* Assign local copies of grid functions */
+    
+    CCTK_REAL phiL = phi[index];
+    CCTK_REAL phiErrorL = phiError[index];
+    CCTK_REAL piL = pi[index];
+    CCTK_REAL piErrorL = piError[index];
+    
+    
+    /* Include user supplied include files */
+    
+    /* Precompute derivatives */
+    CCTK_REAL PDplus1phi;
+    CCTK_REAL PDplus2phi;
+    CCTK_REAL PDplus3phi;
+    
+    switch(fdOrder)
     {
-      for (i = min[0]; i < max[0]; i++)
-      {
-         int  const  index  =  CCTK_GFINDEX3D(cctkGH,i,j,k) ;
-        
-        /* Assign local copies of grid functions */
-        
-        CCTK_REAL phiL = phi[index];
-        CCTK_REAL phiErrorL = phiError[index];
-        CCTK_REAL piL = pi[index];
-        CCTK_REAL piErrorL = piError[index];
-        
-        
-        /* Include user supplied include files */
-        
-        /* Precompute derivatives */
-        CCTK_REAL const PDplus1phi = PDplus1(&phi[index]);
-        CCTK_REAL const PDplus2phi = PDplus2(&phi[index]);
-        CCTK_REAL const PDplus3phi = PDplus3(&phi[index]);
-        
-        /* Calculate temporaries and grid functions */
-        CCTK_REAL VL2squared = SQR(phiL) + SQR(piL);
-        
-        CCTK_REAL VL2L = sqrt(VL2squared);
-        
-        CCTK_REAL VDPsquared = SQR(PDplus1phi) + SQR(PDplus2phi) + 
-          SQR(PDplus3phi) + SQR(piL);
-        
-        CCTK_REAL VDPL = sqrt(VDPsquared);
-        
-        CCTK_REAL EL2squared = SQR(phiErrorL) + SQR(piErrorL);
-        
-        CCTK_REAL EL2L = sqrt(EL2squared);
-        
-        /* Copy local copies back to grid functions */
-        EL2[index] = EL2L;
-        VDP[index] = VDPL;
-        VL2[index] = VL2L;
-      }
+      case 2:
+        PDplus1phi = PDplus1(&phi[index]);
+        PDplus2phi = PDplus2(&phi[index]);
+        PDplus3phi = PDplus3(&phi[index]);
+        break;
+      
+      case 4:
+        PDplus1phi = PDplus1(&phi[index]);
+        PDplus2phi = PDplus2(&phi[index]);
+        PDplus3phi = PDplus3(&phi[index]);
+        break;
     }
+    
+    /* Calculate temporaries and grid functions */
+    CCTK_REAL VL2squared = SQR(phiL) + SQR(piL);
+    
+    CCTK_REAL VL2L = sqrt(VL2squared);
+    
+    CCTK_REAL VDPsquared = SQR(piL) + SQR(PDplus1phi) + SQR(PDplus2phi) 
+      + SQR(PDplus3phi);
+    
+    CCTK_REAL VDPL = sqrt(VDPsquared);
+    
+    CCTK_REAL EL2squared = SQR(phiErrorL) + SQR(piErrorL);
+    
+    CCTK_REAL EL2L = sqrt(EL2squared);
+    
+    /* Copy local copies back to grid functions */
+    EL2[index] = EL2L;
+    VDP[index] = VDPL;
+    VL2[index] = VL2L;
   }
+  CCTK_ENDLOOP3 (wave_calc_norm);
 }
 
 extern "C" void wave_calc_norm(CCTK_ARGUMENTS)
@@ -164,5 +172,35 @@ extern "C" void wave_calc_norm(CCTK_ARGUMENTS)
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
+  
+  if (verbose > 1)
+  {
+    CCTK_VInfo(CCTK_THORNSTRING,"Entering wave_calc_norm_Body");
+  }
+  
+  if (cctk_iteration % wave_calc_norm_calc_every != wave_calc_norm_calc_offset)
+  {
+    return;
+  }
+  
+  const char *groups[] = {"Wave::errors","Wave::evolved","Wave::norms"};
+  GenericFD_AssertGroupStorage(cctkGH, "wave_calc_norm", 3, groups);
+  
+  switch(fdOrder)
+  {
+    case 2:
+      GenericFD_EnsureStencilFits(cctkGH, "wave_calc_norm", 1, 1, 1);
+      break;
+    
+    case 4:
+      GenericFD_EnsureStencilFits(cctkGH, "wave_calc_norm", 1, 1, 1);
+      break;
+  }
+  
   GenericFD_LoopOverInterior(cctkGH, &wave_calc_norm_Body);
+  
+  if (verbose > 1)
+  {
+    CCTK_VInfo(CCTK_THORNSTRING,"Leaving wave_calc_norm_Body");
+  }
 }

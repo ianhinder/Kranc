@@ -18,5 +18,7 @@ extern "C" void EM_RegisterVars(CCTK_ARGUMENTS)
   ierr += MoLRegisterEvolved(CCTK_VarIndex("EM::El1"),  CCTK_VarIndex("EM::El1rhs"));
   ierr += MoLRegisterEvolved(CCTK_VarIndex("EM::El2"),  CCTK_VarIndex("EM::El2rhs"));
   ierr += MoLRegisterEvolved(CCTK_VarIndex("EM::El3"),  CCTK_VarIndex("EM::El3rhs"));
+  
+  /* Register all the evolved Array functions with MoL */
   return;
 }

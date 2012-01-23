@@ -1,9 +1,15 @@
 # File produced by Kranc
 
 
-STORAGE: constraints[1]
+if (other_timelevels == 1)
+{
+  STORAGE: constraints[1]
+}
 
-STORAGE: endens[1]
+if (other_timelevels == 1)
+{
+  STORAGE: endens[1]
+}
 
 if (timelevels == 1)
 {
@@ -93,6 +99,28 @@ schedule group EM_constraints_group in MoL_PseudoEvolution
 schedule EM_constraints in EM_constraints_group
 {
   LANG: C
+} "EM_constraints"
+
+schedule EM_constraints_SelectBCs in EM_constraints_bc_group
+{
+  LANG: C
+  OPTIONS: level
+  SYNC: constraints
+} "EM_constraints_SelectBCs"
+
+schedule group ApplyBCs as EM_constraints_ApplyBCs in EM_constraints_bc_group after EM_constraints_SelectBCs
+{
+  # no language specified
+} "Apply BCs for groups set in EM_constraints"
+
+schedule group EM_constraints_bc_group in EM_constraints_group after EM_constraints
+{
+  # no language specified
+} "EM_constraints"
+
+schedule group EM_constraints_bc_group in MoL_PseudoEvolutionBoundaries after MoL_PostStep
+{
+  # no language specified
 } "EM_constraints"
 
 schedule group EM_energy_group in MoL_PseudoEvolution

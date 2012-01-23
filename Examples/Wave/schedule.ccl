@@ -1,11 +1,44 @@
 # File produced by Kranc
 
 
-STORAGE: errors[3]
+if (timelevels == 1)
+{
+  STORAGE: errors[1]
+}
+if (timelevels == 2)
+{
+  STORAGE: errors[2]
+}
+if (timelevels == 3)
+{
+  STORAGE: errors[3]
+}
 
-STORAGE: exact[3]
+if (timelevels == 1)
+{
+  STORAGE: exact[1]
+}
+if (timelevels == 2)
+{
+  STORAGE: exact[2]
+}
+if (timelevels == 3)
+{
+  STORAGE: exact[3]
+}
 
-STORAGE: norms[3]
+if (timelevels == 1)
+{
+  STORAGE: norms[1]
+}
+if (timelevels == 2)
+{
+  STORAGE: norms[2]
+}
+if (timelevels == 3)
+{
+  STORAGE: norms[3]
+}
 
 if (timelevels == 1)
 {
@@ -54,7 +87,7 @@ schedule Wave_RegisterSymmetries in SymmetryRegister
 
 if (CCTK_EQUALS(initial_data, "sine"))
 {
-  schedule wave_exact_sine AT INITIAL before import_exact
+  schedule wave_exact_sine AT INITIAL before import_exact before import_exact
   {
     LANG: C
   } "wave_exact_sine"
@@ -63,7 +96,7 @@ if (CCTK_EQUALS(initial_data, "sine"))
 
 if (CCTK_EQUALS(initial_data, "sine"))
 {
-  schedule wave_exact_sine AT POSTSTEP before calc_errors
+  schedule wave_exact_sine AT POSTSTEP before calc_errors before import_exact
   {
     LANG: C
   } "wave_exact_sine"
@@ -72,7 +105,7 @@ if (CCTK_EQUALS(initial_data, "sine"))
 
 if (CCTK_EQUALS(initial_data, "gaussian"))
 {
-  schedule wave_exact_gaussian AT INITIAL before import_exact
+  schedule wave_exact_gaussian AT INITIAL before import_exact before import_exact
   {
     LANG: C
   } "wave_exact_gaussian"
@@ -81,7 +114,7 @@ if (CCTK_EQUALS(initial_data, "gaussian"))
 
 if (CCTK_EQUALS(initial_data, "gaussian"))
 {
-  schedule wave_exact_gaussian AT POSTSTEP before calc_errors
+  schedule wave_exact_gaussian AT POSTSTEP before calc_errors before import_exact
   {
     LANG: C
   } "wave_exact_gaussian"

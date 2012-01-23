@@ -1,41 +1,95 @@
 # File produced by Kranc
 
 
-STORAGE: DenF_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: DenF_group[1]
+}
 
-STORAGE: DenLeft_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: DenLeft_group[1]
+}
 
-STORAGE: DenRight_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: DenRight_group[1]
+}
 
-STORAGE: EnF_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: EnF_group[1]
+}
 
-STORAGE: EnLeft_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: EnLeft_group[1]
+}
 
-STORAGE: EnRight_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: EnRight_group[1]
+}
 
-STORAGE: p_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: p_group[1]
+}
 
-STORAGE: pLeft_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: pLeft_group[1]
+}
 
-STORAGE: pRight_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: pRight_group[1]
+}
 
-STORAGE: rho_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: rho_group[1]
+}
 
-STORAGE: rhoLeft_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: rhoLeft_group[1]
+}
 
-STORAGE: rhoRight_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: rhoRight_group[1]
+}
 
-STORAGE: SF_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: SF_group[1]
+}
 
-STORAGE: SLeft_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: SLeft_group[1]
+}
 
-STORAGE: SRight_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: SRight_group[1]
+}
 
-STORAGE: v_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: v_group[1]
+}
 
-STORAGE: vLeft_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: vLeft_group[1]
+}
 
-STORAGE: vRight_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: vRight_group[1]
+}
 
 if (timelevels == 1)
 {
@@ -189,12 +243,7 @@ schedule group euler_reconstruct_1_bc_group in euler_reconstruct_1_group after e
   # no language specified
 } "euler_reconstruct_1"
 
-schedule group euler_reconstruct_1_bc_group at CCTK_POSTRESTRICT
-{
-  # no language specified
-} "euler_reconstruct_1"
-
-schedule group euler_reconstruct_1_bc_group at CCTK_POSTRESTRICTINITIAL
+schedule group euler_reconstruct_1_bc_group in MoL_PseudoEvolutionBoundaries after MoL_PostStep
 {
   # no language specified
 } "euler_reconstruct_1"
@@ -233,12 +282,7 @@ schedule group euler_flux_1_bc_group in euler_flux_1_group after euler_flux_1
   # no language specified
 } "euler_flux_1"
 
-schedule group euler_flux_1_bc_group at CCTK_POSTRESTRICT
-{
-  # no language specified
-} "euler_flux_1"
-
-schedule group euler_flux_1_bc_group at CCTK_POSTRESTRICTINITIAL
+schedule group euler_flux_1_bc_group in MoL_PseudoEvolutionBoundaries after MoL_PostStep
 {
   # no language specified
 } "euler_flux_1"

@@ -12,6 +12,8 @@
 #include "cctk_Parameters.h"
 #include "GenericFD.h"
 #include "Differencing.h"
+#include "cctk_Loop.h"
+#include "loopcontrol.h"
 
 /* Define macros used in calculations */
 #define INITVALUE (42)
@@ -38,32 +40,13 @@ extern "C" void euler_flux_1_SelectBCs(CCTK_ARGUMENTS)
   return;
 }
 
-static void euler_flux_1_Body(cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const min[3], int const max[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[])
+static void euler_flux_1_Body(cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const imin[3], int const imax[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[])
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
   
-  /* Declare the variables used for looping over grid points */
-  CCTK_INT i, j, k;
-  // CCTK_INT index = INITVALUE;
-  
   /* Declare finite differencing variables */
-  
-  if (verbose > 1)
-  {
-    CCTK_VInfo(CCTK_THORNSTRING,"Entering euler_flux_1_Body");
-  }
-  
-  if (cctk_iteration % euler_flux_1_calc_every != euler_flux_1_calc_offset)
-  {
-    return;
-  }
-  
-  const char *groups[] = {"Euler::DenF_group","Euler::DenLeft_group","Euler::DenRight_group","Euler::EnF_group","Euler::EnLeft_group","Euler::EnRight_group","Euler::pLeft_group","Euler::pRight_group","Euler::rhoLeft_group","Euler::rhoRight_group","Euler::SF_group","Euler::SLeft_group","Euler::SRight_group","Euler::vLeft_group","Euler::vRight_group"};
-  GenericFD_AssertGroupStorage(cctkGH, "euler_flux_1", 15, groups);
-  
-  GenericFD_EnsureStencilFits(cctkGH, "euler_flux_1", 1, 1, 1);
   
   /* Include user-supplied include files */
   
@@ -71,10 +54,14 @@ static void euler_flux_1_Body(cGH const * restrict const cctkGH, int const dir, 
   ptrdiff_t const di = 1;
   ptrdiff_t const dj = CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0);
   ptrdiff_t const dk = CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0);
+  ptrdiff_t const cdi = sizeof(CCTK_REAL) * di;
+  ptrdiff_t const cdj = sizeof(CCTK_REAL) * dj;
+  ptrdiff_t const cdk = sizeof(CCTK_REAL) * dk;
   CCTK_REAL const dx = ToReal(CCTK_DELTA_SPACE(0));
   CCTK_REAL const dy = ToReal(CCTK_DELTA_SPACE(1));
   CCTK_REAL const dz = ToReal(CCTK_DELTA_SPACE(2));
   CCTK_REAL const dt = ToReal(CCTK_DELTA_TIME);
+  CCTK_REAL const t = ToReal(cctk_time);
   CCTK_REAL const dxi = INV(dx);
   CCTK_REAL const dyi = INV(dy);
   CCTK_REAL const dzi = INV(dz);
@@ -114,89 +101,95 @@ static void euler_flux_1_Body(cGH const * restrict const cctkGH, int const dir, 
   CCTK_REAL const pm1o2dy = -0.5*INV(dy);
   CCTK_REAL const pm1o2dz = -0.5*INV(dz);
   
+  /* Assign local copies of arrays functions */
+  
+  
+  
+  /* Calculate temporaries and arrays functions */
+  
+  /* Copy local copies back to grid functions */
+  
   /* Loop over the grid points */
-  for (k = min[2]; k < max[2]; k++)
+  #pragma omp parallel
+  CCTK_LOOP3 (euler_flux_1,
+    i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
+    cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
   {
-    for (j = min[1]; j < max[1]; j++)
-    {
-      for (i = min[0]; i < max[0]; i++)
-      {
-         int  const  index  =  CCTK_GFINDEX3D(cctkGH,i,j,k) ;
-        
-        /* Assign local copies of grid functions */
-        
-        CCTK_REAL DenLeftL = DenLeft[index];
-        CCTK_REAL DenRightL = DenRight[index];
-        CCTK_REAL EnLeftL = EnLeft[index];
-        CCTK_REAL EnRightL = EnRight[index];
-        CCTK_REAL pLeftL = pLeft[index];
-        CCTK_REAL pRightL = pRight[index];
-        CCTK_REAL rhoLeftL = rhoLeft[index];
-        CCTK_REAL rhoRightL = rhoRight[index];
-        CCTK_REAL SLeft1L = SLeft1[index];
-        CCTK_REAL SLeft2L = SLeft2[index];
-        CCTK_REAL SLeft3L = SLeft3[index];
-        CCTK_REAL SRight1L = SRight1[index];
-        CCTK_REAL SRight2L = SRight2[index];
-        CCTK_REAL SRight3L = SRight3[index];
-        CCTK_REAL vLeft1L = vLeft1[index];
-        CCTK_REAL vLeft2L = vLeft2[index];
-        CCTK_REAL vLeft3L = vLeft3[index];
-        CCTK_REAL vRight1L = vRight1[index];
-        CCTK_REAL vRight2L = vRight2[index];
-        CCTK_REAL vRight3L = vRight3[index];
-        
-        
-        /* Include user supplied include files */
-        
-        /* Precompute derivatives */
-        CCTK_REAL const ShiftMinus1DenRight = ShiftMinus1(&DenRight[index]);
-        CCTK_REAL const ShiftMinus1EnRight = ShiftMinus1(&EnRight[index]);
-        CCTK_REAL const ShiftMinus1pRight = ShiftMinus1(&pRight[index]);
-        CCTK_REAL const ShiftMinus1rhoRight = ShiftMinus1(&rhoRight[index]);
-        CCTK_REAL const ShiftMinus1SRight1 = ShiftMinus1(&SRight1[index]);
-        CCTK_REAL const ShiftMinus1SRight2 = ShiftMinus1(&SRight2[index]);
-        CCTK_REAL const ShiftMinus1SRight3 = ShiftMinus1(&SRight3[index]);
-        CCTK_REAL const ShiftMinus1vRight1 = ShiftMinus1(&vRight1[index]);
-        CCTK_REAL const ShiftMinus1vRight2 = ShiftMinus1(&vRight2[index]);
-        CCTK_REAL const ShiftMinus1vRight3 = ShiftMinus1(&vRight3[index]);
-        
-        /* Calculate temporaries and grid functions */
-        CCTK_REAL vRightTemp1 = ShiftMinus1vRight1;
-        
-        CCTK_REAL vRightTemp2 = ShiftMinus1vRight2;
-        
-        CCTK_REAL vRightTemp3 = ShiftMinus1vRight3;
-        
-        CCTK_REAL DenFL = 0.5*(rhoLeftL*vLeft1L + 
-          ShiftMinus1rhoRight*vRightTemp1 + (-DenLeftL + 
-          ShiftMinus1DenRight)*ToReal(alpha));
-        
-        CCTK_REAL SF1L = 0.5*(pLeftL + ShiftMinus1pRight + 
-          rhoLeftL*SQR(vLeft1L) + ShiftMinus1rhoRight*SQR(vRightTemp1) + 
-          (ShiftMinus1SRight1 - SLeft1L)*ToReal(alpha));
-        
-        CCTK_REAL SF2L = 0.5*(rhoLeftL*vLeft1L*vLeft2L + 
-          ShiftMinus1rhoRight*vRightTemp1*vRightTemp2 + (ShiftMinus1SRight2 - 
-          SLeft2L)*ToReal(alpha));
-        
-        CCTK_REAL SF3L = 0.5*(rhoLeftL*vLeft1L*vLeft3L + 
-          ShiftMinus1rhoRight*vRightTemp1*vRightTemp3 + (ShiftMinus1SRight3 - 
-          SLeft3L)*ToReal(alpha));
-        
-        CCTK_REAL EnFL = 0.5*((EnLeftL + pLeftL)*vLeft1L + 
-          ShiftMinus1pRight*vRightTemp1 - EnLeftL*ToReal(alpha) + 
-          ShiftMinus1EnRight*(vRightTemp1 + ToReal(alpha)));
-        
-        /* Copy local copies back to grid functions */
-        DenF[index] = DenFL;
-        EnF[index] = EnFL;
-        SF1[index] = SF1L;
-        SF2[index] = SF2L;
-        SF3[index] = SF3L;
-      }
-    }
+    ptrdiff_t const index = di*i + dj*j + dk*k;
+    
+    /* Assign local copies of grid functions */
+    
+    CCTK_REAL DenLeftL = DenLeft[index];
+    CCTK_REAL DenRightL = DenRight[index];
+    CCTK_REAL EnLeftL = EnLeft[index];
+    CCTK_REAL EnRightL = EnRight[index];
+    CCTK_REAL pLeftL = pLeft[index];
+    CCTK_REAL pRightL = pRight[index];
+    CCTK_REAL rhoLeftL = rhoLeft[index];
+    CCTK_REAL rhoRightL = rhoRight[index];
+    CCTK_REAL SLeft1L = SLeft1[index];
+    CCTK_REAL SLeft2L = SLeft2[index];
+    CCTK_REAL SLeft3L = SLeft3[index];
+    CCTK_REAL SRight1L = SRight1[index];
+    CCTK_REAL SRight2L = SRight2[index];
+    CCTK_REAL SRight3L = SRight3[index];
+    CCTK_REAL vLeft1L = vLeft1[index];
+    CCTK_REAL vLeft2L = vLeft2[index];
+    CCTK_REAL vLeft3L = vLeft3[index];
+    CCTK_REAL vRight1L = vRight1[index];
+    CCTK_REAL vRight2L = vRight2[index];
+    CCTK_REAL vRight3L = vRight3[index];
+    
+    
+    /* Include user supplied include files */
+    
+    /* Precompute derivatives */
+    CCTK_REAL const ShiftMinus1DenRight = ShiftMinus1(&DenRight[index]);
+    CCTK_REAL const ShiftMinus1EnRight = ShiftMinus1(&EnRight[index]);
+    CCTK_REAL const ShiftMinus1pRight = ShiftMinus1(&pRight[index]);
+    CCTK_REAL const ShiftMinus1rhoRight = ShiftMinus1(&rhoRight[index]);
+    CCTK_REAL const ShiftMinus1SRight1 = ShiftMinus1(&SRight1[index]);
+    CCTK_REAL const ShiftMinus1SRight2 = ShiftMinus1(&SRight2[index]);
+    CCTK_REAL const ShiftMinus1SRight3 = ShiftMinus1(&SRight3[index]);
+    CCTK_REAL const ShiftMinus1vRight1 = ShiftMinus1(&vRight1[index]);
+    CCTK_REAL const ShiftMinus1vRight2 = ShiftMinus1(&vRight2[index]);
+    CCTK_REAL const ShiftMinus1vRight3 = ShiftMinus1(&vRight3[index]);
+    
+    /* Calculate temporaries and grid functions */
+    CCTK_REAL vRightTemp1 = ShiftMinus1vRight1;
+    
+    CCTK_REAL vRightTemp2 = ShiftMinus1vRight2;
+    
+    CCTK_REAL vRightTemp3 = ShiftMinus1vRight3;
+    
+    CCTK_REAL DenFL = 0.5*(rhoLeftL*vLeft1L + 
+      ShiftMinus1rhoRight*vRightTemp1 + (-DenLeftL + 
+      ShiftMinus1DenRight)*ToReal(alpha));
+    
+    CCTK_REAL SF1L = 0.5*(pLeftL + ShiftMinus1pRight + 
+      rhoLeftL*SQR(vLeft1L) + ShiftMinus1rhoRight*SQR(vRightTemp1) + 
+      (-SLeft1L + ShiftMinus1SRight1)*ToReal(alpha));
+    
+    CCTK_REAL SF2L = 0.5*(rhoLeftL*vLeft1L*vLeft2L + 
+      ShiftMinus1rhoRight*vRightTemp1*vRightTemp2 + (-SLeft2L + 
+      ShiftMinus1SRight2)*ToReal(alpha));
+    
+    CCTK_REAL SF3L = 0.5*(rhoLeftL*vLeft1L*vLeft3L + 
+      ShiftMinus1rhoRight*vRightTemp1*vRightTemp3 + (-SLeft3L + 
+      ShiftMinus1SRight3)*ToReal(alpha));
+    
+    CCTK_REAL EnFL = 0.5*((EnLeftL + pLeftL)*vLeft1L + 
+      ShiftMinus1pRight*vRightTemp1 - EnLeftL*ToReal(alpha) + 
+      ShiftMinus1EnRight*(vRightTemp1 + ToReal(alpha)));
+    
+    /* Copy local copies back to grid functions */
+    DenF[index] = DenFL;
+    EnF[index] = EnFL;
+    SF1[index] = SF1L;
+    SF2[index] = SF2L;
+    SF3[index] = SF3L;
   }
+  CCTK_ENDLOOP3 (euler_flux_1);
 }
 
 extern "C" void euler_flux_1(CCTK_ARGUMENTS)
@@ -204,5 +197,26 @@ extern "C" void euler_flux_1(CCTK_ARGUMENTS)
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
+  
+  if (verbose > 1)
+  {
+    CCTK_VInfo(CCTK_THORNSTRING,"Entering euler_flux_1_Body");
+  }
+  
+  if (cctk_iteration % euler_flux_1_calc_every != euler_flux_1_calc_offset)
+  {
+    return;
+  }
+  
+  const char *groups[] = {"Euler::DenF_group","Euler::DenLeft_group","Euler::DenRight_group","Euler::EnF_group","Euler::EnLeft_group","Euler::EnRight_group","Euler::pLeft_group","Euler::pRight_group","Euler::rhoLeft_group","Euler::rhoRight_group","Euler::SF_group","Euler::SLeft_group","Euler::SRight_group","Euler::vLeft_group","Euler::vRight_group"};
+  GenericFD_AssertGroupStorage(cctkGH, "euler_flux_1", 15, groups);
+  
+  GenericFD_EnsureStencilFits(cctkGH, "euler_flux_1", 1, 1, 1);
+  
   GenericFD_LoopOverInterior(cctkGH, &euler_flux_1_Body);
+  
+  if (verbose > 1)
+  {
+    CCTK_VInfo(CCTK_THORNSTRING,"Leaving euler_flux_1_Body");
+  }
 }

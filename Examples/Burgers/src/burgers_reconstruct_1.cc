@@ -12,6 +12,8 @@
 #include "cctk_Parameters.h"
 #include "GenericFD.h"
 #include "Differencing.h"
+#include "cctk_Loop.h"
+#include "loopcontrol.h"
 
 /* Define macros used in calculations */
 #define INITVALUE (42)
@@ -35,32 +37,13 @@ extern "C" void burgers_reconstruct_1_SelectBCs(CCTK_ARGUMENTS)
   return;
 }
 
-static void burgers_reconstruct_1_Body(cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const min[3], int const max[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[])
+static void burgers_reconstruct_1_Body(cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const imin[3], int const imax[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[])
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
   
-  /* Declare the variables used for looping over grid points */
-  CCTK_INT i, j, k;
-  // CCTK_INT index = INITVALUE;
-  
   /* Declare finite differencing variables */
-  
-  if (verbose > 1)
-  {
-    CCTK_VInfo(CCTK_THORNSTRING,"Entering burgers_reconstruct_1_Body");
-  }
-  
-  if (cctk_iteration % burgers_reconstruct_1_calc_every != burgers_reconstruct_1_calc_offset)
-  {
-    return;
-  }
-  
-  const char *groups[] = {"Burgers::u_group","Burgers::uLeft_group","Burgers::uR_group"};
-  GenericFD_AssertGroupStorage(cctkGH, "burgers_reconstruct_1", 3, groups);
-  
-  GenericFD_EnsureStencilFits(cctkGH, "burgers_reconstruct_1", 1, 1, 1);
   
   /* Include user-supplied include files */
   
@@ -68,10 +51,14 @@ static void burgers_reconstruct_1_Body(cGH const * restrict const cctkGH, int co
   ptrdiff_t const di = 1;
   ptrdiff_t const dj = CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0);
   ptrdiff_t const dk = CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0);
+  ptrdiff_t const cdi = sizeof(CCTK_REAL) * di;
+  ptrdiff_t const cdj = sizeof(CCTK_REAL) * dj;
+  ptrdiff_t const cdk = sizeof(CCTK_REAL) * dk;
   CCTK_REAL const dx = ToReal(CCTK_DELTA_SPACE(0));
   CCTK_REAL const dy = ToReal(CCTK_DELTA_SPACE(1));
   CCTK_REAL const dz = ToReal(CCTK_DELTA_SPACE(2));
   CCTK_REAL const dt = ToReal(CCTK_DELTA_TIME);
+  CCTK_REAL const t = ToReal(cctk_time);
   CCTK_REAL const dxi = INV(dx);
   CCTK_REAL const dyi = INV(dy);
   CCTK_REAL const dzi = INV(dz);
@@ -90,44 +77,50 @@ static void burgers_reconstruct_1_Body(cGH const * restrict const cctkGH, int co
   CCTK_REAL const p1ody = INV(dy);
   CCTK_REAL const p1odz = INV(dz);
   
+  /* Assign local copies of arrays functions */
+  
+  
+  
+  /* Calculate temporaries and arrays functions */
+  
+  /* Copy local copies back to grid functions */
+  
   /* Loop over the grid points */
-  for (k = min[2]; k < max[2]; k++)
+  #pragma omp parallel
+  CCTK_LOOP3 (burgers_reconstruct_1,
+    i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
+    cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
   {
-    for (j = min[1]; j < max[1]; j++)
-    {
-      for (i = min[0]; i < max[0]; i++)
-      {
-         int  const  index  =  CCTK_GFINDEX3D(cctkGH,i,j,k) ;
-        
-        /* Assign local copies of grid functions */
-        
-        CCTK_REAL uL = u[index];
-        
-        
-        /* Include user supplied include files */
-        
-        /* Precompute derivatives */
-        CCTK_REAL const DiffPlus1u = DiffPlus1(&u[index]);
-        CCTK_REAL const DiffMinus1u = DiffMinus1(&u[index]);
-        
-        /* Calculate temporaries and grid functions */
-        CCTK_REAL slopeL = DiffMinus1u;
-        
-        CCTK_REAL slopeR = DiffPlus1u;
-        
-        CCTK_REAL slope = IfThen(slopeL*slopeR < 0,0,IfThen(Abs(slopeL) < 
-          Abs(slopeR),slopeL,slopeR));
-        
-        CCTK_REAL uLeftL = -0.5*slope + uL;
-        
-        CCTK_REAL uRL = 0.5*slope + uL;
-        
-        /* Copy local copies back to grid functions */
-        uLeft[index] = uLeftL;
-        uR[index] = uRL;
-      }
-    }
+    ptrdiff_t const index = di*i + dj*j + dk*k;
+    
+    /* Assign local copies of grid functions */
+    
+    CCTK_REAL uL = u[index];
+    
+    
+    /* Include user supplied include files */
+    
+    /* Precompute derivatives */
+    CCTK_REAL const DiffPlus1u = DiffPlus1(&u[index]);
+    CCTK_REAL const DiffMinus1u = DiffMinus1(&u[index]);
+    
+    /* Calculate temporaries and grid functions */
+    CCTK_REAL slopeL = DiffMinus1u;
+    
+    CCTK_REAL slopeR = DiffPlus1u;
+    
+    CCTK_REAL slope = IfThen(slopeL*slopeR < 0,0,IfThen(Abs(slopeL) < 
+      Abs(slopeR),slopeL,slopeR));
+    
+    CCTK_REAL uLeftL = uL - 0.5*slope;
+    
+    CCTK_REAL uRL = uL + 0.5*slope;
+    
+    /* Copy local copies back to grid functions */
+    uLeft[index] = uLeftL;
+    uR[index] = uRL;
   }
+  CCTK_ENDLOOP3 (burgers_reconstruct_1);
 }
 
 extern "C" void burgers_reconstruct_1(CCTK_ARGUMENTS)
@@ -135,5 +128,26 @@ extern "C" void burgers_reconstruct_1(CCTK_ARGUMENTS)
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
+  
+  if (verbose > 1)
+  {
+    CCTK_VInfo(CCTK_THORNSTRING,"Entering burgers_reconstruct_1_Body");
+  }
+  
+  if (cctk_iteration % burgers_reconstruct_1_calc_every != burgers_reconstruct_1_calc_offset)
+  {
+    return;
+  }
+  
+  const char *groups[] = {"Burgers::u_group","Burgers::uLeft_group","Burgers::uR_group"};
+  GenericFD_AssertGroupStorage(cctkGH, "burgers_reconstruct_1", 3, groups);
+  
+  GenericFD_EnsureStencilFits(cctkGH, "burgers_reconstruct_1", 1, 1, 1);
+  
   GenericFD_LoopOverInterior(cctkGH, &burgers_reconstruct_1_Body);
+  
+  if (verbose > 1)
+  {
+    CCTK_VInfo(CCTK_THORNSTRING,"Leaving burgers_reconstruct_1_Body");
+  }
 }

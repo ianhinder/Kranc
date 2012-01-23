@@ -10,6 +10,7 @@ USES INCLUDE: GenericFD.h
 USES INCLUDE: Symmetry.h
 USES INCLUDE: sbp_calc_coeffs.h
 USES INCLUDE: Boundary.h
+USES INCLUDE: loopcontrol.h
 
 CCTK_INT FUNCTION MoLRegisterEvolved(CCTK_INT IN EvolvedIndex, CCTK_INT IN RHSIndex)
 USES FUNCTION MoLRegisterEvolved

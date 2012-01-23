@@ -1,47 +1,110 @@
 # File produced by Kranc
 
 
-STORAGE: Den_flux_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: Den_flux_group[1]
+}
 
-STORAGE: Den_lr_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: Den_lr_group[1]
+}
 
-STORAGE: epsi_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: epsi_group[1]
+}
 
-STORAGE: epsi_lr_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: epsi_lr_group[1]
+}
 
-STORAGE: h_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: h_group[1]
+}
 
-STORAGE: p_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: p_group[1]
+}
 
-STORAGE: rho_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: rho_group[1]
+}
 
-STORAGE: rho_lr_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: rho_lr_group[1]
+}
 
-STORAGE: S1_flux_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: S1_flux_group[1]
+}
 
-STORAGE: S1_lr_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: S1_lr_group[1]
+}
 
-STORAGE: S2_flux_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: S2_flux_group[1]
+}
 
-STORAGE: S2_lr_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: S2_lr_group[1]
+}
 
-STORAGE: S3_flux_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: S3_flux_group[1]
+}
 
-STORAGE: S3_lr_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: S3_lr_group[1]
+}
 
-STORAGE: tau_flux_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: tau_flux_group[1]
+}
 
-STORAGE: tau_lr_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: tau_lr_group[1]
+}
 
-STORAGE: v1_lr_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: v1_lr_group[1]
+}
 
-STORAGE: v2_lr_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: v2_lr_group[1]
+}
 
-STORAGE: v3_lr_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: v3_lr_group[1]
+}
 
-STORAGE: v_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: v_group[1]
+}
 
-STORAGE: W_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: W_group[1]
+}
 
 if (timelevels == 1)
 {
@@ -194,12 +257,7 @@ schedule group eulersr_cons_calc_reconstruct_1_bc_group in eulersr_cons_calc_rec
   # no language specified
 } "eulersr_cons_calc_reconstruct_1"
 
-schedule group eulersr_cons_calc_reconstruct_1_bc_group at CCTK_POSTRESTRICT
-{
-  # no language specified
-} "eulersr_cons_calc_reconstruct_1"
-
-schedule group eulersr_cons_calc_reconstruct_1_bc_group at CCTK_POSTRESTRICTINITIAL
+schedule group eulersr_cons_calc_reconstruct_1_bc_group in MoL_PseudoEvolutionBoundaries after MoL_PostStep
 {
   # no language specified
 } "eulersr_cons_calc_reconstruct_1"
@@ -240,12 +298,7 @@ schedule group eulersr_cons_calc_flux_1_bc_group in eulersr_cons_calc_flux_1_gro
   # no language specified
 } "eulersr_cons_calc_flux_1"
 
-schedule group eulersr_cons_calc_flux_1_bc_group at CCTK_POSTRESTRICT
-{
-  # no language specified
-} "eulersr_cons_calc_flux_1"
-
-schedule group eulersr_cons_calc_flux_1_bc_group at CCTK_POSTRESTRICTINITIAL
+schedule group eulersr_cons_calc_flux_1_bc_group in MoL_PseudoEvolutionBoundaries after MoL_PostStep
 {
   # no language specified
 } "eulersr_cons_calc_flux_1"
@@ -286,12 +339,7 @@ schedule group eulersr_cons_calc_reconstruct_2_bc_group in eulersr_cons_calc_rec
   # no language specified
 } "eulersr_cons_calc_reconstruct_2"
 
-schedule group eulersr_cons_calc_reconstruct_2_bc_group at CCTK_POSTRESTRICT
-{
-  # no language specified
-} "eulersr_cons_calc_reconstruct_2"
-
-schedule group eulersr_cons_calc_reconstruct_2_bc_group at CCTK_POSTRESTRICTINITIAL
+schedule group eulersr_cons_calc_reconstruct_2_bc_group in MoL_PseudoEvolutionBoundaries after MoL_PostStep
 {
   # no language specified
 } "eulersr_cons_calc_reconstruct_2"
@@ -332,12 +380,7 @@ schedule group eulersr_cons_calc_flux_2_bc_group in eulersr_cons_calc_flux_2_gro
   # no language specified
 } "eulersr_cons_calc_flux_2"
 
-schedule group eulersr_cons_calc_flux_2_bc_group at CCTK_POSTRESTRICT
-{
-  # no language specified
-} "eulersr_cons_calc_flux_2"
-
-schedule group eulersr_cons_calc_flux_2_bc_group at CCTK_POSTRESTRICTINITIAL
+schedule group eulersr_cons_calc_flux_2_bc_group in MoL_PseudoEvolutionBoundaries after MoL_PostStep
 {
   # no language specified
 } "eulersr_cons_calc_flux_2"
@@ -378,12 +421,7 @@ schedule group eulersr_cons_calc_reconstruct_3_bc_group in eulersr_cons_calc_rec
   # no language specified
 } "eulersr_cons_calc_reconstruct_3"
 
-schedule group eulersr_cons_calc_reconstruct_3_bc_group at CCTK_POSTRESTRICT
-{
-  # no language specified
-} "eulersr_cons_calc_reconstruct_3"
-
-schedule group eulersr_cons_calc_reconstruct_3_bc_group at CCTK_POSTRESTRICTINITIAL
+schedule group eulersr_cons_calc_reconstruct_3_bc_group in MoL_PseudoEvolutionBoundaries after MoL_PostStep
 {
   # no language specified
 } "eulersr_cons_calc_reconstruct_3"
@@ -424,12 +462,7 @@ schedule group eulersr_cons_calc_flux_3_bc_group in eulersr_cons_calc_flux_3_gro
   # no language specified
 } "eulersr_cons_calc_flux_3"
 
-schedule group eulersr_cons_calc_flux_3_bc_group at CCTK_POSTRESTRICT
-{
-  # no language specified
-} "eulersr_cons_calc_flux_3"
-
-schedule group eulersr_cons_calc_flux_3_bc_group at CCTK_POSTRESTRICTINITIAL
+schedule group eulersr_cons_calc_flux_3_bc_group in MoL_PseudoEvolutionBoundaries after MoL_PostStep
 {
   # no language specified
 } "eulersr_cons_calc_flux_3"

@@ -13,5 +13,7 @@ extern "C" void Burgers_RegisterVars(CCTK_ARGUMENTS)
   
   /* Register all the evolved grid functions with MoL */
   ierr += MoLRegisterEvolved(CCTK_VarIndex("Burgers::u"),  CCTK_VarIndex("Burgers::urhs"));
+  
+  /* Register all the evolved Array functions with MoL */
   return;
 }

@@ -8,6 +8,7 @@ shares: GenericFD
 shares: MethodOfLines
 
 USES CCTK_INT MoL_Num_Evolved_Vars
+USES CCTK_INT MoL_Num_ArrayEvolved_Vars
 
 restricted:
 CCTK_INT verbose "verbose" STEERABLE=ALWAYS
@@ -71,6 +72,12 @@ CCTK_INT Burgers_MaxNumEvolvedVars "Number of evolved variables used by this tho
 } 1
 
 restricted:
+CCTK_INT Burgers_MaxNumArrayEvolvedVars "Number of Array evolved variables used by this thorn" ACCUMULATOR-BASE=MethodofLines::MoL_Num_ArrayEvolved_Vars STEERABLE=RECOVER
+{
+  0:0 :: "Number of Array evolved variables used by this thorn"
+} 0
+
+restricted:
 CCTK_INT timelevels "Number of active timelevels" STEERABLE=RECOVER
 {
   0:3 :: ""
@@ -78,6 +85,12 @@ CCTK_INT timelevels "Number of active timelevels" STEERABLE=RECOVER
 
 restricted:
 CCTK_INT rhs_timelevels "Number of active RHS timelevels" STEERABLE=RECOVER
+{
+  0:3 :: ""
+} 1
+
+restricted:
+CCTK_INT other_timelevels "Number of active timelevels for non-evolved grid functions" STEERABLE=RECOVER
 {
   0:3 :: ""
 } 1

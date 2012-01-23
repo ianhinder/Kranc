@@ -63,8 +63,6 @@ Carpet/CarpetSlab
 Carpet/LoopControl
 LSUThorns/Vectors
 
-LSUThorns/Vectors
-
 # Kranc support thorn
 KrancNumericalTools/GenericFD
 

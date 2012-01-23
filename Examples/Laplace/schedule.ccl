@@ -1,0 +1,98 @@
+# File produced by Kranc
+
+
+if (timelevels == 1)
+{
+  STORAGE: phi_group[1]
+}
+if (timelevels == 2)
+{
+  STORAGE: phi_group[2]
+}
+if (timelevels == 3)
+{
+  STORAGE: phi_group[3]
+}
+
+if (rhs_timelevels == 1)
+{
+  STORAGE: phi_grouprhs[1]
+}
+if (rhs_timelevels == 2)
+{
+  STORAGE: phi_grouprhs[2]
+}
+if (rhs_timelevels == 3)
+{
+  STORAGE: phi_grouprhs[3]
+}
+
+schedule Laplace_Startup at STARTUP
+{
+  LANG: C
+  OPTIONS: meta
+} "create banner"
+
+schedule Laplace_RegisterVars in MoL_Register
+{
+  LANG: C
+  OPTIONS: meta
+} "Register Variables for MoL"
+
+schedule Laplace_RegisterSymmetries in SymmetryRegister
+{
+  LANG: C
+  OPTIONS: meta
+} "register symmetries"
+
+schedule Laplace_initial AT INITIAL
+{
+  LANG: C
+  SYNC: phi_group
+} "Laplace_initial"
+
+schedule Laplace_initial_boundary AT INITIAL after Laplace_initial
+{
+  LANG: C
+  SYNC: phi_group
+} "Laplace_initial_boundary"
+
+schedule Laplace_relax in MoL_CalcRHS
+{
+  LANG: C
+} "Laplace_relax"
+
+schedule Laplace_relax AT ANALYSIS
+{
+  LANG: C
+  SYNC: phi_grouprhs
+} "Laplace_relax"
+
+schedule Laplace_boundary in MoL_RHSBoundaries
+{
+  LANG: C
+} "Laplace_boundary"
+
+schedule Laplace_boundary AT ANALYSIS
+{
+  LANG: C
+  SYNC: phi_grouprhs
+} "Laplace_boundary"
+
+schedule Laplace_SelectBoundConds in MoL_PostStep
+{
+  LANG: C
+  OPTIONS: level
+  SYNC: phi_group
+} "select boundary conditions"
+
+schedule Laplace_CheckBoundaries at BASEGRID
+{
+  LANG: C
+  OPTIONS: meta
+} "check boundaries treatment"
+
+schedule group ApplyBCs as Laplace_ApplyBCs in MoL_PostStep after Laplace_SelectBoundConds
+{
+  # no language specified
+} "Apply boundary conditions controlled by thorn Boundary"

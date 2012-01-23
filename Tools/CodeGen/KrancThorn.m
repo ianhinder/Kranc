@@ -113,7 +113,9 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     includeFiles = OptionValue[IncludeFiles];
     evolutionTimelevels = OptionValue[EvolutionTimelevels]; (* Redundant *)
     defaultEvolutionTimelevels = lookupDefault[{opts}, DefaultEvolutionTimelevels, evolutionTimelevels];
-    realParams = OptionValue[RealParameters] ~Join~ ConservationDifferencingRealParameters[];
+    realParams = OptionValue[RealParameters];
+    If[OptionValue[ConservationCalculations] =!= {},
+       realParams = Join[realParams,ConservationDifferencingRealParameters[]]];
     intParams = OptionValue[IntParameters];
     realParamDefs = MakeFullParamDefs[realParams];
     intParamDefs = MakeFullParamDefs[intParams];
@@ -124,8 +126,9 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     extendedRealParams = OptionValue[ExtendedRealParameters];
     extendedIntParams = OptionValue[ExtendedIntParameters];
     extendedKeywordParams = OptionValue[ExtendedKeywordParameters];
-    partialDerivs = OptionValue[PartialDerivatives] ~Join~
-      ConservationDifferencingOperators[];
+    partialDerivs = OptionValue[PartialDerivatives];
+    If[OptionValue[ConservationCalculations] =!= {},
+       partialDerivs = Join[partialDerivs, ConservationDifferencingOperators[]]];
     reflectionSymmetries = OptionValue[ReflectionSymmetries];
 
     coordGroup = {"grid::coordinates", {Kranc`x,Kranc`y,Kranc`z,Kranc`r}};

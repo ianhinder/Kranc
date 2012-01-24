@@ -29,7 +29,7 @@ BeginPackage["KrancThorn`", {"CodeGen`", "Thorn`",
  "MapLookup`", "KrancGroups`", "Differencing`",
  "CalculationFunction`", "Errors`", "Helpers`", "CactusBoundary`",
  "KrancTensor`", "Param`", "Schedule`", "Interface`", "Kranc`", "Jacobian`",
- "ConservationCalculation`"}];
+ "ConservationCalculation`", "CaKernel`"}];
 
 CreateKrancThorn::usage = "Construct a Kranc thorn";
 
@@ -95,7 +95,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     evolvedODEGroupDefinitions, rhsODEGroupDefinitions, rhsODEGroups,
     allParams, boundarySources, reflectionSymmetries,
     realParamDefs, intParamDefs,
-    pDefs, consCalcs, consCalcsIn, consGroups},
+    pDefs, consCalcs, consCalcsIn, consGroups, cakernel},
 
     (* Parse named arguments *)
 
@@ -225,6 +225,11 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
       Join[rhsGroups,rhsODEGroups], Join[nonevolvedGroups,nonevolvedODEGroups], thornName,
       evolutionTimelevels];
 
+    (* Construct the cakernel file *)
+    If[OptionValue[UseCaKernel],
+       InfoMessage[Terse, "Creating CaKernel file"];
+       cakernel = CaKernelCCL[calcs]];
+
     boundarySources = CactusBoundary`GetSources[evolvedGroups, groups, 
                                             implementation, thornName];
 
@@ -287,6 +292,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 	         Interface     -> interface, 
                  Schedule      -> schedule, 
                  Param         -> param,
+                 CaKernel      -> cakernel,
                  Makefile      -> make,
                  Sources       -> Join[{
                   {Filename -> "Startup.cc", Contents -> startup}, 

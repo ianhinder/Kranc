@@ -274,15 +274,23 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
                      Map[unqualifiedName, inheritedKeywordParams]];
 
     InfoMessage[Terse, "Creating calculation source files"];
-    calcSources = Map[CreateSetterSource[
-      {Join[#, {ODEGroups -> Join[odeGroups, rhsODEGroups],
-                Parameters -> allParams, PartialDerivatives -> partialDerivs}]},
-      False, {}, implementation, opts] &, calcs];
-    calcFilenames = Map[lookup[#, Name] <> ext &, calcs];
+
+    calcs = Map[Join[#,
+                     {ODEGroups -> Join[odeGroups, rhsODEGroups],
+                      Parameters -> allParams,
+                      PartialDerivatives -> partialDerivs}] &, calcs];
+
+    If[!OptionValue[UseCaKernel],
+       calcSources = Map[CreateSetterSource[{#}, False, {}, implementation, opts] &, calcs];
+       calcFilenames = Map[lookup[#, Name] <> ext &, calcs],
+    (* else *)
+       calcSources = Map[CaKernelCode, calcs];
+       calcFilenames = Map[lookup[#, Name] <> ".code" &, calcs]];
 
     (* Makefile *)
     InfoMessage[Terse, "Creating make file"];
-    make = CreateMakefile[Join[{"Startup.cc", "RegisterMoL.cc", "RegisterSymmetries.cc"}, calcFilenames, 
+    make = CreateMakefile[Join[{"Startup.cc", "RegisterMoL.cc", "RegisterSymmetries.cc"},
+                               If[!OptionValue[UseCaKernel], calcFilenames, {}],
       Map[lookup[#, Filename] &, boundarySources]]];
 
     (* Put all the above together and generate the Cactus thorn *)

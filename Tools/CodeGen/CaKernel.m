@@ -18,9 +18,10 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-BeginPackage["CaKernel`", {"Errors`", "Helpers`", "Kranc`", "CodeGenCactus`", "MapLookup`", "Calculation`"}];
+BeginPackage["CaKernel`", {"Errors`", "Helpers`", "Kranc`", "CodeGenCactus`", "MapLookup`", "Calculation`", "CodeGen`"}];
 
 CaKernelCCL;
+CaKernelCode;
 
 Begin["`Private`"];
 
@@ -60,6 +61,38 @@ DefFn[CaKernelCCL[calcs_List] :=
   Module[
     {},
     Map[kernelCCLBlock, calcs]]];
+
+DefFn[codeBlock[macro_String, contents:CodeGenBlock] :=
+  Module[
+    {},
+    {macro<>"_Begin_s", "\n",
+     IndentBlock[{contents,"\n"}],
+     macro<>"_End_s","\n"}]];
+
+DefFn[CaKernelCode[calc_List] :=
+  Module[
+    {kernel = "CAKERNEL_"<>GetCalculationName[calc]},
+    codeBlock[
+      kernel<>"_Declare",
+
+      {kernel<>"_Declare_Cached_Variables_s"<>"\n",
+       kernel<>"_Declare_Flow_Variables_s"<>"\n",
+
+       codeBlock[
+         kernel<>"_Limit_Threads_To_LSH",
+
+         {kernel<>"_Fetch_Data_To_Cache_s"<>"\n",
+
+          codeBlock[
+            kernel<>"_Computations",
+
+            {kernel<>"_Iterate_Local_Tile_s"<>"\n",
+             kernel<>"_Fetch_Front_Tile_To_Cache_s"<>"\n",
+
+             codeBlock[
+               kernel<>"_Limit_Threads_To_Compute",
+
+               "// Kernel code"]}]}]}]]];
 
 End[];
 

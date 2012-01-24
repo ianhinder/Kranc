@@ -42,15 +42,15 @@ DefFn[
     inOut = Intersection[in,out];
 
     Riffle[
-      Map[variableBlock[#, Which[MemberQ[inOnly, #], "in", 
-                                 MemberQ[outOnly, #], "out", 
-                                 MemberQ[inOut, #], "inout", 
+      Map[variableBlock[#, Which[MemberQ[inOnly, #], "in",
+                                 MemberQ[outOnly, #], "out",
+                                 MemberQ[inOut, #], "inout",
                                  True,ThrowError["Unable to determine use of variable "<>ToString[#]]]] &, all],
           "\n"]]];
 
 DefFn[
   kernelCCLBlock[calc_] :=
-  CCLBlock["CCTK_CUDA_KERNEL", lookup[calc, Name], 
+  CCLBlock["CCTK_CUDA_KERNEL", lookup[calc, Name],
            {"TYPE" -> "gpu_cuda/3dblock",
             "STENCIL" -> "0,0,0,0,0,0",
             "TILE" -> "16,16,16",

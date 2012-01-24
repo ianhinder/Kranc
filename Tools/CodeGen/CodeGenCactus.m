@@ -79,6 +79,8 @@ NameRoot::usage = "";
 PartitionVarList::usage = "";
 DataType::usage = "DataType[] returns a string for the grid function data type (e.g. CCTK_REAL)";
 SetDataType::usage = "SetDataType[type] sets a string for the grid function data type (e.g. CCTK_REAL)";
+CCLBlock;
+
 
 Begin["`Private`"];
 
@@ -705,6 +707,14 @@ DefFn[
        rhs = rhs /. Power[xx_, power_] -> xx^power];
     (*       Print[rhs//FullForm];*)
     rhs]];
+
+DefFn[
+  CCLBlock[type_String, name_String, attrs:{(_String -> _String)...},
+           contents:CodeGenBlock,comment_String:""] :=
+  {type, " ", name,
+   Map[" "<>#[[1]]<>"="<>#[[2]] &, attrs], "\n",
+   CBlock[contents],
+   If[comment === "", "", Quote[comment]],"\n"}];
 
 End[];
 

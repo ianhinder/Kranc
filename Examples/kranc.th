@@ -86,3 +86,6 @@ ExternalLibraries/HDF5
 ExternalLibraries/zlib
 CactusUtils/TimerReport
 
+CaCUDA/CaCUDAPiraha
+CaCUDA/CaCUDACFD3DWOMOL
+CaCUDA/CaCUDALib

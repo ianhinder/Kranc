@@ -23,6 +23,7 @@ BeginPackage["Calculation`", {"Errors`", "Helpers`", "Kranc`", "KrancGroups`", "
 InputGridFunctions;
 OutputGridFunctions;
 AllGridFunctions;
+GetCalculationName;
 
 Begin["`Private`"];
 
@@ -58,6 +59,10 @@ DefFn[
 DefFn[
   GetEquations[calc_List] :=
   lookup[calc,Equations]];
+
+DefFn[
+  GetCalculationName[calc_List] :=
+  lookup[calc,Name]];
 
 End[];
 

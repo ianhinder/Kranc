@@ -28,10 +28,11 @@ VerifyMap[m_] :=
       ThrowError["Expecting a map (list of rules) but found", m]];
     Map[VerifyRule, m]];
 
-lookup[map_, key_, default_] :=
-  lookupDefault[map, key, default];
+DefFn[
+  lookup[map_List, key_Symbol, default_] :=
+  lookupDefault[map, key, default]];
 
-lookup[map_, key_] :=
+DefFn[lookup[map_List, key_Symbol] :=
   Module[{values},
     VerifyMap[map];
 
@@ -41,7 +42,7 @@ lookup[map_, key_] :=
     If[Length[values] > 1,
        ThrowError["lookup failure: key ", key, " found multiple times in map", map]];
 
-    First[values][[2]]];
+    First[values][[2]]]];
 
 mapContains[map_, key_] :=
   Module[{},

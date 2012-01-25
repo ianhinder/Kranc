@@ -12,6 +12,8 @@ extern "C" void SimpleWaveCaKernel_RegisterVars(CCTK_ARGUMENTS)
   CCTK_INT ierr = 0;
   
   /* Register all the evolved grid functions with MoL */
+  ierr += MoLRegisterEvolved(CCTK_VarIndex("SimpleWaveCaKernel::phi"),  CCTK_VarIndex("SimpleWaveCaKernel::phirhs"));
+  ierr += MoLRegisterEvolved(CCTK_VarIndex("SimpleWaveCaKernel::pi"),  CCTK_VarIndex("SimpleWaveCaKernel::pirhs"));
   
   /* Register all the evolved Array functions with MoL */
   return;

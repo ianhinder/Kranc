@@ -28,13 +28,25 @@ CCTK_INT FUNCTION Boundary_SelectVarForBC(CCTK_POINTER_TO_CONST IN GH, CCTK_INT 
 USES FUNCTION Boundary_SelectVarForBC
 
 public:
-CCTK_REAL phi_g type=GF timelevels=1 tags=''
+CCTK_REAL phi_g type=GF timelevels=3 tags=''
 {
   phi
 } "phi_g"
 
 public:
-CCTK_REAL pi_g type=GF timelevels=1 tags=''
+CCTK_REAL pi_g type=GF timelevels=3 tags=''
 {
   pi
 } "pi_g"
+
+public:
+CCTK_REAL phi_grhs type=GF timelevels=3 tags=''
+{
+  phirhs
+} "phi_grhs"
+
+public:
+CCTK_REAL pi_grhs type=GF timelevels=3 tags=''
+{
+  pirhs
+} "pi_grhs"

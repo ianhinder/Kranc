@@ -3,7 +3,7 @@
 
 #define CCTK_GFINDEX3D(u,i,j,k) I3D(u,i,j,k)
 
-CAKERNEL_initial_sine_Begin_s
+CAKERNEL_calc_rhs_Begin_s
   
   /* Declare finite differencing variables */
   
@@ -48,25 +48,31 @@ CAKERNEL_initial_sine_Begin_s
   /* Calculate temporaries and arrays functions */
   
   /* Copy local copies back to grid functions */
-  CAKERNEL_initial_sine_Computations_Begin_s
+  CAKERNEL_calc_rhs_Computations_Begin_s
     
     /* Assign local copies of grid functions */
     
+    CCTK_REAL phiL = I3D(phi,0,0,0);
+    CCTK_REAL piL = I3D(pi,0,0,0);
     
     
     /* Include user supplied include files */
     
     /* Precompute derivatives */
+    CCTK_REAL const PDstandard2nd11phi = PDstandard2nd11(&phi[index]);
+    CCTK_REAL const PDstandard2nd22phi = PDstandard2nd22(&phi[index]);
+    CCTK_REAL const PDstandard2nd33phi = PDstandard2nd33(&phi[index]);
     
     /* Calculate temporaries and grid functions */
-    CCTK_REAL phiL = 0;
+    CCTK_REAL phirhsL = piL;
     
-    CCTK_REAL piL = 0;
+    CCTK_REAL pirhsL = PDstandard2nd11phi + PDstandard2nd22phi + 
+      PDstandard2nd33phi;
     
     /* Copy local copies back to grid functions */
-    I3D(phi,0,0,0) = phiL;
-    I3D(pi,0,0,0) = piL;
+    I3D(phirhs,0,0,0) = phirhsL;
+    I3D(pirhs,0,0,0) = pirhsL;
     
-  CAKERNEL_initial_sine_Computations_End_s
+  CAKERNEL_calc_rhs_Computations_End_s
   
-CAKERNEL_initial_sine_End_s
+CAKERNEL_calc_rhs_End_s

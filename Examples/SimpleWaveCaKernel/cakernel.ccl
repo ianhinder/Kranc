@@ -13,3 +13,57 @@ CCTK_CUDA_KERNEL initial_sine TYPE=gpu_cuda/3dblock STENCIL=0,0,0,0,0,0 TILE=16,
   "pi"
 }
 
+CCTK_CUDA_KERNEL calc_rhs TYPE=gpu_cuda/3dblock STENCIL=0,0,0,0,0,0 TILE=16,16,16 SHARECODE=yes
+{
+  CCTK_CUDA_KERNEL_VARIABLE  cached=yes intent=in
+  {
+    phi
+  }
+  "phi"
+  
+  CCTK_CUDA_KERNEL_VARIABLE  cached=yes intent=out
+  {
+    phirhs
+  }
+  "phirhs"
+  
+  CCTK_CUDA_KERNEL_VARIABLE  cached=yes intent=in
+  {
+    pi
+  }
+  "pi"
+  
+  CCTK_CUDA_KERNEL_VARIABLE  cached=yes intent=out
+  {
+    pirhs
+  }
+  "pirhs"
+}
+
+CCTK_CUDA_KERNEL rk1 TYPE=gpu_cuda/3dblock STENCIL=0,0,0,0,0,0 TILE=16,16,16 SHARECODE=yes
+{
+  CCTK_CUDA_KERNEL_VARIABLE  cached=yes intent=inout
+  {
+    phi
+  }
+  "phi"
+  
+  CCTK_CUDA_KERNEL_VARIABLE  cached=yes intent=in
+  {
+    phirhs
+  }
+  "phirhs"
+  
+  CCTK_CUDA_KERNEL_VARIABLE  cached=yes intent=in
+  {
+    pi
+  }
+  "pi"
+  
+  CCTK_CUDA_KERNEL_VARIABLE  cached=yes intent=in
+  {
+    pirhs
+  }
+  "pirhs"
+}
+

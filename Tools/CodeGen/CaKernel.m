@@ -19,7 +19,7 @@
 *)
 
 BeginPackage["CaKernel`", {"Errors`", "Helpers`", "Kranc`", "CodeGenCactus`", "MapLookup`",
-                           "Calculation`", "CodeGen`"}];
+                           "Calculation`", "CodeGen`", "CalculationFunction`"}];
 
 CaKernelCCL;
 CaKernelCode;
@@ -71,15 +71,20 @@ DefFn[codeBlock[macro_String, contents:CodeGenBlock] :=
      IndentBlock[{contents,"\n"}],
      macro<>"_End_s","\n"}]];
 
-DefFn[CaKernelCode[calc_List] :=
+DefFn[CaKernelCode[calc_List,opts___] :=
   Module[
-    {kernel = "CAKERNEL_"<>GetCalculationName[calc]},
-    codeBlock[
-      kernel,
+    {kernel = "CAKERNEL_"<>GetCalculationName[calc], calc2},
 
-      codeBlock[
-        kernel<>"_Computations",
-        Map[makeEquation[calc, #] &, GetEquations[calc]]]]]];
+    calc2 = Join[calc, {BodyFunction -> (codeBlock[kernel, #] &), 
+                       CallerFunction -> False,
+                       LoopFunction -> (codeBlock[kernel<>"_Computations", #] &)}];
+
+    CreateCalculationFunction[calc2,opts]]];
+
+        (* codeBlock[ *)
+        (*   kernel<>"_Computations", *)
+        (*   Map[makeEquation[calc, #] &, GetEquations[calc]]]] *)
+
 
 DefFn[
   makeEquation[calc_List, eq_Rule] :=

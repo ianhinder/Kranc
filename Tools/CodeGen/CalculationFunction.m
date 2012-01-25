@@ -491,11 +491,7 @@ DefFn[
 
   InfoMessage[InfoFull,"Generating function"];
   {
-  DefineFunction[bodyFunctionName, "static void", "cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const imin[3], int const imax[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[]",
-  {
-    "DECLARE_CCTK_ARGUMENTS;\n",
-    "DECLARE_CCTK_PARAMETERS;\n\n",
-
+    lookup[calcp,BodyFunction][{
     (* OpenCL kernel prologue *)
     (* We could (or probably should) write this into a source file of its own *)
     If[OptionValue[UseOpenCL],

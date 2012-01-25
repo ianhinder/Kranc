@@ -39,7 +39,8 @@ dummy;
 LoopPreIncludes, GroupImplementations, PartialDerivatives, NoSimplify,
 Boundary, Interior, InteriorNoSync, Where, AddToStencilWidth,
 Everywhere, normal1, normal2, normal3, INV, SQR, CUB, QAD, dot, pow,
-exp, dt, dx, dy, dz, idx, idy, idz, t, MinMod, VanLeer}
+exp, dt, dx, dy, dz, idx, idy, idz, t, MinMod, VanLeer, BodyFunction,
+CallerFunction}
 
 {ConditionalOnKeyword, ConditionalOnKeywords, CollectList, Interior,
 InteriorNoSync, Boundary, BoundaryWithGhosts, Where, PreDefinitions,

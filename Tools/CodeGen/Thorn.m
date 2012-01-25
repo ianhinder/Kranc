@@ -531,6 +531,17 @@ CreateSetterSource[calcs_, debug_, include_,
 
    CalculationBoundariesFunction[First[calcs]],
 
+   bodyFunction = DefineFunction[lookup[calc,Name]<>"_Body", "static void", "cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const imin[3], int const imax[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[]",
+  {
+    "DECLARE_CCTK_ARGUMENTS;\n",
+    "DECLARE_CCTK_PARAMETERS;\n\n", 
+    #
+  }] &;
+
+   calc = Join[calc, {BodyFunction -> bodyFunction, 
+                      CallerFunction -> True,
+                      LoopFunction -> (codeBlock[kernel<>"_Computations", #] &)}];
+
    CreateCalculationFunction[calc, opts]}];
 
 

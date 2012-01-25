@@ -77,7 +77,8 @@ DefFn[CaKernelCode[calc_List,opts___] :=
 
     calc2 = Join[calc, {BodyFunction -> (codeBlock[kernel, #] &), 
                        CallerFunction -> False,
-                       LoopFunction -> (codeBlock[kernel<>"_Computations", #] &)}];
+                       LoopFunction -> (codeBlock[kernel<>"_Computations", #] &),
+                       GFAccessFunction -> ({"I3D(",Riffle[{#,0,0,0},","],")"} &)}];
 
     CreateCalculationFunction[calc2,opts]]];
 

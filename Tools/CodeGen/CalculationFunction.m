@@ -382,10 +382,11 @@ DefFn[
           shorts, eqs, parameters, parameterRules, odeGroups,
           functionName, dsUsed, groups, pddefs, cleancalc, eqLoop, where,
           addToStencilWidth, pDefs, haveCondTextuals, condTextuals, calc,
-          kernelCall,debug,imp},
+          kernelCall,debug,imp,gridName},
 
   debug = OptionValue[Debug];
   imp = lookup[calcp, Implementation];
+  gridName = lookup[calcp, GFAccessFunction];
 
   functionName = ToString@lookup[calcp, Name];
   bodyFunctionName = functionName <> "_Body";
@@ -600,9 +601,11 @@ DefFn[
           loopFunction, gfsInBoth, gfsDifferentiated,
           gfsDifferentiatedAndOnLHS, declare, eqsReplaced,
           arraysInRHS, arraysInLHS, arraysOnlyInRHS, odeVars,
-          generateEquationCode, groupedIfs, IfThenGroup, noSimplify},
+          generateEquationCode, groupedIfs, IfThenGroup, noSimplify,gridName},
 
     InfoMessage[InfoFull, "Equation loop"];
+
+    gridName = Function[x,FlattenBlock[lookup[cleancalc, GFAccessFunction][x]]];
 
     rhss = Map[#[[2]] &, eqs];
     lhss = Map[#[[1]] &, eqs];
@@ -738,7 +741,7 @@ DefFn[
          code
       ];
 
-    assignLocalGridFunctions[gs_, useVectors_, useJacobian_] := assignLocalFunctions[gs, useVectors, useJacobian, GridName];
+    assignLocalGridFunctions[gs_, useVectors_, useJacobian_] := assignLocalFunctions[gs, useVectors, useJacobian, gridName];
     assignLocalArrayFunctions[gs_] := assignLocalFunctions[gs, False, False, ArrayName];
 
     (* separate grid and array variables *)
@@ -782,7 +785,7 @@ DefFn[
 
       Which[OptionValue[UseOpenCL],
               CommentedBlock["Copy local copies back to grid functions",
-                Map[StorePartialVariableInLoop[GridName[#], localName[#]] &, gfsInLHS]],
+                Map[StorePartialVariableInLoop[gridName[#], localName[#]] &, gfsInLHS]],
             OptionValue[UseVectors],
               {
                 CommentedBlock["If necessary, store only partial vectors after the first iteration",
@@ -790,30 +793,30 @@ DefFn[
                   {
                     DeclareAssignVariable["ptrdiff_t", "elt_count_lo", "lc_imin-i"],
                     DeclareAssignVariable["ptrdiff_t", "elt_count_hi", "lc_imax-i"],
-                    Map[StoreMiddlePartialVariableInLoop[GridName[#], localName[#], "elt_count_lo", "elt_count_hi"] &, gfsInLHS],
+                    Map[StoreMiddlePartialVariableInLoop[gridName[#], localName[#], "elt_count_lo", "elt_count_hi"] &, gfsInLHS],
                     "break;\n"
                   }]],
                 CommentedBlock["If necessary, store only partial vectors after the first iteration",
                   ConditionalOnParameterTextual["CCTK_REAL_VEC_SIZE > 1 && CCTK_BUILTIN_EXPECT(i < lc_imin, 0)",
                   {
                     DeclareAssignVariable["ptrdiff_t", "elt_count", "lc_imin-i"],
-                    Map[StoreHighPartialVariableInLoop[GridName[#], localName[#], "elt_count"] &, gfsInLHS],
+                    Map[StoreHighPartialVariableInLoop[gridName[#], localName[#], "elt_count"] &, gfsInLHS],
                     "continue;\n"
                   }]],
                 CommentedBlock["If necessary, store only partial vectors after the last iteration",
                   ConditionalOnParameterTextual["CCTK_REAL_VEC_SIZE > 1 && CCTK_BUILTIN_EXPECT(i+CCTK_REAL_VEC_SIZE > lc_imax, 0)",
                   {
                     DeclareAssignVariable["ptrdiff_t", "elt_count", "lc_imax-i"],
-                    Map[StoreLowPartialVariableInLoop[GridName[#], localName[#], "elt_count"] &, gfsInLHS],
+                    Map[StoreLowPartialVariableInLoop[gridName[#], localName[#], "elt_count"] &, gfsInLHS],
                     "break;\n"
                   }]],
-                Map[StoreVariableInLoop[GridName[#], localName[#]] &, gfsInLHS]
+                Map[StoreVariableInLoop[gridName[#], localName[#]] &, gfsInLHS]
               },
             True,
               CommentedBlock["Copy local copies back to grid functions",
-                Map[AssignVariableInLoop[GridName[#], localName[#]] &, gfsInLHS]]],
+                Map[AssignVariableInLoop[gridName[#], localName[#]] &, gfsInLHS]]],
 
-      If[debugInLoop, Map[InfoVariable[GridName[#]] &, gfsInLHS], ""]}, opts]}]];
+      If[debugInLoop, Map[InfoVariable[gridName[#]] &, gfsInLHS], ""]}, opts]}]];
 
 (* Unsorted *)
 

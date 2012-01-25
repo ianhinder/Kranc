@@ -16,8 +16,8 @@ initialSineCalc =
   Schedule -> {"AT INITIAL"},
   Equations -> 
   {
-    phi -> Sin[2 Pi (x - t)],
-    pi -> -2 Pi Cos[2 Pi (x - t)]
+    phi -> 0, (*Sin[2 Pi (x - t)],*)
+    pi -> 0 (*-2 Pi Cos[2 Pi (x - t)] *)
   }
 };
 

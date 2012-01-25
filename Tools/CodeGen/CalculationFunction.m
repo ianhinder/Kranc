@@ -553,7 +553,8 @@ DefFn[
        }]
     }],
   
-    DefineCCTKSubroutine[functionName,
+    If[lookup[calcp,CallerFunction],
+      DefineCCTKSubroutine[functionName,
       FlattenBlock[{
         ConditionalOnParameterTextual["verbose > 1",
           "CCTK_VInfo(CCTK_THORNSTRING,\"Entering " <> bodyFunctionName <> "\");\n"],
@@ -583,7 +584,9 @@ DefFn[
 
         ConditionalOnParameterTextual["verbose > 1",
           "CCTK_VInfo(CCTK_THORNSTRING,\"Leaving " <> bodyFunctionName <> "\");\n"]
-      }]]
+      }]],
+      (* else *)
+       ""]
   }]];
 
 Options[equationLoop] = ThornOptions;

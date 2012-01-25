@@ -11,11 +11,5 @@ CCTK_CUDA_KERNEL initial_sine TYPE=gpu_cuda/3dblock STENCIL=0,0,0,0,0,0 TILE=16,
     pi
   }
   "pi"
-  
-  CCTK_CUDA_KERNEL_VARIABLE  cached=yes intent=in
-  {
-    x
-  }
-  "x"
 }
 

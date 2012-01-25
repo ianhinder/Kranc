@@ -1,17 +1,12 @@
-CAKERNEL_initial_sine_Declare_Begin_s
-  CAKERNEL_initial_sine_Declare_Cached_Variables_s
-  CAKERNEL_initial_sine_Declare_Flow_Variables_s
-  CAKERNEL_initial_sine_Limit_Threads_To_LSH_Begin_s
-    CAKERNEL_initial_sine_Fetch_Data_To_Cache_s
-    CAKERNEL_initial_sine_Computations_Begin_s
-      CAKERNEL_initial_sine_Iterate_Local_Tile_s
-      CAKERNEL_initial_sine_Fetch_Front_Tile_To_Cache_s
-      CAKERNEL_initial_sine_Limit_Threads_To_Compute_Begin_s
-        // Kernel code
-      CAKERNEL_initial_sine_Limit_Threads_To_Compute_End_s
-      
-    CAKERNEL_initial_sine_Computations_End_s
+CAKERNEL_initial_sine_Begin_s
+  CAKERNEL_initial_sine_Computations_Begin_s
+    // phi -> 0
+    phi(0,0,0) = 0
     
-  CAKERNEL_initial_sine_Limit_Threads_To_LSH_End_s
+    // pi -> 0
+    pi(0,0,0) = 0
+    
+    
+  CAKERNEL_initial_sine_Computations_End_s
   
-CAKERNEL_initial_sine_Declare_End_s
+CAKERNEL_initial_sine_End_s

@@ -29,7 +29,7 @@ schedule SimpleWaveCaKernel_RegisterSymmetries in SymmetryRegister
   OPTIONS: meta
 } "register symmetries"
 
-schedule initial_sine AT INITIAL
+schedule CAKERNEL_Launch_initial_sine AT INITIAL
 {
   LANG: C
 } "initial_sine"
@@ -50,3 +50,7 @@ schedule group ApplyBCs as SimpleWaveCaKernel_ApplyBCs in MoL_PostStep after Sim
 {
   # no language specified
 } "Apply boundary conditions controlled by thorn Boundary"
+
+############################################################
+#CAKERNEL AUTO GENERATED PART. DO NOT EDIT BELOW THIS POINT#
+############################################################

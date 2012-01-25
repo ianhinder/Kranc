@@ -759,7 +759,7 @@ DefFn[
     CommentedBlock["Copy local copies back to grid functions",
         Map[AssignVariableInLoop[ArrayName[#], localName[#]] &, arraysInLHS]],
 
-    GenericGridLoop[functionName,
+    lookup[cleancalc,LoopFunction][
     {
       (* DeclareDerivatives[defsWithoutShorts, eqsOrdered], *)
 

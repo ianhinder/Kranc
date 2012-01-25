@@ -540,7 +540,7 @@ CreateSetterSource[calcs_, debug_, include_,
 
    calc = Join[calc, {BodyFunction -> bodyFunction, 
                       CallerFunction -> True,
-                      LoopFunction -> (codeBlock[kernel<>"_Computations", #] &)}];
+                      LoopFunction -> (GenericGridLoop[lookup[calc,Name],#,opts] &)}];
 
    CreateCalculationFunction[calc, opts]}];
 

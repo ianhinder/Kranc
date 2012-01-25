@@ -23,6 +23,7 @@ BeginPackage["CaKernel`", {"Errors`", "Helpers`", "Kranc`", "CodeGenCactus`", "M
 
 CaKernelCCL;
 CaKernelCode;
+CaKernelEpilogue;
 
 Begin["`Private`"];
 
@@ -94,6 +95,13 @@ DefFn[CaKernelCode[calc_List] :=
                kernel<>"_Limit_Threads_To_Compute",
 
                "// Kernel code"]}]}]}]]];
+
+DefFn[CaKernelEpilogue[] :=
+      "
+############################################################
+#CAKERNEL AUTO GENERATED PART. DO NOT EDIT BELOW THIS POINT#
+############################################################
+"];
 
 End[];
 

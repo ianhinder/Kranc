@@ -223,7 +223,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     InfoMessage[Terse, "Creating schedule file"];
     schedule = CreateKrancScheduleFile[calcs, groups, Join[evolvedGroups,evolvedODEGroups],
       Join[rhsGroups,rhsODEGroups], Join[nonevolvedGroups,nonevolvedODEGroups], thornName,
-      evolutionTimelevels];
+      evolutionTimelevels,opts];
 
     (* Construct the cakernel file *)
     If[OptionValue[UseCaKernel],
@@ -292,6 +292,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     make = CreateMakefile[Join[{"Startup.cc", "RegisterMoL.cc", "RegisterSymmetries.cc"},
                                If[!OptionValue[UseCaKernel], calcFilenames, {}],
       Map[lookup[#, Filename] &, boundarySources]]];
+
+    If[OptionValue[UseCaKernel], make = {make, CaKernelEpilogue[]}];
 
     (* Put all the above together and generate the Cactus thorn *)
     thornspec = {Name          -> thornName, 

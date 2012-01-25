@@ -18,7 +18,7 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-BeginPackage["Schedule`", {"Thorn`", "KrancGroups`", "MapLookup`", "Errors`", "Helpers`", "Kranc`"}];
+BeginPackage["Schedule`", {"Thorn`", "KrancGroups`", "MapLookup`", "Errors`", "Helpers`", "Kranc`", "CaKernel`"}];
 
 CreateKrancScheduleFile;
 
@@ -184,8 +184,9 @@ scheduleCalc[calc_, groups_] :=
          bcGroupSched["in "<>groupName <> " after " <> lookup[calc, Name]],
          bcGroupSched["in MoL_PseudoEvolutionBoundaries after MoL_PostStep"]},{}]]]];
 
+Options[CreateKrancScheduleFile] = ThornOptions;
 CreateKrancScheduleFile[calcs_, groups_, evolvedGroups_, rhsGroups_, nonevolvedGroups_, thornName_, 
-                        evolutionTimelevels_] :=
+                        evolutionTimelevels_, opts:OptionsPattern[]] :=
   Module[{scheduledCalcs, scheduledStartup, scheduleMoLRegister, globalStorageGroups, scheduledFunctions, schedule},
 
     scheduledCalcs = Flatten[Map[scheduleCalc[#, groups] &, calcs], 1];
@@ -235,6 +236,9 @@ CreateKrancScheduleFile[calcs_, groups_, evolvedGroups_, rhsGroups_, nonevolvedG
 
     schedule = CreateSchedule[globalStorageGroups, 
       CactusBoundary`GetScheduledGroups[thornName], scheduledFunctions];
+
+    If[OptionValue[UseCaKernel],
+       schedule = {schedule, CaKernelEpilogue[]}];
 
     Return[schedule]];
 

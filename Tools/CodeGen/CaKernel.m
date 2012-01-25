@@ -75,26 +75,23 @@ DefFn[CaKernelCode[calc_List] :=
   Module[
     {kernel = "CAKERNEL_"<>GetCalculationName[calc]},
     codeBlock[
-      kernel<>"_Declare",
+      kernel,
 
-      {kernel<>"_Declare_Cached_Variables_s"<>"\n",
-       kernel<>"_Declare_Flow_Variables_s"<>"\n",
+      codeBlock[
+        kernel<>"_Computations",
+        Map[makeEquation[calc, #] &, GetEquations[calc]]]]]];
 
-       codeBlock[
-         kernel<>"_Limit_Threads_To_LSH",
-
-         {kernel<>"_Fetch_Data_To_Cache_s"<>"\n",
-
-          codeBlock[
-            kernel<>"_Computations",
-
-            {kernel<>"_Iterate_Local_Tile_s"<>"\n",
-             kernel<>"_Fetch_Front_Tile_To_Cache_s"<>"\n",
-
-             codeBlock[
-               kernel<>"_Limit_Threads_To_Compute",
-
-               "// Kernel code"]}]}]}]]];
+DefFn[
+  makeEquation[calc_List, eq_Rule] :=
+  Module[
+    {gfs, eq2},
+    gfs = AllGridFunctions[calc];
+    Print["eq = ", eq];
+    Print["gfs = ", gfs];
+    eq2 = eq /. Map[# -> ToString[#,CForm]<>"(0,0,0)" &, gfs];
+    
+    StringReplace[FlattenBlock[{"// ", ToString[eq,InputForm], "\n",
+     ToString[eq2[[1]], CForm], " = ", ToString[eq2[[2]],CForm], "\n\n"}],"\""->""]]];
 
 DefFn[CaKernelEpilogue[] :=
       "

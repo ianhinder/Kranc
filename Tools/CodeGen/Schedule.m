@@ -63,7 +63,9 @@ groupsSetInCalc[calc_, groups_] :=
 (* Each calculation can be scheduled at multiple points, so this
    function returns a LIST of schedule structures for each calculation
    *)
-scheduleCalc[calc_, groups_] :=
+
+Options[scheduleCalc] = ThornOptions;
+scheduleCalc[calc_, groups_, OptionsPattern[]] :=
   Module[{points, conditional, conditionals, keywordConditional,
           keywordConditionals, triggered, keyword, value, keywordvaluepairs,
           groupsToSync, groupName, userSchedule, groupSched, fnSched,
@@ -107,7 +109,7 @@ scheduleCalc[calc_, groups_] :=
     Return[Map[
       Join[
       {
-        Name               -> lookup[calc, Name],
+        Name               -> If[OptionValue[UseCaKernel], "CAKERNEL_Launch_",""]<>lookup[calc, Name],
         SchedulePoint      -> # <> relStr,
         SynchronizedGroups -> If[StringMatchQ[#, "*MoL_CalcRHS*", IgnoreCase -> True] || StringMatchQ[#, "*MoL_RHSBoundaries*", IgnoreCase -> True],
                                  {},
@@ -189,7 +191,7 @@ CreateKrancScheduleFile[calcs_, groups_, evolvedGroups_, rhsGroups_, nonevolvedG
                         evolutionTimelevels_, opts:OptionsPattern[]] :=
   Module[{scheduledCalcs, scheduledStartup, scheduleMoLRegister, globalStorageGroups, scheduledFunctions, schedule},
 
-    scheduledCalcs = Flatten[Map[scheduleCalc[#, groups] &, calcs], 1];
+    scheduledCalcs = Flatten[Map[scheduleCalc[#, groups, opts] &, calcs], 1];
     scheduledStartup = 
     {
       Name          -> thornName <> "_Startup",

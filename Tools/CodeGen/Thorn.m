@@ -456,7 +456,7 @@ scheduleGroup[spec_] :=
 
 (* Taking a list of group storage specifications for global storage,
    and lists of scheduled function and scheduled group structures,
-   return a CodeGen block representing a schdule.ccl file. *)
+   return a CodeGen block representing a schedule.ccl file. *)
 CreateSchedule[globalStorageGroups_, scheduledGroups_, scheduledFunctions_] :=
   {whoWhen["CCL"],
    Map[SeparatedBlock[groupStorage[#]]     &, globalStorageGroups],

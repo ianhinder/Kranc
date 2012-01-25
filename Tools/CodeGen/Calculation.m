@@ -54,7 +54,7 @@ DefFn[
 
 DefFn[
   AllGridFunctions[calc_List] :=
-  Flatten[GetGridFunctions[calc],1]];
+  Union@@GetGridFunctions[calc]];
 
 (* This is from the user's input calculation, not after processing/optimisation *)
 DefFn[

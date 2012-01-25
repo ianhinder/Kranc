@@ -81,22 +81,6 @@ DefFn[CaKernelCode[calc_List,opts___] :=
 
     CreateCalculationFunction[calc2,opts]]];
 
-        (* codeBlock[ *)
-        (*   kernel<>"_Computations", *)
-        (*   Map[makeEquation[calc, #] &, GetEquations[calc]]]] *)
-
-
-DefFn[
-  makeEquation[calc_List, eq_Rule] :=
-  Module[
-    {gfs, eq2},
-    gfs = AllGridFunctions[calc];
-    Print["eq = ", eq];
-    Print["gfs = ", gfs];
-    eq2 = eq /. Map[# -> ToString[#,CForm]<>"(0,0,0)" &, gfs];
-    
-    StringReplace[FlattenBlock[{"// ", ToString[eq,InputForm], "\n",
-     ToString[eq2[[1]], CForm], " = ", ToString[eq2[[2]],CForm], "\n\n"}],"\""->""]]];
 
 DefFn[CaKernelEpilogue[] :=
       "

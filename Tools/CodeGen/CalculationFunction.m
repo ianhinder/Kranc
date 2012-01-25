@@ -374,15 +374,18 @@ pdCanonicalOrdering[name_[inds___] -> x_] :=
    Calculation function generation
    -------------------------------------------------------------------------- *)
 
-Options[CreateCalculationFunction] = ThornOptions;
+Options[CreateCalculationFunction] = Join[ThornOptions,{Debug -> False}];
 
 DefFn[
-  CreateCalculationFunction[calcp_, debug_, imp_, opts:OptionsPattern[]] :=
+  CreateCalculationFunction[calcp_, opts:OptionsPattern[]] :=
   Module[{gfs, allSymbols, knownSymbols,
           shorts, eqs, parameters, parameterRules, odeGroups,
           functionName, dsUsed, groups, pddefs, cleancalc, eqLoop, where,
           addToStencilWidth, pDefs, haveCondTextuals, condTextuals, calc,
-          kernelCall},
+          kernelCall,debug,imp},
+
+  debug = OptionValue[Debug];
+  imp = lookup[calcp, Implementation];
 
   functionName = ToString@lookup[calcp, Name];
   bodyFunctionName = functionName <> "_Body";

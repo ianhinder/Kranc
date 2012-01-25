@@ -278,10 +278,11 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     calcs = Map[Join[#,
                      {ODEGroups -> Join[odeGroups, rhsODEGroups],
                       Parameters -> allParams,
-                      PartialDerivatives -> partialDerivs}] &, calcs];
+                      PartialDerivatives -> partialDerivs,
+                      Implementation -> implementation}] &, calcs];
 
     If[!OptionValue[UseCaKernel],
-       calcSources = Map[CreateSetterSource[{#}, False, {}, implementation, opts] &, calcs];
+       calcSources = Map[CreateSetterSource[{#}, False, {}, opts] &, calcs];
        calcFilenames = Map[lookup[#, Name] <> ext &, calcs],
     (* else *)
        calcSources = Map[CaKernelCode, calcs];

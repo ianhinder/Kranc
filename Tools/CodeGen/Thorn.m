@@ -498,9 +498,9 @@ calculationMacros[vectorise_] :=
 
 Options[CreateSetterSource] = ThornOptions;
 
-CreateSetterSource[calcs_, debug_, include_, imp_,
+CreateSetterSource[calcs_, debug_, include_,
   opts:OptionsPattern[]] :=
-  Module[{},
+  Module[{calc = First[calcs],bodyFunction},
 
   If[!MatchQ[include, _List],
     Throw["CreateSetterSource: Include should be a list but is in fact " <> ToString[include]]];
@@ -529,10 +529,9 @@ CreateSetterSource[calcs_, debug_, include_, imp_,
    (* For each function structure passed, create the function and
       insert it *)
 
-   CalculationBoundariesFunction[First[calcs], imp],
+   CalculationBoundariesFunction[First[calcs]],
 
-   Map[CreateCalculationFunction[# , debug, imp, opts] &,
-       calcs]}];
+   CreateCalculationFunction[calc, opts]}];
 
 
 

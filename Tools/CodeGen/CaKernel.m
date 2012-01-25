@@ -19,7 +19,7 @@
 *)
 
 BeginPackage["CaKernel`", {"Errors`", "Helpers`", "Kranc`", "CodeGenCactus`", "MapLookup`",
-                           "Calculation`", "CodeGen`", "CalculationFunction`"}];
+                           "Calculation`", "CodeGen`", "CalculationFunction`", "CodeGenC`"}];
 
 CaKernelCCL;
 CaKernelCode;
@@ -80,7 +80,8 @@ DefFn[CaKernelCode[calc_List,opts___] :=
                        LoopFunction -> (codeBlock[kernel<>"_Computations", #] &),
                        GFAccessFunction -> ({"I3D(",Riffle[{#,0,0,0},","],")"} &)}];
 
-    CreateCalculationFunction[calc2,opts]]];
+    {Map[IncludeFile, {"GenericFD.h", "Differencing.h"}],
+    "\n#define CCTK_GFINDEX3D(u,i,j,k) I3D(u,i,j,k)\n\n", CreateCalculationFunction[calc2,opts]}]];
 
 
 DefFn[CaKernelEpilogue[] :=

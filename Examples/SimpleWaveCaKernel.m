@@ -24,7 +24,7 @@ initialSineCalc =
 evolveCalc = 
 {
   Name -> "calc_rhs",
-  Schedule -> {"in MoL_CalcRHS"},
+  Schedule -> {"at EVOL"},
   Where -> Interior,
   Equations ->
   {
@@ -33,9 +33,22 @@ evolveCalc =
   }
 };
 
+
+integrateCalc = 
+{
+  Name -> "rk1",
+  Schedule -> {"at EVOL after calc_rhs"},
+  Where -> Interior,
+  Equations ->
+  {
+    phi -> phi + dt dot[phi]
+    pi -> pi + dt dot[pi]
+  }
+};
+
 CreateKrancThornTT[groups, ".", 
   "SimpleWaveCaKernel", 
-  Calculations -> {initialSineCalc},
+  Calculations -> {initialSineCalc, evolveCalc, integrateCalc},
   PartialDerivatives -> derivatives,
   UseCaKernel -> True,
   DeclaredGroups -> {"phi_g","pi_g"}];

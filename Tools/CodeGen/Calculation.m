@@ -24,6 +24,7 @@ InputGridFunctions;
 OutputGridFunctions;
 AllGridFunctions;
 GetCalculationName;
+GetEquations;
 
 Begin["`Private`"];
 

@@ -1,10 +1,10 @@
 
 script = $CommandLine[[-1]];
-krancDir = Environment["KRANCDIR"];
+Kranc`KrancDirectory = Environment["KRANCDIR"];
 
 $Path = Join[$Path,
-  {krancDir <> "/Tools/CodeGen",
-   krancDir <> "/Tools/MathematicaMisc"}];
+  {Kranc`KrancDirectory <> "/Tools/CodeGen",
+   Kranc`KrancDirectory <> "/Tools/MathematicaMisc"}];
 Needs["Errors`"];
 Needs["KrancThorn`"];
 Needs["Profile`"];

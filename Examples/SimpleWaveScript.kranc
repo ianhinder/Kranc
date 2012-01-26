@@ -1,0 +1,13 @@
+begin thorn simplewavescript
+
+begin calculation initial_sine_calc
+  phi = sin(2*PI*(x-t))
+  pi = -2*pi*cos(2*PI*(x-t))
+end calculation
+
+begin calculation calc_rhs
+  D_t phi = pi
+  D_t pi = Euc^ij*D_ij phi
+end calculation
+
+end thorn

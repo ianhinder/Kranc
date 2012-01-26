@@ -35,8 +35,8 @@ absPath[s_String] :=
 
 fullKrancDir = absPath[KrancDirectory];
 
-Print[AddToClassPath[
- FileNameJoin[{fullKrancDir, "Tools","PirahaPEG","piraha.jar"}]]];
+AddToClassPath[
+ FileNameJoin[{fullKrancDir, "Tools","PirahaPEG","piraha.jar"}]];
 
 DefFn[
   parseScript[filename_String] :=

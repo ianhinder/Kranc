@@ -1,0 +1,19 @@
+skipper = ([ \t\n\r]+|#.*)*
+end = ([ \t]+|#.*)*\r*\n
+name = [A-Za-z][A-Za-z0-9]*
+uname = [A-Za-z][A-Za-z0-9_]*
+indices = ([_^]([a-zA-Z]'*)+)*
+tensor = {name}{indices}
+dtensor = D{indices} {tensor}
+number = -?[0-9]+(\.[0-9]*|)([eEdD][+-]?[0-9]+|)
+func = {name} \( {expr} \)
+value = {func}|{dtensor}|{tensor}|{number}|\( {expr} \)
+pow = {value}( \*\* {value}|)
+mulop = [*/%]
+mul = {pow}( {mulop} {pow})*
+addop = [+-]
+expr = {mul}( {addop} {mul})*
+eqn = ({dtensor}|{tensor}) \= {expr}{-end}
+eqns = {eqn}( {eqn})*
+thorn = begin[ ]+thorn {name}{-end}( {calculation})* end[ ]+thorn
+calculation = begin[ ]+calculation {uname}{-end} {eqns} end[ ]+calculation

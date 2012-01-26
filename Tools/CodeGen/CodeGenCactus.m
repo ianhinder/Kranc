@@ -709,7 +709,7 @@ DefFn[
     rhs]];
 
 DefFn[
-  CCLBlock[type_String, name_String, attrs:{(_String -> _String)...},
+  CCLBlock[type_String, name_String, attrs:{(_String -> CodeGenBlock)...},
            contents:CodeGenBlock,comment_String:""] :=
   {type, " ", name,
    Map[" "<>#[[1]]<>"="<>#[[2]] &, attrs], "\n",

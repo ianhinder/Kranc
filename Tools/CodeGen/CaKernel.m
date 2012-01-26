@@ -54,8 +54,8 @@ DefFn[
   kernelCCLBlock[calc_] :=
   CCLBlock["CCTK_CUDA_KERNEL", lookup[calc, Name],
            {"TYPE" -> "gpu_cuda/3dblock",
-            "STENCIL" -> "0,0,0,0,0,0",
-            "TILE" -> "16,16,16",
+            "STENCIL" -> Quote["0,0,0,0,0,0"],
+            "TILE" -> Quote["8,8,8"],
             "SHARECODE" -> "yes"},
            variableBlocks[calc]]];
 

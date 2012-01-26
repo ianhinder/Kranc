@@ -4,11 +4,11 @@ krancDir = Environment["KRANCDIR"];
 
 $Path = Join[$Path,
   {krancDir <> "/Tools/CodeGen",
-   krancDir <> "/Tools/MathematicaMisc",
-   krancDir <> "/Tools/External"}];
+   krancDir <> "/Tools/MathematicaMisc"}];
 Needs["Errors`"];
 Needs["KrancThorn`"];
 Needs["Profile`"];
+Needs["KrancScript`"];
 If[Environment["KRANCVERBOSE"] == "yes",
   SetDebugLevel[InfoFull]];
 
@@ -62,7 +62,12 @@ exception = Catch[Catch[
   Check[
     Block[
       {$RecursionLimit = Infinity},
-      (*{result,timers} =  GetTimers[ *) Get[script](*]*)];
+
+      Switch[
+        FileExtension[script],
+        "m",      (*{result,timers} =  GetTimers[ *) Get[script](*]*),
+        "kranc",  CreateThornFromKrancScript[script],
+        _,        ThrowError["Unknown file extension for "<>script<>".  Recognised extensions are .m and .kranc."]]];
 
     (* Put[timers, "timer-output-1.m"]; *)
 

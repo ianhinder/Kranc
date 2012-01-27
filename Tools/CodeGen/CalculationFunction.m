@@ -252,9 +252,8 @@ simpCollect[collectList_, eqrhs_, localvar_, debug_] :=
 (* Return a CodeGen block which assigns dest by evaluating expr *)
 assignVariableFromExpression[dest_, expr_, declare_, vectorise_, noSimplify:Boolean : False] :=
   Module[{tSym, type, cleanExpr, code},
-    tSym = Unique[];
     type = If[StringMatchQ[ToString[dest], "dir*"], "ptrdiff_t", DataType[]];
-    cleanExpr = ReplacePowers[expr, vectorise, noSimplify] /. Kranc`t -> tSym;
+    cleanExpr = ReplacePowers[expr, vectorise, noSimplify];
 
     If[SOURCELANGUAGE == "C",
       code = If[declare, type <> " ", ""] <> ToString[dest] <> " = " <>
@@ -275,7 +274,6 @@ assignVariableFromExpression[dest_, expr_, declare_, vectorise_, noSimplify:Bool
     code = StringReplace[code, "normal2"     -> "normal[1]"];
     code = StringReplace[code, "normal3"     -> "normal[2]"];
     code = StringReplace[code, "BesselJ"-> "gsl_sf_bessel_Jn"];
-    code = StringReplace[code, ToString@tSym -> "cctk_time"];
     code = StringReplace[code, "\"" -> ""];
 
     {code}];
@@ -283,8 +281,7 @@ assignVariableFromExpression[dest_, expr_, declare_, vectorise_, noSimplify:Bool
 (* This and assignVariableFromExpression should be combined *)
 generateCodeFromExpression[expr_, vectorise_, noSimplify:Boolean : False] :=
   Module[{tSym, type, cleanExpr, code},
-    tSym = Unique[];
-    cleanExpr = ReplacePowers[expr, vectorise, noSimplify] /. Kranc`t -> tSym;
+    cleanExpr = ReplacePowers[expr, vectorise, noSimplify];
 
     If[SOURCELANGUAGE == "C",
       code =
@@ -303,7 +300,6 @@ generateCodeFromExpression[expr_, vectorise_, noSimplify:Boolean : False] :=
     code = StringReplace[code, "normal2"     -> "normal[1]"];
     code = StringReplace[code, "normal3"     -> "normal[2]"];
     code = StringReplace[code, "BesselJ"-> "gsl_sf_bessel_Jn"];
-    code = StringReplace[code, ToString@tSym -> "cctk_time"];
     code = StringReplace[code, "\"" -> ""];
 
     {code}];

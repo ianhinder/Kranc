@@ -119,14 +119,19 @@ DefFn[CaKernelCode[calc_List,opts___] :=
                        CallerFunction -> False,
                        LoopFunction -> (codeBlock[kernel<>"_Computations", #] &),
                        GFAccessFunction -> ({"I3D(",Riffle[{#,0,0,0},","],")"} &),
-                       InitFDVariables -> CaKernelInitialiseFDVariables[]}];
+                       InitFDVariables -> CaKernelInitialiseFDVariables[],
+                       MacroPointer -> False}];
 
-    {"#define KRANC_" <> ToUpperCase[CodeGenC`SOURCELANGUAGE] <> "\n\n",
+    {"#undef KRANC_DIFF_FUNCTIONS\n",
+     "#define KRANC_" <> ToUpperCase[CodeGenC`SOURCELANGUAGE] <> "\n",
      Map[IncludeFile, {"Differencing.h", "GenericFD.h"}],
 
+     "\n",
+     "#define KRANC_GFOFFSET3D(u,i,j,k) I3D(u,i,j,k)\n",
+     "\n",
      CalculationMacros[],
 
-    "\n#define CCTK_GFINDEX3D(u,i,j,k) I3D(u,i,j,k)\n\n", CreateCalculationFunction[calc2,opts]}]];
+    "\n", CreateCalculationFunction[calc2,opts]}]];
 
 
 DefFn[CaKernelEpilogue[] :=

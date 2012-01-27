@@ -531,7 +531,8 @@ CreateSetterSource[calcs_, debug_, include_,
                       CallerFunction -> True,
                       LoopFunction -> (GenericGridLoop[lookup[calc,Name],#,opts] &),
                       GFAccessFunction -> ({#,"[","index","]"} &),
-                      InitFDVariables -> InitialiseFDVariables[OptionValue[UseVectors]]}];
+                      InitFDVariables -> InitialiseFDVariables[OptionValue[UseVectors]],
+                      MacroPointer -> True}];
 
    CreateCalculationFunction[calc, opts]}];
 

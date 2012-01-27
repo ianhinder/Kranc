@@ -768,7 +768,8 @@ DefFn[
       CommentedBlock["Precompute derivatives",
         PrecomputeDerivatives[defsWithoutShorts, eqsOrdered, 
                               lookup[{opts}, IntParameters, {}],
-                              OptionValue[ZeroDimensions]]],
+                              OptionValue[ZeroDimensions],
+                              lookup[cleancalc, MacroPointer]]],
 
       CommentedBlock["Calculate temporaries and grid functions", calcCode],
 

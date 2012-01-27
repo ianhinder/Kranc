@@ -505,7 +505,8 @@ DefFn[
     CommentedBlock["Include user-supplied include files",
       Map[IncludeFile, lookupDefault[cleancalc, DeclarationIncludes, {}]]],
 
-    InitialiseFDVariables[OptionValue[UseVectors]],
+    lookup[calcp,InitFDVariables],
+
     definePreDefinitions[pDefs],
 
     If[OptionValue[UseJacobian], CreateJacobianVariables[], {}],

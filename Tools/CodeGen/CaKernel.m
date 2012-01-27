@@ -83,6 +83,31 @@ DefFn[codeBlock[macro_String, contents:CodeGenBlock] :=
      IndentBlock[{contents,"\n"}],
      macro<>"_End","\n"}]];
 
+DefFn[
+  CaKernelInitialiseFDVariables[] :=
+  CommentedBlock[
+    "Initialise finite differencing variables",
+    {
+      DeclareAssignVariable[DataType[], "dx", "params.cagh_dx"],
+      DeclareAssignVariable[DataType[], "dy", "params.cagh_dy"],
+      DeclareAssignVariable[DataType[], "dz", "params.cagh_dz"],
+      DeclareAssignVariable[DataType[], "dt", "params.cagh_dt"],
+      DeclareAssignVariable[DataType[], "t",  "params.cagh_time"],
+
+      DeclareAssignVariable[DataType[], "dxi", "INV(dx)"],
+      DeclareAssignVariable[DataType[], "dyi", "INV(dy)"],
+      DeclareAssignVariable[DataType[], "dzi", "INV(dz)"],
+      
+      DeclareAssignVariable[DataType[], "khalf", "0.5"],
+      DeclareAssignVariable[DataType[], "kthird", "1/3.0"],
+      DeclareAssignVariable[DataType[], "ktwothird", "2.0/3.0"],
+      DeclareAssignVariable[DataType[], "kfourthird", "4.0/3.0"],
+      DeclareAssignVariable[DataType[], "keightthird", "8.0/3.0"],
+      DeclareAssignVariable[DataType[], "hdxi", "0.5 * dxi"],
+      DeclareAssignVariable[DataType[], "hdyi", "0.5 * dyi"],
+      DeclareAssignVariable[DataType[], "hdzi", "0.5 * dzi"]}]];
+
+
 DefFn[CaKernelCode[calc_List,opts___] :=
   Module[
     {kernel = "CAKERNEL_"<>GetCalculationName[calc], calc2},
@@ -92,10 +117,13 @@ DefFn[CaKernelCode[calc_List,opts___] :=
     calc2 = Join[calc, {BodyFunction -> (codeBlock[kernel, #] &), 
                        CallerFunction -> False,
                        LoopFunction -> (codeBlock[kernel<>"_Computations", #] &),
-                       GFAccessFunction -> ({"I3D(",Riffle[{#,0,0,0},","],")"} &)}];
+                       GFAccessFunction -> ({"I3D(",Riffle[{#,0,0,0},","],")"} &),
+                       InitFDVariables -> CaKernelInitialiseFDVariables[]}];
 
     {"#define KRANC_" <> ToUpperCase[CodeGenC`SOURCELANGUAGE] <> "\n\n",
      Map[IncludeFile, {"Differencing.h", "GenericFD.h"}],
+
+     CalculationMacros[],
 
     "\n#define CCTK_GFINDEX3D(u,i,j,k) I3D(u,i,j,k)\n\n", CreateCalculationFunction[calc2,opts]}]];
 

@@ -67,9 +67,9 @@ DefFn[CaKernelCCL[calcs_List] :=
 DefFn[codeBlock[macro_String, contents:CodeGenBlock] :=
   Module[
     {},
-    {macro<>"_Begin_s", "\n",
+    {macro<>"_Begin", "\n",
      IndentBlock[{contents,"\n"}],
-     macro<>"_End_s","\n"}]];
+     macro<>"_End","\n"}]];
 
 DefFn[CaKernelCode[calc_List,opts___] :=
   Module[

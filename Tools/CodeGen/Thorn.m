@@ -478,19 +478,6 @@ CreateSchedule[globalStorageGroups_, scheduledGroups_, scheduledFunctions_] :=
          optional LoopPreIncludes     -> {include file list},
 	          Equations           -> {{K11_rhs -> 2 A K11, ...}...}} *)
 
-calculationMacros[vectorise_] :=
-  CommentedBlock["Define macros used in calculations",
-      Map[{"#define ", #, "\n"} &,
-         {"INITVALUE (42)",
-          "QAD(x) (SQR(SQR(x)))"} ~Join~
-          If[vectorise,
-           {"INV(x) (kdiv(ToReal(1.0),x))",
-            "SQR(x) (kmul(x,x))",
-            "CUB(x) (kmul(x,SQR(x)))"},
-           {"INV(x) ((1.0) / (x))",
-            "SQR(x) ((x) * (x))",
-            "CUB(x) ((x) * (x) * (x))"}]
-         ]];
 
 (* Given a list of Calculation structures as defined above, create a
    CodeGen representation of a source file that defines a function for
@@ -524,7 +511,7 @@ CreateSetterSource[calcs_, debug_, include_,
                          {"cctk_Loop.h", "loopcontrol.h"},
                          If[OptionValue[UseOpenCL], {"OpenCLRunTime.h"}, {}],
                          If[OptionValue[UseVectors], {"vectors.h"}, {}]]],
-   calculationMacros[OptionValue[UseVectors]],
+   CalculationMacros[OptionValue[UseVectors]],
 
    (* For each function structure passed, create the function and
       insert it *)

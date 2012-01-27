@@ -21,6 +21,19 @@ initialSineCalc =
   }
 };
 
+f[x_] := Exp[-(x/0.1)^2];
+
+initialGaussianCalc = 
+{
+  Name -> "initial_gaussian",
+  Schedule -> {"AT INITIAL"},
+  Equations -> 
+  {
+    phi -> f[t+x],
+    pi -> D[f[t+x],t]
+  }
+};
+
 evolveCalc = 
 {
   Name -> "calc_rhs",
@@ -48,7 +61,7 @@ integrateCalc =
 
 CreateKrancThornTT[groups, ".", 
   "SimpleWaveCaKernel", 
-  Calculations -> {initialSineCalc, evolveCalc, integrateCalc},
+  Calculations -> {initialGaussianCalc, evolveCalc, integrateCalc},
   PartialDerivatives -> derivatives,
   UseCaKernel -> True,
   EvolutionTimelevels -> 1,

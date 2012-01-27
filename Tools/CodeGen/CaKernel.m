@@ -87,6 +87,8 @@ DefFn[CaKernelCode[calc_List,opts___] :=
   Module[
     {kernel = "CAKERNEL_"<>GetCalculationName[calc], calc2},
 
+    SetDataType["CCTK_REAL"];
+
     calc2 = Join[calc, {BodyFunction -> (codeBlock[kernel, #] &), 
                        CallerFunction -> False,
                        LoopFunction -> (codeBlock[kernel<>"_Computations", #] &),

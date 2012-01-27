@@ -492,6 +492,8 @@ CreateSetterSource[calcs_, debug_, include_,
   If[!MatchQ[include, _List],
     Throw["CreateSetterSource: Include should be a list but is in fact " <> ToString[include]]];
 
+  SetDataType[If[OptionValue[UseVectors],"CCTK_REAL_VEC", "CCTK_REAL"]];
+
   {whoWhen[CodeGenC`SOURCELANGUAGE],
 
    "#define KRANC_" <> ToUpperCase[CodeGenC`SOURCELANGUAGE] <> "\n\n",

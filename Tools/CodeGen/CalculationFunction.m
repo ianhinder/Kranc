@@ -414,8 +414,6 @@ DefFn[
   pDefs = lookup[cleancalc, PreDefinitions];
   haveCondTextuals = mapContains[cleancalc, ConditionalOnTextuals];
 
-  SetDataType[If[OptionValue[UseVectors],"CCTK_REAL_VEC", "CCTK_REAL"]];
-
   VerifyCalculation[cleancalc];
 
   gfs = allGroupVariables[groups];

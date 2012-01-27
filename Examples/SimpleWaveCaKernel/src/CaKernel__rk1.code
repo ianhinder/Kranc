@@ -1,7 +1,10 @@
+#undef KRANC_DIFF_FUNCTIONS
 #define KRANC_C
-
 #include "Differencing.h"
 #include "GenericFD.h"
+
+#define KRANC_GFOFFSET3D(u,i,j,k) I3D(u,i,j,k)
+
 
 /* Define macros used in calculations */
 #define INITVALUE (42)
@@ -9,8 +12,6 @@
 #define INV(x) ((1.0) / (x))
 #define SQR(x) ((x) * (x))
 #define CUB(x) ((x) * (x) * (x))
-
-#define CCTK_GFINDEX3D(u,i,j,k) I3D(u,i,j,k)
 
 CAKERNEL_rk1_Begin
   

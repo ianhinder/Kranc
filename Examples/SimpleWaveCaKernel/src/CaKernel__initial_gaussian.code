@@ -1,7 +1,10 @@
+#undef KRANC_DIFF_FUNCTIONS
 #define KRANC_C
-
 #include "Differencing.h"
 #include "GenericFD.h"
+
+#define KRANC_GFOFFSET3D(u,i,j,k) I3D(u,i,j,k)
+
 
 /* Define macros used in calculations */
 #define INITVALUE (42)
@@ -10,9 +13,7 @@
 #define SQR(x) ((x) * (x))
 #define CUB(x) ((x) * (x) * (x))
 
-#define CCTK_GFINDEX3D(u,i,j,k) I3D(u,i,j,k)
-
-CAKERNEL_initial_sine_Begin
+CAKERNEL_initial_gaussian_Begin
   
   /* Include user-supplied include files */
   
@@ -49,7 +50,7 @@ CAKERNEL_initial_sine_Begin
   /* Calculate temporaries and arrays functions */
   
   /* Copy local copies back to grid functions */
-  CAKERNEL_initial_sine_Computations_Begin
+  CAKERNEL_initial_gaussian_Computations_Begin
     
     /* Assign local copies of grid functions */
     
@@ -61,14 +62,14 @@ CAKERNEL_initial_sine_Begin
     /* Precompute derivatives */
     
     /* Calculate temporaries and grid functions */
-    CCTK_REAL phiL = Sin(2*Pi*(xL - t));
+    CCTK_REAL phiL = exp(-100.*SQR(xL + t));
     
-    CCTK_REAL piL = -2*Pi*Cos(2*Pi*(xL - t));
+    CCTK_REAL piL = -200.*(xL + t)*exp(-100.*SQR(xL + t));
     
     /* Copy local copies back to grid functions */
     I3D(phi,0,0,0) = phiL;
     I3D(pi,0,0,0) = piL;
     
-  CAKERNEL_initial_sine_Computations_End
+  CAKERNEL_initial_gaussian_Computations_End
   
-CAKERNEL_initial_sine_End
+CAKERNEL_initial_gaussian_End

@@ -39,14 +39,16 @@ schedule SimpleWaveCaKernel_RegisterSymmetries in SymmetryRegister
   OPTIONS: meta
 } "register symmetries"
 
-schedule CAKERNEL_Launch_initial_sine AT INITIAL
+schedule CAKERNEL_Launch_initial_gaussian AT INITIAL
 {
   LANG: C
-} "initial_sine"
+} "initial_gaussian"
 
 schedule CAKERNEL_Launch_calc_rhs at EVOL
 {
   LANG: C
+  SYNC: phi_grhs
+  SYNC: pi_grhs
 } "calc_rhs"
 
 schedule CAKERNEL_Launch_rk1 at EVOL after calc_rhs

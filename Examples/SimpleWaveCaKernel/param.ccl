@@ -47,7 +47,7 @@ CCTK_INT other_timelevels "Number of active timelevels for non-evolved grid func
 } 1
 
 restricted:
-CCTK_INT initial_sine_calc_every "initial_sine_calc_every" STEERABLE=ALWAYS
+CCTK_INT initial_gaussian_calc_every "initial_gaussian_calc_every" STEERABLE=ALWAYS
 {
   *:* :: ""
 } 1
@@ -65,7 +65,7 @@ CCTK_INT rk1_calc_every "rk1_calc_every" STEERABLE=ALWAYS
 } 1
 
 restricted:
-CCTK_INT initial_sine_calc_offset "initial_sine_calc_offset" STEERABLE=ALWAYS
+CCTK_INT initial_gaussian_calc_offset "initial_gaussian_calc_offset" STEERABLE=ALWAYS
 {
   *:* :: ""
 } 0

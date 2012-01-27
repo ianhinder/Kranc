@@ -25,11 +25,11 @@ evolveCalc =
 {
   Name -> "calc_rhs",
   Schedule -> {"at EVOL"},
-  Where -> Everywhere,
+  Where -> Interior,
   Equations ->
   {
     dot[phi] -> pi,
-    dot[pi]  -> phi (* Euc[ui,uj] PD[phi,li,lj] *)
+    dot[pi]  -> Euc[ui,uj] PD[phi,li,lj]
   }
 };
 

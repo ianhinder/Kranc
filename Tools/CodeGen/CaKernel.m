@@ -92,12 +92,15 @@ DefFn[CaKernelCode[calc_List,opts___] :=
                        LoopFunction -> (codeBlock[kernel<>"_Computations", #] &),
                        GFAccessFunction -> ({"I3D(",Riffle[{#,0,0,0},","],")"} &)}];
 
-    {Map[IncludeFile, {"GenericFD.h", "Differencing.h"}],
+    {"#define KRANC_" <> ToUpperCase[CodeGenC`SOURCELANGUAGE] <> "\n\n",
+     Map[IncludeFile, {"Differencing.h", "GenericFD.h"}],
+
     "\n#define CCTK_GFINDEX3D(u,i,j,k) I3D(u,i,j,k)\n\n", CreateCalculationFunction[calc2,opts]}]];
 
 
 DefFn[CaKernelEpilogue[] :=
       "
+
 ############################################################
 #CAKERNEL AUTO GENERATED PART. DO NOT EDIT BELOW THIS POINT#
 ############################################################

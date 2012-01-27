@@ -11,6 +11,12 @@ CCTK_CUDA_KERNEL initial_sine TYPE=gpu_cuda/3dblock STENCIL="0,0,0,0,0,0" TILE="
     pi
   }
   "pi"
+  
+  CCTK_CUDA_KERNEL_VARIABLE  cached=yes intent=in
+  {
+    x
+  }
+  "x"
 }
 
 CCTK_CUDA_KERNEL calc_rhs TYPE=gpu_cuda/3dblock STENCIL="0,0,0,0,0,0" TILE="8,8,8" SHARECODE=yes
@@ -54,7 +60,7 @@ CCTK_CUDA_KERNEL rk1 TYPE=gpu_cuda/3dblock STENCIL="0,0,0,0,0,0" TILE="8,8,8" SH
   }
   "phirhs"
   
-  CCTK_CUDA_KERNEL_VARIABLE  cached=yes intent=in
+  CCTK_CUDA_KERNEL_VARIABLE  cached=yes intent=inout
   {
     pi
   }

@@ -60,15 +60,11 @@ CAKERNEL_calc_rhs_Begin
     /* Include user supplied include files */
     
     /* Precompute derivatives */
-    CCTK_REAL const PDstandard2nd11phi = PDstandard2nd11(&phi[index]);
-    CCTK_REAL const PDstandard2nd22phi = PDstandard2nd22(&phi[index]);
-    CCTK_REAL const PDstandard2nd33phi = PDstandard2nd33(&phi[index]);
     
     /* Calculate temporaries and grid functions */
     CCTK_REAL phirhsL = piL;
     
-    CCTK_REAL pirhsL = PDstandard2nd11phi + PDstandard2nd22phi + 
-      PDstandard2nd33phi;
+    CCTK_REAL pirhsL = phiL;
     
     /* Copy local copies back to grid functions */
     I3D(phirhs,0,0,0) = phirhsL;

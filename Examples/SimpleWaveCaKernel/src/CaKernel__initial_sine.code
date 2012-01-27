@@ -53,6 +53,7 @@ CAKERNEL_initial_sine_Begin
     
     /* Assign local copies of grid functions */
     
+    CCTK_REAL xL = I3D(x,0,0,0);
     
     
     /* Include user supplied include files */
@@ -60,9 +61,9 @@ CAKERNEL_initial_sine_Begin
     /* Precompute derivatives */
     
     /* Calculate temporaries and grid functions */
-    CCTK_REAL phiL = 0;
+    CCTK_REAL phiL = Sin(2*Pi*(xL - t));
     
-    CCTK_REAL piL = 0;
+    CCTK_REAL piL = -2*Pi*Cos(2*Pi*(xL - t));
     
     /* Copy local copies back to grid functions */
     I3D(phi,0,0,0) = phiL;

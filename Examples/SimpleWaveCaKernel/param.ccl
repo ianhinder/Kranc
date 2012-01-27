@@ -31,19 +31,19 @@ CCTK_INT SimpleWaveCaKernel_MaxNumArrayEvolvedVars "Number of Array evolved vari
 restricted:
 CCTK_INT timelevels "Number of active timelevels" STEERABLE=RECOVER
 {
-  0:3 :: ""
-} 3
+  0:1 :: ""
+} 1
 
 restricted:
 CCTK_INT rhs_timelevels "Number of active RHS timelevels" STEERABLE=RECOVER
 {
-  0:3 :: ""
+  0:1 :: ""
 } 1
 
 restricted:
 CCTK_INT other_timelevels "Number of active timelevels for non-evolved grid functions" STEERABLE=RECOVER
 {
-  0:3 :: ""
+  0:1 :: ""
 } 1
 
 restricted:

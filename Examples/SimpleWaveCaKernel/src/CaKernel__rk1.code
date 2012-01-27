@@ -64,10 +64,13 @@ CAKERNEL_rk1_Begin
     /* Precompute derivatives */
     
     /* Calculate temporaries and grid functions */
-    phiL = Rule(phiL + phirhsL*piL*dt,piL + pirhsL*dt);
+    phiL = phiL + phirhsL*dt;
+    
+    piL = piL + pirhsL*dt;
     
     /* Copy local copies back to grid functions */
     I3D(phi,0,0,0) = phiL;
+    I3D(pi,0,0,0) = piL;
     
   CAKERNEL_rk1_Computations_End
   

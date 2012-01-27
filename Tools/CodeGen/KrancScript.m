@@ -65,10 +65,102 @@ DefFn[
     {code},
 
     Print["Creating thorn from ",filename];
-    
+
     code = parseScript[filename];
-    Print["Parsed script:"];
-    Print[code//InputForm]]];
+
+    code = code /. ("startIndex" -> _) :> Sequence[];
+    code = code /. ("endIndex" -> _) :> Sequence[];
+
+    (* Print["Parsed script:"]; *)
+    (* Print[code//InputForm]; *)
+
+    stringRules = XMLElement[s_,_,c_] :> s@@c;
+
+    thorn = code[[2]] //. stringRules;
+
+    Print[];
+    Print["Parse tree:"];
+    Print[thorn];
+    Print[];
+
+    processed = process[thorn];
+    Print[processed];
+]];
+
+process[h_[args___]] :=
+  Module[
+    {},
+    Print["No handler for ", h@@Map[ToString[Head[#]]&,{args}]];
+    h[args]];
+
+process[thorn:"thorn"[content___]] :=
+  Module[
+    {calcs, name,options},
+    calcs = Cases[thorn, c:"calculation"[___]:>process[c]];
+    name = Cases[thorn, "name"[n_]:>n][[1]];
+    options = {Calculations -> calcs};
+    CreateThornTTExpression[groups,parentDirectory,name,Sequence@@options]];
+
+process[calc:"calculation"[content___]] :=
+  Module[
+    {name,eqs},
+    name = Cases[calc, "uname"[n_]:>n][[1]];
+    eqs = Cases[calc, "eqns"[es___]:>{es}][[1]];
+    {Name -> name,
+     Equations -> Map[process,eqs]}];
+
+process["eqn"[lhs_,rhs_]] := Module[{name,eqs}, lhs -> process[rhs]];
+
+process["tensor"["name"[k_],"indices"[]]] := k;
+process["tensor"["name"[k_],inds_]] := Tensor[k,Sequence@@process[inds]];
+
+process["dtensor"[inds_,tensor_]] := PD[process[tensor],Sequence@@process[inds]];
+
+process["indices"[inds_]] :=
+  Module[
+    {lower,upper,is},
+
+    lower[s_String] :=
+    If[s === "", {},
+       If[StringTake[s,1] === "^", upper[StringDrop[s,1]],
+          If[StringTake[s,1] === "_", ThrowError["Repeated '_'"],
+             Prepend[lower[StringDrop[s,1]], TensorIndex["l",StringTake[s,1]]]]]];
+
+    upper[s_String] :=
+    If[s === "", {},
+       If[StringTake[s,1] === "_", lower[StringDrop[s,1]],
+          If[StringTake[s,1] === "^", ThrowError["Repeated '^'"],
+             Prepend[upper[StringDrop[s,1]], TensorIndex["u",StringTake[s,1]]]]]];
+
+    is = Switch[StringTake[inds,1],
+                "_", lower[StringDrop[inds,1]],
+                "^", upper[StringDrop[inds,1]],
+                _, ThrowError["Tensor indices must start with ^ or _"]];
+    is];
+
+process["func"["name"[name_],expr_]] :=
+  Module[
+    {fns},
+    fns = {"sin" -> Sin, "cos" -> Cos};
+    If[MemberQ[First/@fns,name], (name/.fns)[process[expr]],
+       ThrowError["Unrecognised function: ", name]]];
+
+process["expr"[mul_]] := process[mul];
+process["expr"[]] := 0;
+process["expr"[a_, "addop"["-"], b_,cs___]] := process[a] - process[b] + process["expr"[cs]];
+process["expr"[a_, "mulop"["+"], bs__]] := process[a] + process["expr"[bs]];
+
+process["mul"[pow_]] := process[pow];
+process["mul"[]] := 1;
+process["mul"[a_, "mulop"["/"], b_,cs___]] := Times[process[a] / process[b],process["mul"[cs]]];
+process["mul"[a_, "mulop"["*"], bs__]] := process[a] * process["mul"[bs]];
+
+process["pow"[a_,b_]] := process[a]^process[b];
+process["pow"[a_]] := process[a];
+
+process["value"[a_]] := process[a];
+
+process["number"[a_]] := ToExpression[a];
 
 End[];
 

@@ -504,8 +504,6 @@ DefFn[
 
     If[OptionValue[UseOpenCL], Stringify, Identity][{
 
-    DeclareFDVariables[],
-
     CommentedBlock["Include user-supplied include files",
       Map[IncludeFile, lookupDefault[cleancalc, DeclarationIncludes, {}]]],
 

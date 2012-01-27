@@ -69,7 +69,6 @@ GridLoop::usage = "GridLoop[block] returns a block that is looped over for every
   "grid point.  Must have previously set up the grid loop variables (see " <>
   "InitialiseGridLoopVariables.";
 ConditionalOnParameterTextual::usage = "";
-DeclareFDVariables::usage = "";
 InitialiseFDVariables::usage = "";
 ReplacePowers::usage = "";
 BoundaryLoop::usage = "";
@@ -188,20 +187,6 @@ DefFn[
       "DECLARE_CCTK_PARAMETERS;\n\n",
       contents
     }]];
-
-DefFn[
-  DeclareFDVariables[] := 
-(*
-  CommentedBlock["Declare finite differencing variables",
-    {Map[DeclareVariables[#, "CCTK_REAL"] &, {{"dx", "dy", "dz"}, 
-                                              {"dxi", "dyi", "dzi"},
-                                              {khalf,kthird,ktwothird,kfourthird,keightthird},
-                                              {"hdxi", "hdyi", "hdzi"}}],
-     "\n"},
-    {Map[DeclareVariables[#, "ptrdiff_t"] &, {{"di", "dj", "dk"}}],
-     "\n"}];
-*)
-  CommentedBlock["Declare finite differencing variables", {}]];
 
 DefFn[
   InitialiseFDSpacingVariablesC[] :=

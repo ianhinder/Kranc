@@ -24,6 +24,7 @@ BeginPackage["CaKernel`", {"Errors`", "Helpers`", "Kranc`", "CodeGenCactus`", "M
 CaKernelCCL;
 CaKernelCode;
 CaKernelEpilogue;
+CaKernelSchedule;
 
 Begin["`Private`"];
 
@@ -63,6 +64,17 @@ DefFn[CaKernelCCL[calcs_List] :=
   Module[
     {},
     Map[kernelCCLBlock, calcs]]];
+
+DefFn[CaKernelSchedule[] :=
+  Module[
+    {},
+    {{
+      Name          -> "CaKernel_CopyFromDev",
+      SchedulePoint -> "at ANALYSIS", 
+      Language      -> "C",
+      Comment       -> "Copy variables from devices"
+    }}]];
+
 
 DefFn[codeBlock[macro_String, contents:CodeGenBlock] :=
   Module[

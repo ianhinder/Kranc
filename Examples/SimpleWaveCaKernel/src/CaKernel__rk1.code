@@ -1,26 +1,27 @@
-#include "GenericFD.h"
+#define KRANC_C
+
 #include "Differencing.h"
+#include "GenericFD.h"
+
+/* Define macros used in calculations */
+#define INITVALUE (42)
+#define QAD(x) (SQR(SQR(x)))
+#define INV(x) ((1.0) / (x))
+#define SQR(x) ((x) * (x))
+#define CUB(x) ((x) * (x) * (x))
 
 #define CCTK_GFINDEX3D(u,i,j,k) I3D(u,i,j,k)
 
-CAKERNEL_initial_sine_Begin_s
-  
-  /* Declare finite differencing variables */
+CAKERNEL_rk1_Begin
   
   /* Include user-supplied include files */
   
   /* Initialise finite differencing variables */
-  ptrdiff_t const di = 1;
-  ptrdiff_t const dj = CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0);
-  ptrdiff_t const dk = CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0);
-  ptrdiff_t const cdi = sizeof(CCTK_REAL) * di;
-  ptrdiff_t const cdj = sizeof(CCTK_REAL) * dj;
-  ptrdiff_t const cdk = sizeof(CCTK_REAL) * dk;
-  CCTK_REAL const dx = ToReal(CCTK_DELTA_SPACE(0));
-  CCTK_REAL const dy = ToReal(CCTK_DELTA_SPACE(1));
-  CCTK_REAL const dz = ToReal(CCTK_DELTA_SPACE(2));
-  CCTK_REAL const dt = ToReal(CCTK_DELTA_TIME);
-  CCTK_REAL const t = ToReal(cctk_time);
+  CCTK_REAL const dx = params.cagh_dx;
+  CCTK_REAL const dy = params.cagh_dy;
+  CCTK_REAL const dz = params.cagh_dz;
+  CCTK_REAL const dt = params.cagh_dt;
+  CCTK_REAL const t = params.cagh_time;
   CCTK_REAL const dxi = INV(dx);
   CCTK_REAL const dyi = INV(dy);
   CCTK_REAL const dzi = INV(dz);
@@ -48,10 +49,14 @@ CAKERNEL_initial_sine_Begin_s
   /* Calculate temporaries and arrays functions */
   
   /* Copy local copies back to grid functions */
-  CAKERNEL_initial_sine_Computations_Begin_s
+  CAKERNEL_rk1_Computations_Begin
     
     /* Assign local copies of grid functions */
     
+    CCTK_REAL phiL = I3D(phi,0,0,0);
+    CCTK_REAL phirhsL = I3D(phirhs,0,0,0);
+    CCTK_REAL piL = I3D(pi,0,0,0);
+    CCTK_REAL pirhsL = I3D(pirhs,0,0,0);
     
     
     /* Include user supplied include files */
@@ -59,14 +64,11 @@ CAKERNEL_initial_sine_Begin_s
     /* Precompute derivatives */
     
     /* Calculate temporaries and grid functions */
-    CCTK_REAL phiL = 0;
-    
-    CCTK_REAL piL = 0;
+    phiL = Rule(phiL + phirhsL*piL*dt,piL + pirhsL*dt);
     
     /* Copy local copies back to grid functions */
     I3D(phi,0,0,0) = phiL;
-    I3D(pi,0,0,0) = piL;
     
-  CAKERNEL_initial_sine_Computations_End_s
+  CAKERNEL_rk1_Computations_End
   
-CAKERNEL_initial_sine_End_s
+CAKERNEL_rk1_End

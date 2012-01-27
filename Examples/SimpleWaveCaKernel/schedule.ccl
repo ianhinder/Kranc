@@ -103,10 +103,16 @@ schedule SimpleWaveCaKernel_CheckBoundaries at BASEGRID
   OPTIONS: meta
 } "check boundaries treatment"
 
+schedule CaKernel_CopyFromDev at ANALYSIS
+{
+  LANG: C
+} "Copy variables from devices"
+
 schedule group ApplyBCs as SimpleWaveCaKernel_ApplyBCs in MoL_PostStep after SimpleWaveCaKernel_SelectBoundConds
 {
   # no language specified
 } "Apply boundary conditions controlled by thorn Boundary"
+
 
 ############################################################
 #CAKERNEL AUTO GENERATED PART. DO NOT EDIT BELOW THIS POINT#

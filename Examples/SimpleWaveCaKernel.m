@@ -25,11 +25,11 @@ evolveCalc =
 {
   Name -> "calc_rhs",
   Schedule -> {"at EVOL"},
-  Where -> Interior,
+  Where -> Everywhere,
   Equations ->
   {
     dot[phi] -> pi,
-    dot[pi]  -> Euc[ui,uj] PD[phi,li,lj]
+    dot[pi]  -> phi (* Euc[ui,uj] PD[phi,li,lj] *)
   }
 };
 
@@ -41,7 +41,7 @@ integrateCalc =
   Where -> Interior,
   Equations ->
   {
-    phi -> phi + dt dot[phi]
+    phi -> phi + dt dot[phi],
     pi -> pi + dt dot[pi]
   }
 };
@@ -51,4 +51,5 @@ CreateKrancThornTT[groups, ".",
   Calculations -> {initialSineCalc, evolveCalc, integrateCalc},
   PartialDerivatives -> derivatives,
   UseCaKernel -> True,
+  EvolutionTimelevels -> 1,
   DeclaredGroups -> {"phi_g","pi_g"}];

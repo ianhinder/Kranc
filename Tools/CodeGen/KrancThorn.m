@@ -286,7 +286,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        calcFilenames = Map[lookup[#, Name] <> ext &, calcs],
     (* else *)
        calcSources = Map[CaKernelCode[#,opts] &, calcs];
-       calcFilenames = Map[lookup[#, Name] <> ".code" &, calcs]];
+       calcFilenames = Map["CaKernel__"<>lookup[#, Name] <> ".code" &, calcs]];
 
     (* Makefile *)
     InfoMessage[Terse, "Creating make file"];

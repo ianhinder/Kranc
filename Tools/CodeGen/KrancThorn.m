@@ -197,6 +197,12 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     rhsGroups = Map[groupName, rhsGroupDefinitions];
     rhsODEGroups = Map[groupName, rhsODEGroupDefinitions];
 
+    calcs = Map[Join[#,
+                     {ODEGroups -> Join[odeGroups, rhsODEGroups],
+                      Parameters -> allParams,
+                      PartialDerivatives -> partialDerivs,
+                      Implementation -> implementation}] &, calcs];
+
     (* Construct the configuration file *)
     InfoMessage[Terse, "Creating configuration file"];
     configuration = CreateConfiguration[opts];
@@ -274,12 +280,6 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
                      Map[unqualifiedName, inheritedKeywordParams]];
 
     InfoMessage[Terse, "Creating calculation source files"];
-
-    calcs = Map[Join[#,
-                     {ODEGroups -> Join[odeGroups, rhsODEGroups],
-                      Parameters -> allParams,
-                      PartialDerivatives -> partialDerivs,
-                      Implementation -> implementation}] &, calcs];
 
     If[!OptionValue[UseCaKernel],
        calcSources = Map[CreateSetterSource[{#}, False, {}, opts] &, calcs];

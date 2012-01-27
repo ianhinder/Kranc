@@ -18,13 +18,15 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-BeginPackage["Calculation`", {"Errors`", "Helpers`", "Kranc`", "KrancGroups`", "MapLookup`"}];
+BeginPackage["Calculation`", {"Errors`", "Helpers`", "Kranc`", "KrancGroups`",
+                              "MapLookup`","Differencing`"}];
 
 InputGridFunctions;
 OutputGridFunctions;
 AllGridFunctions;
 GetCalculationName;
 GetEquations;
+CalculationStencilSize;
 
 Begin["`Private`"];
 
@@ -64,6 +66,16 @@ DefFn[
 DefFn[
   GetCalculationName[calc_List] :=
   lookup[calc,Name]];
+
+DefFn[
+  CalculationStencilSize[calc_List] :=
+  Module[
+    {pddefs,eqs},
+
+    pddefs = lookup[calc, PartialDerivatives, {}];
+    eqs    = lookup[calc, Equations];
+
+    StencilSize[pddefs, eqs, "not needed", {} (*ZeroDimensions*)]]];
 
 End[];
 

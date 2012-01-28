@@ -95,9 +95,14 @@ process[h_[args___]] :=
 
 process[thorn:"thorn"[content___]] :=
   Module[
-    {calcs, name,options},
-    calcs = Cases[thorn, c:"calculation"[___]:>process[c]];
-    name = Cases[thorn, "name"[n_]:>n][[1]];
+    {calcs = {}, name, options},
+
+    Do[Switch[el,
+              "calculation"[___], AppendTo[calcs,process[el]],
+              "name"[_], name = el[[1]],
+              _, ThrowError["Unrecognised element '"<>Head[el]<>"' in thorn"]],
+       {el, {content}}];
+
     options = {Calculations -> calcs};
     CreateThornTTExpression[groups,parentDirectory,name,Sequence@@options]];
 

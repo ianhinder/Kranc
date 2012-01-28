@@ -15,7 +15,8 @@ addop = [+-]
 expr = {mul}( {addop} {mul})*
 eqn = ({dtensor}|{tensor}) \= {expr}{-end}
 eqns = {eqn}( {eqn})*
+schedule = scheduled[ \t]+at[ \t]{uname}
 thorn = begin[ ]+thorn {name}{-end}( {calculation}| {variables}| {temporaries})* end[ ]+thorn
-calculation = begin[ \t]+calculation[ \t]+{uname}{-end} {eqns} end[ \t]+calculation
+calculation = begin[ \t]+calculation[ \t]+{uname}[ \t]+{schedule}{-end} {eqns} end[ \t]+calculation
 variables = begin[ \t]+variables{-end} {tensor}( end[ \t]+variables\b{brk}| {tensor})*{-end}
 temporaries = begin[ \t]+temporaries{-end} {tensor}( end[ \t]+temporaries\b{brk}| {tensor})*{-end}

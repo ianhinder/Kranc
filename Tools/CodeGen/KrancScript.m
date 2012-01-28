@@ -18,7 +18,8 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-BeginPackage["KrancScript`", {"Errors`", "Helpers`", "Kranc`", "JLink`"}];
+BeginPackage["KrancScript`", {"Errors`", "Helpers`", "Kranc`", "JLink`", "TensorTools`",
+                              "KrancTensor`"}];
 
 CreateThornFromKrancScript;
 
@@ -62,7 +63,7 @@ DefFn[
 DefFn[
   CreateThornFromKrancScript[filename_String] :=
   Module[
-    {code},
+    {code,stringRules,thorn,processed},
 
     Print["Creating thorn from ",filename];
 
@@ -71,20 +72,11 @@ DefFn[
     code = code /. ("startIndex" -> _) :> Sequence[];
     code = code /. ("endIndex" -> _) :> Sequence[];
 
-    (* Print["Parsed script:"]; *)
-    (* Print[code//InputForm]; *)
-
     stringRules = XMLElement[s_,_,c_] :> s@@c;
 
     thorn = code[[2]] //. stringRules;
 
-    Print[];
-    Print["Parse tree:"];
-    Print[thorn];
-    Print[];
-
-    processed = process[thorn];
-    Print[processed];
+    processed = process[thorn]
 ]];
 
 process[h_[args___]] :=
@@ -95,7 +87,8 @@ process[h_[args___]] :=
 
 process[thorn:"thorn"[content___]] :=
   Module[
-    {calcs = {}, name, options, variables = {}, temporaries = {}},
+    {calcs = {}, name, options, variables = {}, temporaries = {}, tensors, kernels,
+     nonScalars, tensorRule, withInds},
 
     Do[Switch[el,
               "calculation"[___], AppendTo[calcs,process[el]],
@@ -105,21 +98,53 @@ process[thorn:"thorn"[content___]] :=
               _, ThrowError["Unrecognised element '"<>Head[el]<>"' in thorn"]],
        {el, {content}}];
 
-    options = {Calculations -> calcs, Variables -> variables, Shorthands -> temporaries};
-    CreateThornTTExpression[groups,parentDirectory,name,Sequence@@options]];
+    tensors = Join[variables,temporaries];
+    kernels = Map[If[AtomQ[#],#,First[#]] &, tensors];
+    Scan[DefineTensor, kernels];
+    nonScalars = Cases[tensors, _tensor];
+    tensorRule = tensor[k_,inds__] :> k[inds];
+
+    withInds = nonScalars /. tensorRule; (* This should trigger the tensor character
+                                            definitions *)
+
+    SetEnhancedTimes[False];
+
+    options = {Calculations -> calcs, Variables -> variables, Shorthands -> temporaries} /. tensorRule;
+    CreateKrancThornTT2[name,Sequence@@options]];
 
 process[calc:"calculation"[content___]] :=
   Module[
-    {name,eqs},
+    {name,eqs,joinWord},
     name = Cases[calc, "uname"[n_]:>n][[1]];
     eqs = Cases[calc, "eqns"[es___]:>{es}][[1]];
+    schedule = Cases[calc, "schedule"["uname"[s_]]:>s][[1]];
+
+    joinWord = If[StringMatchQ[schedule,"initial",IgnoreCase->True] ||
+                  StringMatchQ[schedule,"analysis",IgnoreCase->True],
+                  "at","in"];
+
     {Name -> name,
-     Equations -> Map[process,eqs]}];
+     Equations -> Map[process,eqs],
+     Schedule -> {joinWord<>" "<>schedule},
+     Where -> Automatic}];
 
 process["eqn"[lhs_,rhs_]] := Module[{name,eqs}, process[lhs] -> process[rhs]];
 
-process["tensor"["name"[k_],"indices"[]]] := k;
-process["tensor"["name"[k_],inds_]] := Tensor[k,Sequence@@process[inds]];
+process["tensor"["name"[k_],"indices"[]]] := ToExpression[If[Names[k] === {}, "Global`"<>k, k]];
+
+builtIns = {"true" -> True,
+            "false" -> False,
+            "PI" -> Pi};
+
+Do[
+  Module[
+    {lhs = process["tensor"["name"[b[[1]]],"indices"[]]],
+     rhs = b[[2]]},
+    Evaluate[lhs] := rhs],
+  {b,builtIns}];
+
+process["tensor"["name"[k_],inds_]] :=
+  tensor[ToExpression[If[Names[k] === {}, "Global`"<>k, k]],Sequence@@process[inds]];
 
 process["dtensor"[inds_,tensor_]] := PD[process[tensor],Sequence@@process[inds]];
 process["dtensor"["indices"["_t"],tensor_]] := dot[process[tensor]];
@@ -132,13 +157,13 @@ process["indices"[inds_]] :=
     If[s === "", {},
        If[StringTake[s,1] === "^", upper[StringDrop[s,1]],
           If[StringTake[s,1] === "_", ThrowError["Repeated '_'"],
-             Prepend[lower[StringDrop[s,1]], TensorIndex["l",StringTake[s,1]]]]]];
+             Prepend[lower[StringDrop[s,1]], TensorIndex[StringTake[s,1],"l"]]]]];
 
     upper[s_String] :=
     If[s === "", {},
        If[StringTake[s,1] === "_", lower[StringDrop[s,1]],
           If[StringTake[s,1] === "^", ThrowError["Repeated '^'"],
-             Prepend[upper[StringDrop[s,1]], TensorIndex["u",StringTake[s,1]]]]]];
+             Prepend[upper[StringDrop[s,1]], TensorIndex[StringTake[s,1],"u"]]]]];
 
     is = Switch[StringTake[inds,1],
                 "_", lower[StringDrop[inds,1]],
@@ -156,7 +181,7 @@ process["func"["name"[name_],exprs__]] :=
 process["expr"[mul_]] := process[mul];
 process["expr"[]] := 0;
 process["expr"[a_, "addop"["-"], b_,cs___]] := process[a] - process[b] + process["expr"[cs]];
-process["expr"[a_, "mulop"["+"], bs__]] := process[a] + process["expr"[bs]];
+process["expr"[a_, "addop"["+"], bs__]] := process[a] + process["expr"[bs]];
 
 process["mul"[pow_]] := process[pow];
 process["mul"[]] := 1;

@@ -138,11 +138,11 @@ process["indices"[inds_]] :=
                 _, ThrowError["Tensor indices must start with ^ or _"]];
     is];
 
-process["func"["name"[name_],expr_]] :=
+process["func"["name"[name_],exprs__]] :=
   Module[
     {fns},
-    fns = {"sin" -> Sin, "cos" -> Cos};
-    If[MemberQ[First/@fns,name], (name/.fns)[process[expr]],
+    fns = {"sin" -> Sin, "cos" -> Cos, "if" -> IfThen};
+    If[MemberQ[First/@fns,name], (name/.fns)@@Map[process,{exprs}],
        ThrowError["Unrecognised function: ", name]]];
 
 process["expr"[mul_]] := process[mul];

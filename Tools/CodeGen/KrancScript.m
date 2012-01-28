@@ -109,7 +109,7 @@ process[calc:"calculation"[content___]] :=
     {Name -> name,
      Equations -> Map[process,eqs]}];
 
-process["eqn"[lhs_,rhs_]] := Module[{name,eqs}, lhs -> process[rhs]];
+process["eqn"[lhs_,rhs_]] := Module[{name,eqs}, process[lhs] -> process[rhs]];
 
 process["tensor"["name"[k_],"indices"[]]] := k;
 process["tensor"["name"[k_],inds_]] := Tensor[k,Sequence@@process[inds]];

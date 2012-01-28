@@ -95,15 +95,17 @@ process[h_[args___]] :=
 
 process[thorn:"thorn"[content___]] :=
   Module[
-    {calcs = {}, name, options},
+    {calcs = {}, name, options, variables = {}, temporaries = {}},
 
     Do[Switch[el,
               "calculation"[___], AppendTo[calcs,process[el]],
               "name"[_], name = el[[1]],
+              "variables"[__], variables = Join[variables,List@@Map[process,el]],
+              "temporaries"[__], temporaries = Join[temporaries,List@@Map[process,el]],
               _, ThrowError["Unrecognised element '"<>Head[el]<>"' in thorn"]],
        {el, {content}}];
 
-    options = {Calculations -> calcs};
+    options = {Calculations -> calcs, Variables -> variables, Shorthands -> temporaries};
     CreateThornTTExpression[groups,parentDirectory,name,Sequence@@options]];
 
 process[calc:"calculation"[content___]] :=

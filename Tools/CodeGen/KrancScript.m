@@ -115,6 +115,7 @@ process["tensor"["name"[k_],"indices"[]]] := k;
 process["tensor"["name"[k_],inds_]] := Tensor[k,Sequence@@process[inds]];
 
 process["dtensor"[inds_,tensor_]] := PD[process[tensor],Sequence@@process[inds]];
+process["dtensor"["indices"["_t"],tensor_]] := dot[process[tensor]];
 
 process["indices"[inds_]] :=
   Module[

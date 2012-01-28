@@ -17,5 +17,5 @@ eqn = ({dtensor}|{tensor}) \= {expr}{-end}
 eqns = {eqn}( {eqn})*
 thorn = begin[ ]+thorn {name}{-end}( {calculation}| {variables}| {temporaries})* end[ ]+thorn
 calculation = begin[ \t]+calculation[ \t]+{uname}{-end} {eqns} end[ \t]+calculation
-variables = begin[ \t]+variables{-end} {name}( end[ \t]+variables\b{brk}| {name})*{-end}
-temporaries = begin[ \t]+temporaries{-end} {name}( end[ \t]+temporaries\b{brk}| {name})*{-end}
+variables = begin[ \t]+variables{-end} {tensor}( end[ \t]+variables\b{brk}| {tensor})*{-end}
+temporaries = begin[ \t]+temporaries{-end} {tensor}( end[ \t]+temporaries\b{brk}| {tensor})*{-end}

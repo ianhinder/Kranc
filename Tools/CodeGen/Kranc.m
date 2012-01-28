@@ -78,7 +78,10 @@ ThornOptions =
   ProhibitAssignmentToGridFunctionsRead -> False,
   IncludeFiles -> {},
   CSE -> False,
-  UseJacobian -> False};
+  UseJacobian -> False,
+  Variables -> Automatic,
+  Shorthands -> {},
+  ParentDirectory -> "."};
 
 (* Thorn.m *)
 

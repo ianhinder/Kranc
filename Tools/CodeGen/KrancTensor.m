@@ -26,9 +26,12 @@
 
 $KrancTensorPackage = "TensorToolsKranc`";
 
-BeginPackage["KrancTensor`", {"Errors`", "KrancThorn`", "MapLookup`", "KrancGroups`", "Kranc`", $KrancTensorPackage, "ConservationCalculation`", "TensorTools`"}];
+BeginPackage["KrancTensor`", {"Errors`", "KrancThorn`", "MapLookup`", "KrancGroups`",
+                              "Kranc`", $KrancTensorPackage, "ConservationCalculation`",
+                              "TensorTools`", "KrancGroups`", "Differencing`"}];
 
 CreateKrancThornTT::usage = "Construct a Kranc thorn using tensor expressions.";
+CreateKrancThornTT2::usage = "Construct a Kranc thorn using tensor expressions.";
 
 (* FIXME: Move CreateGroupFromTensor here *)
 
@@ -101,6 +104,35 @@ makeGroupExplicit[g_] :=
     newVariables = deleteDuplicates[ExpandComponents[variables]];
     newGroup = SetGroupVariables[g, newVariables];
     newGroup];
+
+Options[CreateKrancThornTT2] = ThornOptions;
+
+DefFn[CreateKrancThornTT2[thornName_String, opts:OptionsPattern[]] :=
+  Module[
+    {groups, pderivs, opts2, fdOrder = Global`fdOrder, PDstandard = Global`PDstandard},
+    groups = Map[CreateGroupFromTensor, OptionValue[Variables]];
+
+    pderivs =
+    Join[OptionValue[PartialDerivatives],
+         {
+           PDstandard[i_] ->
+           StandardCenteredDifferenceOperator[1,fdOrder/2,i],
+           PDstandard[i_, i_] ->
+           StandardCenteredDifferenceOperator[2,fdOrder/2,i],
+           PDstandard[i_, j_] ->
+           StandardCenteredDifferenceOperator[1,fdOrder/2,i] StandardCenteredDifferenceOperator[1,fdOrder/2,j]
+         }];
+
+    opts2 = mapReplaceAdd[{opts}, PartialDerivatives, pderivs];
+
+    opts2 = mapReplaceAdd[opts2, IntParameters, Join[lookup[opts2,IntParameters,{}],
+                                                     {{Name -> fdOrder, Default -> 2, AllowedValues -> {2, 4}}}]];
+
+    opts2 = opts2 /. PD -> PDstandard;
+
+    CreateKrancThornTT[groups,OptionValue[ParentDirectory],thornName,
+                       DeclaredGroups -> Map[groupName, groups],
+                       Sequence@@opts2]]];
 
 End[];
 EndPackage[];

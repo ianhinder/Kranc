@@ -1,0 +1,101 @@
+# File produced by Kranc
+
+
+if (timelevels == 1)
+{
+  STORAGE: phi_group[1]
+}
+if (timelevels == 2)
+{
+  STORAGE: phi_group[2]
+}
+if (timelevels == 3)
+{
+  STORAGE: phi_group[3]
+}
+
+if (timelevels == 1)
+{
+  STORAGE: pi_group[1]
+}
+if (timelevels == 2)
+{
+  STORAGE: pi_group[2]
+}
+if (timelevels == 3)
+{
+  STORAGE: pi_group[3]
+}
+
+if (rhs_timelevels == 1)
+{
+  STORAGE: phi_grouprhs[1]
+}
+if (rhs_timelevels == 2)
+{
+  STORAGE: phi_grouprhs[2]
+}
+if (rhs_timelevels == 3)
+{
+  STORAGE: phi_grouprhs[3]
+}
+
+if (rhs_timelevels == 1)
+{
+  STORAGE: pi_grouprhs[1]
+}
+if (rhs_timelevels == 2)
+{
+  STORAGE: pi_grouprhs[2]
+}
+if (rhs_timelevels == 3)
+{
+  STORAGE: pi_grouprhs[3]
+}
+
+schedule SimpleWaveScript_Startup at STARTUP
+{
+  LANG: C
+  OPTIONS: meta
+} "create banner"
+
+schedule SimpleWaveScript_RegisterVars in MoL_Register
+{
+  LANG: C
+  OPTIONS: meta
+} "Register Variables for MoL"
+
+schedule SimpleWaveScript_RegisterSymmetries in SymmetryRegister
+{
+  LANG: C
+  OPTIONS: meta
+} "register symmetries"
+
+schedule initial_sine_calc at initial
+{
+  LANG: C
+} "initial_sine_calc"
+
+schedule calc_rhs in mol_calcrhs
+{
+  LANG: C
+} "calc_rhs"
+
+schedule SimpleWaveScript_SelectBoundConds in MoL_PostStep
+{
+  LANG: C
+  OPTIONS: level
+  SYNC: phi_group
+  SYNC: pi_group
+} "select boundary conditions"
+
+schedule SimpleWaveScript_CheckBoundaries at BASEGRID
+{
+  LANG: C
+  OPTIONS: meta
+} "check boundaries treatment"
+
+schedule group ApplyBCs as SimpleWaveScript_ApplyBCs in MoL_PostStep after SimpleWaveScript_SelectBoundConds
+{
+  # no language specified
+} "Apply boundary conditions controlled by thorn Boundary"

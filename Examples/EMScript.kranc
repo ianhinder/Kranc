@@ -1,0 +1,35 @@
+begin thorn EMScript
+
+begin variables
+    El_i B_i CEl CB rho
+end variables
+
+begin temporaries
+  sigma
+end temporaries
+
+begin calculation EM_initial scheduled at initial
+  sigma = 1
+  El1 = sigma*cos(2*PI*(x + y))
+  El2 = -1*(1 - sigma)*cos(2*PI*x) - sigma*cos(2*PI*(x + y))
+  El3 = 0
+  B1  = 0
+  B2  = 0
+  B3  = (1 - sigma)*cos(2*PI*x) + sigma*cos(2*PI*(x + y))
+end calculation
+
+begin calculation EM_evol scheduled at MoL_CalcRHS
+  D_t El_a = Eps_abc * Euc^be * Euc^cf * D_e B_f
+  D_t B_a  = -1*Eps_abc * Euc^be * Euc^cf * D_e El_f
+end calculation
+
+begin calculation EM_constraints scheduled at analysis
+  CEl = D_b El_a * Euc^ab
+  CB = D_b B_a * Euc^ab
+end calculation
+
+begin calculation EM_energy scheduled at analysis
+  rho = Euc^ab * El_a * El_b/2 + Euc^ab * B_a * B_b/2
+end calculation
+
+end thorn

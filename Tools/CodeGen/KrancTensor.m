@@ -55,6 +55,7 @@ CreateKrancThornTT[groups_, parentDirectory_, thornName_, opts___] :=
     expDerivs = Flatten[Map[ExpandComponents,derivs],1];
     expGroups = Map[makeGroupExplicit, groups];
     options = Join[DeleteCases[{opts}, Calculations -> _], {Calculations -> expCalcs}];
+    options = mapReplace[options, Shorthands, ExpandComponents[lookup[options,Shorthands,{}]]];
     options = Join[DeleteCases[options, ConservationCalculations -> _],
       {ConservationCalculations -> expConsCalcs}];
     options = Join[DeleteCases[options, PartialDerivatives -> _], {PartialDerivatives -> expDerivs}];

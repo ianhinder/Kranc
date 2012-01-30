@@ -168,6 +168,9 @@ process["uname"[n_]] := n;
 process["option"["inherit"[imps__]]] :=
   {InheritedImplementations -> Map[process, {imps}]};
 
+process["option"["implement"[imp_]]] :=
+  {Implementation -> process[imp]};
+
 flags = {"loopcontrol"->UseLoopControl,"vectors"->UseVectors,"opencl"->UseOpenCL,
          "jacobian"->UseJacobian, "cse" -> CSE};
 

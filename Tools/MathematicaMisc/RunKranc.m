@@ -4,7 +4,8 @@ Kranc`KrancDirectory = Environment["KRANCDIR"];
 
 $Path = Join[$Path,
   {Kranc`KrancDirectory <> "/Tools/CodeGen",
-   Kranc`KrancDirectory <> "/Tools/MathematicaMisc"}];
+   Kranc`KrancDirectory <> "/Tools/MathematicaMisc",
+   Kranc`KrancDirectory <> "/Tools/PirahaPeg"}];
 Needs["Errors`"];
 Needs["KrancThorn`"];
 Needs["Profile`"];

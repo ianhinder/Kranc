@@ -19,46 +19,11 @@
 *)
 
 BeginPackage["KrancScript`", {"Errors`", "Helpers`", "Kranc`", "JLink`", "TensorTools`",
-                              "KrancTensor`"}];
+                              "KrancTensor`", "Piraha`"}];
 
 CreateThornFromKrancScript;
 
 Begin["`Private`"];
-
-InstallJava[];
-
-(* The JRE does not share a current directory with the Mathematica
-   kernel, so relative paths have to be converted to absolute paths.
-   It is not possible to change the JRE working directory. *)
-
-absPath[s_String] :=
-  If[StringTake[s,1] === $PathnameSeparator, s, FileNameJoin[{Directory[],s}]];
-
-fullKrancDir = absPath[KrancDirectory];
-
-AddToClassPath[
- FileNameJoin[{fullKrancDir, "Tools","PirahaPEG","piraha.jar"}]];
-
-DefFn[
-  parseScript[filename_String] :=
-  Module[
-    {g,m,c,sw,dout,xmlString,xml},
-    g = JavaNew["edu.lsu.cct.piraha.Grammar"];
-    g@compileFile[JavaNew["java.io.File", FileNameJoin[{fullKrancDir, "Auxiliary", "Grammars","kranc2.peg"}]]];
-
-    c = Grammar`readContents[JavaNew["java.io.File", absPath@filename]];
-
-    m = g@matcher["thorn", c];
-
-    If[!m@match[0], ThrowError["Failed to parse input file: ",m@near[]@toString[]]];
-
-    sw = JavaNew["java.io.StringWriter"];
-    dout = JavaNew["edu.lsu.cct.piraha.DebugOutput", JavaNew["java.io.PrintWriter", sw]];
-    m@dumpMatchesXML[dout];
-    dout@flush[];
-    xmlString = sw@toString[];
-    xml = ImportString[xmlString, "XML"];
-    xml]];
 
 DefFn[
   CreateThornFromKrancScript[filename_String] :=
@@ -67,7 +32,7 @@ DefFn[
 
     Print["Creating thorn from ",filename];
 
-    code = parseScript[filename];
+    code = Parse["kranc2.peg", "thorn", filename];
 
     code = code /. ("startIndex" -> _) :> Sequence[];
     code = code /. ("endIndex" -> _) :> Sequence[];

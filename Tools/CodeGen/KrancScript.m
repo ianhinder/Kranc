@@ -48,7 +48,7 @@ process[h_[args___]] :=
   Module[
     {},
     Print["No handler for ", h@@Map[ToString[Head[#]]&,{args}]];
-    h[args]];
+    ThrowError["Failed to parse script"]];
 
 process[thorn:"thorn"[content___]] :=
   Module[

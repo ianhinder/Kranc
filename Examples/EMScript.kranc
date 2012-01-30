@@ -1,5 +1,10 @@
 begin thorn EMScript
 
+inherit ADMBase EinsteinBase
+use opencl vectors jacobian cse
+disable loopcontrol
+implement My_New_Implementation
+
 begin variables
     El_i B_i CEl CB rho
 end variables

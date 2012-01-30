@@ -19,7 +19,7 @@
 *)
 
 BeginPackage["KrancScript`", {"Errors`", "Helpers`", "Kranc`", "JLink`", "TensorTools`",
-                              "KrancTensor`", "Piraha`"}];
+                              "KrancTensor`", "Piraha`", "MapLookup`"}];
 
 CreateThornFromKrancScript;
 
@@ -52,14 +52,15 @@ process[h_[args___]] :=
 
 process[thorn:"thorn"[content___]] :=
   Module[
-    {calcs = {}, name, options, variables = {}, temporaries = {}, tensors, kernels,
-     nonScalars, tensorRule, withInds},
+    {calcs = {}, name, variables = {}, temporaries = {}, tensors, kernels,
+     nonScalars, tensorRule, withInds, options = {}},
 
     Do[Switch[el,
               "calculation"[___], AppendTo[calcs,process[el]],
               "name"[_], name = el[[1]],
               "variables"[__], variables = Join[variables,List@@Map[process,el]],
               "temporaries"[__], temporaries = Join[temporaries,List@@Map[process,el]],
+              "option"[__], options = Join[options, process[el]],
               _, ThrowError["Unrecognised element '"<>Head[el]<>"' in thorn"]],
        {el, {content}}];
 
@@ -74,7 +75,9 @@ process[thorn:"thorn"[content___]] :=
 
     SetEnhancedTimes[False];
 
-    options = {Calculations -> calcs, Variables -> variables, Shorthands -> temporaries} /. tensorRule;
+    options = Join[{Calculations -> calcs, Variables -> variables, Shorthands -> temporaries} /. tensorRule,
+                   options];
+
     CreateKrancThornTT2[name,Sequence@@options]];
 
 process[calc:"calculation"[content___]] :=
@@ -159,6 +162,21 @@ process["pow"[a_]] := process[a];
 process["value"[a_]] := process[a];
 
 process["number"[a_]] := ToExpression[a];
+
+process["uname"[n_]] := n;
+
+process["option"["inherit"[imps__]]] :=
+  {InheritedImplementations -> Map[process, {imps}]};
+
+flags = {"loopcontrol"->UseLoopControl,"vectors"->UseVectors,"opencl"->UseOpenCL,
+         "jacobian"->UseJacobian, "cse" -> CSE};
+
+process["option"["use"[features__]]] :=
+  Map[(lookup[flags,#] -> True) &,{features}/.(("feature"[n_]):>n)];
+
+process["option"["disable"[features__]]] :=
+  Map[(lookup[flags,#] -> False) &,{features}/.(("feature"[n_]):>n)];
+
 
 End[];
 

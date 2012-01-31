@@ -137,6 +137,7 @@ DefFn[CaKernelCode[calc_List,opts___] :=
      Map[IncludeFile, {"Differencing.h", "GenericFD.h"}],
 
      "\n",
+     "#undef KRANC_GFOFFSET3D\n",
      "#define KRANC_GFOFFSET3D(u,i,j,k) I3D(u,i,j,k)\n",
      "\n",
      CalculationMacros[],

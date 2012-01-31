@@ -136,15 +136,6 @@ DefFn[CaKernelCode[calc_List,opts___] :=
 
     "\n", CreateCalculationFunction[calc2,opts]}]];
 
-
-DefFn[CaKernelEpilogue[] :=
-      "
-
-############################################################
-#CAKERNEL AUTO GENERATED PART. DO NOT EDIT BELOW THIS POINT#
-############################################################
-"];
-
 End[];
 
 EndPackage[];

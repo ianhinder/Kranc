@@ -65,10 +65,12 @@ groupsSetInCalc[calc_, groups_] :=
    *)
 
 Options[scheduleCalc] = ThornOptions;
-scheduleCalc[calc_, groups_, OptionsPattern[]] :=
+scheduleCalc[calc_, groups_, thornName_, OptionsPattern[]] :=
   Module[{points, conditional, conditionals, keywordConditional,
           keywordConditionals, triggered, keyword, value, keywordvaluepairs,
-          groupsToSync, groupName, userSchedule, groupSched, fnSched,
+          groupsToSync, tags,
+          prefixWithScope, groupsToRequire, groupsToProvide,
+          groupName, userSchedule, groupSched, fnSched,
           selbcSched, appbcSched, bcGroupName, condParams, bcGroupSched, before, after, relStr},
     conditional = mapContains[calc, ConditionalOnKeyword];
     conditionals = mapContains[calc, ConditionalOnKeywords];
@@ -96,6 +98,23 @@ scheduleCalc[calc_, groups_, OptionsPattern[]] :=
                       groupsSetInCalc[calc, groups],
                       {}];
 
+    (* TODO: Pass this as {keyword,value} pair instead of a string,
+       once Thorn.m understands this format *)
+    (* TODO: This doesn't work -- I don't know how to access
+       OptionValue[] in this file.
+    tags = If[OptionValue[UseOpenCL], "OpenCL=1", ""];
+    *)
+    tags = "OpenCL=1";
+    
+    prefixWithScope[group_] :=
+      If[StringMatchQ[ToString[group], __~~"::"~~__],
+         ToString[group],
+         thornName <> "::" <> ToString[group]];
+    (* TODO: Don't blindly require/provide all groups, check the
+       equations instead *)
+    groupsToRequire = prefixWithScope /@ Map[First, groups];
+    groupsToProvide = prefixWithScope /@ groupsSetInCalc[calc, groups];
+
     before = lookupDefault[calc, Before, None];
     after = lookupDefault[calc, After, None];
 
@@ -115,6 +134,9 @@ scheduleCalc[calc_, groups_, OptionsPattern[]] :=
                                  {},
                                  groupsToSync],
         Language           -> CodeGenC`SOURCELANGUAGE, 
+        Tags               -> tags,
+        RequiredGroups     -> groupsToRequire,
+        ProvidedGroups     -> groupsToProvide,
         Comment            -> lookup[calc, Name]
       },
        If[triggered, {TriggerGroups -> lookup[calc, TriggerGroups]},
@@ -149,10 +171,17 @@ scheduleCalc[calc_, groups_, OptionsPattern[]] :=
       }
       ~Join~ condParams;
 
+      (* We set required/provided groups here with the actual
+         function, since (at least in principle) the driver should be
+         able to deduce the synchronization and boundary condition
+         treatment from this information. *)
       fnSched = {
         Name               -> lookup[calc, Name],
         SchedulePoint      -> "in " <> groupName,
         Language           -> CodeGenC`SOURCELANGUAGE,
+        Tags               -> tags,
+        RequiredGroups     -> groupsToRequire,
+        ProvidedGroups     -> groupsToProvide,
         Comment            -> lookup[calc, Name]
       };
 
@@ -191,7 +220,7 @@ CreateKrancScheduleFile[calcs_, groups_, evolvedGroups_, rhsGroups_, nonevolvedG
                         evolutionTimelevels_, opts:OptionsPattern[]] :=
   Module[{scheduledCalcs, scheduledStartup, scheduleMoLRegister, globalStorageGroups, scheduledFunctions, schedule},
 
-    scheduledCalcs = Flatten[Map[scheduleCalc[#, groups, opts] &, calcs], 1];
+    scheduledCalcs = Flatten[Map[scheduleCalc[#, groups, thornName, opts] &, calcs], 1];
     scheduledStartup = 
     {
       Name          -> thornName <> "_Startup",

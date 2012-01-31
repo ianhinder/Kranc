@@ -87,6 +87,7 @@ ThornOptions =
 
 {AccumulatorBase, ThornImplementation, Name, Type, Extend, Default,
 Comment, Range, Implementation, Group, SchedulePoint, Language,
+RequiredGroups, ProvidedGroups, 
 SynchronizedGroups, StorageGroups, Timelevels, MaxTimelevels,
 VariableType, GridType, Dim, Size,
 Visibility, Variables, Implementations, Value, AllowedValues,

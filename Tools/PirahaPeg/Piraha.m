@@ -56,7 +56,7 @@ DefFn[
 
     m = g@matcher[pattern, c];
 
-    If[!m@match[0], ThrowError["Failed to parse input file: ",m@near[]@toString[]]];
+    If[!m@match[0], ThrowError["Failed to parse input file: ",inputFileName,m@near[]@toString[]]];
 
     sw = JavaNew["java.io.StringWriter"];
     dout = JavaNew["edu.lsu.cct.piraha.DebugOutput", JavaNew["java.io.PrintWriter", sw]];

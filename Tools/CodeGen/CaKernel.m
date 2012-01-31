@@ -25,6 +25,7 @@ CaKernelCCL;
 CaKernelCode;
 CaKernelEpilogue;
 CaKernelSchedule;
+CaKernelConfigurationCLL;
 
 Begin["`Private`"];
 
@@ -76,6 +77,8 @@ DefFn[CaKernelSchedule[] :=
       Comment       -> "Copy variables from devices"
     }}]];
 
+CaKernelConfigurationCLL[] :=
+  "REQUIRES CUDA";
 
 DefFn[codeBlock[macro_String, contents:CodeGenBlock] :=
   Module[

@@ -25,7 +25,7 @@
 
 BeginPackage["Thorn`", "CodeGen`", "CodeGenC`", "CodeGenCactus`", "CalculationFunction`",
   "CalculationBoundaries`", "MapLookup`", "KrancGroups`", "Helpers`",
-  "Errors`", "Kranc`"];
+  "Errors`", "Kranc`", "CaKernel`"];
 
 (* These functions are externally visible, and comprise the public
    interface to this package. *)
@@ -223,7 +223,8 @@ CreateConfiguration[opts:OptionsPattern[]] :=
    If[OptionValue[UseVectors], 
       "REQUIRES LoopControl\n", "OPTIONAL LoopControl\n{\n}\n"],
    If[OptionValue[UseOpenCL], "REQUIRES OpenCL OpenCLRunTime\n", {}],
-   If[OptionValue[UseVectors], "REQUIRES Vectors\n", {}]
+   If[OptionValue[UseVectors], "REQUIRES Vectors\n", {}],
+   If[OptionValue[UseCaKernel], CaKernelConfigurationCLL[], {}]
   };
 
 (* ------------------------------------------------------------------------ 

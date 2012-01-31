@@ -197,6 +197,13 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     rhsGroups = Map[groupName, rhsGroupDefinitions];
     rhsODEGroups = Map[groupName, rhsODEGroupDefinitions];
 
+    (* Construct a source file for each calculation *)
+    allParams = Join[Map[ParamName, realParamDefs],
+                     Map[ParamName, intParamDefs],
+                     Map[unqualifiedName, inheritedRealParams], 
+                     Map[unqualifiedName, inheritedIntParams], 
+                     Map[unqualifiedName, inheritedKeywordParams]];
+
     calcs = Map[Join[#,
                      {ODEGroups -> Join[odeGroups, rhsODEGroups],
                       Parameters -> allParams,
@@ -272,12 +279,6 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     ext = CodeGenC`SOURCESUFFIX;
 
-    (* Construct a source file for each calculation *)
-    allParams = Join[Map[ParamName, realParamDefs],
-                     Map[ParamName, intParamDefs],
-                     Map[unqualifiedName, inheritedRealParams], 
-                     Map[unqualifiedName, inheritedIntParams], 
-                     Map[unqualifiedName, inheritedKeywordParams]];
 
     InfoMessage[Terse, "Creating calculation source files"];
 
@@ -293,8 +294,6 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     make = CreateMakefile[Join[{"Startup.cc", "RegisterMoL.cc", "RegisterSymmetries.cc"},
                                If[!OptionValue[UseCaKernel], calcFilenames, {}],
       Map[lookup[#, Filename] &, boundarySources]]];
-
-    If[OptionValue[UseCaKernel], make = {make, CaKernelEpilogue[]}];
 
     (* Put all the above together and generate the Cactus thorn *)
     thornspec = {Name          -> thornName, 

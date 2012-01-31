@@ -242,9 +242,6 @@ CreateKrancScheduleFile[calcs_, groups_, evolvedGroups_, rhsGroups_, nonevolvedG
     schedule = CreateSchedule[globalStorageGroups, 
       CactusBoundary`GetScheduledGroups[thornName], scheduledFunctions];
 
-    If[OptionValue[UseCaKernel],
-       schedule = {schedule, CaKernelEpilogue[]}];
-
     Return[schedule]];
 
 End[];

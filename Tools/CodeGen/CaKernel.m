@@ -34,14 +34,20 @@ DefFn[
   CCLBlock["CCTK_CUDA_KERNEL_VARIABLE", "", {"cached" -> "yes", "intent" -> intent}, {var,"\n"}, ToString[var]]];
 
 DefFn[
+  parameterBlock[par_] :=
+  CCLBlock["CCTK_CUDA_KERNEL_PARAMETER", "", {}, {par,"\n"}, ToString[par]]];
+
+DefFn[
   variableBlocks[calc_] :=
   Module[
-    {in,out,all,inOnly,outOnly,inOut},
-    in = InputGridFunctions[calc];
+    {in,out,all,inOnly,outOnly,inOut,params},
+
+    params = GetCalculationParameters[calc];
+    in = Join[InputGridFunctions[calc]];
     out = OutputGridFunctions[calc];
     all = Union[in,out];
 
-    inOnly = Complement[in, out];
+    inOnly = Join[Complement[in, out]];
     outOnly = Complement[out, in];
     inOut = Intersection[in,out];
 
@@ -49,8 +55,9 @@ DefFn[
       Map[variableBlock[#, Which[MemberQ[inOnly, #], "in",
                                  MemberQ[outOnly, #], "out",
                                  MemberQ[inOut, #], "inout",
-                                 True,ThrowError["Unable to determine use of variable "<>ToString[#]]]] &, all],
-          "\n"]]];
+                                 True,ThrowError["Unable to determine use of variable "<>ToString[#]]]] &, all]~Join~
+      Map[parameterBlock, params],
+      "\n"]]];
 
 DefFn[
   kernelCCLBlock[calc_] :=

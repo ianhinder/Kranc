@@ -19,46 +19,46 @@ extern "C" void EMScript_RegisterSymmetries(CCTK_ARGUMENTS)
   sym[0] = -1;
   sym[1] = 1;
   sym[2] = 1;
-  SetCartSymVN(cctkGH, sym, "EMScript::B1");
+  SetCartSymVN(cctkGH, sym, "My_New_Implementation::B1");
   
   sym[0] = 1;
   sym[1] = -1;
   sym[2] = 1;
-  SetCartSymVN(cctkGH, sym, "EMScript::B2");
+  SetCartSymVN(cctkGH, sym, "My_New_Implementation::B2");
   
   sym[0] = 1;
   sym[1] = 1;
   sym[2] = -1;
-  SetCartSymVN(cctkGH, sym, "EMScript::B3");
+  SetCartSymVN(cctkGH, sym, "My_New_Implementation::B3");
   
   sym[0] = -1;
   sym[1] = 1;
   sym[2] = 1;
-  SetCartSymVN(cctkGH, sym, "EMScript::El1");
+  SetCartSymVN(cctkGH, sym, "My_New_Implementation::El1");
   
   sym[0] = 1;
   sym[1] = -1;
   sym[2] = 1;
-  SetCartSymVN(cctkGH, sym, "EMScript::El2");
+  SetCartSymVN(cctkGH, sym, "My_New_Implementation::El2");
   
   sym[0] = 1;
   sym[1] = 1;
   sym[2] = -1;
-  SetCartSymVN(cctkGH, sym, "EMScript::El3");
+  SetCartSymVN(cctkGH, sym, "My_New_Implementation::El3");
   
   sym[0] = 1;
   sym[1] = 1;
   sym[2] = 1;
-  SetCartSymVN(cctkGH, sym, "EMScript::CB");
+  SetCartSymVN(cctkGH, sym, "My_New_Implementation::CB");
   
   sym[0] = 1;
   sym[1] = 1;
   sym[2] = 1;
-  SetCartSymVN(cctkGH, sym, "EMScript::CEl");
+  SetCartSymVN(cctkGH, sym, "My_New_Implementation::CEl");
   
   sym[0] = 1;
   sym[1] = 1;
   sym[2] = 1;
-  SetCartSymVN(cctkGH, sym, "EMScript::rho");
+  SetCartSymVN(cctkGH, sym, "My_New_Implementation::rho");
   
 }

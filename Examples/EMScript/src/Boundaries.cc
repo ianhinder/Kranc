@@ -38,9 +38,9 @@ extern "C" void EMScript_SelectBoundConds(CCTK_ARGUMENTS)
       CCTK_EQUALS(B_group_bound, "zero"  ) )
   {
     ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
-                      "EMScript::B_group", B_group_bound);
+                      "My_New_Implementation::B_group", B_group_bound);
     if (ierr < 0)
-       CCTK_WARN(0, "Failed to register B_group_bound BC for EMScript::B_group!");
+       CCTK_WARN(0, "Failed to register B_group_bound BC for My_New_Implementation::B_group!");
   }
   
   if (CCTK_EQUALS(El_group_bound, "none"  ) ||
@@ -49,9 +49,9 @@ extern "C" void EMScript_SelectBoundConds(CCTK_ARGUMENTS)
       CCTK_EQUALS(El_group_bound, "zero"  ) )
   {
     ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
-                      "EMScript::El_group", El_group_bound);
+                      "My_New_Implementation::El_group", El_group_bound);
     if (ierr < 0)
-       CCTK_WARN(0, "Failed to register El_group_bound BC for EMScript::El_group!");
+       CCTK_WARN(0, "Failed to register El_group_bound BC for My_New_Implementation::El_group!");
   }
   
   if (CCTK_EQUALS(B1_bound, "none"  ) ||
@@ -60,9 +60,9 @@ extern "C" void EMScript_SelectBoundConds(CCTK_ARGUMENTS)
       CCTK_EQUALS(B1_bound, "zero"  ) )
   {
     ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
-                      "EMScript::B1", B1_bound);
+                      "My_New_Implementation::B1", B1_bound);
     if (ierr < 0)
-       CCTK_WARN(0, "Failed to register B1_bound BC for EMScript::B1!");
+       CCTK_WARN(0, "Failed to register B1_bound BC for My_New_Implementation::B1!");
   }
   
   if (CCTK_EQUALS(B2_bound, "none"  ) ||
@@ -71,9 +71,9 @@ extern "C" void EMScript_SelectBoundConds(CCTK_ARGUMENTS)
       CCTK_EQUALS(B2_bound, "zero"  ) )
   {
     ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
-                      "EMScript::B2", B2_bound);
+                      "My_New_Implementation::B2", B2_bound);
     if (ierr < 0)
-       CCTK_WARN(0, "Failed to register B2_bound BC for EMScript::B2!");
+       CCTK_WARN(0, "Failed to register B2_bound BC for My_New_Implementation::B2!");
   }
   
   if (CCTK_EQUALS(B3_bound, "none"  ) ||
@@ -82,9 +82,9 @@ extern "C" void EMScript_SelectBoundConds(CCTK_ARGUMENTS)
       CCTK_EQUALS(B3_bound, "zero"  ) )
   {
     ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
-                      "EMScript::B3", B3_bound);
+                      "My_New_Implementation::B3", B3_bound);
     if (ierr < 0)
-       CCTK_WARN(0, "Failed to register B3_bound BC for EMScript::B3!");
+       CCTK_WARN(0, "Failed to register B3_bound BC for My_New_Implementation::B3!");
   }
   
   if (CCTK_EQUALS(El1_bound, "none"  ) ||
@@ -93,9 +93,9 @@ extern "C" void EMScript_SelectBoundConds(CCTK_ARGUMENTS)
       CCTK_EQUALS(El1_bound, "zero"  ) )
   {
     ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
-                      "EMScript::El1", El1_bound);
+                      "My_New_Implementation::El1", El1_bound);
     if (ierr < 0)
-       CCTK_WARN(0, "Failed to register El1_bound BC for EMScript::El1!");
+       CCTK_WARN(0, "Failed to register El1_bound BC for My_New_Implementation::El1!");
   }
   
   if (CCTK_EQUALS(El2_bound, "none"  ) ||
@@ -104,9 +104,9 @@ extern "C" void EMScript_SelectBoundConds(CCTK_ARGUMENTS)
       CCTK_EQUALS(El2_bound, "zero"  ) )
   {
     ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
-                      "EMScript::El2", El2_bound);
+                      "My_New_Implementation::El2", El2_bound);
     if (ierr < 0)
-       CCTK_WARN(0, "Failed to register El2_bound BC for EMScript::El2!");
+       CCTK_WARN(0, "Failed to register El2_bound BC for My_New_Implementation::El2!");
   }
   
   if (CCTK_EQUALS(El3_bound, "none"  ) ||
@@ -115,9 +115,9 @@ extern "C" void EMScript_SelectBoundConds(CCTK_ARGUMENTS)
       CCTK_EQUALS(El3_bound, "zero"  ) )
   {
     ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
-                      "EMScript::El3", El3_bound);
+                      "My_New_Implementation::El3", El3_bound);
     if (ierr < 0)
-       CCTK_WARN(0, "Failed to register El3_bound BC for EMScript::El3!");
+       CCTK_WARN(0, "Failed to register El3_bound BC for My_New_Implementation::El3!");
   }
   
   if (CCTK_EQUALS(B_group_bound, "radiative"))
@@ -132,10 +132,10 @@ extern "C" void EMScript_SelectBoundConds(CCTK_ARGUMENTS)
        CCTK_WARN(0, "could not set SPEED value in table!");
   
     ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, 1, handle_B_group_bound, 
-                      "EMScript::B_group", "Radiation");
+                      "My_New_Implementation::B_group", "Radiation");
   
     if (ierr < 0)
-       CCTK_WARN(0, "Failed to register Radiation BC for EMScript::B_group!");
+       CCTK_WARN(0, "Failed to register Radiation BC for My_New_Implementation::B_group!");
   
   }
   
@@ -151,10 +151,10 @@ extern "C" void EMScript_SelectBoundConds(CCTK_ARGUMENTS)
        CCTK_WARN(0, "could not set SPEED value in table!");
   
     ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, 1, handle_El_group_bound, 
-                      "EMScript::El_group", "Radiation");
+                      "My_New_Implementation::El_group", "Radiation");
   
     if (ierr < 0)
-       CCTK_WARN(0, "Failed to register Radiation BC for EMScript::El_group!");
+       CCTK_WARN(0, "Failed to register Radiation BC for My_New_Implementation::El_group!");
   
   }
   
@@ -170,10 +170,10 @@ extern "C" void EMScript_SelectBoundConds(CCTK_ARGUMENTS)
         CCTK_WARN(0, "could not set SPEED value in table!");
   
     ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, handle_B1_bound, 
-                      "EMScript::B1", "Radiation");
+                      "My_New_Implementation::B1", "Radiation");
   
     if (ierr < 0)
-       CCTK_WARN(0, "Failed to register Radiation BC for EMScript::B1!");
+       CCTK_WARN(0, "Failed to register Radiation BC for My_New_Implementation::B1!");
   
   }
   
@@ -189,10 +189,10 @@ extern "C" void EMScript_SelectBoundConds(CCTK_ARGUMENTS)
         CCTK_WARN(0, "could not set SPEED value in table!");
   
     ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, handle_B2_bound, 
-                      "EMScript::B2", "Radiation");
+                      "My_New_Implementation::B2", "Radiation");
   
     if (ierr < 0)
-       CCTK_WARN(0, "Failed to register Radiation BC for EMScript::B2!");
+       CCTK_WARN(0, "Failed to register Radiation BC for My_New_Implementation::B2!");
   
   }
   
@@ -208,10 +208,10 @@ extern "C" void EMScript_SelectBoundConds(CCTK_ARGUMENTS)
         CCTK_WARN(0, "could not set SPEED value in table!");
   
     ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, handle_B3_bound, 
-                      "EMScript::B3", "Radiation");
+                      "My_New_Implementation::B3", "Radiation");
   
     if (ierr < 0)
-       CCTK_WARN(0, "Failed to register Radiation BC for EMScript::B3!");
+       CCTK_WARN(0, "Failed to register Radiation BC for My_New_Implementation::B3!");
   
   }
   
@@ -227,10 +227,10 @@ extern "C" void EMScript_SelectBoundConds(CCTK_ARGUMENTS)
         CCTK_WARN(0, "could not set SPEED value in table!");
   
     ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, handle_El1_bound, 
-                      "EMScript::El1", "Radiation");
+                      "My_New_Implementation::El1", "Radiation");
   
     if (ierr < 0)
-       CCTK_WARN(0, "Failed to register Radiation BC for EMScript::El1!");
+       CCTK_WARN(0, "Failed to register Radiation BC for My_New_Implementation::El1!");
   
   }
   
@@ -246,10 +246,10 @@ extern "C" void EMScript_SelectBoundConds(CCTK_ARGUMENTS)
         CCTK_WARN(0, "could not set SPEED value in table!");
   
     ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, handle_El2_bound, 
-                      "EMScript::El2", "Radiation");
+                      "My_New_Implementation::El2", "Radiation");
   
     if (ierr < 0)
-       CCTK_WARN(0, "Failed to register Radiation BC for EMScript::El2!");
+       CCTK_WARN(0, "Failed to register Radiation BC for My_New_Implementation::El2!");
   
   }
   
@@ -265,10 +265,10 @@ extern "C" void EMScript_SelectBoundConds(CCTK_ARGUMENTS)
         CCTK_WARN(0, "could not set SPEED value in table!");
   
     ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, handle_El3_bound, 
-                      "EMScript::El3", "Radiation");
+                      "My_New_Implementation::El3", "Radiation");
   
     if (ierr < 0)
-       CCTK_WARN(0, "Failed to register Radiation BC for EMScript::El3!");
+       CCTK_WARN(0, "Failed to register Radiation BC for My_New_Implementation::El3!");
   
   }
   
@@ -282,10 +282,10 @@ extern "C" void EMScript_SelectBoundConds(CCTK_ARGUMENTS)
         CCTK_WARN(0, "could not set SCALAR value in table!");
   
     ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, 1, handle_B_group_bound, 
-                      "EMScript::B_group", "scalar");
+                      "My_New_Implementation::B_group", "scalar");
   
     if (ierr < 0)
-       CCTK_WARN(0, "Failed to register Scalar BC for EMScript::B_group!");
+       CCTK_WARN(0, "Failed to register Scalar BC for My_New_Implementation::B_group!");
   
   }
   
@@ -299,10 +299,10 @@ extern "C" void EMScript_SelectBoundConds(CCTK_ARGUMENTS)
         CCTK_WARN(0, "could not set SCALAR value in table!");
   
     ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, 1, handle_El_group_bound, 
-                      "EMScript::El_group", "scalar");
+                      "My_New_Implementation::El_group", "scalar");
   
     if (ierr < 0)
-       CCTK_WARN(0, "Failed to register Scalar BC for EMScript::El_group!");
+       CCTK_WARN(0, "Failed to register Scalar BC for My_New_Implementation::El_group!");
   
   }
   
@@ -316,10 +316,10 @@ extern "C" void EMScript_SelectBoundConds(CCTK_ARGUMENTS)
       CCTK_WARN(0, "could not set SCALAR value in table!");
   
     ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, handle_B1_bound, 
-                      "EMScript::B1", "scalar");
+                      "My_New_Implementation::B1", "scalar");
   
     if (ierr < 0)
-       CCTK_WARN(0, "Error in registering Scalar BC for EMScript::B1!");
+       CCTK_WARN(0, "Error in registering Scalar BC for My_New_Implementation::B1!");
   
   }
   
@@ -333,10 +333,10 @@ extern "C" void EMScript_SelectBoundConds(CCTK_ARGUMENTS)
       CCTK_WARN(0, "could not set SCALAR value in table!");
   
     ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, handle_B2_bound, 
-                      "EMScript::B2", "scalar");
+                      "My_New_Implementation::B2", "scalar");
   
     if (ierr < 0)
-       CCTK_WARN(0, "Error in registering Scalar BC for EMScript::B2!");
+       CCTK_WARN(0, "Error in registering Scalar BC for My_New_Implementation::B2!");
   
   }
   
@@ -350,10 +350,10 @@ extern "C" void EMScript_SelectBoundConds(CCTK_ARGUMENTS)
       CCTK_WARN(0, "could not set SCALAR value in table!");
   
     ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, handle_B3_bound, 
-                      "EMScript::B3", "scalar");
+                      "My_New_Implementation::B3", "scalar");
   
     if (ierr < 0)
-       CCTK_WARN(0, "Error in registering Scalar BC for EMScript::B3!");
+       CCTK_WARN(0, "Error in registering Scalar BC for My_New_Implementation::B3!");
   
   }
   
@@ -367,10 +367,10 @@ extern "C" void EMScript_SelectBoundConds(CCTK_ARGUMENTS)
       CCTK_WARN(0, "could not set SCALAR value in table!");
   
     ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, handle_El1_bound, 
-                      "EMScript::El1", "scalar");
+                      "My_New_Implementation::El1", "scalar");
   
     if (ierr < 0)
-       CCTK_WARN(0, "Error in registering Scalar BC for EMScript::El1!");
+       CCTK_WARN(0, "Error in registering Scalar BC for My_New_Implementation::El1!");
   
   }
   
@@ -384,10 +384,10 @@ extern "C" void EMScript_SelectBoundConds(CCTK_ARGUMENTS)
       CCTK_WARN(0, "could not set SCALAR value in table!");
   
     ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, handle_El2_bound, 
-                      "EMScript::El2", "scalar");
+                      "My_New_Implementation::El2", "scalar");
   
     if (ierr < 0)
-       CCTK_WARN(0, "Error in registering Scalar BC for EMScript::El2!");
+       CCTK_WARN(0, "Error in registering Scalar BC for My_New_Implementation::El2!");
   
   }
   
@@ -401,10 +401,10 @@ extern "C" void EMScript_SelectBoundConds(CCTK_ARGUMENTS)
       CCTK_WARN(0, "could not set SCALAR value in table!");
   
     ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, handle_El3_bound, 
-                      "EMScript::El3", "scalar");
+                      "My_New_Implementation::El3", "scalar");
   
     if (ierr < 0)
-       CCTK_WARN(0, "Error in registering Scalar BC for EMScript::El3!");
+       CCTK_WARN(0, "Error in registering Scalar BC for My_New_Implementation::El3!");
   
   }
   return;
@@ -413,45 +413,45 @@ extern "C" void EMScript_SelectBoundConds(CCTK_ARGUMENTS)
 
 
 /* template for entries in parameter file:
-#$bound$#EMScript::B_group_bound       = "skip"
-#$bound$#EMScript::B_group_bound_speed = 1.0
-#$bound$#EMScript::B_group_bound_limit = 0.0
-#$bound$#EMScript::B_group_bound_scalar = 0.0
+#$bound$#My_New_Implementation::B_group_bound       = "skip"
+#$bound$#My_New_Implementation::B_group_bound_speed = 1.0
+#$bound$#My_New_Implementation::B_group_bound_limit = 0.0
+#$bound$#My_New_Implementation::B_group_bound_scalar = 0.0
 
-#$bound$#EMScript::El_group_bound       = "skip"
-#$bound$#EMScript::El_group_bound_speed = 1.0
-#$bound$#EMScript::El_group_bound_limit = 0.0
-#$bound$#EMScript::El_group_bound_scalar = 0.0
+#$bound$#My_New_Implementation::El_group_bound       = "skip"
+#$bound$#My_New_Implementation::El_group_bound_speed = 1.0
+#$bound$#My_New_Implementation::El_group_bound_limit = 0.0
+#$bound$#My_New_Implementation::El_group_bound_scalar = 0.0
 
-#$bound$#EMScript::B1_bound       = "skip"
-#$bound$#EMScript::B1_bound_speed = 1.0
-#$bound$#EMScript::B1_bound_limit = 0.0
-#$bound$#EMScript::B1_bound_scalar = 0.0
+#$bound$#My_New_Implementation::B1_bound       = "skip"
+#$bound$#My_New_Implementation::B1_bound_speed = 1.0
+#$bound$#My_New_Implementation::B1_bound_limit = 0.0
+#$bound$#My_New_Implementation::B1_bound_scalar = 0.0
 
-#$bound$#EMScript::B2_bound       = "skip"
-#$bound$#EMScript::B2_bound_speed = 1.0
-#$bound$#EMScript::B2_bound_limit = 0.0
-#$bound$#EMScript::B2_bound_scalar = 0.0
+#$bound$#My_New_Implementation::B2_bound       = "skip"
+#$bound$#My_New_Implementation::B2_bound_speed = 1.0
+#$bound$#My_New_Implementation::B2_bound_limit = 0.0
+#$bound$#My_New_Implementation::B2_bound_scalar = 0.0
 
-#$bound$#EMScript::B3_bound       = "skip"
-#$bound$#EMScript::B3_bound_speed = 1.0
-#$bound$#EMScript::B3_bound_limit = 0.0
-#$bound$#EMScript::B3_bound_scalar = 0.0
+#$bound$#My_New_Implementation::B3_bound       = "skip"
+#$bound$#My_New_Implementation::B3_bound_speed = 1.0
+#$bound$#My_New_Implementation::B3_bound_limit = 0.0
+#$bound$#My_New_Implementation::B3_bound_scalar = 0.0
 
-#$bound$#EMScript::El1_bound       = "skip"
-#$bound$#EMScript::El1_bound_speed = 1.0
-#$bound$#EMScript::El1_bound_limit = 0.0
-#$bound$#EMScript::El1_bound_scalar = 0.0
+#$bound$#My_New_Implementation::El1_bound       = "skip"
+#$bound$#My_New_Implementation::El1_bound_speed = 1.0
+#$bound$#My_New_Implementation::El1_bound_limit = 0.0
+#$bound$#My_New_Implementation::El1_bound_scalar = 0.0
 
-#$bound$#EMScript::El2_bound       = "skip"
-#$bound$#EMScript::El2_bound_speed = 1.0
-#$bound$#EMScript::El2_bound_limit = 0.0
-#$bound$#EMScript::El2_bound_scalar = 0.0
+#$bound$#My_New_Implementation::El2_bound       = "skip"
+#$bound$#My_New_Implementation::El2_bound_speed = 1.0
+#$bound$#My_New_Implementation::El2_bound_limit = 0.0
+#$bound$#My_New_Implementation::El2_bound_scalar = 0.0
 
-#$bound$#EMScript::El3_bound       = "skip"
-#$bound$#EMScript::El3_bound_speed = 1.0
-#$bound$#EMScript::El3_bound_limit = 0.0
-#$bound$#EMScript::El3_bound_scalar = 0.0
+#$bound$#My_New_Implementation::El3_bound       = "skip"
+#$bound$#My_New_Implementation::El3_bound_speed = 1.0
+#$bound$#My_New_Implementation::El3_bound_limit = 0.0
+#$bound$#My_New_Implementation::El3_bound_scalar = 0.0
 
 */
 

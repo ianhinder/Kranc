@@ -1,6 +1,6 @@
 begin thorn EMScript
 
-inherit ADMBase EinsteinBase
+inherit ADMBase
 use opencl vectors jacobian cse
 disable loopcontrol
 implement My_New_Implementation

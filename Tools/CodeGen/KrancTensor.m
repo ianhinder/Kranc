@@ -28,7 +28,8 @@ $KrancTensorPackage = "TensorToolsKranc`";
 
 BeginPackage["KrancTensor`", {"Errors`", "KrancThorn`", "MapLookup`", "KrancGroups`",
                               "Kranc`", $KrancTensorPackage, "ConservationCalculation`",
-                              "TensorTools`", "KrancGroups`", "Differencing`"}];
+                              "TensorTools`", "KrancGroups`", "Differencing`",
+                              "Piraha`"}];
 
 CreateKrancThornTT::usage = "Construct a Kranc thorn using tensor expressions.";
 CreateKrancThornTT2::usage = "Construct a Kranc thorn using tensor expressions.";
@@ -105,12 +106,129 @@ makeGroupExplicit[g_] :=
     newGroup = SetGroupVariables[g, newVariables];
     newGroup];
 
+printStruct[x:h_[args___], indent_:0] :=
+  Module[
+    {ind},
+    ind = StringJoin@ConstantArray[" ",indent];
+    If[Length[x] === 0, 
+       Print[ind,h,"[]"],
+       (* else *)
+       If[And@@Map[StringQ,x],
+          Print[ind,h,"[",StringJoin@Riffle[List@@x,","],"]"],
+          (* else *)
+          Print[ind,h,"["];
+          Scan[printStruct[#,indent+2]&, x];
+          Print[StringJoin@ConstantArray[" ",indent+StringLength[h]],"]"]]]];
+
+printStruct[x_String, indent_:0] :=
+  Module[
+    {},
+    Print[StringJoin@ConstantArray[" ",indent],x]];
+
+DefFn[
+  InheritedGroups[imp_String] :=
+  Module[
+    {interfaceFiles, arrangements},
+
+    arrangements = FileNameJoin[{KrancDirectory,"..","..","arrangements"}];
+    interfaceFiles = Take[FileNames[FileNameJoin[{arrangements,"*","*","interface.ccl"}]],All];
+
+    Print[StringForm["Parsing interface.ccl files in `1`", FileNameJoin[{KrancDirectory,"..","..","arrangements"}]]];
+
+    interfaces = Catch[(WriteString["stdout","."]; # -> Parse["intrfccl.peg", "intr", #]),_,
+                       Function[{val,tag},#->val]] & /@ interfaceFiles; Print[];
+
+    badInterfaces = Select[interfaces, (Head[#[[2]]] === KrancError) &];
+
+    (* dir = "failed-interface-files"; *)
+    (* CreateDirectory[dir]; *)
+    (* Map[Print[CopyFile[#, FileNameJoin[{dir,FileNameSplit[#][[-2]]}]<>"_interface.ccl"]] &, Map[First, badInterfaces]]; *)
+
+    goodInterfaces = Select[interfaces, (!(Head[#] === KrancError)) &];
+
+    If[Length[badInterfaces] > 0,
+       InfoMessage[Terse, StringForm["Warning: Could not parse the interface files for thorns `1`",StringJoin@Riffle[Map[FileNameSplit[#[[1]]][[-2]] &,badInterfaces]," "]]]];
+
+    (* Map[PrintError,badInterfaces]; *)
+
+    If[Length[badInterfaces] > 0,
+       Print[StringForm["`1`/`2` interface.ccl files could not be parsed", 
+                        Length[badInterfaces], Length[interfaces]]]];
+
+    interfaces2 = goodInterfaces //. {("startIndex" -> _) :> Sequence[],
+                                      ("endIndex" -> _) :> Sequence[]};
+
+    stringRules = {(a_-> XMLObject["Document"][_,data_,___]) :> a->data, 
+                   XMLElement[s_,_,c_] :> s@@c};
+
+    interfaces3 = interfaces2 //. stringRules;
+
+    structGet[expr_, path_List] :=
+    Module[
+      {results, pat,x},
+      pat = Fold[#2[___, #1, ___] &, x:Last[path], Reverse@Drop[path,-1]];
+
+      (* pat = "intr"[___, "entries"[___, "GROUP_VARS"[___], ___], ___]; *)
+      (* pat = "intr"[___, "entries"[___, "GROUP_VARS"[x__], ___], ___]; *)
+
+      (* Print["pattern = ", pat//InputForm]; *)
+      (* Print["expression = ", expr//InputForm]; *)
+      results = Cases[{expr}, pat :> {x}];
+
+      If[Length[results] === 0, 
+         ThrowError[ToString@StringForm["Cannot find `1` in expression `2`", path, expr]]];
+
+      If[Length[results] > 1,
+         ThrowError[ToString@StringForm["More than one instance of `1` in expression `2`", 
+                                        path, expr]]];
+      results[[1]]];
+
+    structMatchQ[expr_, path_List] :=
+    Module[{result},
+           result=MatchQ[expr, Fold[#2[___, #1, ___] &, Last[path], Reverse@Drop[path,-1]]];
+          result];
+
+    thorns = Select[interfaces3, structMatchQ[#[[2]], {"intr","entries","HEADER","IMPLEMENTS","name",imp}] &];
+
+    (* Print["thorns = ", Map[First,thorns]]; *)
+
+    If[Length[thorns] > 1,
+       ThrowError[ToString@StringForm[
+         "Found more than one thorn (`1`) providing implementation `2`.  Kranc does not yet support this.", Map[FileNameSplit[First[#]][[-2]] &, thorns], imp]]];
+
+    If[Length[thorns] === 0,
+       ThrowError[ToString@StringForm[
+         "Cannot find any thorn providing implementation `1` in `2`.", imp, arrangements]]];
+
+    (* printStruct[thorns[[1,2]]]; *)
+
+
+    groups = Cases[thorns[[1,2]], "GROUP_VARS"[___], Infinity];
+    
+    groups = Select[groups, Cases[#,"gtype"["GF"]] =!= {} &];
+    
+    (* Print["groups = "]; *)
+    (* Map[Print, groups]; *)
+
+    groupFromStruct[str_] :=
+    {Cases[str,"name"[n_] :> n][[1]], Cases[str,"VARS"[vs___] :> Map[First,{vs}]][[1]]};
+
+    krancGroups = Map[groupFromStruct, groups];
+
+    krancGroups]];
+
+
+
 Options[CreateKrancThornTT2] = ThornOptions;
 
 DefFn[CreateKrancThornTT2[thornName_String, opts:OptionsPattern[]] :=
   Module[
     {groups, pderivs, opts2, fdOrder = Global`fdOrder, PDstandard = Global`PDstandard},
     groups = Map[CreateGroupFromTensor, OptionValue[Variables]];
+
+    inheritedGroups = Join@@Map[InheritedGroups, OptionValue[InheritedImplementations]];
+
+    Print["inheritedGroups = ", inheritedGroups];
 
     pderivs =
     Join[OptionValue[PartialDerivatives],

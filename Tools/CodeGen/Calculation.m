@@ -26,6 +26,7 @@ OutputGridFunctions;
 AllGridFunctions;
 GetCalculationName;
 GetEquations;
+GetCalculationParameters;
 CalculationStencilSize;
 
 Begin["`Private`"];
@@ -62,6 +63,14 @@ DefFn[
 DefFn[
   GetEquations[calc_List] :=
   lookup[calc,Equations]];
+
+DefFn[
+  GetCalculationParameters[calc_List] :=
+  Module[
+    {syms,params},
+    syms = Cases[GetEquations[calc], _?AtomQ|_String, {-1}];
+    params = lookup[calc,Parameters];
+    Join[Intersection[params,syms],{Global`fdOrder}]]];
 
 DefFn[
   GetCalculationName[calc_List] :=

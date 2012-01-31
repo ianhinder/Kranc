@@ -31,7 +31,7 @@ Begin["`Private`"];
 
 DefFn[
   variableBlock[var_, intent_String] :=
-  CCLBlock["CCTK_CUDA_KERNEL_VARIABLE", "", {"cached" -> "yes", "intent" -> intent}, {var,"\n"}, ToString[var]]];
+  CCLBlock["CCTK_CUDA_KERNEL_VARIABLE", "", {"cached" -> "no", "intent" -> intent}, {var,"\n"}, ToString[var]]];
 
 DefFn[
   parameterBlock[par_] :=

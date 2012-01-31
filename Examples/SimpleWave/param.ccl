@@ -17,12 +17,6 @@ CCTK_INT verbose "verbose" STEERABLE=ALWAYS
 } 0
 
 restricted:
-CCTK_REAL hlleAlpha "hlleAlpha"
-{
-  "*:*" :: ""
-} 0
-
-restricted:
 CCTK_INT SimpleWave_MaxNumEvolvedVars "Number of evolved variables used by this thorn" ACCUMULATOR-BASE=MethodofLines::MoL_Num_Evolved_Vars STEERABLE=RECOVER
 {
   2:2 :: "Number of evolved variables used by this thorn"

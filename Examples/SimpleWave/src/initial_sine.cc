@@ -57,15 +57,11 @@ static void initial_sine_Body(cGH const * restrict const cctkGH, int const dir, 
   CCTK_REAL const hdzi = 0.5 * dzi;
   
   /* Initialize predefined quantities */
-  CCTK_REAL const p1o1 = 1;
   CCTK_REAL const p1o2dx = 0.5*INV(dx);
   CCTK_REAL const p1o2dy = 0.5*INV(dy);
   CCTK_REAL const p1o2dz = 0.5*INV(dz);
-  CCTK_REAL const p1odx = INV(dx);
   CCTK_REAL const p1odx2 = INV(SQR(dx));
-  CCTK_REAL const p1ody = INV(dy);
   CCTK_REAL const p1ody2 = INV(SQR(dy));
-  CCTK_REAL const p1odz = INV(dz);
   CCTK_REAL const p1odz2 = INV(SQR(dz));
   
   /* Assign local copies of arrays functions */

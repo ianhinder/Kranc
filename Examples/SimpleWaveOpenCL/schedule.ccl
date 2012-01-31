@@ -48,11 +48,17 @@ schedule SimpleWaveOpenCL_RegisterSymmetries in SymmetryRegister
 schedule initial_sine AT INITIAL
 {
   LANG: C
+  # TAGS: OpenCL=1
+  READS:    grid::coordinates
+  WRITES:   SimpleWaveOpenCL::evolved_group
 } "initial_sine"
 
 schedule calc_rhs in MoL_CalcRHS
 {
   LANG: C
+  # TAGS: OpenCL=1
+  READS:    SimpleWaveOpenCL::evolved_group
+  WRITES:   SimpleWaveOpenCL::evolved_grouprhs
 } "calc_rhs"
 
 schedule SimpleWaveOpenCL_SelectBoundConds in MoL_PostStep

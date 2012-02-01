@@ -216,9 +216,41 @@ DefFn[
     Cases[tree, "GROUP_VARS"[___], Infinity],
     Cases[#, "gtype"["GF"]] =!= {} &]];
 
+unquote[s_String] := StringDrop[StringDrop[s,-1],1];
+
+unquote["squote"[s_]] := StringDrop[StringDrop[s,-1],1];
+unquote["dquote"[s_]] := StringDrop[StringDrop[s,-1],1];
+
+tensorType[s_String] :=
+  Module[
+    {symmetric = StringMatchQ[s, __~~"_sym"],
+     s1 = StringReplace[s, x__~~"_sym" -> x]},
+    If[StringTake[s,1] === "4", ThrowError["Kranc does not yet support 4D tensors"]];
+    If[StringMatchQ[s1,"scalar",IgnoreCase->True],
+       {"",symmetric},
+       {ToLowerCase@s1,symmetric}]];
+
+tagToOptions[s_] :=
+  Module[
+    {tag,val},
+    {tag,val} = StringSplit[s,"="];
+    Switch[
+      tag,
+      "tensorweight", {TensorWeight -> val},
+      "tensortypealias", {TensorType -> tensorType@unquote[val]},
+      _, {}]];
+
+
+groupOptionsFromTags[tags_] :=
+  If[Length[tags] === 0, {},
+     Print["tags = ", tags//InputForm];
+     Print["tags split = ", InputForm@StringSplit[tags[[1]]]];
+     Flatten[tagToOptions/@StringSplit[tags[[1]]],1]];
+
 DefFn[
   groupStructureOfGroupVar[groupVar_] :=
-  {Cases[groupVar,"name"[n_] :> n][[1]], Cases[groupVar,"VARS"[vs___] :> Map[First,{vs}]][[1]]}];
+  {Cases[groupVar,"name"[n_] :> n][[1]], Cases[groupVar,"VARS"[vs___] :> Map[First,{vs}]][[1]], 
+   Sequence@@groupOptionsFromTags[Cases[Print[groupVar//InputForm]; groupVar,"tags"[tags_] :> unquote[tags]]]}];
 
 DefFn[
   InheritedGroups[imp_String] :=
@@ -233,6 +265,8 @@ DefFn[CreateKrancThornTT2[thornName_String, opts:OptionsPattern[]] :=
     groups = Map[CreateGroupFromTensor, OptionValue[Variables]];
 
     inheritedGroups = Join@@Map[InheritedGroups, OptionValue[InheritedImplementations]];
+
+    Print[inheritedGroups];
 
     pderivs =
     Join[OptionValue[PartialDerivatives],

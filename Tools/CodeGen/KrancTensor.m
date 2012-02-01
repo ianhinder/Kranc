@@ -120,104 +120,110 @@ printStruct[x:h_[args___], indent_:0] :=
           Scan[printStruct[#,indent+2]&, x];
           Print[StringJoin@ConstantArray[" ",indent+StringLength[h]],"]"]]]];
 
-printStruct[x_String, indent_:0] :=
+DefFn[
+  printStruct[x_String, indent_:0] :=
   Module[
     {},
-    Print[StringJoin@ConstantArray[" ",indent],x]];
+    Print[StringJoin@ConstantArray[" ",indent],x]]];
+
+(* Structure functions *)
+
+DefFn[
+  structGet[expr_, path_List] :=
+  Module[
+    {results, pat,x},
+    pat = Fold[#2[___, #1, ___] &, x:Last[path], Reverse@Drop[path,-1]];
+    results = Cases[{expr}, pat :> x];
+
+    If[Length[results] === 0, 
+       ThrowError[ToString@StringForm["Cannot find `1` in expression `2`", path, expr]]];
+
+    results[[1]]]];
+
+DefFn[
+  structMatchQ[expr_, path_List] :=
+  Module[{result},
+         result=MatchQ[expr, Fold[#2[___, #1, ___] &, Last[path], Reverse@Drop[path,-1]]];
+         result]];
+
+(* Cactus tree functions *)
+
+DefFn[
+  getCactusDirectory[] :=
+  FileNameJoin[{KrancDirectory,"..",".."}]];
+
+DefFn[
+  getAllInterfaceFiles[] :=
+  FileNames[FileNameJoin[{getCactusDirectory[],"arrangements","*","*","interface.ccl"}]]];
+
+DefFn[
+  getAllThorns[] :=
+  Map[FileNameDrop[#,-1] &, getAllInterfaceFiles[]]];
+
+(* Groups and variables functions *)
+
+(*
+
+Get groups provided by an implementation:
+  If there is a thorn with the same name as the implementation
+  AND the implementation of this thorn is the one we want,
+    Return the groups of this thorn
+  else
+    Scan all the interface files and find the thorn(s) providing this implementation
+    Warn if there is not exactly one
+    Return the groups of this thorn
+
+*)
+
+DefFn[
+thornOfImplementation[imp_String] :=
+  Module[
+    {impThorns = Select[getAllThorns[], FileNameTake[#,-1] === imp &],
+     impThorns2},
+    If[impThorns =!= {} && StringMatchQ[implementationOfThorn[impThorns[[1]]], imp, IgnoreCase->True],
+       impThorns[[1]],
+       (* else *)
+       Module[
+         {impThorns2 = Select[getAllThorns[], StringMatchQ[implementationOfThorn[#], "*", IgnoreCase -> True] &]},
+         Switch[Length[impThorns2],
+                0, ThrowError[ToString@StringForm["Cannot find a thorn with implementation `1`", imp]],
+                1, impThorns2[[1]],
+                _, Print[StringForm[
+                  "WARNING: Found more than one thorn (`1`) providing implementation `2`.  Using `3`.",
+                  Map[FileNameTake[#,-1] &, impThorns], imp, FileNameTake[impThorns[[1]],-1]]];
+                impThorns2[[1]]]]]]];
+
+DefFn[
+  implementationOfThorn[thorn_String] :=
+  structGet[interfaceTreeOfThorn[thorn],
+            {"intr","entries","HEADER","IMPLEMENTS","name",_}]];
+
+DefFn[
+  interfaceTreeOfThorn[thorn_String] :=
+  parseInterfaceCCL[FileNameJoin[{thorn,"interface.ccl"}]]];
+
+DefFn[
+  parseInterfaceCCL[interfaceFile_String] :=
+  (Parse["intrfccl.peg", "intr", interfaceFile] //.
+   {("startIndex" -> _) :> Sequence[],
+    ("endIndex" -> _) :> Sequence[]} )//.
+  {(XMLObject["Document"][_,data_,___]) :> data, 
+   XMLElement[s_,_,c_] :> s@@c}];
+
+DefFn[
+  gfGroupVarsOfInterfaceTree[tree_] :=
+  Select[
+    Cases[tree, "GROUP_VARS"[___], Infinity],
+    Cases[#, "gtype"["GF"]] =!= {} &]];
+
+DefFn[
+  groupStructureOfGroupVar[groupVar_] :=
+  {Cases[groupVar,"name"[n_] :> n][[1]], Cases[groupVar,"VARS"[vs___] :> Map[First,{vs}]][[1]]}];
 
 DefFn[
   InheritedGroups[imp_String] :=
-  Module[
-    {interfaceFiles, arrangements},
-
-    arrangements = FileNameJoin[{KrancDirectory,"..","..","arrangements"}];
-    interfaceFiles = Take[FileNames[FileNameJoin[{arrangements,"*","*","interface.ccl"}]],All];
-
-    Print[StringForm["Parsing interface.ccl files in `1`", FileNameJoin[{KrancDirectory,"..","..","arrangements"}]]];
-
-    interfaces = Catch[(WriteString["stdout","."]; # -> Parse["intrfccl.peg", "intr", #]),_,
-                       Function[{val,tag},#->val]] & /@ interfaceFiles; Print[];
-
-    badInterfaces = Select[interfaces, (Head[#[[2]]] === KrancError) &];
-
-    (* dir = "failed-interface-files"; *)
-    (* CreateDirectory[dir]; *)
-    (* Map[Print[CopyFile[#, FileNameJoin[{dir,FileNameSplit[#][[-2]]}]<>"_interface.ccl"]] &, Map[First, badInterfaces]]; *)
-
-    goodInterfaces = Select[interfaces, (!(Head[#] === KrancError)) &];
-
-    If[Length[badInterfaces] > 0,
-       InfoMessage[Terse, StringForm["Warning: Could not parse the interface files for thorns `1`",StringJoin@Riffle[Map[FileNameSplit[#[[1]]][[-2]] &,badInterfaces]," "]]]];
-
-    (* Map[PrintError,badInterfaces]; *)
-
-    If[Length[badInterfaces] > 0,
-       Print[StringForm["`1`/`2` interface.ccl files could not be parsed", 
-                        Length[badInterfaces], Length[interfaces]]]];
-
-    interfaces2 = goodInterfaces //. {("startIndex" -> _) :> Sequence[],
-                                      ("endIndex" -> _) :> Sequence[]};
-
-    stringRules = {(a_-> XMLObject["Document"][_,data_,___]) :> a->data, 
-                   XMLElement[s_,_,c_] :> s@@c};
-
-    interfaces3 = interfaces2 //. stringRules;
-
-    structGet[expr_, path_List] :=
-    Module[
-      {results, pat,x},
-      pat = Fold[#2[___, #1, ___] &, x:Last[path], Reverse@Drop[path,-1]];
-
-      (* pat = "intr"[___, "entries"[___, "GROUP_VARS"[___], ___], ___]; *)
-      (* pat = "intr"[___, "entries"[___, "GROUP_VARS"[x__], ___], ___]; *)
-
-      (* Print["pattern = ", pat//InputForm]; *)
-      (* Print["expression = ", expr//InputForm]; *)
-      results = Cases[{expr}, pat :> {x}];
-
-      If[Length[results] === 0, 
-         ThrowError[ToString@StringForm["Cannot find `1` in expression `2`", path, expr]]];
-
-      If[Length[results] > 1,
-         ThrowError[ToString@StringForm["More than one instance of `1` in expression `2`", 
-                                        path, expr]]];
-      results[[1]]];
-
-    structMatchQ[expr_, path_List] :=
-    Module[{result},
-           result=MatchQ[expr, Fold[#2[___, #1, ___] &, Last[path], Reverse@Drop[path,-1]]];
-          result];
-
-    thorns = Select[interfaces3, structMatchQ[#[[2]], {"intr","entries","HEADER","IMPLEMENTS","name",imp}] &];
-
-    (* Print["thorns = ", Map[First,thorns]]; *)
-
-    If[Length[thorns] > 1,
-       ThrowError[ToString@StringForm[
-         "Found more than one thorn (`1`) providing implementation `2`.  Kranc does not yet support this.", Map[FileNameSplit[First[#]][[-2]] &, thorns], imp]]];
-
-    If[Length[thorns] === 0,
-       ThrowError[ToString@StringForm[
-         "Cannot find any thorn providing implementation `1` in `2`.", imp, arrangements]]];
-
-    (* printStruct[thorns[[1,2]]]; *)
-
-
-    groups = Cases[thorns[[1,2]], "GROUP_VARS"[___], Infinity];
-    
-    groups = Select[groups, Cases[#,"gtype"["GF"]] =!= {} &];
-    
-    (* Print["groups = "]; *)
-    (* Map[Print, groups]; *)
-
-    groupFromStruct[str_] :=
-    {Cases[str,"name"[n_] :> n][[1]], Cases[str,"VARS"[vs___] :> Map[First,{vs}]][[1]]};
-
-    krancGroups = Map[groupFromStruct, groups];
-
-    krancGroups]];
-
-
+  Map[groupStructureOfGroupVar,
+      gfGroupVarsOfInterfaceTree[interfaceTreeOfThorn[thornOfImplementation[imp]]]]];
 
 Options[CreateKrancThornTT2] = ThornOptions;
 
@@ -227,8 +233,6 @@ DefFn[CreateKrancThornTT2[thornName_String, opts:OptionsPattern[]] :=
     groups = Map[CreateGroupFromTensor, OptionValue[Variables]];
 
     inheritedGroups = Join@@Map[InheritedGroups, OptionValue[InheritedImplementations]];
-
-    Print["inheritedGroups = ", inheritedGroups];
 
     pderivs =
     Join[OptionValue[PartialDerivatives],

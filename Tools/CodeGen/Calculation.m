@@ -28,6 +28,7 @@ GetCalculationName;
 GetEquations;
 GetCalculationParameters;
 CalculationStencilSize;
+CalculationOnDevice;
 
 Begin["`Private`"];
 
@@ -90,6 +91,10 @@ DefFn[
     eqs    = lookup[calc, Equations];
 
     StencilSize[pddefs, eqs, "not needed", {} (*ZeroDimensions*)]]];
+
+DefFn[
+  CalculationOnDevice[calc_List] :=
+  lookup[calc, ExecuteOn] === Device];
 
 End[];
 

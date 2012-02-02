@@ -624,7 +624,7 @@ DefFn[
   ReplacePowers[expr_, vectorise:Boolean, noSimplify:Boolean : False] :=
   Module[
     {rhs},
-    rhs = expr /. Power[xx_, -1] -> INV[xx];
+    rhs = expr /. Power[xx_, -1] -> INV[xx] /. ToReal[x_] :> x;
     If[SOURCELANGUAGE == "C",
        {rhs = rhs /. Power[xx_,  2  ] -> SQR[xx];
         rhs = rhs /. Power[xx_,  3  ] -> CUB[xx];
@@ -678,7 +678,7 @@ DefFn[
 
         rhs = rhs /. ArcTan[x_, y_] -> ArcTan2[x,y];
         rhs = rhs /. Power[E, power_] -> exp[power];
-        rhs = rhs /. Power[xx_, power_] -> pow[xx, power];
+        rhs = rhs /. Power[xx_, power_] :> pow[xx, "(CCTK_REAL) "<>ToString[power]];
         (* Note: Mathematica simplifies Max[xx_] -> xx automatically *)
         rhs = rhs //. Max[xx_, yy__] -> fmax[xx, Max[yy]];
         rhs = rhs //. Min[xx_, yy__] -> fmin[xx, Min[yy]];

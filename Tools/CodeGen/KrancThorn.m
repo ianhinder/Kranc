@@ -291,8 +291,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     (* Makefile *)
     InfoMessage[Terse, "Creating make file"];
-    make = CreateMakefile[Join[{"Startup.cc", "RegisterMoL.cc", "RegisterSymmetries.cc"},
-                               If[!OptionValue[UseCaKernel], calcFilenames, {}],
+    make = CreateMakefile[Join[{"Startup.cc", "RegisterSymmetries.cc"},
+                               If[!OptionValue[UseCaKernel], {"RegisterMoL.cc"}~Join~calcFilenames, {}],
       Map[lookup[#, Filename] &, boundarySources]]];
 
     (* Put all the above together and generate the Cactus thorn *)

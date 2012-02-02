@@ -18,7 +18,7 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-BeginPackage["Schedule`", {"Thorn`", "KrancGroups`", "MapLookup`", "Errors`", "Helpers`", "Kranc`", "CaKernel`"}];
+BeginPackage["Schedule`", {"Thorn`", "KrancGroups`", "MapLookup`", "Errors`", "Helpers`", "Kranc`", "CaKernel`", "Calculation`"}];
 
 CreateKrancScheduleFile;
 
@@ -109,7 +109,7 @@ scheduleCalc[calc_, groups_, thornName_, OptionsPattern[]] :=
 
     (* TODO: Pass this as {keyword,value} pair instead of a string,
        once Thorn.m understands this format *)
-    tags = If[OptionValue[UseOpenCL], "Device=1", ""];
+    tags = If[OptionValue[UseOpenCL] || CalculationOnDevice[calc], "Device=1", ""];
     
     prefixWithScope[group_] :=
       If[StringMatchQ[ToString[group], __~~"::"~~__],
@@ -131,7 +131,7 @@ scheduleCalc[calc_, groups_, thornName_, OptionsPattern[]] :=
     Return[Map[
       Join[
       {
-        Name               -> If[OptionValue[UseCaKernel], "CAKERNEL_Launch_",""]<>lookup[calc, Name],
+        Name               -> If[OptionValue[UseCaKernel] && CalculationOnDevice[calc], "CAKERNEL_Launch_",""]<>lookup[calc, Name],
         SchedulePoint      -> # <> relStr,
         SynchronizedGroups -> If[StringMatchQ[#, "*MoL_CalcRHS*", IgnoreCase -> True] || StringMatchQ[#, "*MoL_RHSBoundaries*", IgnoreCase -> True],
                                  {},

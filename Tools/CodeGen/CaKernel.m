@@ -73,7 +73,7 @@ DefFn[
 DefFn[CaKernelCCL[calcs_List] :=
   Module[
     {},
-    Map[kernelCCLBlock, calcs]]];
+    Map[kernelCCLBlock, Select[calcs, CalculationOnDevice]]]];
 
 DefFn[CaKernelSchedule[] :=
       {}];

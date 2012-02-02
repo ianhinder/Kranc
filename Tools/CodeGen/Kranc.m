@@ -83,6 +83,10 @@ ThornOptions =
   UseJacobian -> False,
   UseCaKernel -> False};
 
+ExecuteOn;
+Device;
+Host;
+
 (* Thorn.m *)
 
 {AccumulatorBase, ThornImplementation, Name, Type, Extend, Default,

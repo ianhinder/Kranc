@@ -75,14 +75,7 @@ DefFn[CaKernelCCL[calcs_List] :=
     Map[kernelCCLBlock, calcs]]];
 
 DefFn[CaKernelSchedule[] :=
-  Module[
-    {},
-    {{
-      Name          -> "CaKernel_CopyFromDev",
-      SchedulePoint -> "at ANALYSIS", 
-      Language      -> "C",
-      Comment       -> "Copy variables from devices"
-    }}]];
+      {}];
 
 CaKernelConfigurationCLL[] :=
   "REQUIRES CUDA";

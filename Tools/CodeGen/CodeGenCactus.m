@@ -624,7 +624,7 @@ DefFn[
   ReplacePowers[expr_, vectorise:Boolean, noSimplify:Boolean : False] :=
   Module[
     {rhs},
-    rhs = expr /. Power[xx_, -1] -> INV[xx] /. ToReal[x_] :> x;
+    rhs = expr /. Power[xx_, -1] -> INV[xx] /. ToReal[x_] :> x; (* FIXME: this breaks vectorisation *)
     If[SOURCELANGUAGE == "C",
        {rhs = rhs /. Power[xx_,  2  ] -> SQR[xx];
         rhs = rhs /. Power[xx_,  3  ] -> CUB[xx];

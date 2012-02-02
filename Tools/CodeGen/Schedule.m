@@ -109,7 +109,7 @@ scheduleCalc[calc_, groups_, thornName_, OptionsPattern[]] :=
 
     (* TODO: Pass this as {keyword,value} pair instead of a string,
        once Thorn.m understands this format *)
-    tags = If[OptionValue[UseOpenCL], "OpenCL=1", ""];
+    tags = If[OptionValue[UseOpenCL], "Device=1", ""];
     
     prefixWithScope[group_] :=
       If[StringMatchQ[ToString[group], __~~"::"~~__],

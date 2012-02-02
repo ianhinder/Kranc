@@ -4,6 +4,15 @@ begin variables
     phi pi
 end variables
 
+begin temporaries
+    foo bar
+end temporaries
+
+begin derivatives
+    Du u_i = (u_(i+1) - u_(i-1))/h
+    Dv v_i = (v_(i+1,j) - u_(i-1,j))/h
+end derivatives
+
 begin calculation initial_sine_calc scheduled at initial
   phi = sin(2*PI*(x-t))
   pi = -2*pi*cos(2*PI*(x-t))

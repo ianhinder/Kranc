@@ -1,10 +1,13 @@
-skipper = ([ \t\n\r]+|#.*)*
+skipper = \b([ \t\n\r]+|#.*)*
+int = [0-9]+
 end = ([ \t]+|#.*)*\r*\n
 name = [A-Za-z][A-Za-z0-9]*
 uname = [A-Za-z][A-Za-z0-9_]*
-indices = ([_^]([a-zA-Z]'*)+)*
+indices = ([_^]({index_symbol}|\({index_expr}(,{index_expr})*\))+)*
+index_symbol = [a-zA-Z]'*
+index_expr = {index_symbol}([+-]{int}|)
 tensor = {name}{indices}
-dtensor = D{indices} {tensor}
+dtensor = D[a-z]*{indices}? {tensor}
 number = -?[0-9]+(\.[0-9]*|)([eEdD][+-]?[0-9]+|)
 func = {name} \( ({expr}( , {expr})*|) \)
 value = {func}|{dtensor}|{tensor}|{number}|\( {expr} \)
@@ -14,9 +17,11 @@ mul = {pow}( {mulop} {pow})*
 addop = [+-]
 expr = {mul}( {addop} {mul})*
 eqn = ({dtensor}|{tensor}) \= {expr}{-end}
+deqn = {dtensor} \= {expr}{-end}
 eqns = {eqn}( {eqn})*
+deqns = {deqn}( {deqn})*
 schedule = scheduled[ \t]+at[ \t]{uname}
-thorn = begin[ ]+thorn {name}{-end}( {calculation}| {variables}| {temporaries}| {option})* end[ ]+thorn
+thorn = begin[ ]+thorn {name}{-end}( {calculation}| {variables}| {temporaries}| {derivatives}| {option})* end[ ]+thorn
 calculation = begin[ \t]+calculation[ \t]+{uname}[ \t]+{schedule}{-end} {eqns} end[ \t]+calculation
 variables = begin[ \t]+variables{-end} {tensor}( end[ \t]+variables\b{brk}| {tensor})*{-end}
 temporaries = begin[ \t]+temporaries{-end} {tensor}( end[ \t]+temporaries\b{brk}| {tensor})*{-end}
@@ -26,3 +31,4 @@ feature = loopcontrol|vectors|opencl|jacobian|cse
 use = use[ \t]+({feature}[ \t]*)+
 disable = disable[ \t]+({feature}[ \t]*)+
 implement = implement[ \t]+{uname}{-end}
+derivatives = begin[ \t]+derivatives{-end} {deqns} end[ \t]+derivatives

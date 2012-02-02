@@ -65,12 +65,17 @@ DefFn[
   lookup[calc,Equations]];
 
 DefFn[
+  GetPartialDerivatives[calc_List] :=
+  lookup[calc,PartialDerivatives]];
+
+DefFn[
   GetCalculationParameters[calc_List] :=
   Module[
-    {syms,params},
+    {syms,pdSyms,params},
     syms = Cases[GetEquations[calc], _?AtomQ|_String, {-1}];
+    pdSyms = Cases[GetPartialDerivatives[calc], _?AtomQ|_String, {-1}];
     params = lookup[calc,Parameters];
-    Join[Intersection[params,syms],{Global`fdOrder}]]];
+    Intersection[params,Join[syms,pdSyms]]]];
 
 DefFn[
   GetCalculationName[calc_List] :=

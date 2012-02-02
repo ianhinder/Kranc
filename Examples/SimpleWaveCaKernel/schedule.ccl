@@ -42,6 +42,9 @@ schedule SimpleWaveCaKernel_RegisterSymmetries in SymmetryRegister
 schedule CAKERNEL_Launch_initial_gaussian AT INITIAL
 {
   LANG: C
+  READS:    grid::coordinates
+  WRITES:   SimpleWaveCaKernel::phi_g
+  WRITES:   SimpleWaveCaKernel::pi_g
 } "initial_gaussian"
 
 schedule CAKERNEL_Launch_calc_rhs at EVOL
@@ -49,6 +52,10 @@ schedule CAKERNEL_Launch_calc_rhs at EVOL
   LANG: C
   SYNC: phi_grhs
   SYNC: pi_grhs
+  READS:    SimpleWaveCaKernel::phi_g
+  READS:    SimpleWaveCaKernel::pi_g
+  WRITES:   SimpleWaveCaKernel::phi_grhs
+  WRITES:   SimpleWaveCaKernel::pi_grhs
 } "calc_rhs"
 
 schedule CAKERNEL_Launch_rk1 at EVOL after calc_rhs
@@ -56,6 +63,12 @@ schedule CAKERNEL_Launch_rk1 at EVOL after calc_rhs
   LANG: C
   SYNC: phi_g
   SYNC: pi_g
+  READS:    SimpleWaveCaKernel::phi_g
+  READS:    SimpleWaveCaKernel::phi_grhs
+  READS:    SimpleWaveCaKernel::pi_g
+  READS:    SimpleWaveCaKernel::pi_grhs
+  WRITES:   SimpleWaveCaKernel::phi_g
+  WRITES:   SimpleWaveCaKernel::pi_g
 } "rk1"
 
 schedule SimpleWaveCaKernel_SelectBoundConds in MoL_PostStep
@@ -72,17 +85,7 @@ schedule SimpleWaveCaKernel_CheckBoundaries at BASEGRID
   OPTIONS: meta
 } "check boundaries treatment"
 
-schedule CaKernel_CopyFromDev at ANALYSIS
-{
-  LANG: C
-} "Copy variables from devices"
-
 schedule group ApplyBCs as SimpleWaveCaKernel_ApplyBCs in MoL_PostStep after SimpleWaveCaKernel_SelectBoundConds
 {
   # no language specified
 } "Apply boundary conditions controlled by thorn Boundary"
-
-
-############################################################
-#CAKERNEL AUTO GENERATED PART. DO NOT EDIT BELOW THIS POINT#
-############################################################

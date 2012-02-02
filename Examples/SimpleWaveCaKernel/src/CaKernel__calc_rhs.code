@@ -3,6 +3,7 @@
 #include "Differencing.h"
 #include "GenericFD.h"
 
+#undef KRANC_GFOFFSET3D
 #define KRANC_GFOFFSET3D(u,i,j,k) I3D(u,i,j,k)
 
 

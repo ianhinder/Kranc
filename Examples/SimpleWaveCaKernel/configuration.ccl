@@ -4,3 +4,4 @@ REQUIRES GenericFD
 OPTIONAL LoopControl
 {
 }
+REQUIRES CUDA

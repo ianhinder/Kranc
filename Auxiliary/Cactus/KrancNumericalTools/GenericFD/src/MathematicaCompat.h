@@ -1,5 +1,5 @@
- 
-#define Power(x, y)   (pow(x,y))
+
+#define Power(x, y)   (pow(x,(CCTK_REAL) y))
 #define Sqrt(x)       (sqrt(x))
 
 

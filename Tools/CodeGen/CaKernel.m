@@ -26,6 +26,7 @@ CaKernelCode;
 CaKernelEpilogue;
 CaKernelSchedule;
 CaKernelConfigurationCLL;
+CaKernelInterfaceCLL;
 
 Begin["`Private`"];
 
@@ -79,6 +80,20 @@ DefFn[CaKernelSchedule[] :=
 
 CaKernelConfigurationCLL[] :=
   "REQUIRES CUDA";
+
+CaKernelInterfaceCLL[] :=
+"
+# These functions are provided by the CaKernel thorn
+
+CCTK_INT FUNCTION Device_RegisterMem(CCTK_POINTER IN cctkGH, CCTK_INT IN vi, CCTK_INT IN num_tls)
+REQUIRES FUNCTION Device_RegisterMem
+
+CCTK_INT FUNCTION Device_UnRegisterMem(CCTK_POINTER IN cctkGH, CCTK_INT IN vi)
+REQUIRES FUNCTION Device_UnRegisterMem
+
+CCTK_POINTER FUNCTION Device_GetVarI (CCTK_POINTER IN cctkGH, CCTK_INT IN vi, CCTK_INT IN num_tls)
+REQUIRES FUNCTION Device_GetVarI
+";
 
 DefFn[codeBlock[macro_String, contents:CodeGenBlock] :=
   Module[

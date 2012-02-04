@@ -29,6 +29,7 @@ GetEquations;
 GetCalculationParameters;
 CalculationStencilSize;
 CalculationOnDevice;
+GetCalculationWhere;
 
 Begin["`Private`"];
 
@@ -81,6 +82,10 @@ DefFn[
 DefFn[
   GetCalculationName[calc_List] :=
   lookup[calc,Name]];
+
+DefFn[
+  GetCalculationWhere[calc_List] :=
+  lookup[calc,Where, Everywhere]];
 
 DefFn[
   CalculationStencilSize[calc_List] :=

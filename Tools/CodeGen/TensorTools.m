@@ -140,6 +140,7 @@ TensorManualCartesianParities;
 Checkpoint;
 IsTensor;
 toggleIndex;
+replaceConflicting;
 
 (* This is for compatibility with MathTensor notation *)
 (*OD = PD;*)
@@ -352,7 +353,7 @@ replaceDummyIndex[x_, li_, ri_] :=
    TensorProduct represents a Times that has already been checked for
    conflicting dummy indices.  It can have any expressions in it. *)
 
-SetAttributes[TensorProduct, {Flat, OneIdentity}];
+SetAttributes[TensorProduct, {Flat, OneIdentity, Orderless}];
 
 (* For some reason this causes infinite loops - might want to check this later *)
 (*TensorProduct[t:(Tensor[_,__])] := t;*)
@@ -757,7 +758,7 @@ DefineConnection[cd_, pd_, gamma_] :=
 
 (* Things we can do with covariant derivatives:
 
-   (1) Liebnitz: CD[x_ y_,i_] -> CD[x,i] y + x CD[y,i]
+   (1) Leibnitz: CD[x_ y_,i_] -> CD[x,i] y + x CD[y,i]
    (2) Linear: CD[x_ + y_,i_] -> CD[x,i] + CD[y,i]
    (3) Linear: CD[i_Integer x_] -> i CD[x]
    (4) High order derivatives: CD[x_, i_, is__] -> CD[CD[x,i],is]

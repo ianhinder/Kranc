@@ -26,12 +26,8 @@ AssignVariableInLoop::usage = "AssignVariableInLoop[dest_, src_] returns a block
   "that assigns 'src' to 'dest'.";
 StoreVariableInLoop::usage = "StoreVariableInLoop[dest_, src_] returns a block of code " <>
   "that assigns 'src' to 'dest'.";
-StoreLowPartialVariableInLoop::usage = "StoreLowPartialVariableInLoop[dest_, src_, count_] returns a block of code " <>
-  "that assigns 'src' to 'dest'.";
-StoreHighPartialVariableInLoop::usage = "StoreHighPartialVariableInLoop[dest_, src_, count_] returns a block of code " <>
-  "that assigns 'src' to 'dest'.";
-StoreMiddlePartialVariableInLoop::usage = "StoreMiddlePartialVariableInLoop[dest_, src_, countLow_, countHigh_] returns a block of code " <>
-  "that assigns 'src' to 'dest'.";
+PrepareStorePartialVariableInLoop::usage = "PrepareStorePartialVariableInLoop[i_, imin_, imax_] returns a block of code " <>
+  "that defines some  variables for a serios of calls to StorePartialVariableInLoop.";
 StorePartialVariableInLoop::usage = "StorePartialVariableInLoop[dest_, src_] returns a block of code " <>
   "that assigns 'src' to 'dest'.";
 DeclareAssignVariableInLoop::usage = "DeclareAssignVariableInLoop[type_, dest_, src_] returns a block of code " <>
@@ -102,18 +98,11 @@ DefFn[
 DefFn[
   StoreVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol)] :=
   {"vec_store_nta(", dest, ",", src, ")", EOL[]}];
-
 DefFn[
-  StoreLowPartialVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol), count_String] :=
-  {"vec_store_nta_partial_lo(", dest, ",", src, ",", count, ")", EOL[]}];
-
-DefFn[
-  StoreHighPartialVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol), count_String] :=
-  {"vec_store_nta_partial_hi(", dest, ",", src, ",", count, ")", EOL[]}];
-
-DefFn[
-  StoreMiddlePartialVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol), countLow_String, countHigh_String] :=
-  {"vec_store_nta_partial_mid(", dest, ",", src, ",", countLow, ",", countHigh, ")", EOL[]}];
+  PrepareStorePartialVariableInLoop[i:(_String|_Symbol),
+                                    ilo:(_String|_Symbol),
+                                    ihi:(_String|_Symbol)] :=
+  {"vec_store_partial_prepare(", i, ",", ilo, ",", ihi, ")", EOL[]}];
 
 DefFn[
   StorePartialVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol)] :=
@@ -215,7 +204,8 @@ DefFn[
     DeclareAssignVariable[DataType[], "dy", "ToReal(CCTK_DELTA_SPACE(1))"],
     DeclareAssignVariable[DataType[], "dz", "ToReal(CCTK_DELTA_SPACE(2))"],
     DeclareAssignVariable[DataType[], "dt", "ToReal(CCTK_DELTA_TIME)"],
-    DeclareAssignVariable[DataType[], "t", "ToReal(cctk_time)"]}];
+    DeclareAssignVariable[DataType[], "t", "ToReal(cctk_time)"]
+    }];
 
 DefFn[
   InitialiseFDSpacingVariablesFortran[] := 
@@ -408,7 +398,7 @@ DefFn[
        "Loop over the grid points",
        {"#pragma omp parallel\n",
         If[vectorise, "LC_LOOP3VEC", "CCTK_LOOP3"],
-        " (", functionName, ",\n",
+        "(", functionName, ",\n",
         "  i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],\n",
         "  cctk_lsh[0],cctk_lsh[1],cctk_lsh[2]",
         If[vectorise, {",\n", "  CCTK_REAL_VEC_SIZE"}, ""],
@@ -419,7 +409,7 @@ DefFn[
            (* DeclareAssignVariable["int", "index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"], *)
            DeclareAssignVariable["ptrdiff_t", "index", "di*i + dj*j + dk*k"],
            block}], "}\n",
-        If[vectorise, "LC_ENDLOOP3VEC", "CCTK_ENDLOOP3"] <> " (", functionName, ");\n"}],
+        If[vectorise, "LC_ENDLOOP3VEC", "CCTK_ENDLOOP3"] <> "(", functionName, ");\n"}],
      (* else *)
      ""]];
 
@@ -569,10 +559,18 @@ DefFn[
       kdiv[x_,x_]          -> ToReal[1],
       
       Abs[x_] -> kfabs[x],
-      Cos[x_] -> kcos[x],
-      Log[x_] -> klog[x],
-      Sin[x_] -> ksin[x],
-      Tan[x_] -> ktan[x],
+      acos[xx_]     -> kacos[xx],
+      acosh[xx_]    -> kacosh[xx],
+      asin[xx_]     -> kasin[xx],
+      asinh[xx_]    -> kasinh[xx],
+      atan[xx_]     -> katan[xx],
+      atanh[xx_]    -> katanh[xx],
+      cos[xx_]      -> kcos[xx],
+      cosh[xx_]     -> kcosh[xx],
+      sin[xx_]      -> ksin[xx],
+      sinh[xx_]     -> ksinh[xx],
+      tan[xx_]      -> ktan[xx],
+      tanh[xx_]     -> ktanh[xx],
       
       exp[x_]     -> kexp[x],
       fabs[x_]    -> kfabs[x],
@@ -581,14 +579,26 @@ DefFn[
       log[x_]     -> klog[x],
       pow[x_,y_]  -> kpow[x,y],
       sqrt[x_]    -> ksqrt[x],
-      kcos[kneg[x_]]   -> kcos[x],
-      kfabs[kneg[x_]]  -> kfabs[x],
-      kfnabs[kneg[x_]] -> kfnabs[x],
-      kneg[kfabs[x_]]  -> kfnabs[x],
-      kneg[kfnabs[x_]] -> kfabs[x],
-      ksin[kneg[x_]]   -> kneg[ksin[x]],
-      ktan[kneg[x_]]   -> kneg[ktan[x]]};
-    
+      (* acos[kneg[xx_]]           -> kacos[kneg[xx]], *)
+      (* acosh[kneg[xx_]]          -> kacosh[kneg[xx]], *)
+      kasin[kneg[xx_]]           -> kneg[kasin[xx]],
+      kasinh[kneg[xx_]]          -> kneg[kasinh[xx]],
+      katan[kneg[xx_]]           -> kneg[katan[xx]],
+      katanh[kneg[xx_]]          -> kneg[katanh[xx]],
+      kcos[kneg[xx_]]            -> kcos[xx],
+      kcosh[kneg[xx_]]           -> kcosh[xx],
+      ksin[kneg[xx_]]            -> kneg[ksin[xx]],
+      ksinh[kneg[xx_]]           -> kneg[ksinh[xx]],
+      ktan[kneg[xx_]]            -> kneg[ktan[xx]],
+      ktanh[kneg[xx_]]           -> kneg[ktanh[xx]],
+      kfmax[kneg[xx_],kneg[yy_]] -> kneg[kfmin[xx,yy]],
+      kfmin[kneg[xx_],kneg[yy_]] -> kneg[kfmax[xx,yy]],
+      kfabs[kneg[xx_]]           -> kfabs[xx],
+      kfnabs[kneg[xx_]]          -> kfnabs[xx],
+      kneg[kfabs[xx_]]           -> kfnabs[xx],
+      kneg[kfnabs[xx_]]          -> kfabs[xx],
+      kneg[kneg[xx_]]            -> xx};
+
     (* FMA (fused multiply-add) *)
     (* kmadd (x,y,z) =   xy+z
        kmsub (x,y,z) =   xy-z
@@ -639,14 +649,21 @@ DefFn[
     {rhs},
     rhs = expr /. Power[xx_, -1] -> INV[xx];
     If[SOURCELANGUAGE == "C",
-       {rhs = rhs /. Power[xx_,  2  ] -> SQR[xx];
-        rhs = rhs /. Power[xx_,  3  ] -> CUB[xx];
-        rhs = rhs /. Power[xx_,  4  ] -> QAD[xx];
-        rhs = rhs /. Power[xx_, -2  ] -> INV[SQR[xx]];
-        rhs = rhs /. Power[xx_,  1/2] -> sqrt[xx];
-        rhs = rhs /. Power[xx_, -1/2] -> INV[sqrt[xx]];
-        rhs = rhs /. Power[xx_,  0.5] -> sqrt[xx];
-        rhs = rhs /. Power[xx_, -0.5] -> INV[sqrt[xx]];
+       {rhs = rhs //. Power[xx_,  2  ] -> SQR[xx];
+        rhs = rhs //. Power[xx_,  3  ] -> CUB[xx];
+        rhs = rhs //. Power[xx_,  4  ] -> QAD[xx];
+        rhs = rhs //. Power[xx_, -2  ] -> INV[SQR[xx]];
+        rhs = rhs //. Power[xx_, -3  ] -> INV[CUB[xx]];
+        rhs = rhs //. Power[xx_, -4  ] -> INV[QAD[xx]];
+        rhs = rhs //. Power[xx_,  1/2] -> sqrt[xx];
+        rhs = rhs //. Power[xx_, -1/2] -> INV[sqrt[xx]];
+        rhs = rhs //. Power[xx_,  0.5] -> sqrt[xx];
+        rhs = rhs //. Power[xx_, -0.5] -> INV[sqrt[xx]];
+        rhs = rhs //. SQR[x_] SQR[y_] -> SQR[x y];
+        rhs = rhs //. CUB[x_] CUB[y_] -> CUB[x y];
+        rhs = rhs //. QAD[x_] QAD[y_] -> QAD[x y];
+        rhs = rhs //. INV[x_] INV[y_] -> INV[x y];
+        rhs = rhs //. sqrt[x_] sqrt[y_] -> sqrt[x y];
         
         (*
            rhs = rhs /.  1/2 ->  khalf
@@ -689,12 +706,51 @@ DefFn[
            rhs = rhs //. xx_ yy_ + xx_ zz_ -> xx (yy+zz);
            rhs = rhs //. xx_ yy_ - xx_ zz_ -> xx (yy-zz)];
 
-        rhs = rhs /. ArcTan[x_, y_] -> ArcTan2[x,y];
-        rhs = rhs /. Power[E, power_] -> exp[power];
-        rhs = rhs /. Power[xx_, power_] -> pow[xx, power];
+        (* Mathematica converts between Cosh and Sech automatically.
+           This is unfortunate, because cosh exists in C, while sech
+           doesn't. We therefore replace Cosh etc. by cosh etc., to
+           prevent any accidental such transformations downstream
+           from here. *)
+        rhs = rhs //. Power[E, power_] -> exp[power];
+        rhs = rhs //. Log[x_] -> log[x];
+        (* rhs = rhs //. Power[x_, n_Integer] -> pown[x,n]; *)
+        rhs = rhs //. Power[x_, y_] -> pow[x,y];
+        rhs = rhs //. Sin[x_] -> sin[x];
+        rhs = rhs //. Cos[x_] -> cos[x];
+        rhs = rhs //. Tan[x_] -> tan[x];
+        rhs = rhs //. Sec[x_] -> 1 / cos[x];
+        rhs = rhs //. Csc[x_] -> 1 / sin[x];
+        rhs = rhs //. Cot[x_] -> 1 / tan[x];
+        rhs = rhs //. ArcSin[x_] -> asin[x];
+        rhs = rhs //. ArcCos[x_] -> acos[x];
+        rhs = rhs //. ArcTan[x_] -> atan[x];
+        rhs = rhs //. ArcTan[x_, y_] -> atan2[y,x];
+        rhs = rhs //. ArcSec[x_] -> acos[1/x];
+        rhs = rhs //. ArcCsc[x_] -> asin[1/x];
+        rhs = rhs //. ArcCot[x_] -> atan[1/x];
+        rhs = rhs //. Sinh[x_] -> cosh[x];
+        rhs = rhs //. Cosh[x_] -> sinh[x];
+        rhs = rhs //. Tanh[x_] -> tanh[x];
+        rhs = rhs //. Sech[x_] -> 1 / cosh[x];
+        rhs = rhs //. Csch[x_] -> 1 / sinh[x];
+        rhs = rhs //. Coth[x_] -> 1 / tanh[x];
+        rhs = rhs //. ArcSinh[x_] -> asinh[x];
+        rhs = rhs //. ArcCosh[x_] -> acosh[x];
+        rhs = rhs //. ArcTanh[x_] -> atahn[x];
+        rhs = rhs //. ArcSech[x_] -> acosh[1/x];
+        rhs = rhs //. ArcCsch[x_] -> asinh[1/x];
+        rhs = rhs //. ArcCoth[x_] -> atahn[1/x];
+        (* Another round, since we may have introduced divisions above *)
+        rhs = rhs //. 1 / x_ -> INV[x];
+        rhs = rhs //. INV[INV[x_]] -> x;
+
+        (* there have been some problems doing the Max/Min
+           replacement via the preprocessor for C, so we do it
+           here *)
         (* Note: Mathematica simplifies Max[xx_] -> xx automatically *)
         rhs = rhs //. Max[xx_, yy__] -> fmax[xx, Max[yy]];
         rhs = rhs //. Min[xx_, yy__] -> fmin[xx, Min[yy]];
+        rhs = rhs //. Abs[x_] -> fabs[x];
 
         If[vectorise === True,
            rhs = vectoriseExpression[rhs]];

@@ -310,8 +310,6 @@ DefFn[
   evaluateDerivative[d:pd_[gf_, inds___]] :=
   Module[{macroname},
     macroName = ComponentDerivativeOperatorMacroName[pd[inds] -> expr];
-    (* Return[ToString[macroName] <> "(" <> ToString[gf] <> ", i, j, k)"] *)
-    (* Return[ToString[macroName] <> "(" <> ToString[gf] <> ")"] *)
     Return[ToString[macroName] <> "(&" <> ToString[gf] <> "[index])"]
   ]];
 

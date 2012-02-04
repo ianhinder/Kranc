@@ -135,7 +135,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     CheckGroups[groupsOrig];
 
-    groups = Join[groupsOrig, {coordGroup}];
+    groups = Union[Join[groupsOrig, {coordGroup}]];
     includeFiles = Join[includeFiles, {"GenericFD.h", "Symmetry.h", "sbp_calc_coeffs.h"}];
 
     inheritedImplementations = Join[inheritedImplementations, {"Grid",
@@ -223,7 +223,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     InfoMessage[Terse, "Creating schedule file"];
     schedule = CreateKrancScheduleFile[calcs, groups, Join[evolvedGroups,evolvedODEGroups],
       Join[rhsGroups,rhsODEGroups], Join[nonevolvedGroups,nonevolvedODEGroups], thornName,
-      evolutionTimelevels];
+      evolutionTimelevels, opts];
 
     boundarySources = CactusBoundary`GetSources[evolvedGroups, groups, 
                                             implementation, thornName];
@@ -251,7 +251,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
            {}],
         diffHeader];
     diffHeader = If[OptionValue[UseOpenCL],
-                    "static char const * const differencing =\n" <>
+                    "static char const *const differencing =\n" <>
                     Stringify[diffHeader] <>
                     ";\n",
                     diffHeader];

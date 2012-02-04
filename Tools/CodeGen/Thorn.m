@@ -222,6 +222,7 @@ CreateConfiguration[opts:OptionsPattern[]] :=
    "REQUIRES GenericFD\n",
    If[OptionValue[UseVectors], 
       "REQUIRES LoopControl\n", "OPTIONAL LoopControl\n{\n}\n"],
+   If[OptionValue[UseDGFE], "REQUIRES Boost CPPUtils FDCore HRSCCore\n", {}],
    If[OptionValue[UseOpenCL], "REQUIRES OpenCL OpenCLRunTime\n", {}],
    If[OptionValue[UseVectors], "REQUIRES Vectors\n", {}]
   };
@@ -385,14 +386,21 @@ scheduleUnconditionalFunction[spec_] :=
       (* Insert a SYNC line for each group we want to synchronize. *)
       Map[{"SYNC: ", #, "\n"}     &, lookupDefault[spec, SynchronizedGroups, {}]],
 
-
       Map[{"TRIGGERS: ", #, "\n"} &, lookupDefault[spec, TriggerGroups, {}]],
+
+      (* TODO: Expect a set of keyword/value pairs instead of a string *)
+      If[lookupDefault[spec, Tags, ""] != "",
+         "TAGS: " <> lookup[spec, Tags] <> "\n",
+         ""],
+
+      Map[{"READS:    ", #, "\n"} &, lookupDefault[spec, RequiredGroups, {}]],
+      Map[{"WRITES:   ", #, "\n"} &, lookupDefault[spec, ProvidedGroups, {}]],
 
       (* Insert a storage block for each group we want to allocate
          storage for *)
       Map[groupStorage, lookupDefault[spec, StorageGroups, {}]]},
 
-     Quote[lookup[spec, Comment]]]};
+      Quote[lookup[spec, Comment]]]};
 
 (* Handle the aspect of scheduling the function conditionally *)
 scheduleFunction[spec_] :=

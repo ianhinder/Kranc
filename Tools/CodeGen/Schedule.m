@@ -55,18 +55,29 @@ groupsSetInCalc[calc_, groups_] :=
     eqs = lookup[calc, Equations];
     lhss = Map[First, eqs];
     gfsInLHS = Union[Cases[lhss, _ ? (MemberQ[gfs,#] &), Infinity]];
-
     lhsGroupNames = containingGroups[gfsInLHS, groups];
     Return[lhsGroupNames]
+  ];
+
+groupsReadInCalc[calc_, groups_] :=
+  Module[{gfs, eqs, lhss, gfsInLHS, lhsGroupNames},
+    gfs = allGroupVariables[groups];
+    eqs = lookup[calc, Equations];
+    rhss = Map[Last, eqs];
+    gfsInRHS = Union[Cases[rhss, _ ? (MemberQ[gfs,#] &), Infinity]];
+    rhsGroupNames = containingGroups[gfsInRHS, groups];
+    Return[rhsGroupNames]
   ];
 
 (* Each calculation can be scheduled at multiple points, so this
    function returns a LIST of schedule structures for each calculation
    *)
-scheduleCalc[calc_, groups_] :=
+scheduleCalc[calc_, groups_, thornName_, useOpenCL_] :=
   Module[{points, conditional, conditionals, keywordConditional,
           keywordConditionals, triggered, keyword, value, keywordvaluepairs,
-          groupsToSync, groupName, userSchedule, groupSched, fnSched,
+          groupsToSync, tags,
+          prefixWithScope, groupsToRequire, groupsToProvide,
+          groupName, userSchedule, groupSched, fnSched,
           selbcSched, appbcSched, bcGroupName, condParams, bcGroupSched, before, after, relStr},
     conditional = mapContains[calc, ConditionalOnKeyword];
     conditionals = mapContains[calc, ConditionalOnKeywords];
@@ -94,6 +105,17 @@ scheduleCalc[calc_, groups_] :=
                       groupsSetInCalc[calc, groups],
                       {}];
 
+    (* TODO: Pass this as {keyword,value} pair instead of a string,
+       once Thorn.m understands this format *)
+    tags = If[useOpenCL, "Device=1", ""];
+    
+    prefixWithScope[group_] :=
+      If[StringMatchQ[ToString[group], __~~"::"~~__],
+         ToString[group],
+         thornName <> "::" <> ToString[group]];
+    groupsToRequire = prefixWithScope /@ groupsReadInCalc[calc, groups];
+    groupsToProvide = prefixWithScope /@ groupsSetInCalc[calc, groups];
+
     before = lookupDefault[calc, Before, None];
     after = lookupDefault[calc, After, None];
 
@@ -113,6 +135,9 @@ scheduleCalc[calc_, groups_] :=
                                  {},
                                  groupsToSync],
         Language           -> CodeGenC`SOURCELANGUAGE, 
+        Tags               -> tags,
+        RequiredGroups     -> groupsToRequire,
+        ProvidedGroups     -> groupsToProvide,
         Comment            -> lookup[calc, Name]
       },
        If[triggered, {TriggerGroups -> lookup[calc, TriggerGroups]},
@@ -147,10 +172,17 @@ scheduleCalc[calc_, groups_] :=
       }
       ~Join~ condParams;
 
+      (* We set required/provided groups here with the actual
+         function, since (at least in principle) the driver should be
+         able to deduce the synchronization and boundary condition
+         treatment from this information. *)
       fnSched = {
         Name               -> lookup[calc, Name],
         SchedulePoint      -> "in " <> groupName,
         Language           -> CodeGenC`SOURCELANGUAGE,
+        Tags               -> tags,
+        RequiredGroups     -> groupsToRequire,
+        ProvidedGroups     -> groupsToProvide,
         Comment            -> lookup[calc, Name]
       };
 
@@ -184,11 +216,14 @@ scheduleCalc[calc_, groups_] :=
          bcGroupSched["in "<>groupName <> " after " <> lookup[calc, Name]],
          bcGroupSched["in MoL_PseudoEvolutionBoundaries after MoL_PostStep"]},{}]]]];
 
+Options[CreateKrancScheduleFile] = ThornOptions;
+
 CreateKrancScheduleFile[calcs_, groups_, evolvedGroups_, rhsGroups_, nonevolvedGroups_, thornName_, 
-                        evolutionTimelevels_] :=
+                        evolutionTimelevels_, opts:OptionsPattern[]] :=
   Module[{scheduledCalcs, scheduledStartup, scheduleMoLRegister, globalStorageGroups, scheduledFunctions, schedule},
 
-    scheduledCalcs = Flatten[Map[scheduleCalc[#, groups] &, calcs], 1];
+    scheduledCalcs =
+      Flatten[Map[scheduleCalc[#, groups, thornName, OptionValue[UseOpenCL]] &, calcs], 1];
     scheduledStartup = 
     {
       Name          -> thornName <> "_Startup",

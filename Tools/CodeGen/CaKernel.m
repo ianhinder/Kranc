@@ -62,13 +62,24 @@ DefFn[
 
 DefFn[
   kernelCCLBlock[calc_] :=
-  CCLBlock["CCTK_CUDA_KERNEL", lookup[calc, Name],
-           {"TYPE" -> "gpu_cuda/3dblock",
-            "STENCIL" -> Quote@FlattenBlock@Riffle[
-              Flatten[Map[{#,#} &, CalculationStencilSize[calc]],1],","],
-            "TILE" -> Quote["8,8,8"],
-            "SHARECODE" -> "yes"},
-           variableBlocks[calc]]];
+  Module[
+    {bnd = (GetCalculationWhere[calc] === Boundary),
+     int, attrs},
+    int = !bnd;
+
+    attrs = {"TYPE" -> If[int, "gpu_cuda/3dblock", "gpu_cuda/boundary"],
+             "TILE" -> Quote["8,8,8"],
+             "SHARECODE" -> "yes"};
+
+    If[int,
+       attrs = Append[attrs, 
+                      "STENCIL" ->
+                      Quote@FlattenBlock@Riffle[
+                        Flatten[Map[{#,#} &,
+                                    CalculationStencilSize[calc]],1],","]]];
+
+    CCLBlock["CCTK_CUDA_KERNEL", lookup[calc, Name], attrs,
+             variableBlocks[calc]]]];
 
 DefFn[CaKernelCCL[calcs_List] :=
   Module[
@@ -95,9 +106,10 @@ CCTK_POINTER FUNCTION Device_GetVarI (CCTK_POINTER IN cctkGH, CCTK_INT IN vi, CC
 REQUIRES FUNCTION Device_GetVarI
 ";
 
-DefFn[codeBlock[macro_String, contents:CodeGenBlock] :=
+DefFn[codeBlock[macro_String, contents_] :=
   Module[
     {},
+    CheckBlock[contents];
     {macro<>"_Begin", "\n",
      IndentBlock[{contents,"\n"}],
      macro<>"_End","\n"}]];
@@ -126,16 +138,25 @@ DefFn[
       DeclareAssignVariable[DataType[], "hdyi", "0.5 * dyi"],
       DeclareAssignVariable[DataType[], "hdzi", "0.5 * dzi"]}]];
 
+cakernelLoopFunctionInt[b_, opts___] :=
+  codeBlock[LoopName /. {opts}, b];
+
+cakernelLoopFunctionBnd[b_, opts___] :=
+  b;
 
 DefFn[CaKernelCode[calc_List,opts___] :=
   Module[
-    {kernel = "CAKERNEL_"<>GetCalculationName[calc], calc2},
+    {kernel = "CAKERNEL_"<>GetCalculationName[calc], calc2,
+     compSuff, int, loopFunction},
 
     SetDataType["CCTK_REAL"];
 
+    int = (GetCalculationWhere[calc] =!= Boundary);
+    loopFunction = If[int, cakernelLoopFunctionInt, cakernelLoopFunctionBnd];
+
     calc2 = Join[calc, {BodyFunction -> (codeBlock[kernel, #] &), 
                        CallerFunction -> False,
-                       LoopFunction -> (codeBlock[kernel<>"_Computations", #] &),
+                       LoopFunction -> loopFunction,
                        GFAccessFunction -> ({"I3D(",Riffle[{#,0,0,0},","],")"} &),
                        InitFDVariables -> CaKernelInitialiseFDVariables[],
                        MacroPointer -> False}];
@@ -150,7 +171,8 @@ DefFn[CaKernelCode[calc_List,opts___] :=
      "\n",
      CalculationMacros[],
 
-    "\n", CreateCalculationFunction[calc2,opts]}]];
+    "\n", CreateCalculationFunction[calc2, LoopName -> kernel<>"_Computations",
+                                    opts]}]];
 
 End[];
 

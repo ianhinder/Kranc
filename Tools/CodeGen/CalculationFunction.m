@@ -591,7 +591,7 @@ DefFn[
              opts:OptionsPattern[]] :=
   Module[{rhss, lhss, gfsInRHS, gfsInLHS, gfsOnlyInRHS, localGFs,
           localMap, eqs2, derivSwitch, code, functionName, calcCode,
-          loopFunction, gfsInBoth, gfsDifferentiated,
+          gfsInBoth, gfsDifferentiated,
           gfsDifferentiatedAndOnLHS, declare, eqsReplaced,
           arraysInRHS, arraysInLHS, arraysOnlyInRHS, odeVars,
           generateEquationCode, groupedIfs, IfThenGroup, noSimplify,gridName},

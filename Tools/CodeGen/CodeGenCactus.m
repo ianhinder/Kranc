@@ -528,7 +528,9 @@ DefFn[
     (* Constants *)
     expr = expr /. {
       x_Integer -> ToReal[x],
-      x_Real    -> ToReal[x]};
+      x_Real    -> ToReal[x],
+      E         -> ToReal[E],
+      Pi        -> ToReal[Pi]};
     
     (* Operators *)
     expr = expr //. {

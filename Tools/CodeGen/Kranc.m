@@ -81,7 +81,8 @@ ThornOptions =
   IncludeFiles -> {},
   CSE -> False,
   UseJacobian -> False,
-  UseCaKernel -> False};
+  UseCaKernel -> False,
+  LoopName -> "" (* internal hack - do not use *)};
 
 ExecuteOn;
 Device;

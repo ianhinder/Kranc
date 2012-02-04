@@ -391,7 +391,7 @@ scheduleUnconditionalFunction[spec_] :=
 
       (* TODO: Expect a set of keyword/value pairs instead of a string *)
       If[lookupDefault[spec, Tags, ""] != "",
-         "# TAGS: " <> lookup[spec, Tags] <> "\n",
+         "TAGS: " <> lookup[spec, Tags] <> "\n",
          ""],
 
       Map[{"READS:    ", #, "\n"} &, lookupDefault[spec, RequiredGroups, {}]],

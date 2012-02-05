@@ -17,7 +17,7 @@
 #endif
 
 #ifdef KRANC_C
-#  define Sign(x)     (copysign(1.0,(x)))
+#  define Sign(x)     (copysign( (CCTK_REAL) 1.0,(CCTK_REAL) (x)))
 #  define ToReal(x)   ((CCTK_REAL)(x))
 #else
 #  define Sign(x)     (sgn(x))
@@ -48,7 +48,7 @@
 #define Sech(x)       (1./cosh(x))
 
 #ifdef KRANC_C
-#  define Sign(x)     (copysign(1.0,(x)))
+#  define Sign(x)     (copysign( (CCTK_REAL) 1.0,(CCTK_REAL) (x)))
 #  define ToReal(x)   ((CCTK_REAL)(x))
 #else
 #  define Sign(x)     (sgn(x))

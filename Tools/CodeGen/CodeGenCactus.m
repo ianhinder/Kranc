@@ -636,7 +636,7 @@ DefFn[
   ReplacePowers[expr_, vectorise:Boolean, noSimplify:Boolean : False] :=
   Module[
     {rhs},
-    rhs = expr /. Power[xx_, -1] -> INV[xx] /. ToReal[x_] :> x; (* FIXME: this breaks vectorisation *)
+    rhs = expr /. Power[xx_, -1] -> INV[xx];
     If[SOURCELANGUAGE == "C",
        {rhs = rhs //. Power[xx_,  2  ] -> SQR[xx];
         rhs = rhs //. Power[xx_,  3  ] -> CUB[xx];
@@ -703,7 +703,7 @@ DefFn[
         rhs = rhs //. Power[E, power_] -> exp[power];
         rhs = rhs //. Log[x_] -> log[x];
         (* rhs = rhs //. Power[x_, n_Integer] -> pown[x,n]; *)
-        rhs = rhs //. Power[x_, power_] -> pow[x,"(CCTK_REAL) "<>ToString[power]];
+        rhs = rhs //. Power[x_, power_] :> pow[x,power];
         rhs = rhs //. Sin[x_] -> sin[x];
         rhs = rhs //. Cos[x_] -> cos[x];
         rhs = rhs //. Tan[x_] -> tan[x];

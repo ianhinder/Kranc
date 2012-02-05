@@ -99,7 +99,7 @@ DefFn[
 
 DefFn[
   CalculationOnDevice[calc_List] :=
-  lookup[calc, ExecuteOn] === Device];
+  lookupDefault[calc, ExecuteOn, Automatic] === Device];
 
 End[];
 

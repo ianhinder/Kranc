@@ -5,6 +5,7 @@
 
 #ifdef KRANC_C
 #  define Abs(x)        (fabs(x))
+#  define IntAbs(x)     (abs(x))
 #  define Min(x, y)     (fmin(x,y))
 #  define Min3(x, y, z) (fmin(fmin((x), (y)), (z)))
 #  define Max(x, y)     (fmax(x,y))

@@ -161,6 +161,11 @@ DefFn[CaKernelCode[calc_List,opts___] :=
                        InitFDVariables -> CaKernelInitialiseFDVariables[],
                        MacroPointer -> False}];
 
+    If[!int,
+
+       calc2 = calc2 /. {normal1 -> "bound_x", normal2 -> "bound_y", normal3 -> "bound_z"}];
+
+
     {"#undef KRANC_DIFF_FUNCTIONS\n",
      "#define KRANC_" <> ToUpperCase[CodeGenC`SOURCELANGUAGE] <> "\n",
      Map[IncludeFile, {"Differencing.h", "GenericFD.h"}],

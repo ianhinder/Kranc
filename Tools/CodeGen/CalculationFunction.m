@@ -645,8 +645,8 @@ DefFn[
     (* Replace the partial derivatives *)
     {defsWithoutShorts, defsWithShorts} = splitPDDefsWithShorthands[pddefs, shorts];
     eqs2 = ReplaceDerivatives[defsWithoutShorts, eqsOrdered, True,
-                              OptionValue[ZeroDimensions]];
-    eqs2 = ReplaceDerivatives[defsWithShorts, eqs2, False, OptionValue[ZeroDimensions]];
+                              OptionValue[ZeroDimensions],lookup[cleancalc, MacroPointer]];
+    eqs2 = ReplaceDerivatives[defsWithShorts, eqs2, False, OptionValue[ZeroDimensions], lookup[cleancalc, MacroPointer]];
 
     checkEquationAssignmentOrder[eqs2, shorts];
     functionName = ToString@lookup[cleancalc, Name];

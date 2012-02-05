@@ -230,7 +230,7 @@ DefFn[
      Map[DeclareDerivative, sortedgfds]}]];
 
 DefFn[
-  ReplaceDerivatives[derivOps_, expr_, precompute_, zeroDims_] :=
+  ReplaceDerivatives[derivOps_, expr_, precompute_, zeroDims_, macroPointer_] :=
   Module[{componentDerivOps, gfds},
     Map[DerivativeOperatorVerify, derivOps];
     componentDerivOps = Flatten[Map[DerivativeOperatorToComponents[#,zeroDims] &, derivOps]];
@@ -238,7 +238,7 @@ DefFn[
 
     If[precompute,
       rules = Map[# :> GridFunctionDerivativeName[#] &, gfds],
-      rules = Map[# :> evaluateDerivative[#] &, gfds]];
+      rules = Map[# :> evaluateDerivative[#,macroPointer] &, gfds]];
     expr /. rules]];
 
 (* Generate code to ensure that there are sufficient ghost and

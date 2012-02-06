@@ -1,0 +1,26 @@
+begin thorn FunwaveSources
+
+# parameters section?
+inherit Funwave
+
+begin variables
+end variables
+
+begin temporaries
+end temporaries
+
+begin derivatives
+    Dx1 u_i = (u_(i+1,j) - u_(i,j))/hx
+    Dy1 u_j = (u_(i,j+1) - u_(i,j))/hy
+    Dx2 v_i = (v_(i+1,j) - v_(i-1,j))/(2*hx)
+    Dy2 v_j = (v_(i,j+1) - v_(i,j-1))/(2*hy)
+end derivatives
+
+begin calculation sourceterms scheduled in funw_source
+  sourcex = gamma1*mask9*(-u1p + u4)*(Dx1 p + Dy1 q) + 
+    gamma1*mask9*(-(gamma2*mask9*(u1pp + u2 + u3)) + u4*Dx2 u + u*Dx2 u4 + 
+       v4*Dy2 u + v*Dy2 u4)*max(h,mindepthfrc) - 
+    cd*u*sqrt(Power(u,2) + Power(v,2))
+end calculation
+
+end thorn

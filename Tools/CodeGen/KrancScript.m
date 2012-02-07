@@ -48,6 +48,7 @@ process[h_[args___]] :=
   Module[
     {},
     Print["No handler for ", h@@Map[ToString[Head[#]]&,{args}]];
+    (* Print["Full expression is: ", HoldForm[h[args]]]; *)
     ThrowError["Failed to parse script"]];
 
 process[thorn:"thorn"[content___]] :=
@@ -55,6 +56,9 @@ process[thorn:"thorn"[content___]] :=
     {calcs = {}, name, variables = {}, temporaries = {}, tensors, kernels,
      nonScalars, tensorRule, withInds, options = {}},
 
+    (* Print["thorn = ", thorn]; *)
+    (* KrancTensor`printStruct[thorn]; *)
+    
     Do[Switch[el,
               "calculation"[___], AppendTo[calcs,process[el]],
               "name"[_], name = el[[1]],
@@ -116,7 +120,12 @@ Do[
 process["tensor"["name"[k_],inds_]] :=
   tensor[ToExpression[If[Names[k] === {}, "Global`"<>k, k]],Sequence@@process[inds]];
 
+fprint[x_] := (Print[x//InputForm]; x);
+
+
+
 process["dtensor"["dname"[dname_],inds_,tensor_]] := ToExpression[dname][process[tensor],Sequence@@process[inds]];
+
 process["dtensor"["dname"["D"], "indices"["lower_index"["index_symbol"["t"]]],tensor_]] :=
   dot[process[tensor]];
 

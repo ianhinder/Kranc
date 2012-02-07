@@ -121,9 +121,11 @@ process["dtensor"["indices"["lower_index"["index_symbol"["t"]]],tensor_]] :=
   dot[process[tensor]];
 
 process["indices"[inds___]] := Map[process, {inds}];
-process["lower_index"[i_]] := TensorIndex[process[i], "l"];
-process["upper_index"[i_]] := TensorIndex[process[i], "u"];
-process["index_symbol"[s_]] := s;
+
+process[(pos:("lower_index"|"upper_index"))["index_symbol"[i_]]] :=
+  If[StringMatchQ[i,DigitCharacter],
+     ToExpression[i],
+     TensorIndex[i, If[pos==="lower_index","l","u"]]];
 
 process["func"["name"[name_],exprs__]] :=
   Module[

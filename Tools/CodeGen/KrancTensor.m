@@ -184,7 +184,7 @@ thornOfImplementation[imp_String] :=
        impThorns[[1]],
        (* else *)
        Module[
-         {impThorns2 = Select[getAllThorns[], StringMatchQ[implementationOfThorn[#], "*", IgnoreCase -> True] &]},
+         {impThorns2 = Select[getAllThorns[], StringMatchQ[implementationOfThorn[#], imp, IgnoreCase -> True] &]},
          Switch[Length[impThorns2],
                 0, ThrowError[ToString@StringForm["Cannot find a thorn with implementation `1`", imp]],
                 1, impThorns2[[1]],

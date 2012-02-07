@@ -128,7 +128,8 @@ process["index_symbol"[s_]] := s;
 process["func"["name"[name_],exprs__]] :=
   Module[
     {fns},
-    fns = {"sin" -> Sin, "cos" -> Cos, "if" -> IfThen};
+    fns = {"sin" -> Sin, "cos" -> Cos, "if" -> IfThen, "max" -> Max,
+           "sqrt" -> Sqrt};
     If[MemberQ[First/@fns,name], (name/.fns)@@Map[process,{exprs}],
        ThrowError["Unrecognised function: ", name]]];
 

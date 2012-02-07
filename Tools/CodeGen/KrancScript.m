@@ -116,8 +116,8 @@ Do[
 process["tensor"["name"[k_],inds_]] :=
   tensor[ToExpression[If[Names[k] === {}, "Global`"<>k, k]],Sequence@@process[inds]];
 
-process["dtensor"[inds_,tensor_]] := PD[process[tensor],Sequence@@process[inds]];
-process["dtensor"["indices"["lower_index"["index_symbol"["t"]]],tensor_]] :=
+process["dtensor"["dname"[dname_],inds_,tensor_]] := ToExpression[dname][process[tensor],Sequence@@process[inds]];
+process["dtensor"["dname"["D"], "indices"["lower_index"["index_symbol"["t"]]],tensor_]] :=
   dot[process[tensor]];
 
 process["indices"[inds___]] := Map[process, {inds}];

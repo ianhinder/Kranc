@@ -54,7 +54,7 @@ process[h_[args___]] :=
 process[thorn:"thorn"[content___]] :=
   Module[
     {calcs = {}, name, variables = {}, temporaries = {}, tensors, kernels,
-     nonScalars, tensorRule, withInds, options = {}},
+     nonScalars, tensorRule, withInds, options = {}, derivatives = {}},
 
     (* Print["thorn = ", thorn]; *)
     (* KrancTensor`printStruct[thorn]; *)
@@ -66,6 +66,7 @@ process[thorn:"thorn"[content___]] :=
               "temporaries"["begin temporaries end temporaries"], Null,
               "variables"[__], variables = Join[variables,List@@Map[process,el]],
               "temporaries"[__], temporaries = Join[temporaries,List@@Map[process,el]],
+              "derivatives"[__], derivatives = Join[derivatives,process[el]],
               "option"[__], options = Join[options, process[el]],
               _, ThrowError["Unrecognised element '"<>Head[el]<>"' in thorn"]],
        {el, {content}}];
@@ -82,6 +83,7 @@ process[thorn:"thorn"[content___]] :=
     SetEnhancedTimes[False];
 
     options = Join[{Calculations -> calcs, Variables -> variables, Shorthands -> temporaries} /. tensorRule,
+                   {PartialDerivatives -> derivatives},
                    options];
 
     CreateKrancThornTT2[name,Sequence@@options]];
@@ -177,6 +179,54 @@ process["option"["use"[features__]]] :=
 
 process["option"["disable"[features__]]] :=
   Map[(lookup[flags,#] -> False) &,{features}/.(("feature"[n_]):>n)];
+
+(* Derivatives *)
+
+process[h:"derivatives"["deqns"[eqs___]]] :=
+  Map[process, {eqs}];
+
+process[d:"deqn"[___]] := Print["no handler for ", d];
+
+process["deqn"[("dtensor"["dname"[dname_],
+                          "tensor"["name"[tName_],
+                                   "indices"[tinds___]]]),
+               rhs:"expr"[___]]] :=
+  Module[
+    {gridInds = {tinds} /. "lower_index"["index_symbol"[i_]] :> Unique[ToExpression@i],
+     gridIndSyms,ind,rhsEval},
+    gridIndSyms = {tinds} /. "lower_index"["index_symbol"[i_]] :> i;
+
+    If[Length[gridIndSyms] > 1,
+       ThrowError["Kranc does not yet support explicit specification of finite difference operators of dimension higher than 1.  1D operators will be automatically generalised to act on grid functions of all dimensions."]];
+
+    rhsEval = (process[rhs] /. {tensor[ToExpression[tName],__] :> 1,
+                                "int"[n_]:>ToExpression[n],
+                                Global`h :> spacing[1],
+                                Global`h1 :> spacing[1],
+                                Global`h2 :> spacing[2],
+                                Global`h3 :> spacing[3],
+                                dimof[i_] :> Position[gridIndSyms,i][[1,1]]});
+
+    ind = Unique[i];
+
+    ToExpression[dname][Pattern[Evaluate[ind],_]] -> (rhsEval/.{spacing[1]->spacing[ind],shift[1]->shift[ind]})];
+
+process["tensor"["name"[k_],
+                 "indices"[a___,
+                           pos_["index_expr"[sym:"index_symbol"[i_],
+                                             "index_op"[op_], int_]],
+                           b___]]] :=
+  (shift[dimof[i]]^If[op==="+", int, -int] *
+   process["tensor"["name"[k],
+                    "indices"[a,pos[sym],b]]]);
+
+process["tensor"["name"[k_],
+                 "indices"[a___,
+                           pos_["index_expr"[sym:"index_symbol"[___]]],
+                           b___]]] :=
+   process["tensor"["name"[k],
+                           "indices"[a,pos[sym],b]]];
+
 
 
 End[];

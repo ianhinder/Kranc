@@ -180,7 +180,7 @@ Get groups provided by an implementation:
 DefFn[
 thornOfImplementation[imp_String] :=
   Module[
-    {impThorns = Select[getAllThorns[], FileNameTake[#,-1] === imp &],
+    {impThorns = Select[getAllThorns[], StringMatchQ[FileNameTake[#,-1],imp,IgnoreCase->True] &],
      impThorns2},
     If[impThorns =!= {} && StringMatchQ[implementationOfThorn[impThorns[[1]]], imp, IgnoreCase->True],
        impThorns[[1]],

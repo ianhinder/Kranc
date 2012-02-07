@@ -115,29 +115,13 @@ process["tensor"["name"[k_],inds_]] :=
   tensor[ToExpression[If[Names[k] === {}, "Global`"<>k, k]],Sequence@@process[inds]];
 
 process["dtensor"[inds_,tensor_]] := PD[process[tensor],Sequence@@process[inds]];
-process["dtensor"["indices"["_t"],tensor_]] := dot[process[tensor]];
+process["dtensor"["indices"["lower_index"["index_symbol"["t"]]],tensor_]] :=
+  dot[process[tensor]];
 
-process["indices"[inds_]] :=
-  Module[
-    {lower,upper,is},
-
-    lower[s_String] :=
-    If[s === "", {},
-       If[StringTake[s,1] === "^", upper[StringDrop[s,1]],
-          If[StringTake[s,1] === "_", ThrowError["Repeated '_'"],
-             Prepend[lower[StringDrop[s,1]], TensorIndex[StringTake[s,1],"l"]]]]];
-
-    upper[s_String] :=
-    If[s === "", {},
-       If[StringTake[s,1] === "_", lower[StringDrop[s,1]],
-          If[StringTake[s,1] === "^", ThrowError["Repeated '^'"],
-             Prepend[upper[StringDrop[s,1]], TensorIndex[StringTake[s,1],"u"]]]]];
-
-    is = Switch[StringTake[inds,1],
-                "_", lower[StringDrop[inds,1]],
-                "^", upper[StringDrop[inds,1]],
-                _, ThrowError["Tensor indices must start with ^ or _"]];
-    is];
+process["indices"[inds___]] := Map[process, {inds}];
+process["lower_index"[i_]] := TensorIndex[process[i], "l"];
+process["upper_index"[i_]] := TensorIndex[process[i], "u"];
+process["index_symbol"[s_]] := s;
 
 process["func"["name"[name_],exprs__]] :=
   Module[

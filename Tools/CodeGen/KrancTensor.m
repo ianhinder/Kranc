@@ -36,6 +36,8 @@ CreateKrancThornTT2::usage = "Construct a Kranc thorn using tensor expressions."
 
 (* FIXME: Move CreateGroupFromTensor here *)
 
+printStruct;
+
 Begin["`Private`"];
 
 (* --------------------------------------------------------------------------
@@ -243,8 +245,8 @@ tagToOptions[s_] :=
 
 groupOptionsFromTags[tags_] :=
   If[Length[tags] === 0, {},
-     Print["tags = ", tags//InputForm];
-     Print["tags split = ", InputForm@StringSplit[tags[[1]]]];
+     (* Print["tags = ", tags//InputForm]; *)
+     (* Print["tags split = ", InputForm@StringSplit[tags[[1]]]]; *)
      Flatten[tagToOptions/@StringSplit[tags[[1]]],1]];
 
 DefFn[
@@ -264,9 +266,9 @@ DefFn[CreateKrancThornTT2[thornName_String, opts:OptionsPattern[]] :=
     {groups, pderivs, opts2, fdOrder = Global`fdOrder, PDstandard = Global`PDstandard},
     groups = Map[CreateGroupFromTensor, OptionValue[Variables]];
 
+    Print["Searching for inherited groups..."];
     inheritedGroups = Join@@Map[InheritedGroups, OptionValue[InheritedImplementations]];
-
-    Print[inheritedGroups];
+    Print["Done."];
 
     pderivs =
     Join[OptionValue[PartialDerivatives],

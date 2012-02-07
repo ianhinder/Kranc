@@ -250,13 +250,13 @@ groupOptionsFromTags[tags_] :=
      Flatten[tagToOptions/@StringSplit[tags[[1]]],1]];
 
 DefFn[
-  groupStructureOfGroupVar[groupVar_] :=
-  {Cases[groupVar,"name"[n_] :> n][[1]], Cases[groupVar,"VARS"[vs___] :> Map[First,{vs}]][[1]], 
+  groupStructureOfGroupVar[groupVar_,imp_String] :=
+  {Cases[groupVar,"name"[n_] :> imp<>"::"<>n][[1]], Cases[groupVar,"VARS"[vs___] :> Map[First,{vs}]][[1]], 
    Sequence@@groupOptionsFromTags[Cases[Print[groupVar//InputForm]; groupVar,"tags"[tags_] :> unquote[tags]]]}];
 
 DefFn[
   InheritedGroups[imp_String] :=
-  Map[groupStructureOfGroupVar,
+  Map[groupStructureOfGroupVar[#,imp] &,
       gfGroupVarsOfInterfaceTree[interfaceTreeOfThorn[thornOfImplementation[imp]]]]];
 
 Options[CreateKrancThornTT2] = ThornOptions;

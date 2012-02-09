@@ -378,7 +378,7 @@ DefFn[
           shorts, eqs, parameters, parameterRules, odeGroups,
           functionName, dsUsed, groups, pddefs, cleancalc, eqLoop, where,
           addToStencilWidth, pDefs, haveCondTextuals, condTextuals, calc,
-          kernelCall, DGFEDefs, DGFECall,debug,imp,gridName},
+          kernelCall, DGFEDefs, DGFECall, debug, imp, gridName, stencilSize},
 
   debug = OptionValue[Debug];
   imp = lookup[calcp, Implementation];
@@ -412,15 +412,6 @@ DefFn[
 
   VerifyCalculation[cleancalc];
 
-  Module[
-    {stencilSize = StencilSize[pddefs, eqs, functionName, OptionValue[ZeroDimensions],
-                               lookup[{opts}, IntParameters, {}]]},
-    If[!VectorQ[stencilSize],
-       stencilSize = MapThread[Max,Map[Last,stencilSize[[2]]]]];
-
-    If[where === Automatic,
-       where = If[MatchQ[stencilSize, {0,0,0}] =!= True, Interior, Everywhere]]];
-
   gfs = allGroupVariables[groups];
 
   InfoMessage[InfoFull, " " <> ToString[Length@shorts] <> " shorthands"];
@@ -449,6 +440,15 @@ DefFn[
   (* Map[printEq, eqs]; *)
 
   Scan[InfoMessage[InfoFull, "  " <> ToString@First[#]<>" = ..."] &, eqs];
+
+  (* Compute necessary stencil size *)
+  stencilSize = StencilSize[pddefs, eqs, functionName, OptionValue[ZeroDimensions],
+                               lookup[{opts}, IntParameters, {}]];
+  If[!VectorQ[stencilSize],
+     stencilSize = MapThread[Max,Map[Last,stencilSize[[2]]]]];
+
+  If[where === Automatic,
+     where = If[MatchQ[stencilSize, {0,0,0}] =!= True, Interior, Everywhere]];
 
   (* Check all the function names *)
   functionsPresent = functionsInCalculation[cleancalc]; (* Not currently used *)
@@ -771,14 +771,8 @@ DefFn[
         CheckStencil[pddefs, eqs, functionName, OptionValue[ZeroDimensions],
                      lookup[{opts}, IntParameters, {}]],
 
-        Module[
-          {stencilSize = StencilSize[pddefs, eqs, functionName, OptionValue[ZeroDimensions],
-                                     lookup[{opts}, IntParameters, {}]]},
-          If[!VectorQ[stencilSize],
-             stencilSize = MapThread[Max,Map[Last,stencilSize[[2]]]]];
-
-          If[where === Everywhere && MatchQ[stencilSize, {0,0,0}] =!= True,
-             ThrowError["Calculation "<>functionName<>" uses derivative operators but is computed Everywhere.  Specify Where -> Interior for calculations that use derivative operators."]]];
+        If[where === Everywhere && MatchQ[stencilSize, {0,0,0}] =!= True,
+           ThrowError["Calculation "<>functionName<>" uses derivative operators but is computed Everywhere.  Specify Where -> Interior for calculations that use derivative operators."]];
         "\n",
   
         If[haveCondTextuals, Map[ConditionalOnParameterTextual["!(" <> # <> ")", "return;\n"] &,condTextuals], {}],

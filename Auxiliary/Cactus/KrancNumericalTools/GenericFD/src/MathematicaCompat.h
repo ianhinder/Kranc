@@ -2,6 +2,7 @@
 #  define IfThen(x,y,z) ((x) ? (y) : (z))
 #else
 #  define Abs(x)        (abs(x))
+#  define IntAbs(x)     (abs(x))
 #  define Min(x, y)     (min(x,y))
 #  define Max(x, y)     (max(x,y))
 #  define Sqrt(x)       (sqrt(x))
@@ -9,7 +10,7 @@
 #endif
 
 #ifdef KRANC_C
-#  define Sign(x)     (copysign(1.0,(x)))
+#  define Sign(x)     (copysign( (CCTK_REAL) 1.0,(CCTK_REAL) (x)))
 #  define ToReal(x)   ((CCTK_REAL)(x))
 #else
 #  define Sign(x)     (sgn(x))

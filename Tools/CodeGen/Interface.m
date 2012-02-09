@@ -18,7 +18,8 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-BeginPackage["Interface`", {"Thorn`", "KrancGroups`", "MapLookup`", "Errors`", "Helpers`", "Kranc`"}];
+BeginPackage["Interface`", {"Thorn`", "KrancGroups`", "MapLookup`", "Errors`",
+                            "Helpers`", "Kranc`", "CaKernel`"}];
 
 CreateKrancInterface;
 
@@ -192,7 +193,7 @@ CreateKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_,
                            nonevolvedODEGroupStructures,
                            evolvedODEGroupStructures, rhsODEGroupStructures];
 
-    interface = CreateInterface[implementation, inheritedImplementations, 
+    interface = Join[CreateInterface[implementation, inheritedImplementations,
       Join[includeFiles, {CactusBoundary`GetIncludeFiles[]},
            {"loopcontrol.h"},
            If[OptionValue[UseOpenCL], {"OpenCLRunTime.h"}, {}],
@@ -201,7 +202,9 @@ CreateKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_,
       UsesFunctions ->
         Join[{registerEvolved, (*registerConstrained,*)
                 diffCoeff, getMap}, 
-             CactusBoundary`GetUsedFunctions[]]];
+             CactusBoundary`GetUsedFunctions[]]],
+   {If[OptionValue[UseCaKernel], CaKernelInterfaceCLL[], {}]}];
+
     Return[interface]];
 
 

@@ -29,7 +29,7 @@ BeginPackage["KrancThorn`", {"CodeGen`", "Thorn`",
  "MapLookup`", "KrancGroups`", "Differencing`",
  "CalculationFunction`", "Errors`", "Helpers`", "CactusBoundary`",
  "KrancTensor`", "Param`", "Schedule`", "Interface`", "Kranc`", "Jacobian`",
- "ConservationCalculation`"}];
+ "ConservationCalculation`", "CaKernel`", "Calculation`"}];
 
 CreateKrancThorn::usage = "Construct a Kranc thorn";
 
@@ -95,7 +95,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     evolvedODEGroupDefinitions, rhsODEGroupDefinitions, rhsODEGroups,
     allParams, boundarySources, reflectionSymmetries,
     realParamDefs, intParamDefs,
-    pDefs, consCalcs, consCalcsIn, consGroups},
+    pDefs, consCalcs, consCalcsIn, consGroups, cakernel,
+    hostCals, deviceCalcs, incFilenames},
 
     (* Parse named arguments *)
 
@@ -197,6 +198,21 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     rhsGroups = Map[groupName, rhsGroupDefinitions];
     rhsODEGroups = Map[groupName, rhsODEGroupDefinitions];
 
+    (* Construct a source file for each calculation *)
+    allParams = Join[Map[ParamName, realParamDefs],
+                     Map[ParamName, intParamDefs],
+                     Map[unqualifiedName, inheritedRealParams], 
+                     Map[unqualifiedName, inheritedIntParams], 
+                     Map[unqualifiedName, inheritedKeywordParams]];
+
+    calcs = Map[Join[#,
+                     {ODEGroups -> Join[odeGroups, rhsODEGroups],
+                      Parameters -> allParams,
+                      PartialDerivatives -> partialDerivs,
+                      Implementation -> implementation}] &, calcs];
+
+    calcs = Map[If[!OptionValue[UseCaKernel], #, If[mapContains[#,ExecuteOn], #, Append[#,ExecuteOn->Device]]] &, calcs];
+
     (* Construct the configuration file *)
     InfoMessage[Terse, "Creating configuration file"];
     configuration = CreateConfiguration[opts];
@@ -223,7 +239,12 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     InfoMessage[Terse, "Creating schedule file"];
     schedule = CreateKrancScheduleFile[calcs, groups, Join[evolvedGroups,evolvedODEGroups],
       Join[rhsGroups,rhsODEGroups], Join[nonevolvedGroups,nonevolvedODEGroups], thornName,
-      evolutionTimelevels, opts];
+      evolutionTimelevels,opts];
+
+    (* Construct the cakernel file *)
+    If[OptionValue[UseCaKernel],
+       InfoMessage[Terse, "Creating CaKernel file"];
+       cakernel = CaKernelCCL[calcs]];
 
     boundarySources = CactusBoundary`GetSources[evolvedGroups, groups, 
                                             implementation, thornName];
@@ -261,24 +282,26 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     ext = CodeGenC`SOURCESUFFIX;
 
-    (* Construct a source file for each calculation *)
-    allParams = Join[Map[ParamName, realParamDefs],
-                     Map[ParamName, intParamDefs],
-                     Map[unqualifiedName, inheritedRealParams], 
-                     Map[unqualifiedName, inheritedIntParams], 
-                     Map[unqualifiedName, inheritedKeywordParams]];
 
     InfoMessage[Terse, "Creating calculation source files"];
-    calcSources = Map[CreateSetterSource[
-      {Join[#, {ODEGroups -> Join[odeGroups, rhsODEGroups],
-                Parameters -> allParams, PartialDerivatives -> partialDerivs}]},
-      False, {}, implementation, opts] &, calcs];
-    calcFilenames = Map[lookup[#, Name] <> ext &, calcs];
+
+    hostCalcs = Select[calcs, !CalculationOnDevice[#] &];
+    deviceCalcs = Select[calcs, CalculationOnDevice];
+
+    calcSources = Join[Map[CreateSetterSource[{#}, False, {}, opts] &, hostCalcs],
+                       Map[CaKernelCode[#,opts] &, deviceCalcs]];
+
+    calcFilenames = Join[Map[lookup[#, Name] <> ext &, hostCalcs],
+                         Map["CaKernel__"<>lookup[#, Name] <> ".code" &, deviceCalcs]];
+
+    incFilenames = Map[lookup[#, Name] <> ext &, hostCalcs];
 
     (* Makefile *)
     InfoMessage[Terse, "Creating make file"];
-    make = CreateMakefile[Join[{"Startup.cc", "RegisterMoL.cc", "RegisterSymmetries.cc"}, calcFilenames, 
-      Map[lookup[#, Filename] &, boundarySources]]];
+    make = CreateMakefile[Join[{"Startup.cc", "RegisterSymmetries.cc"},
+                               If[!OptionValue[UseCaKernel], {"RegisterMoL.cc"}, {}],
+                               incFilenames,
+                               Map[lookup[#, Filename] &, boundarySources]]];
 
     (* Put all the above together and generate the Cactus thorn *)
     thornspec = {Name          -> thornName, 
@@ -287,6 +310,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 	         Interface     -> interface, 
                  Schedule      -> schedule, 
                  Param         -> param,
+                 CaKernel      -> cakernel,
                  Makefile      -> make,
                  Sources       -> Join[{
                   {Filename -> "Startup.cc", Contents -> startup}, 

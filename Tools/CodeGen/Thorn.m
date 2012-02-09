@@ -25,7 +25,7 @@
 
 BeginPackage["Thorn`", "CodeGen`", "CodeGenC`", "CodeGenCactus`", "CalculationFunction`",
   "CalculationBoundaries`", "MapLookup`", "KrancGroups`", "Helpers`",
-  "Errors`", "Kranc`"];
+  "Errors`", "Kranc`", "CaKernel`"];
 
 (* These functions are externally visible, and comprise the public
    interface to this package. *)
@@ -224,7 +224,8 @@ CreateConfiguration[opts:OptionsPattern[]] :=
       "REQUIRES LoopControl\n", "OPTIONAL LoopControl\n{\n}\n"],
    If[OptionValue[UseDGFE], "REQUIRES Boost CPPUtils FDCore HRSCCore\n", {}],
    If[OptionValue[UseOpenCL], "REQUIRES OpenCL OpenCLRunTime\n", {}],
-   If[OptionValue[UseVectors], "REQUIRES Vectors\n", {}]
+   If[OptionValue[UseVectors], "REQUIRES Vectors\n", {}],
+   If[OptionValue[UseCaKernel], CaKernelConfigurationCLL[], {}]
   };
 
 (* ------------------------------------------------------------------------ 
@@ -464,7 +465,7 @@ scheduleGroup[spec_] :=
 
 (* Taking a list of group storage specifications for global storage,
    and lists of scheduled function and scheduled group structures,
-   return a CodeGen block representing a schdule.ccl file. *)
+   return a CodeGen block representing a schedule.ccl file. *)
 CreateSchedule[globalStorageGroups_, scheduledGroups_, scheduledFunctions_] :=
   {whoWhen["CCL"],
    Map[SeparatedBlock[groupStorage[#]]     &, globalStorageGroups],
@@ -486,19 +487,6 @@ CreateSchedule[globalStorageGroups_, scheduledGroups_, scheduledFunctions_] :=
          optional LoopPreIncludes     -> {include file list},
 	          Equations           -> {{K11_rhs -> 2 A K11, ...}...}} *)
 
-calculationMacros[vectorise_] :=
-  CommentedBlock["Define macros used in calculations",
-      Map[{"#define ", #, "\n"} &,
-         {"INITVALUE (42)",
-          "QAD(x) (SQR(SQR(x)))"} ~Join~
-          If[vectorise,
-           {"INV(x) (kdiv(ToReal(1.0),x))",
-            "SQR(x) (kmul(x,x))",
-            "CUB(x) (kmul(x,SQR(x)))"},
-           {"INV(x) ((1.0) / (x))",
-            "SQR(x) ((x) * (x))",
-            "CUB(x) ((x) * (x) * (x))"}]
-         ]];
 
 (* Given a list of Calculation structures as defined above, create a
    CodeGen representation of a source file that defines a function for
@@ -506,12 +494,14 @@ calculationMacros[vectorise_] :=
 
 Options[CreateSetterSource] = ThornOptions;
 
-CreateSetterSource[calcs_, debug_, include_, imp_,
+CreateSetterSource[calcs_, debug_, include_,
   opts:OptionsPattern[]] :=
-  Module[{},
+  Module[{calc = First[calcs],bodyFunction},
 
   If[!MatchQ[include, _List],
     Throw["CreateSetterSource: Include should be a list but is in fact " <> ToString[include]]];
+
+  SetDataType[If[OptionValue[UseVectors],"CCTK_REAL_VEC", "CCTK_REAL"]];
 
   {whoWhen[CodeGenC`SOURCELANGUAGE],
 
@@ -532,15 +522,28 @@ CreateSetterSource[calcs_, debug_, include_, imp_,
                          {"cctk_Loop.h", "loopcontrol.h"},
                          If[OptionValue[UseOpenCL], {"OpenCLRunTime.h"}, {}],
                          If[OptionValue[UseVectors], {"vectors.h"}, {}]]],
-   calculationMacros[OptionValue[UseVectors]],
+   CalculationMacros[OptionValue[UseVectors]],
 
    (* For each function structure passed, create the function and
       insert it *)
 
-   CalculationBoundariesFunction[First[calcs], imp],
+   CalculationBoundariesFunction[First[calcs]],
 
-   Map[CreateCalculationFunction[# , debug, imp, opts] &,
-       calcs]}];
+   bodyFunction = DefineFunction[lookup[calc,Name]<>"_Body", "static void", "cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const imin[3], int const imax[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[]",
+  {
+    "DECLARE_CCTK_ARGUMENTS;\n",
+    "DECLARE_CCTK_PARAMETERS;\n\n", 
+    #
+  }] &;
+
+   calc = Join[calc, {BodyFunction -> bodyFunction, 
+                      CallerFunction -> True,
+                      LoopFunction -> (GenericGridLoop[lookup[calc,Name],#,opts] &),
+                      GFAccessFunction -> ({#,"[","index","]"} &),
+                      InitFDVariables -> InitialiseFDVariables[OptionValue[UseVectors]],
+                      MacroPointer -> True}];
+
+   CreateCalculationFunction[calc, opts]}];
 
 
 
@@ -1406,6 +1409,7 @@ CreateThorn[thorn_] :=
     GenerateFile[thornDirectory <> "/interface.ccl",     lookup[thorn, Interface]];
     GenerateFile[thornDirectory <> "/param.ccl",         lookup[thorn, Param]];
     GenerateFile[thornDirectory <> "/schedule.ccl",      lookup[thorn, Schedule]];
+    GenerateFile[thornDirectory <> "/cakernel.ccl",      lookup[thorn, CaKernel]];
     
     Map[GenerateFile[sourceDirectory <> "/" <> lookup[#, Filename], 
                                                lookup[#, Contents]] &,

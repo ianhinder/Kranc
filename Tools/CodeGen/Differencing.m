@@ -189,7 +189,7 @@ getParamName[p_List] := lookup[p,Name];
 getParamName[p_] := p;
 
 DefFn[
-  PrecomputeDerivatives[derivOps_, expr_, intParams_, zeroDims_] :=
+  PrecomputeDerivatives[derivOps_, expr_, intParams_, zeroDims_, macroPointer_] :=
   Module[{componentDerivOps, gfds, sortedgfds, opNames, intParamNames, paramsInOps,
           paramName, opsWithParam, opNamesWithParam, replace, param},
     gfds = GridFunctionDerivativesInExpression[derivOps, expr, zeroDims];
@@ -204,7 +204,7 @@ DefFn[
 
     If[paramsInOps === {},
       Map[DerivativeOperatorVerify, derivOps];
-      Map[PrecomputeDerivative, sortedgfds],
+      Map[PrecomputeDerivative[#,Automatic,macroPointer]&, sortedgfds],
       (* else *)
       paramName = First[paramsInOps];
       opsWithParam = Select[derivOps, Cases[#, paramName, Infinity] =!= {} &];
@@ -217,7 +217,7 @@ DefFn[
       {Map[DeclareVariableNoInit[GridFunctionDerivativeName[#],DataType[]] &, sortedgfds],
        "\n",
        SwitchStatement[paramName,
-         Sequence@@Table[{value, Map[PrecomputeDerivative[# /. replace[value],#] &, sortedgfds]}, 
+         Sequence@@Table[{value, Map[PrecomputeDerivative[# /. replace[value],#,macroPointer] &, sortedgfds]}, 
                          {value, lookup[param, AllowedValues]}]]}]]];
 
 DefFn[
@@ -230,7 +230,7 @@ DefFn[
      Map[DeclareDerivative, sortedgfds]}]];
 
 DefFn[
-  ReplaceDerivatives[derivOps_, expr_, precompute_, zeroDims_] :=
+  ReplaceDerivatives[derivOps_, expr_, precompute_, zeroDims_, macroPointer_] :=
   Module[{componentDerivOps, gfds},
     Map[DerivativeOperatorVerify, derivOps];
     componentDerivOps = Flatten[Map[DerivativeOperatorToComponents[#,zeroDims] &, derivOps]];
@@ -238,7 +238,7 @@ DefFn[
 
     If[precompute,
       rules = Map[# :> GridFunctionDerivativeName[#] &, gfds],
-      rules = Map[# :> evaluateDerivative[#] &, gfds]];
+      rules = Map[# :> evaluateDerivative[#,macroPointer] &, gfds]];
     expr /. rules]];
 
 (* Generate code to ensure that there are sufficient ghost and
@@ -300,17 +300,20 @@ DefFn[
 (*************************************************************)
 
 DefFn[
-  PrecomputeDerivative[d:pd_[gf_, inds___], vargfd_:Automatic] :=
+  PrecomputeDerivative[d:pd_[gf_, inds___], vargfd_, macroPointer_] :=
   Module[{},
     If[vargfd === Automatic,
-      DeclareAssignVariable[DataType[], GridFunctionDerivativeName[d], evaluateDerivative[d]],
-      AssignVariable[GridFunctionDerivativeName[vargfd], evaluateDerivative[d]]]]];
+      DeclareAssignVariable[DataType[], GridFunctionDerivativeName[d], evaluateDerivative[d,macroPointer]],
+      AssignVariable[GridFunctionDerivativeName[vargfd], evaluateDerivative[d,macroPointer]]]]];
 
 DefFn[
-  evaluateDerivative[d:pd_[gf_, inds___]] :=
+  evaluateDerivative[d:pd_[gf_, inds___], macroPointer_] :=
   Module[{macroname},
     macroName = ComponentDerivativeOperatorMacroName[pd[inds] -> expr];
-    Return[ToString[macroName] <> "(&" <> ToString[gf] <> "[index])"]
+    (* Return[ToString[macroName] <> "(" <> ToString[gf] <> ", i, j, k)"] *)
+    If[macroPointer,
+       Return[ToString[macroName] <> "(&" <> ToString[gf] <> "[index])"],
+       Return[ToString[macroName] <> "(" <> ToString[gf] <> ")"]]
   ]];
 
 DeclareDerivative[d:pd_[gf_, inds___]] :=

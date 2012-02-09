@@ -41,7 +41,9 @@ dummy;
 LoopPreIncludes, GroupImplementations, PartialDerivatives, NoSimplify,
 Boundary, Interior, InteriorNoSync, Where, AddToStencilWidth,
 Everywhere, normal1, normal2, normal3, INV, SQR, CUB, QAD, dot, pow,
-exp, dt, dx, dy, dz, idx, idy, idz, t, MinMod, VanLeer}
+exp, dt, dx, dy, dz, idx, idy, idz, t, MinMod, VanLeer, BodyFunction,
+CallerFunction, LoopFunction, GFAccessFunction, InitFDVariables,
+MacroPointer}
 
 {ConditionalOnKeyword, ConditionalOnKeywords, CollectList, Interior,
 InteriorNoSync, Boundary, BoundaryWithGhosts, Where, PreDefinitions,
@@ -81,7 +83,13 @@ ThornOptions =
   ProhibitAssignmentToGridFunctionsRead -> False,
   IncludeFiles -> {},
   CSE -> False,
-  UseJacobian -> False};
+  UseJacobian -> False,
+  UseCaKernel -> False,
+  LoopName -> "" (* internal hack - do not use *)};
+
+ExecuteOn;
+Device;
+Host;
 
 (* Thorn.m *)
 
@@ -98,7 +106,7 @@ Contents, ThornName, BaseImplementation, EvolvedGFs, EvolvedArrays, PrimitiveGFs
 Groups, Calculation, GridFunctions, Shorthands, Equations, Parameter,
 Value, UsesFunctions, ArgString, Conditional, Conditionals, D1, D2, D3, D11, D22,
 D33, D21, D31, D32, Textual, TriggerGroups, Include, RHSGroups, Tags, 
-Steerable, Never, Always, Recover, Primitives};
+Steerable, Never, Always, Recover, Primitives, CaKernel};
 
 {ExcisionGFs};
 

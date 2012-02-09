@@ -1,0 +1,67 @@
+#undef KRANC_DIFF_FUNCTIONS
+#define KRANC_C
+#include "Differencing.h"
+#include "GenericFD.h"
+
+#define KRANC_GFOFFSET3D(u,i,j,k) I3D(u,i,j,k)
+
+
+/* Define macros used in calculations */
+#define INITVALUE (42)
+#define QAD(x) (SQR(SQR(x)))
+#define INV(x) ((1.0) / (x))
+#define SQR(x) ((x) * (x))
+#define CUB(x) ((x) * (x) * (x))
+
+CAKERNEL_initial_gaussian_Begin
+  
+  /* Include user-supplied include files */
+  
+  /* Initialise finite differencing variables */
+  CCTK_REAL const dx = params.cagh_dx;
+  CCTK_REAL const dy = params.cagh_dy;
+  CCTK_REAL const dz = params.cagh_dz;
+  CCTK_REAL const dt = params.cagh_dt;
+  CCTK_REAL const t = params.cagh_time;
+  CCTK_REAL const dxi = INV(dx);
+  CCTK_REAL const dyi = INV(dy);
+  CCTK_REAL const dzi = INV(dz);
+  CCTK_REAL const khalf = 0.5;
+  CCTK_REAL const kthird = 1/3.0;
+  CCTK_REAL const ktwothird = 2.0/3.0;
+  CCTK_REAL const kfourthird = 4.0/3.0;
+  CCTK_REAL const keightthird = 8.0/3.0;
+  CCTK_REAL const hdxi = 0.5 * dxi;
+  CCTK_REAL const hdyi = 0.5 * dyi;
+  CCTK_REAL const hdzi = 0.5 * dzi;
+  
+  /* Initialize predefined quantities */
+  CCTK_REAL const p1odx = INV(dx);
+  
+  /* Assign local copies of arrays functions */
+  
+  
+  
+  /* Calculate temporaries and arrays functions */
+  
+  /* Copy local copies back to grid functions */
+  CAKERNEL_initial_gaussian_Computations_Begin
+    
+    /* Assign local copies of grid functions */
+    
+    CCTK_REAL xL = I3D(x,0,0,0);
+    
+    
+    /* Include user supplied include files */
+    
+    /* Precompute derivatives */
+    
+    /* Calculate temporaries and grid functions */
+    CCTK_REAL phiL = exp(-100.*SQR(xL + t));
+    
+    /* Copy local copies back to grid functions */
+    I3D(phi,0,0,0) = phiL;
+    
+  CAKERNEL_initial_gaussian_Computations_End
+  
+CAKERNEL_initial_gaussian_End

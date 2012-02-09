@@ -65,7 +65,6 @@ GridLoop::usage = "GridLoop[block] returns a block that is looped over for every
   "grid point.  Must have previously set up the grid loop variables (see " <>
   "InitialiseGridLoopVariables.";
 ConditionalOnParameterTextual::usage = "";
-DeclareFDVariables::usage = "";
 InitialiseFDVariables::usage = "";
 ReplacePowers::usage = "";
 BoundaryLoop::usage = "";
@@ -75,6 +74,8 @@ NameRoot::usage = "";
 PartitionVarList::usage = "";
 DataType::usage = "DataType[] returns a string for the grid function data type (e.g. CCTK_REAL)";
 SetDataType::usage = "SetDataType[type] sets a string for the grid function data type (e.g. CCTK_REAL)";
+CCLBlock;
+CalculationMacros;
 
 Begin["`Private`"];
 
@@ -175,20 +176,6 @@ DefFn[
       "DECLARE_CCTK_PARAMETERS;\n\n",
       contents
     }]];
-
-DefFn[
-  DeclareFDVariables[] := 
-(*
-  CommentedBlock["Declare finite differencing variables",
-    {Map[DeclareVariables[#, "CCTK_REAL"] &, {{"dx", "dy", "dz"}, 
-                                              {"dxi", "dyi", "dzi"},
-                                              {khalf,kthird,ktwothird,kfourthird,keightthird},
-                                              {"hdxi", "hdyi", "hdzi"}}],
-     "\n"},
-    {Map[DeclareVariables[#, "ptrdiff_t"] &, {{"di", "dj", "dk"}}],
-     "\n"}];
-*)
-  CommentedBlock["Declare finite differencing variables", {}]];
 
 DefFn[
   InitialiseFDSpacingVariablesC[] :=
@@ -649,7 +636,7 @@ DefFn[
   ReplacePowers[expr_, vectorise:Boolean, noSimplify:Boolean : False] :=
   Module[
     {rhs},
-    rhs = expr /. Power[xx_, -1] -> INV[xx];
+    rhs = expr /. Power[xx_, -1] -> INV[xx] /. ToReal[x_] :> x; (* FIXME: this breaks vectorisation *)
     If[SOURCELANGUAGE == "C",
        {rhs = rhs //. Power[xx_,  2  ] -> SQR[xx];
         rhs = rhs //. Power[xx_,  3  ] -> CUB[xx];
@@ -716,7 +703,7 @@ DefFn[
         rhs = rhs //. Power[E, power_] -> exp[power];
         rhs = rhs //. Log[x_] -> log[x];
         (* rhs = rhs //. Power[x_, n_Integer] -> pown[x,n]; *)
-        rhs = rhs //. Power[x_, y_] -> pow[x,y];
+        rhs = rhs //. Power[x_, power_] -> pow[x,"(CCTK_REAL) "<>ToString[power]];
         rhs = rhs //. Sin[x_] -> sin[x];
         rhs = rhs //. Cos[x_] -> cos[x];
         rhs = rhs //. Tan[x_] -> tan[x];
@@ -753,6 +740,7 @@ DefFn[
         rhs = rhs //. Max[xx_, yy__] -> fmax[xx, Max[yy]];
         rhs = rhs //. Min[xx_, yy__] -> fmin[xx, Min[yy]];
         rhs = rhs //. Abs[x_] -> fabs[x];
+        rhs = rhs //. IntAbs[x_] -> abs[x];
 
         If[vectorise === True,
            rhs = vectoriseExpression[rhs]];
@@ -763,6 +751,28 @@ DefFn[
        rhs = rhs /. Power[xx_, power_] -> xx^power];
     (*       Print[rhs//FullForm];*)
     rhs]];
+
+DefFn[
+  CCLBlock[type_String, name_String, attrs:{(_String -> CodeGenBlock)...},
+           contents:CodeGenBlock,comment_String:""] :=
+  {type, " ", name,
+   Map[" "<>#[[1]]<>"="<>#[[2]] &, attrs], "\n",
+   CBlock[contents],
+   If[comment === "", "", Quote[comment]],"\n"}];
+
+CalculationMacros[vectorise_:False] :=
+  CommentedBlock["Define macros used in calculations",
+      Map[{"#define ", #, "\n"} &,
+         {"INITVALUE (42)",
+          "QAD(x) (SQR(SQR(x)))"} ~Join~
+          If[vectorise,
+           {"INV(x) (kdiv(ToReal(1.0),x))",
+            "SQR(x) (kmul(x,x))",
+            "CUB(x) (kmul(x,SQR(x)))"},
+           {"INV(x) ((1.0) / (x))",
+            "SQR(x) ((x) * (x))",
+            "CUB(x) ((x) * (x) * (x))"}]
+         ]];
 
 End[];
 

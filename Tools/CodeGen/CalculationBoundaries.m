@@ -45,8 +45,10 @@ groupsSetInCalc[calc_, groups_] :=
    evolved variables.  Currently only a flat boundary condition is
    implemented. *)
 
-CalculationBoundariesFunction[calc_List, imp_String] :=
-  Module[{selectGroup, groups, groupNamesSet},
+CalculationBoundariesFunction[calc_List] :=
+  Module[{selectGroup, groups, groupNamesSet, imp},
+
+  imp = lookup[calc,Implementation];
 
   (* If the calculation sets every grid point, we don't need to apply
      any boundary condition *)

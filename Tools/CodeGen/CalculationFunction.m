@@ -251,10 +251,9 @@ simpCollect[collectList_, eqrhs_, localvar_, debug_] :=
 
 (* Return a CodeGen block which assigns dest by evaluating expr *)
 assignVariableFromExpression[dest_, expr_, declare_, vectorise_, noSimplify:Boolean : False] :=
-  Module[{tSym, type, cleanExpr, code},
-    tSym = Unique[];
+  Module[{type, cleanExpr, code},
     type = If[StringMatchQ[ToString[dest], "dir*"], "ptrdiff_t", DataType[]];
-    cleanExpr = ReplacePowers[expr, vectorise, noSimplify] /. Kranc`t -> tSym;
+    cleanExpr = ReplacePowers[expr, vectorise, noSimplify];
 
     If[SOURCELANGUAGE == "C",
       code = If[declare, type <> " ", ""] <> ToString[dest] <> " = " <>
@@ -275,16 +274,14 @@ assignVariableFromExpression[dest_, expr_, declare_, vectorise_, noSimplify:Bool
     code = StringReplace[code, "normal2"     -> "normal[1]"];
     code = StringReplace[code, "normal3"     -> "normal[2]"];
     code = StringReplace[code, "BesselJ"-> "gsl_sf_bessel_Jn"];
-    code = StringReplace[code, ToString@tSym -> "ToReal(cctk_time)"];
     code = StringReplace[code, "\"" -> ""];
 
     {code}];
 
 (* This and assignVariableFromExpression should be combined *)
 generateCodeFromExpression[expr_, vectorise_, noSimplify:Boolean : False] :=
-  Module[{tSym, type, cleanExpr, code},
-    tSym = Unique[];
-    cleanExpr = ReplacePowers[expr, vectorise, noSimplify] /. Kranc`t -> tSym;
+  Module[{type, cleanExpr, code},
+    cleanExpr = ReplacePowers[expr, vectorise, noSimplify];
 
     If[SOURCELANGUAGE == "C",
       code =
@@ -303,7 +300,6 @@ generateCodeFromExpression[expr_, vectorise_, noSimplify:Boolean : False] :=
     code = StringReplace[code, "normal2"     -> "normal[1]"];
     code = StringReplace[code, "normal3"     -> "normal[2]"];
     code = StringReplace[code, "BesselJ"-> "gsl_sf_bessel_Jn"];
-    code = StringReplace[code, ToString@tSym -> "ToReal(cctk_time)"];
     code = StringReplace[code, "\"" -> ""];
 
     {code}];
@@ -374,15 +370,19 @@ pdCanonicalOrdering[name_[inds___] -> x_] :=
    Calculation function generation
    -------------------------------------------------------------------------- *)
 
-Options[CreateCalculationFunction] = ThornOptions;
+Options[CreateCalculationFunction] = Join[ThornOptions,{Debug -> False}];
 
 DefFn[
-  CreateCalculationFunction[calcp_, debug_, imp_, opts:OptionsPattern[]] :=
+  CreateCalculationFunction[calcp_, opts:OptionsPattern[]] :=
   Module[{gfs, allSymbols, knownSymbols,
           shorts, eqs, parameters, parameterRules, odeGroups,
           functionName, dsUsed, groups, pddefs, cleancalc, eqLoop, where,
           addToStencilWidth, pDefs, haveCondTextuals, condTextuals, calc,
-          kernelCall, DGFEDefs, DGFECall},
+          kernelCall, DGFEDefs, DGFECall,debug,imp,gridName},
+
+  debug = OptionValue[Debug];
+  imp = lookup[calcp, Implementation];
+  gridName = lookup[calcp, GFAccessFunction];
 
   functionName = ToString@lookup[calcp, Name];
   bodyFunctionName = functionName <> "_Body";
@@ -409,8 +409,6 @@ DefFn[
   addToStencilWidth = lookupDefault[cleancalc, AddToStencilWidth, 0];
   pDefs = lookup[cleancalc, PreDefinitions];
   haveCondTextuals = mapContains[cleancalc, ConditionalOnTextuals];
-
-  SetDataType[If[OptionValue[UseVectors],"CCTK_REAL_VEC", "CCTK_REAL"]];
 
   VerifyCalculation[cleancalc];
 
@@ -688,12 +686,7 @@ DefFn[
 
   InfoMessage[InfoFull,"Generating function"];
   {
-  DGFEDefs,
-  DefineFunction[bodyFunctionName, "static void", "cGH const *restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const imin[3], int const imax[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[]",
-  {
-    "DECLARE_CCTK_ARGUMENTS;\n",
-    "DECLARE_CCTK_PARAMETERS;\n\n",
-
+    lookup[calcp,BodyFunction][{
     (* OpenCL kernel prologue *)
     (* We could (or probably should) write this into a source file of its own *)
     If[OptionValue[UseOpenCL],
@@ -705,12 +698,11 @@ DefFn[
 
     If[OptionValue[UseOpenCL], Stringify, Identity][{
 
-    DeclareFDVariables[],
-
     CommentedBlock["Include user-supplied include files",
       Map[IncludeFile, lookupDefault[cleancalc, DeclarationIncludes, {}]]],
 
-    InitialiseFDVariables[OptionValue[UseVectors]],
+    lookup[calcp,InitFDVariables],
+
     definePreDefinitions[pDefs],
 
     If[OptionValue[UseJacobian], CreateJacobianVariables[], {}],
@@ -755,7 +747,8 @@ DefFn[
        }]
     }],
   
-    DefineCCTKSubroutine[functionName,
+    If[lookup[calcp,CallerFunction],
+      DefineCCTKSubroutine[functionName,
       FlattenBlock[{
         ConditionalOnParameterTextual["verbose > 1",
           "CCTK_VInfo(CCTK_THORNSTRING,\"Entering " <> bodyFunctionName <> "\");\n"],
@@ -787,7 +780,9 @@ DefFn[
 
         ConditionalOnParameterTextual["verbose > 1",
           "CCTK_VInfo(CCTK_THORNSTRING,\"Leaving " <> bodyFunctionName <> "\");\n"]
-      }]]
+      }]],
+      (* else *)
+       ""]
   }]];
 
 Options[equationLoop] = ThornOptions;
@@ -798,12 +793,14 @@ DefFn[
              opts:OptionsPattern[]] :=
   Module[{rhss, lhss, gfsInRHS, gfsInLHS, gfsOnlyInRHS, localGFs,
           localMap, eqs2, derivSwitch, code, functionName, calcCode,
-          loopFunction, gfsInBoth, gfsDifferentiated,
+          gfsInBoth, gfsDifferentiated,
           gfsDifferentiatedAndOnLHS, declare, eqsReplaced,
           arraysInRHS, arraysInLHS, arraysOnlyInRHS, odeVars,
-          generateEquationCode, groupedIfs, IfThenGroup, noSimplify},
+          generateEquationCode, groupedIfs, IfThenGroup, noSimplify,gridName},
 
     InfoMessage[InfoFull, "Equation loop"];
+
+    gridName = Function[x,FlattenBlock[lookup[cleancalc, GFAccessFunction][x]]];
 
     rhss = Map[#[[2]] &, eqs];
     lhss = Map[#[[1]] &, eqs];
@@ -850,8 +847,8 @@ DefFn[
     (* Replace the partial derivatives *)
     {defsWithoutShorts, defsWithShorts} = splitPDDefsWithShorthands[pddefs, shorts];
     eqs2 = ReplaceDerivatives[defsWithoutShorts, eqsOrdered, True,
-                              OptionValue[ZeroDimensions]];
-    eqs2 = ReplaceDerivatives[defsWithShorts, eqs2, False, OptionValue[ZeroDimensions]];
+                              OptionValue[ZeroDimensions],lookup[cleancalc, MacroPointer]];
+    eqs2 = ReplaceDerivatives[defsWithShorts, eqs2, False, OptionValue[ZeroDimensions], lookup[cleancalc, MacroPointer]];
 
     checkEquationAssignmentOrder[eqs2, shorts];
     functionName = ToString@lookup[cleancalc, Name];
@@ -939,7 +936,7 @@ DefFn[
          code
       ];
 
-    assignLocalGridFunctions[gs_, useVectors_, useJacobian_] := assignLocalFunctions[gs, useVectors, useJacobian, GridName];
+    assignLocalGridFunctions[gs_, useVectors_, useJacobian_] := assignLocalFunctions[gs, useVectors, useJacobian, gridName];
     assignLocalArrayFunctions[gs_] := assignLocalFunctions[gs, False, False, ArrayName];
 
     (* separate grid and array variables *)
@@ -960,7 +957,7 @@ DefFn[
     CommentedBlock["Copy local copies back to grid functions",
         Map[AssignVariableInLoop[ArrayName[#], localName[#]] &, arraysInLHS]],
 
-    GenericGridLoop[functionName,
+    lookup[cleancalc,LoopFunction][
     {
       (* DeclareDerivatives[defsWithoutShorts, eqsOrdered], *)
 
@@ -973,7 +970,8 @@ DefFn[
       CommentedBlock["Precompute derivatives",
         PrecomputeDerivatives[defsWithoutShorts, eqsOrdered, 
                               lookup[{opts}, IntParameters, {}],
-                              OptionValue[ZeroDimensions]]],
+                              OptionValue[ZeroDimensions],
+                              lookup[cleancalc, MacroPointer]]],
 
       CommentedBlock["Calculate temporaries and grid functions", calcCode],
 
@@ -984,12 +982,12 @@ DefFn[
       If[OptionValue[UseVectors] || OptionValue[UseOpenCL],
          CommentedBlock["Copy local copies back to grid functions",
            { PrepareStorePartialVariableInLoop["i", "lc_imin", "lc_imax"],
-             Map[StorePartialVariableInLoop[GridName[#], localName[#]] &,
+             Map[StorePartialVariableInLoop[gridName[#], localName[#]] &,
                  gfsInLHS] }],
          CommentedBlock["Copy local copies back to grid functions",
-           Map[AssignVariableInLoop[GridName[#], localName[#]] &, gfsInLHS]]],
+           Map[AssignVariableInLoop[gridName[#], localName[#]] &, gfsInLHS]]],
 
-      If[debugInLoop, Map[InfoVariable[GridName[#]] &, gfsInLHS], ""]}, opts]}]];
+      If[debugInLoop, Map[InfoVariable[gridName[#]] &, gfsInLHS], ""]}, opts]}]];
 
 (* Unsorted *)
 

@@ -1,0 +1,8 @@
+# File produced by Kranc
+
+SRCS = Startup.cc RegisterMoL.cc RegisterSymmetries.cc Boundaries.cc 
+
+
+############################################################
+#CAKERNEL AUTO GENERATED PART. DO NOT EDIT BELOW THIS POINT#
+############################################################

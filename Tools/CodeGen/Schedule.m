@@ -18,7 +18,7 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-BeginPackage["Schedule`", {"Thorn`", "KrancGroups`", "MapLookup`", "Errors`", "Helpers`", "Kranc`"}];
+BeginPackage["Schedule`", {"Thorn`", "KrancGroups`", "MapLookup`", "Errors`", "Helpers`", "Kranc`", "CaKernel`", "Calculation`"}];
 
 CreateKrancScheduleFile;
 
@@ -72,7 +72,9 @@ groupsReadInCalc[calc_, groups_] :=
 (* Each calculation can be scheduled at multiple points, so this
    function returns a LIST of schedule structures for each calculation
    *)
-scheduleCalc[calc_, groups_, thornName_, useOpenCL_] :=
+
+Options[scheduleCalc] = ThornOptions;
+scheduleCalc[calc_, groups_, thornName_, OptionsPattern[]] :=
   Module[{points, conditional, conditionals, keywordConditional,
           keywordConditionals, triggered, keyword, value, keywordvaluepairs,
           groupsToSync, tags,
@@ -107,7 +109,7 @@ scheduleCalc[calc_, groups_, thornName_, useOpenCL_] :=
 
     (* TODO: Pass this as {keyword,value} pair instead of a string,
        once Thorn.m understands this format *)
-    tags = If[useOpenCL, "Device=1", ""];
+    tags = If[OptionValue[UseOpenCL] || CalculationOnDevice[calc], "Device=1", ""];
     
     prefixWithScope[group_] :=
       If[StringMatchQ[ToString[group], __~~"::"~~__],
@@ -129,7 +131,7 @@ scheduleCalc[calc_, groups_, thornName_, useOpenCL_] :=
     Return[Map[
       Join[
       {
-        Name               -> lookup[calc, Name],
+        Name               -> If[OptionValue[UseCaKernel] && CalculationOnDevice[calc], "CAKERNEL_Launch_",""]<>lookup[calc, Name],
         SchedulePoint      -> # <> relStr,
         SynchronizedGroups -> If[StringMatchQ[#, "*MoL_CalcRHS*", IgnoreCase -> True] || StringMatchQ[#, "*MoL_RHSBoundaries*", IgnoreCase -> True],
                                  {},
@@ -217,13 +219,11 @@ scheduleCalc[calc_, groups_, thornName_, useOpenCL_] :=
          bcGroupSched["in MoL_PseudoEvolutionBoundaries after MoL_PostStep"]},{}]]]];
 
 Options[CreateKrancScheduleFile] = ThornOptions;
-
 CreateKrancScheduleFile[calcs_, groups_, evolvedGroups_, rhsGroups_, nonevolvedGroups_, thornName_, 
                         evolutionTimelevels_, opts:OptionsPattern[]] :=
   Module[{scheduledCalcs, scheduledStartup, scheduleMoLRegister, globalStorageGroups, scheduledFunctions, schedule},
 
-    scheduledCalcs =
-      Flatten[Map[scheduleCalc[#, groups, thornName, OptionValue[UseOpenCL]] &, calcs], 1];
+    scheduledCalcs = Flatten[Map[scheduleCalc[#, groups, thornName, opts] &, calcs], 1];
     scheduledStartup = 
     {
       Name          -> thornName <> "_Startup",
@@ -265,8 +265,12 @@ CreateKrancScheduleFile[calcs_, groups_, evolvedGroups_, rhsGroups_, nonevolvedG
             rhsGroups]];
 
     scheduledFunctions = 
-      Join[{scheduledStartup, scheduleMoLRegister, scheduleRegisterSymmetries}, 
-        scheduledCalcs, CactusBoundary`GetScheduledFunctions[thornName, evolvedGroups]];
+      Join[{scheduledStartup, scheduleRegisterSymmetries}, 
+        scheduledCalcs, CactusBoundary`GetScheduledFunctions[thornName, evolvedGroups],
+           If[!OptionValue[UseCaKernel], {scheduleMoLRegister}, {}]];
+
+    If[OptionValue[UseCaKernel],
+       scheduledFunctions = Join[scheduledFunctions, CaKernelSchedule[]]];
 
     schedule = CreateSchedule[globalStorageGroups, 
       CactusBoundary`GetScheduledGroups[thornName], scheduledFunctions];

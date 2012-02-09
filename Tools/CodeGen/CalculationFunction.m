@@ -412,6 +412,15 @@ DefFn[
 
   VerifyCalculation[cleancalc];
 
+  Module[
+    {stencilSize = StencilSize[pddefs, eqs, functionName, OptionValue[ZeroDimensions],
+                               lookup[{opts}, IntParameters, {}]]},
+    If[!VectorQ[stencilSize],
+       stencilSize = MapThread[Max,Map[Last,stencilSize[[2]]]]];
+
+    If[where === Automatic,
+       where = If[MatchQ[stencilSize, {0,0,0}] =!= True, Interior, Everywhere]]];
+
   gfs = allGroupVariables[groups];
 
   InfoMessage[InfoFull, " " <> ToString[Length@shorts] <> " shorthands"];

@@ -22,7 +22,8 @@
 
 (* This package provides a TensorTools wrapper for Kranc *)
 
-BeginPackage["TensorToolsKranc`", {"Kranc`", "KrancGroups`", "TensorTools`", "MapLookup`"}];
+BeginPackage["TensorToolsKranc`", {"Kranc`", "KrancGroups`", "TensorTools`", "MapLookup`",
+                                   "Errors`"}];
 
 CreateGroupFromTensor::usage = "";
 ReflectionSymmetries::usage = "Produce a list of reflection symmetries of a tensor.";

@@ -10,6 +10,8 @@ VerifyList;
 InfoMessage;
 SetDebugLevel;
 ErrorDefinition::usage = "ErrorDefinition[f] creates a default definition of a function f which throws an exception.  This can be used to catch programming errors where f is called with incorrect arguments.";
+PrintError;
+TraceExecution;
 
 DebugQuiet = 0;
 Warnings = 1
@@ -96,11 +98,23 @@ ErrorDefinition[x_] :=
 
 SetAttributes[DefFn, HoldAll];
 
+TraceExecution = False;
+TraceExecutionIndent = "";
+
 DefFn[def:(fn_[args___] := body_)] :=
   Module[
-    {},
+    {result = Unique["result"]},
     ErrorDefinition[fn];
-    fn[args] := (*Profile[fn,*)body(*]*)];
+    Quiet[
+      fn[args] := 
+      Module[
+        {result},
+        If[TraceExecution, Print[TraceExecutionIndent, fn," ", Map[InputForm[First[#]] &,{args}]]];
+        TraceExecutionIndent="| "<>TraceExecutionIndent;
+        result2 = body;
+        TraceExecutionIndent=StringDrop[TraceExecutionIndent,2];
+        If[TraceExecution, Print[TraceExecutionIndent, "-> ", InputForm@result2]];
+        result2], RuleDelayed::rhs]];
 
 End[];
 

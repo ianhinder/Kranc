@@ -22,7 +22,22 @@
 #define SQR(x) ((x) * (x))
 #define CUB(x) ((x) * (x) * (x))
 
-static void initial_sine_Body(cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const imin[3], int const imax[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[])
+extern "C" void initial_sine_calc_SelectBCs(CCTK_ARGUMENTS)
+{
+  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_PARAMETERS;
+  
+  CCTK_INT ierr = 0;
+  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, GenericFD_GetBoundaryWidth(cctkGH), -1 /* no table */, "SimpleWaveScript::phi_group","flat");
+  if (ierr < 0)
+    CCTK_WARN(1, "Failed to register flat BC for SimpleWaveScript::phi_group.");
+  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, GenericFD_GetBoundaryWidth(cctkGH), -1 /* no table */, "SimpleWaveScript::pi_group","flat");
+  if (ierr < 0)
+    CCTK_WARN(1, "Failed to register flat BC for SimpleWaveScript::pi_group.");
+  return;
+}
+
+static void initial_sine_calc_Body(cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const imin[3], int const imax[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[])
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
@@ -57,12 +72,24 @@ static void initial_sine_Body(cGH const * restrict const cctkGH, int const dir, 
   CCTK_REAL const hdzi = 0.5 * dzi;
   
   /* Initialize predefined quantities */
+  CCTK_REAL const p1o12dx = 0.0833333333333333333333333333333*INV(dx);
+  CCTK_REAL const p1o12dy = 0.0833333333333333333333333333333*INV(dy);
+  CCTK_REAL const p1o12dz = 0.0833333333333333333333333333333*INV(dz);
+  CCTK_REAL const p1o144dxdy = 0.00694444444444444444444444444444*INV(dx)*INV(dy);
+  CCTK_REAL const p1o144dxdz = 0.00694444444444444444444444444444*INV(dx)*INV(dz);
+  CCTK_REAL const p1o144dydz = 0.00694444444444444444444444444444*INV(dy)*INV(dz);
   CCTK_REAL const p1o2dx = 0.5*INV(dx);
   CCTK_REAL const p1o2dy = 0.5*INV(dy);
   CCTK_REAL const p1o2dz = 0.5*INV(dz);
+  CCTK_REAL const p1o4dxdy = 0.25*INV(dx)*INV(dy);
+  CCTK_REAL const p1o4dxdz = 0.25*INV(dx)*INV(dz);
+  CCTK_REAL const p1o4dydz = 0.25*INV(dy)*INV(dz);
   CCTK_REAL const p1odx2 = INV(SQR(dx));
   CCTK_REAL const p1ody2 = INV(SQR(dy));
   CCTK_REAL const p1odz2 = INV(SQR(dz));
+  CCTK_REAL const pm1o12dx2 = -0.0833333333333333333333333333333*INV(SQR(dx));
+  CCTK_REAL const pm1o12dy2 = -0.0833333333333333333333333333333*INV(SQR(dy));
+  CCTK_REAL const pm1o12dz2 = -0.0833333333333333333333333333333*INV(SQR(dz));
   
   /* Assign local copies of arrays functions */
   
@@ -74,7 +101,7 @@ static void initial_sine_Body(cGH const * restrict const cctkGH, int const dir, 
   
   /* Loop over the grid points */
   #pragma omp parallel
-  CCTK_LOOP3 (initial_sine,
+  CCTK_LOOP3 (initial_sine_calc,
     i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
     cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
   {
@@ -82,6 +109,7 @@ static void initial_sine_Body(cGH const * restrict const cctkGH, int const dir, 
     
     /* Assign local copies of grid functions */
     
+    CCTK_REAL piL = pi[index];
     CCTK_REAL xL = x[index];
     
     
@@ -89,19 +117,28 @@ static void initial_sine_Body(cGH const * restrict const cctkGH, int const dir, 
     
     /* Precompute derivatives */
     
+    switch(fdOrder)
+    {
+      case 2:
+        break;
+      
+      case 4:
+        break;
+    }
+    
     /* Calculate temporaries and grid functions */
     CCTK_REAL phiL = Sin(2*Pi*(xL - cctk_time));
     
-    CCTK_REAL piL = -2*Pi*Cos(2*Pi*(xL - cctk_time));
+    piL = -2*piL*Cos(2*Pi*(xL - cctk_time));
     
     /* Copy local copies back to grid functions */
     phi[index] = phiL;
     pi[index] = piL;
   }
-  CCTK_ENDLOOP3 (initial_sine);
+  CCTK_ENDLOOP3 (initial_sine_calc);
 }
 
-extern "C" void initial_sine(CCTK_ARGUMENTS)
+extern "C" void initial_sine_calc(CCTK_ARGUMENTS)
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
@@ -109,22 +146,30 @@ extern "C" void initial_sine(CCTK_ARGUMENTS)
   
   if (verbose > 1)
   {
-    CCTK_VInfo(CCTK_THORNSTRING,"Entering initial_sine_Body");
+    CCTK_VInfo(CCTK_THORNSTRING,"Entering initial_sine_calc_Body");
   }
   
-  if (cctk_iteration % initial_sine_calc_every != initial_sine_calc_offset)
+  if (cctk_iteration % initial_sine_calc_calc_every != initial_sine_calc_calc_offset)
   {
     return;
   }
   
-  const char *groups[] = {"SimpleWave::evolved_group","grid::coordinates"};
-  GenericFD_AssertGroupStorage(cctkGH, "initial_sine", 2, groups);
+  const char *groups[] = {"grid::coordinates","SimpleWaveScript::phi_group","SimpleWaveScript::pi_group"};
+  GenericFD_AssertGroupStorage(cctkGH, "initial_sine_calc", 3, groups);
   
+  switch(fdOrder)
+  {
+    case 2:
+      break;
+    
+    case 4:
+      break;
+  }
   
-  GenericFD_LoopOverEverything(cctkGH, &initial_sine_Body);
+  GenericFD_LoopOverEverything(cctkGH, &initial_sine_calc_Body);
   
   if (verbose > 1)
   {
-    CCTK_VInfo(CCTK_THORNSTRING,"Leaving initial_sine_Body");
+    CCTK_VInfo(CCTK_THORNSTRING,"Leaving initial_sine_calc_Body");
   }
 }

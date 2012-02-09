@@ -28,9 +28,12 @@ extern "C" void calc_rhs_SelectBCs(CCTK_ARGUMENTS)
   DECLARE_CCTK_PARAMETERS;
   
   CCTK_INT ierr = 0;
-  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, GenericFD_GetBoundaryWidth(cctkGH), -1 /* no table */, "SimpleWave::evolved_grouprhs","flat");
+  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, GenericFD_GetBoundaryWidth(cctkGH), -1 /* no table */, "SimpleWaveScript::phi_grouprhs","flat");
   if (ierr < 0)
-    CCTK_WARN(1, "Failed to register flat BC for SimpleWave::evolved_grouprhs.");
+    CCTK_WARN(1, "Failed to register flat BC for SimpleWaveScript::phi_grouprhs.");
+  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, GenericFD_GetBoundaryWidth(cctkGH), -1 /* no table */, "SimpleWaveScript::pi_grouprhs","flat");
+  if (ierr < 0)
+    CCTK_WARN(1, "Failed to register flat BC for SimpleWaveScript::pi_grouprhs.");
   return;
 }
 
@@ -69,12 +72,24 @@ static void calc_rhs_Body(cGH const * restrict const cctkGH, int const dir, int 
   CCTK_REAL const hdzi = 0.5 * dzi;
   
   /* Initialize predefined quantities */
+  CCTK_REAL const p1o12dx = 0.0833333333333333333333333333333*INV(dx);
+  CCTK_REAL const p1o12dy = 0.0833333333333333333333333333333*INV(dy);
+  CCTK_REAL const p1o12dz = 0.0833333333333333333333333333333*INV(dz);
+  CCTK_REAL const p1o144dxdy = 0.00694444444444444444444444444444*INV(dx)*INV(dy);
+  CCTK_REAL const p1o144dxdz = 0.00694444444444444444444444444444*INV(dx)*INV(dz);
+  CCTK_REAL const p1o144dydz = 0.00694444444444444444444444444444*INV(dy)*INV(dz);
   CCTK_REAL const p1o2dx = 0.5*INV(dx);
   CCTK_REAL const p1o2dy = 0.5*INV(dy);
   CCTK_REAL const p1o2dz = 0.5*INV(dz);
+  CCTK_REAL const p1o4dxdy = 0.25*INV(dx)*INV(dy);
+  CCTK_REAL const p1o4dxdz = 0.25*INV(dx)*INV(dz);
+  CCTK_REAL const p1o4dydz = 0.25*INV(dy)*INV(dz);
   CCTK_REAL const p1odx2 = INV(SQR(dx));
   CCTK_REAL const p1ody2 = INV(SQR(dy));
   CCTK_REAL const p1odz2 = INV(SQR(dz));
+  CCTK_REAL const pm1o12dx2 = -0.0833333333333333333333333333333*INV(SQR(dx));
+  CCTK_REAL const pm1o12dy2 = -0.0833333333333333333333333333333*INV(SQR(dy));
+  CCTK_REAL const pm1o12dz2 = -0.0833333333333333333333333333333*INV(SQR(dz));
   
   /* Assign local copies of arrays functions */
   
@@ -101,15 +116,30 @@ static void calc_rhs_Body(cGH const * restrict const cctkGH, int const dir, int 
     /* Include user supplied include files */
     
     /* Precompute derivatives */
-    CCTK_REAL const PDstandard2nd11phi = PDstandard2nd11(&phi[index]);
-    CCTK_REAL const PDstandard2nd22phi = PDstandard2nd22(&phi[index]);
-    CCTK_REAL const PDstandard2nd33phi = PDstandard2nd33(&phi[index]);
+    CCTK_REAL PDstandard11phi;
+    CCTK_REAL PDstandard22phi;
+    CCTK_REAL PDstandard33phi;
+    
+    switch(fdOrder)
+    {
+      case 2:
+        PDstandard11phi = PDstandardfdOrder211(&phi[index]);
+        PDstandard22phi = PDstandardfdOrder222(&phi[index]);
+        PDstandard33phi = PDstandardfdOrder233(&phi[index]);
+        break;
+      
+      case 4:
+        PDstandard11phi = PDstandardfdOrder411(&phi[index]);
+        PDstandard22phi = PDstandardfdOrder422(&phi[index]);
+        PDstandard33phi = PDstandardfdOrder433(&phi[index]);
+        break;
+    }
     
     /* Calculate temporaries and grid functions */
     CCTK_REAL phirhsL = piL;
     
-    CCTK_REAL pirhsL = PDstandard2nd11phi + PDstandard2nd22phi + 
-      PDstandard2nd33phi;
+    CCTK_REAL pirhsL = PDstandard11phi + PDstandard22phi + 
+      PDstandard33phi;
     
     /* Copy local copies back to grid functions */
     phirhs[index] = phirhsL;
@@ -134,10 +164,19 @@ extern "C" void calc_rhs(CCTK_ARGUMENTS)
     return;
   }
   
-  const char *groups[] = {"SimpleWave::evolved_group","SimpleWave::evolved_grouprhs"};
-  GenericFD_AssertGroupStorage(cctkGH, "calc_rhs", 2, groups);
+  const char *groups[] = {"SimpleWaveScript::phi_group","SimpleWaveScript::phi_grouprhs","SimpleWaveScript::pi_group","SimpleWaveScript::pi_grouprhs"};
+  GenericFD_AssertGroupStorage(cctkGH, "calc_rhs", 4, groups);
   
-  GenericFD_EnsureStencilFits(cctkGH, "calc_rhs", 1, 1, 1);
+  switch(fdOrder)
+  {
+    case 2:
+      GenericFD_EnsureStencilFits(cctkGH, "calc_rhs", 1, 1, 1);
+      break;
+    
+    case 4:
+      GenericFD_EnsureStencilFits(cctkGH, "calc_rhs", 2, 2, 2);
+      break;
+  }
   
   GenericFD_LoopOverInterior(cctkGH, &calc_rhs_Body);
   

@@ -85,7 +85,10 @@ ThornOptions =
   CSE -> False,
   UseJacobian -> False,
   UseCaKernel -> False,
-  LoopName -> "" (* internal hack - do not use *)};
+  LoopName -> "" (* internal hack - do not use *),
+  Variables -> Automatic,
+  Shorthands -> {},
+  ParentDirectory -> "."};
 
 ExecuteOn;
 Device;

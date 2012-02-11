@@ -267,7 +267,7 @@ CreateKrancScheduleFile[calcs_, groups_, evolvedGroups_, rhsGroups_, nonevolvedG
     scheduledFunctions = 
       Join[{scheduledStartup, scheduleRegisterSymmetries}, 
         scheduledCalcs, CactusBoundary`GetScheduledFunctions[thornName, evolvedGroups],
-           If[!OptionValue[UseCaKernel], {scheduleMoLRegister}, {}]];
+           {scheduleMoLRegister}];
 
     If[OptionValue[UseCaKernel],
        scheduledFunctions = Join[scheduledFunctions, CaKernelSchedule[]]];

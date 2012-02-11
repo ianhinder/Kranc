@@ -65,7 +65,6 @@ GridLoop::usage = "GridLoop[block] returns a block that is looped over for every
   "grid point.  Must have previously set up the grid loop variables (see " <>
   "InitialiseGridLoopVariables.";
 ConditionalOnParameterTextual::usage = "";
-DeclareFDVariables::usage = "";
 InitialiseFDVariables::usage = "";
 ReplacePowers::usage = "";
 BoundaryLoop::usage = "";
@@ -75,6 +74,8 @@ NameRoot::usage = "";
 PartitionVarList::usage = "";
 DataType::usage = "DataType[] returns a string for the grid function data type (e.g. CCTK_REAL)";
 SetDataType::usage = "SetDataType[type] sets a string for the grid function data type (e.g. CCTK_REAL)";
+CCLBlock;
+CalculationMacros;
 
 Begin["`Private`"];
 
@@ -98,21 +99,6 @@ DefFn[
 DefFn[
   StoreVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol)] :=
   {"vec_store_nta(", dest, ",", src, ")", EOL[]}];
-
-(*
-DefFn[
-  StoreLowPartialVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol), count_String] :=
-  {"vec_store_nta_partial_lo(", dest, ",", src, ",", count, ")", EOL[]}];
-
-DefFn[
-  StoreHighPartialVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol), count_String] :=
-  {"vec_store_nta_partial_hi(", dest, ",", src, ",", count, ")", EOL[]}];
-
-DefFn[
-  StoreMiddlePartialVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol), countLow_String, countHigh_String] :=
-  {"vec_store_nta_partial_mid(", dest, ",", src, ",", countLow, ",", countHigh, ")", EOL[]}];
-*)
-
 DefFn[
   PrepareStorePartialVariableInLoop[i:(_String|_Symbol),
                                     ilo:(_String|_Symbol),
@@ -192,20 +178,6 @@ DefFn[
     }]];
 
 DefFn[
-  DeclareFDVariables[] := 
-(*
-  CommentedBlock["Declare finite differencing variables",
-    {Map[DeclareVariables[#, "CCTK_REAL"] &, {{"dx", "dy", "dz"}, 
-                                              {"dxi", "dyi", "dzi"},
-                                              {khalf,kthird,ktwothird,kfourthird,keightthird},
-                                              {"hdxi", "hdyi", "hdzi"}}],
-     "\n"},
-    {Map[DeclareVariables[#, "ptrdiff_t"] &, {{"di", "dj", "dk"}}],
-     "\n"}];
-*)
-  CommentedBlock["Declare finite differencing variables", {}]];
-
-DefFn[
   InitialiseFDSpacingVariablesC[] :=
   {
     (* DeclareAssignVariable["ptrdiff_t", "di", "CCTK_GFINDEX3D(cctkGH,1,0,0) - CCTK_GFINDEX3D(cctkGH,0,0,0)"], *)
@@ -218,8 +190,8 @@ DefFn[
     DeclareAssignVariable[DataType[], "dx", "ToReal(CCTK_DELTA_SPACE(0))"],
     DeclareAssignVariable[DataType[], "dy", "ToReal(CCTK_DELTA_SPACE(1))"],
     DeclareAssignVariable[DataType[], "dz", "ToReal(CCTK_DELTA_SPACE(2))"],
-    DeclareAssignVariable[DataType[], "dt", "ToReal(CCTK_DELTA_TIME)"]
-    (* DeclareAssignVariable[DataType[], "t", "ToReal(cctk_time)"]*)
+    DeclareAssignVariable[DataType[], "dt", "ToReal(CCTK_DELTA_TIME)"],
+    DeclareAssignVariable[DataType[], "t", "ToReal(cctk_time)"]
     }];
 
 DefFn[
@@ -263,13 +235,13 @@ DefFn[
           DeclareAssignVariable[DataType[], "hdzi", "0.5 * dzi"]}]}]];
 
 DefFn[
-  GridName[x_Symbol] :=
+  GridName[x:(_Symbol|_String)] :=
   If[SOURCELANGUAGE == "C",
      ToString[x] <> "[index]",
      ToString[x] <> "(i,j,k)"]];
 
 DefFn[
-  ArrayName[x_Symbol] :=
+  ArrayName[x:(_Symbol|_String)] :=
   If[SOURCELANGUAGE == "C",
      ToString[x] <> "[0]",
      ToString[x] <> "(1)"]];
@@ -403,24 +375,8 @@ Options[GenericGridLoop] = ThornOptions;
 
 DefFn[
   GenericGridLoop[functionName_String, block:CodeGenBlock, opts:OptionsPattern[]] :=
-  If[OptionValue[UseLoopControl],
-     GenericGridLoopUsingLoopControl[functionName, block, OptionValue[UseVectors]],
-     GenericGridLoopTraditional[block]]];
-
-DefFn[
-  GenericGridLoopTraditional[block:CodeGenBlock] :=
-  CommentedBlock[
-    "Loop over the grid points",
-    loopOverInteger[
-      "k", "imin[2]", "imax[2]",
-      loopOverInteger[
-        "j", "imin[1]", "imax[1]",
-        loopOverInteger[
-          "i", "imin[0]", "imax[0]",
-          {If[SOURCELANGUAGE == "C",
-              DeclareAssignVariable["int", "index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"],
-              ""],
-            block}]]]]];
+     GenericGridLoopUsingLoopControl[functionName, block, OptionValue[UseVectors]]
+     ];
 
 DefFn[
   GenericGridLoopUsingLoopControl[functionName_String, block:CodeGenBlock, vectorise:Boolean] :=
@@ -428,8 +384,8 @@ DefFn[
      CommentedBlock[
        "Loop over the grid points",
        {"#pragma omp parallel\n",
-        If[vectorise, "LC_LOOP3VEC", "LC_LOOP3"],
-        " (", functionName, ",\n",
+        If[vectorise, "LC_LOOP3VEC", "CCTK_LOOP3"],
+        "(", functionName, ",\n",
         "  i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],\n",
         "  cctk_lsh[0],cctk_lsh[1],cctk_lsh[2]",
         If[vectorise, {",\n", "  CCTK_REAL_VEC_SIZE"}, ""],
@@ -440,7 +396,7 @@ DefFn[
            (* DeclareAssignVariable["int", "index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"], *)
            DeclareAssignVariable["ptrdiff_t", "index", "di*i + dj*j + dk*k"],
            block}], "}\n",
-        If[vectorise, "LC_ENDLOOP3VEC", "LC_ENDLOOP3"] <> " (", functionName, ");\n"}],
+        If[vectorise, "LC_ENDLOOP3VEC", "CCTK_ENDLOOP3"] <> "(", functionName, ");\n"}],
      (* else *)
      ""]];
 
@@ -553,53 +509,45 @@ DefFn[
 DefFn[
   vectoriseExpression[exprp_] :=
   Module[
-    {isNotMinusOneQ, isNotTimesMinusOneQ, fmaRules, isNotKneg, arithRules, undoRules, expr},
+    {expr, undoVect, undoSomeVect},
     expr = exprp;
-
+    
     (* Constants *)
-    (* expr = expr /. xx_Integer/; xx!=-1 :> ToReal[xx]; *)
-    expr = expr /. xx_Integer -> ToReal[xx];
-    expr = expr /. xx_Real -> ToReal[xx];
-
-    removeToRealRules =
-    {-ToReal[xx_] -> ToReal[- xx],
-     ToReal[xx_] + ToReal[yy_] -> ToReal[xx + yy],
-     ToReal[xx_] - ToReal[yy_] -> ToReal[xx - yy],
-     ToReal[xx_] * ToReal[yy_] -> ToReal[xx * yy],
-     ToReal[xx_] == ToReal[yy_] -> ToReal[xx == yy],
-     ToReal[xx_] != ToReal[yy_] -> ToReal[xx != yy],
-     pow[xx_, ToReal[power_]] -> pow[xx, power]};
-
-    expr = expr //. removeToRealRules;
-
-    (* Replace all operators and functions *)
-    (* kneg, kadd, ksub, kmul, kdiv *)
-    isNotKneg[n_] := ! MatchQ[n,kneg[_]];
-
-    arithRules =
-    { - xx_ -> kneg[xx],
-      xx_ * yy_ -> kmul[xx,yy],
-      xx_ / yy_ -> kdiv[xx,yy],
-      xx_ + yy_ -> kadd[xx,yy],
-      xx_ - yy_ -> ksub[xx,yy],
-      kmul[-1,xx_]            -> kneg[xx],
-      kmul[xx_,-1]            -> kneg[xx],
-      kmul[ToReal[-1],xx_]    -> kneg[xx],
-      kmul[xx_,ToReal[-1]]    -> kneg[xx],
-      ToReal[- xx_]           -> kneg[ToReal[xx]],
-      (* kmul[xx_,INV[yy_]]      -> kdiv[xx,yy], *)
-      (* kmul[INV[xx_],yy_]      -> kdiv[yy,xx], *)
-      kdiv[xx_,kdiv[yy_,zz_]] -> kdiv[kmul[xx,zz],yy],
-      kdiv[kdiv[xx_,yy_],zz_] -> kdiv[xx,kmul[yy,zz]],
-      kmul[kneg[xx_],yy_]     -> kneg[kmul[xx,yy]],
-      kmul[xx_,kneg[yy_]]     -> kneg[kmul[xx,yy]],
-      kdiv[kneg[xx_],yy_]     -> kneg[kdiv[xx,yy]],
-      kdiv[xx_,kneg[yy_]]     -> kneg[kdiv[xx,yy]],
-      kadd[kneg[xx_],yy_]     -> ksub[yy,xx],
-      ksub[kneg[xx_],yy_]     -> kneg[kadd[xx,yy]],
-      kadd[xx_,kneg[yy_]]     -> ksub[xx,yy],
-      ksub[xx_,kneg[yy_]]     -> kadd[xx,yy],
-      kneg[ksub[xx_,yy_]]     -> ksub[yy,xx],
+    expr = expr /. {
+      x_Integer -> ToReal[x],
+      x_Real    -> ToReal[x],
+      E         -> ToReal[E],
+      Pi        -> ToReal[Pi]};
+    
+    (* Operators *)
+    expr = expr //. {
+      -x_                 -> kneg[x],
+      kmul[-1,x_]         -> kneg[x],
+      kmul[x_,-1]         -> kneg[x],
+      kmul[ToReal[-1],x_] -> kneg[x],
+      kmul[x_,ToReal[-1]] -> kneg[x],
+      kneg[kneg[x_]]      -> x,
+      
+      x_ + y_           -> kadd[x,y],
+      x_ - y_           -> ksub[x,y],
+      kadd[kneg[x_],y_] -> ksub[y,x],
+      ksub[kneg[x_],y_] -> kneg[kadd[x,y]],
+      kadd[x_,kneg[y_]] -> ksub[x,y],
+      ksub[x_,kneg[y_]] -> kadd[x,y],
+      kneg[ksub[x_,y_]] -> ksub[y,x],
+      ksub[x_,x_]       -> ToReal[0],
+      
+      x_ * y_              -> kmul[x,y],
+      x_ / y_              -> kdiv[x,y],
+      kdiv[x_,kdiv[y_,z_]] -> kdiv[kmul[x,z],y],
+      kdiv[kdiv[x_,y_],z_] -> kdiv[x,kmul[y,z]],
+      kmul[kneg[x_],y_]    -> kneg[kmul[x,y]],
+      kmul[x_,kneg[y_]]    -> kneg[kmul[x,y]],
+      kdiv[kneg[x_],y_]    -> kneg[kdiv[x,y]],
+      kdiv[x_,kneg[y_]]    -> kneg[kdiv[x,y]],
+      kdiv[x_,x_]          -> ToReal[1],
+      
+      Abs[x_] -> kfabs[x],
       acos[xx_]     -> kacos[xx],
       acosh[xx_]    -> kacosh[xx],
       asin[xx_]     -> kasin[xx],
@@ -608,18 +556,18 @@ DefFn[
       atanh[xx_]    -> katanh[xx],
       cos[xx_]      -> kcos[xx],
       cosh[xx_]     -> kcosh[xx],
-      exp[xx_]      -> kexp[xx],
-      fabs[xx_]     -> kfabs[xx],
-      fmax[xx_,yy_] -> kfmax[xx,yy],
-      fmin[xx_,yy_] -> kfmin[xx,yy],
-      log[xx_]      -> klog[xx],
-      pow[xx_,yy_]  -> kpow[xx,yy],
       sin[xx_]      -> ksin[xx],
       sinh[xx_]     -> ksinh[xx],
-      sqrt[xx_]     -> ksqrt[xx],
       tan[xx_]      -> ktan[xx],
       tanh[xx_]     -> ktanh[xx],
-
+      
+      exp[x_]     -> kexp[x],
+      fabs[x_]    -> kfabs[x],
+      fmax[x_,y_] -> kfmax[x,y],
+      fmin[x_,y_] -> kfmin[x,y],
+      log[x_]     -> klog[x],
+      pow[x_,y_]  -> kpow[x,y],
+      sqrt[x_]    -> ksqrt[x],
       (* acos[kneg[xx_]]           -> kacos[kneg[xx]], *)
       (* acosh[kneg[xx_]]          -> kacosh[kneg[xx]], *)
       kasin[kneg[xx_]]           -> kneg[kasin[xx]],
@@ -639,47 +587,46 @@ DefFn[
       kneg[kfabs[xx_]]           -> kfnabs[xx],
       kneg[kfnabs[xx_]]          -> kfabs[xx],
       kneg[kneg[xx_]]            -> xx};
-    expr = expr //. arithRules;
 
-    (* Undo some transformations *)
-    undoRules = 
-    { IfThen[_, aa_, aa_] -> aa,
-      IfThen[xx_?IntegerQ, aa_, bb_] /; xx!=0 :> aa,
-      IfThen[xx_?IntegerQ, aa_, bb_] /; xx==0 :> bb,
-      IfThen[kmul[xx_,yy_], aa_, bb_] -> IfThen[xx*yy, aa, bb],
-      IfThen[kmul[xx_,yy_] != zz_, aa_, bb_] -> IfThen[xx*yy!=zz, aa, bb],
-      IfThen[ToReal[xx_], aa_, bb_] -> IfThen[xx, aa, bb],
-      Scalar[kmul[xx_,yy_]] -> Scalar[xx*yy],
-      Scalar[kmul[xx_,yy_] != zz_] -> Scalar[xx*yy!=zz],
-      Scalar[ToReal[xx_]] -> Scalar[xx],
-      Scalar[xx_ != ToReal[yy_]] -> Scalar[xx != yy],
-      ToReal[kneg[xx_]] -> ToReal[-xx],
-      ToReal[kadd[xx_,yy_]] -> ToReal[xx+yy],
-      ToReal[ksub[xx_,yy_]] -> ToReal[xx-yy],
-      ToReal[kmul[xx_,yy_]] -> ToReal[xx*yy],
-      ToReal[xx_*kadd[yy_,zz_]] -> ToReal[xx*(yy+zz)],
-      kpow[xx_, kneg[power_]] -> kpow[xx, -power]};
-    expr = expr //. undoRules;
-    
-    (* FMA (fused multiply-add) instructions *)
+    (* FMA (fused multiply-add) *)
     (* kmadd (x,y,z) =   xy+z
        kmsub (x,y,z) =   xy-z
        knmadd(x,y,z) = -(xy+z)
        knmsub(x,y,z) = -(xy-z) *)
-    fmaRules =
-    { kadd[kmul[xx_,yy_],zz_] -> kmadd[xx,yy,zz],
-      kadd[zz_,kmul[xx_,yy_]] -> kmadd[xx,yy,zz],
-      ksub[kmul[xx_,yy_],zz_] -> kmsub[xx,yy,zz],
-      ksub[zz_,kmul[xx_,yy_]] -> knmsub[xx,yy,zz],
-      kneg[kmadd [xx_,yy_,zz_]] -> knmadd[xx,yy,zz],
-      kneg[kmsub [xx_,yy_,zz_]] -> knmsub[xx,yy,zz],
-      kneg[knmadd[xx_,yy_,zz_]] -> kmadd [xx,yy,zz],
-      kneg[knmsub[xx_,yy_,zz_]] -> kmsub [xx,yy,zz]
+    expr = expr //. {
+      kadd[kmul[x_,y_],z_] -> kmadd[x,y,z],
+      kadd[z_,kmul[x_,y_]] -> kmadd[x,y,z],
+      ksub[kmul[x_,y_],z_] -> kmsub[x,y,z],
+      ksub[z_,kmul[x_,y_]] -> knmsub[x,y,z],
+      kneg[kmadd [x_,y_,z_]] -> knmadd[x,y,z],
+      kneg[kmsub [x_,y_,z_]] -> knmsub[x,y,z],
+      kneg[knmadd[x_,y_,z_]] -> kmadd [x,y,z],
+      kneg[knmsub[x_,y_,z_]] -> kmsub [x,y,z]
       (* we could match this and similar patterns
-         kmul[xx_, kadd[yy_, ToReal[+1]]] -> kmadd[xx, yy, xx],
-         kmul[xx_, kadd[yy_, ToReal[-1]]] -> kmsub[xx, yy, xx],
+         kmul[x_, kadd[y_, ToReal[+1]]] -> kmadd[x, y, x],
+         kmul[x_, kadd[y_, ToReal[-1]]] -> kmsub[x, y, x],
          *)};
-    expr = expr //. fmaRules;
+    
+    (* Undo some transformations *)
+    undoVect[expr_] := expr //. {
+      ToReal[x_] -> x,
+      
+      kneg[x_] -> -x,
+      
+      kadd[x_,y_] -> x+y,
+      ksub[x_,y_] -> x-y,
+      kmul[x_,y_] -> x*y,
+      kdiv[x_,y_] -> x/y};
+    
+    undoSomeVect[expr_] := (
+      expr
+      /. ToReal[a_] :> ToReal[undoVect[a]]
+      /. Scalar[a_] :> Scalar[undoVect[a]]
+      /. (IfThen[a_,x_,y_] :> 
+          IfThen[undoVect[a], undoSomeVect[x], undoSomeVect[y]])
+      /. kpow[x_,a_] :> kpow[undoSomeVect[x], undoVect[a]]);
+    
+    expr = undoSomeVect[expr];
     
     Return[expr]]];
 
@@ -701,6 +648,11 @@ DefFn[
         rhs = rhs //. Power[xx_, -1/2] -> INV[sqrt[xx]];
         rhs = rhs //. Power[xx_,  0.5] -> sqrt[xx];
         rhs = rhs //. Power[xx_, -0.5] -> INV[sqrt[xx]];
+        rhs = rhs //. SQR[x_] SQR[y_] -> SQR[x y];
+        rhs = rhs //. CUB[x_] CUB[y_] -> CUB[x y];
+        rhs = rhs //. QAD[x_] QAD[y_] -> QAD[x y];
+        rhs = rhs //. INV[x_] INV[y_] -> INV[x y];
+        rhs = rhs //. sqrt[x_] sqrt[y_] -> sqrt[x y];
         
         (*
            rhs = rhs /.  1/2 ->  khalf
@@ -724,18 +676,19 @@ DefFn[
 
         (* Avoid rational numbers *)
         rhs = rhs /. Rational[xx_,yy_] :> N[xx/yy, 30];
-        
-        rhs = rhs //. IfThen[cond1_,xx1_,yy1_] + IfThen[cond2_,xx2_,yy2_] /; cond1==cond2 :> 
-        IfThen[cond1, Simplify[    xx1 +     xx2], Simplify[    yy1 +     yy2]];
 
-        rhs = rhs //. ff1_ IfThen[cond1_,xx1_,yy1_] + IfThen[cond2_,xx2_,yy2_] /; cond1==cond2 :>
-        IfThen[cond1, Simplify[ff1 xx1 +     xx2], Simplify[ff1 yy1 +     yy2]];
+        (* Simple optimisations *)
+        rhs = rhs /. IfThen[_, aa_, aa_] -> aa;
+        rhs = rhs /. IfThen[xx_?IntegerQ, aa_, bb_] /; xx!=0 :> aa;
+        rhs = rhs /. IfThen[xx_?IntegerQ, aa_, bb_] /; xx==0 :> bb;
+        rhs = rhs /. IfThen[True , aa_, bb_] -> aa;
+        rhs = rhs /. IfThen[False, aa_, bb_] -> bb;
 
-        rhs = rhs //.      IfThen[cond1_,xx1_,yy1_] + ff2_ IfThen[cond2_,xx2_,yy2_] /; cond1==cond2 :> 
-        IfThen[cond1, Simplify[    xx1 + ff2 xx2], Simplify[    yy1 + ff2 yy2]];
-
-        rhs = rhs //. ff1_ IfThen[cond1_,xx1_,yy1_] + ff2_ IfThen[cond2_,xx2_,yy2_] /; cond1==cond2 :> 
-        IfThen[cond1, Simplify[ff1 xx1 + ff2 xx2], Simplify[ff1 yy1 + ff2 yy2]];
+        (* Complex optimisations *)
+        rhs = rhs //.      IfThen[cond1_,xx1_,yy1_] +      IfThen[cond2_,xx2_,yy2_] /; cond1==cond2 :> IfThen[cond1, Simplify[    xx1 +     xx2], Simplify[    yy1 +     yy2]];
+        rhs = rhs //. ff1_ IfThen[cond1_,xx1_,yy1_] +      IfThen[cond2_,xx2_,yy2_] /; cond1==cond2 :> IfThen[cond1, Simplify[ff1 xx1 +     xx2], Simplify[ff1 yy1 +     yy2]];
+        rhs = rhs //.      IfThen[cond1_,xx1_,yy1_] + ff2_ IfThen[cond2_,xx2_,yy2_] /; cond1==cond2 :> IfThen[cond1, Simplify[    xx1 + ff2 xx2], Simplify[    yy1 + ff2 yy2]];
+        rhs = rhs //. ff1_ IfThen[cond1_,xx1_,yy1_] + ff2_ IfThen[cond2_,xx2_,yy2_] /; cond1==cond2 :> IfThen[cond1, Simplify[ff1 xx1 + ff2 xx2], Simplify[ff1 yy1 + ff2 yy2]];
 
         (* Is this still a good idea when FMA instructions are used? *)
         If[!noSimplify,
@@ -749,7 +702,8 @@ DefFn[
            from here. *)
         rhs = rhs //. Power[E, power_] -> exp[power];
         rhs = rhs //. Log[x_] -> log[x];
-        rhs = rhs //. Power[x_, y_] -> pow[x,y];
+        (* rhs = rhs //. Power[x_, n_Integer] -> pown[x,n]; *)
+        rhs = rhs //. Power[x_, power_] :> pow[x,power];
         rhs = rhs //. Sin[x_] -> sin[x];
         rhs = rhs //. Cos[x_] -> cos[x];
         rhs = rhs //. Tan[x_] -> tan[x];
@@ -786,6 +740,7 @@ DefFn[
         rhs = rhs //. Max[xx_, yy__] -> fmax[xx, Max[yy]];
         rhs = rhs //. Min[xx_, yy__] -> fmin[xx, Min[yy]];
         rhs = rhs //. Abs[x_] -> fabs[x];
+        rhs = rhs //. IntAbs[x_] -> abs[x];
 
         If[vectorise === True,
            rhs = vectoriseExpression[rhs]];
@@ -796,6 +751,28 @@ DefFn[
        rhs = rhs /. Power[xx_, power_] -> xx^power];
     (*       Print[rhs//FullForm];*)
     rhs]];
+
+DefFn[
+  CCLBlock[type_String, name_String, attrs:{(_String -> CodeGenBlock)...},
+           contents:CodeGenBlock,comment_String:""] :=
+  {type, " ", name,
+   Map[" "<>#[[1]]<>"="<>#[[2]] &, attrs], "\n",
+   CBlock[contents],
+   If[comment === "", "", Quote[comment]],"\n"}];
+
+CalculationMacros[vectorise_:False] :=
+  CommentedBlock["Define macros used in calculations",
+      Map[{"#define ", #, "\n"} &,
+         {"INITVALUE (42)",
+          "QAD(x) (SQR(SQR(x)))"} ~Join~
+          If[vectorise,
+           {"INV(x) (kdiv(ToReal(1.0),x))",
+            "SQR(x) (kmul(x,x))",
+            "CUB(x) (kmul(x,SQR(x)))"},
+           {"INV(x) ((1.0) / (x))",
+            "SQR(x) ((x) * (x))",
+            "CUB(x) ((x) * (x) * (x))"}]
+         ]];
 
 End[];
 

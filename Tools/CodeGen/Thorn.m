@@ -1409,7 +1409,7 @@ CreateThorn[thorn_] :=
     GenerateFile[thornDirectory <> "/interface.ccl",     lookup[thorn, Interface]];
     GenerateFile[thornDirectory <> "/param.ccl",         lookup[thorn, Param]];
     GenerateFile[thornDirectory <> "/schedule.ccl",      lookup[thorn, Schedule]];
-    If[lookup[thorn, CaKernel] != None,
+    If[lookup[thorn, CaKernel] =!= None,
       GenerateFile[thornDirectory <> "/cakernel.ccl",      lookup[thorn, CaKernel]];
     ];
     

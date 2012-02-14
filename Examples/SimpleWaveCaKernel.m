@@ -1,6 +1,6 @@
 << "KrancThorn.m";
 
-groups = {{"phi_g", {phi}}, {"pi_g", {pi}}};
+groups = {{"phi_g", {phi}}, {"pi_g", {pi}}, {"xCopy_g", {xCopy}}};
 
 derivatives =
 {
@@ -10,34 +10,25 @@ derivatives =
 
 PD = PDstandard2nd;
 
-initialSineCalc = 
-{
-  Name -> "initial_sine",
-  Schedule -> {"AT INITIAL"},
-  Equations -> 
-  {
-    phi -> Sin[2 Pi (x - t)],
-    pi -> -2 Pi Cos[2 Pi (x - t)]
-  }
-};
-
 f[x_] := Exp[-(x/0.1)^2];
 
 initialGaussianCalc = 
 {
   Name -> "initial_gaussian",
   Schedule -> {"AT INITIAL"},
+  ExecuteOn -> Host,
   Equations -> 
   {
     phi -> f[t+x],
-    pi -> D[f[t+x],t]
+    pi -> D[f[t+x],t],
+    xCopy -> x
   }
 };
 
 evolveCalc = 
 {
   Name -> "calc_rhs",
-  Schedule -> {"at EVOL"},
+  Schedule -> {"in MoL_CalcRHS"},
   Where -> Interior,
   Equations ->
   {
@@ -46,23 +37,36 @@ evolveCalc =
   }
 };
 
-
-integrateCalc = 
+boundCalc = 
 {
-  Name -> "rk1",
-  Schedule -> {"at EVOL after calc_rhs"},
-  Where -> Interior,
+  Name -> "calc_bound_rhs",
+  Schedule -> {"in MoL_RHSBoundaries"},
+  Where -> Boundary,
   Equations ->
   {
-    phi -> phi + dt dot[phi],
-    pi -> pi + dt dot[pi]
+    dot[phi] -> D[f[t+xCopy],t],
+    dot[pi]  -> D[f[t+xCopy],t,t]
+  }
+};
+
+
+copyCalc = 
+{
+  Name -> "copy_to_device",
+  Schedule -> {"at INITIAL after initial_gaussian"},
+  Where -> Everywhere,
+  ExecuteOn -> Device,
+  Equations ->
+  {
+    phi -> phi,
+    pi -> pi
   }
 };
 
 CreateKrancThornTT[groups, ".", 
   "SimpleWaveCaKernel", 
-  Calculations -> {initialGaussianCalc, evolveCalc, integrateCalc},
+  Calculations -> {initialGaussianCalc, evolveCalc, copyCalc, boundCalc},
   PartialDerivatives -> derivatives,
   UseCaKernel -> True,
-  EvolutionTimelevels -> 1,
-  DeclaredGroups -> {"phi_g","pi_g"}];
+  EvolutionTimelevels -> 2,
+  DeclaredGroups -> {"phi_g","pi_g","xCopy_g"}];

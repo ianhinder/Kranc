@@ -14,7 +14,7 @@
 #define SQR(x) ((x) * (x))
 #define CUB(x) ((x) * (x) * (x))
 
-CAKERNEL_initial_gaussian_Begin
+CAKERNEL_copy_to_device_Begin
   
   /* Include user-supplied include files */
   
@@ -51,11 +51,12 @@ CAKERNEL_initial_gaussian_Begin
   /* Calculate temporaries and arrays functions */
   
   /* Copy local copies back to grid functions */
-  CAKERNEL_initial_gaussian_Computations_Begin
+  CAKERNEL_copy_to_device_Computations_Begin
     
     /* Assign local copies of grid functions */
     
-    CCTK_REAL xL = I3D(x,0,0,0);
+    CCTK_REAL phiL = I3D(phi,0,0,0);
+    CCTK_REAL piL = I3D(pi,0,0,0);
     
     
     /* Include user supplied include files */
@@ -63,14 +64,14 @@ CAKERNEL_initial_gaussian_Begin
     /* Precompute derivatives */
     
     /* Calculate temporaries and grid functions */
-    CCTK_REAL phiL = exp(-100.*SQR(xL + t));
+    phiL = phiL;
     
-    CCTK_REAL piL = -200.*(xL + t)*exp(-100.*SQR(xL + t));
+    piL = piL;
     
     /* Copy local copies back to grid functions */
     I3D(phi,0,0,0) = phiL;
     I3D(pi,0,0,0) = piL;
     
-  CAKERNEL_initial_gaussian_Computations_End
+  CAKERNEL_copy_to_device_Computations_End
   
-CAKERNEL_initial_gaussian_End
+CAKERNEL_copy_to_device_End

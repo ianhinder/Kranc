@@ -672,7 +672,10 @@ DefFn[
          {
            "",
            "/* Add the flux terms to the RHS */",
-           "solver->compute_rhs();"
+           "solver->compute_rhs();",
+           "",
+           "delete solver;",
+           "solver = NULL;"
          } // Flatten // Map[# <> "\n" &, #] &],
        {}
       ];

@@ -392,8 +392,8 @@ scheduleUnconditionalFunction[spec_] :=
          "TAGS: " <> lookup[spec, Tags] <> "\n",
          ""],
 
-      Map[{"REQUIRES: ", #, "\n"} &, lookupDefault[spec, RequiredGroups, {}]],
-      Map[{"PROVIDES: ", #, "\n"} &, lookupDefault[spec, ProvidedGroups, {}]],
+      Map[{"READS: ", #, "\n"} &, lookupDefault[spec, RequiredGroups, {}]],
+      Map[{"WRITES: ", #, "\n"} &, lookupDefault[spec, ProvidedGroups, {}]],
 
       (* Insert a storage block for each group we want to allocate
          storage for *)

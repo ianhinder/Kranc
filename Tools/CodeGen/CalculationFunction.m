@@ -380,7 +380,7 @@ DefFn[
           shorts, eqs, parameters, parameterRules, odeGroups,
           functionName, dsUsed, groups, pddefs, cleancalc, eqLoop, where,
           addToStencilWidth, pDefs, haveCondTextuals, condTextuals, calc,
-          kernelCall, DGFEDefs, DGFECall},
+          kernelCall, DGFEDefs, DGFEInit, DGFECall},
 
   functionName = ToString@lookup[calcp, Name];
   bodyFunctionName = functionName <> "_Body";
@@ -471,21 +471,21 @@ DefFn[
 
   kernelCall = Switch[where,
     Everywhere,
-      "GenericFD_LoopOverEverything(cctkGH, &" <> bodyFunctionName <> ");\n",
+      "GenericFD_LoopOverEverything(cctkGH, " <> bodyFunctionName <> ");\n",
     Interior,
-      "GenericFD_LoopOverInterior(cctkGH, &" <> bodyFunctionName <> ");\n",
+      "GenericFD_LoopOverInterior(cctkGH, " <> bodyFunctionName <> ");\n",
     InteriorNoSync,
-      "GenericFD_LoopOverInterior(cctkGH, &" <> bodyFunctionName <> ");\n",
+      "GenericFD_LoopOverInterior(cctkGH, " <> bodyFunctionName <> ");\n",
     Boundary,
-      "GenericFD_LoopOverBoundary(cctkGH, &" <> bodyFunctionName <> ");\n",
+      "GenericFD_LoopOverBoundary(cctkGH, " <> bodyFunctionName <> ");\n",
     BoundaryWithGhosts,
-      "GenericFD_LoopOverBoundaryWithGhosts(cctkGH, &" <> bodyFunctionName <> ");\n",
+      "GenericFD_LoopOverBoundaryWithGhosts(cctkGH, " <> bodyFunctionName <> ");\n",
     _,
       ThrowError["Unknown 'Where' entry in calculation " <>
         functionName <> ": " <> ToString[where]]];
 
   DGFEDefs =
-    If[OptionValue[UseDGFE] && lookupDefault[cleancalc, UseDGFE, False],
+    If[OptionValue[UseDGFE],
        Module[
          {name, lhss, gfsInLHS, vars},
          InfoMessage[InfoFull, "Generating DGFE boilerplate"];
@@ -662,7 +662,34 @@ DefFn[
            "}",
            "",
            "",
+           "",
+           "/* A solver, DGFE's equivalent of cctkGH */",
+           "static "<>name<>"_solver *solver = NULL;",
+           "",
+           "",
+           "",
+           "/* Call the pointwise DGFE derivative operator */",
+           "#undef PDstandardNth1",
+           "#undef PDstandardNth2",
+           "#undef PDstandardNth3",
+           "#define PDstandardNth1(u) (solver->diff<hrscc::policy::x>(&(u)[-index], i,j,k))",
+           "#define PDstandardNth2(u) (solver->diff<hrscc::policy::y>(&(u)[-index], i,j,k))",
+           "#define PDstandardNth3(u) (solver->diff<hrscc::policy::z>(&(u)[-index], i,j,k))",
+           "",
+           "",
            ""
+         } // Flatten // Map[# <> "\n" &, #] &],
+       {}
+      ];
+
+  DGFEInit =
+    If[OptionValue[UseDGFE],
+       Module[
+         {name},
+         name = lookup[cleancalc, Name];
+         {
+           "",
+           "if (not solver) solver = new "<>name<>"_method(cctkGH);"
          } // Flatten // Map[# <> "\n" &, #] &],
        {}
       ];
@@ -674,12 +701,8 @@ DefFn[
          name = lookup[cleancalc, Name];
          {
            "",
-           "{",
-           "  static "<>name<>"_solver *solver = NULL;",
-           "  if (not solver) solver = new "<>name<>"_method(cctkGH);",
-           "  solver->compute_rhs();",
-           "  // delete solver;",
-           "}"
+           "/* Add the flux terms to the RHS */",
+           "solver->compute_rhs();"
          } // Flatten // Map[# <> "\n" &, #] &],
        {}
       ];
@@ -780,6 +803,8 @@ DefFn[
         "\n",
   
         If[haveCondTextuals, Map[ConditionalOnParameterTextual["!(" <> # <> ")", "return;\n"] &,condTextuals], {}],
+
+        DGFEInit,
 
         kernelCall,
 

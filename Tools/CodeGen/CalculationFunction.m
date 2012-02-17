@@ -695,6 +695,7 @@ DefFn[
 
   InfoMessage[InfoFull,"Generating function"];
   {
+    DGFEDefs,
     lookup[calcp,BodyFunction][{
     (* OpenCL kernel prologue *)
     (* We could (or probably should) write this into a source file of its own *)

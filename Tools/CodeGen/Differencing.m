@@ -200,7 +200,7 @@ DefFn[
     paramsInOps = Union@Flatten@Map[Cases[derivOps, #, Infinity] &, intParamNames];
 
     If[Length[paramsInOps] > 1,
-      Throw["Cannot have more than one integer parameter in the list of partial derivative definitions"]];
+      ThrowError["Cannot have more than one integer parameter in the list of partial derivative definitions"]];
 
     If[paramsInOps === {},
       Map[DerivativeOperatorVerify, derivOps];
@@ -261,7 +261,7 @@ DefFn[
   CheckStencil[derivOps_, eqs_, name_, zeroDims_, intParams_] :=
   Module[{psUsed, p},
     psUsed = parametersUsedInOps[derivOps, intParams];
-    If[Length[psUsed] > 1, Throw["Too many parameters in partial derivatives"]];
+    If[Length[psUsed] > 1, ThrowError["Too many parameters in partial derivatives"]];
     If[psUsed === {},
       CheckStencil[derivOps,eqs,name,zeroDims],
       p = psUsed[[1]];
@@ -285,7 +285,7 @@ DefFn[
   StencilSize[derivOps_, eqs_, name_, zeroDims_, intParams_] :=
   Module[{psUsed, p},
     psUsed = parametersUsedInOps[derivOps, intParams];
-    If[Length[psUsed] > 1, Throw["Too many parameters in partial derivatives"]];
+    If[Length[psUsed] > 1, ThrowError["Too many parameters in partial derivatives"]];
     If[psUsed === {},
       StencilSize[derivOps,eqs,name,zeroDims],
       p = psUsed[[1]];
@@ -514,7 +514,7 @@ DefFn[
     result = Replace[result, _Symbol -> 1, {-1}];
 
     If[!And@@Map[NumericQ, result],
-      Throw["Stencil width is not numeric in "<>ToString[componentDerivOp]]];
+      ThrowError["Stencil width is not numeric in "<>ToString[componentDerivOp]]];
     result]];
 
 (* Farm out each term of a difference operator *)
@@ -585,13 +585,13 @@ DefFn[
     If[MatchQ[ips, List[ (_ ? NumberQ) ...]],
       Return[{name[indPatterns] -> expr/.zeroDimRules}]];
 
-    Throw["DerivativeOperatorToComponents: Expecting indices which are symbolic patterns or numbers"];
+    ThrowError["DerivativeOperatorToComponents: Expecting indices which are symbolic patterns or numbers"];
 ]];
 
 DerivativeOperatorVerify[derivOp_] :=
   If[!MatchQ[derivOp, pd_[_Pattern ...] -> expr_?DerivativeOperatorRHSVerify] && 
      !MatchQ[derivOp, pd_[_ ? NumberQ ...] -> expr_?DerivativeOperatorRHSVerify],
-     Throw["Derivative operator definition failed verification: ", ToString[derivOp]]];
+     ThrowError["Derivative operator definition failed verification: ", ToString[derivOp]]];
 
 DerivativeOperatorRHSVerify[expr_] :=
   Module[{allAtoms, symbols},
@@ -730,10 +730,10 @@ expandDerivOpOverParameter[op_, intParam_] :=
 
 expandDerivOpOverParameters[op_, intParams_] :=
   Module[{usedParams},
-    If[Head[op] =!= Rule, Throw["Invalid partial derivative",op]];
+    If[Head[op] =!= Rule, ThrowError["Invalid partial derivative",op]];
     usedParams = Select[intParams, Cases[op, getParamName[#], Infinity] =!= {} &];
     If[Length[usedParams] > 1,
-      Throw["Partial derivatives can only depend on a single parameter"]];
+      ThrowError["Partial derivatives can only depend on a single parameter"]];
     If[usedParams === {},
       {op},
       expandDerivOpOverParameter[op, usedParams[[1]]]]];

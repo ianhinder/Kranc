@@ -811,7 +811,7 @@ DefFn[
 
     If[OptionValue[ProhibitAssignmentToGridFunctionsRead] &&
        gfsInBoth =!= {},
-      Throw["The calculation " <> ToString@lookup[cleancalc, Name] <>
+      ThrowError["The calculation " <> ToString@lookup[cleancalc, Name] <>
         " has the grid functions " <> ToString[gfsInBoth] <>
         " on both the left hand side and the right hand side.  This is" <>
         " not allowed with the option" <>
@@ -831,7 +831,7 @@ DefFn[
     gfsDifferentiatedAndOnLHS = Intersection[gfsDifferentiated, gfsInLHS];
 
     If[gfsDifferentiatedAndOnLHS =!= {},
-      Throw["The calculation " <> ToString@lookup[cleancalc, Name] <>
+      ThrowError["The calculation " <> ToString@lookup[cleancalc, Name] <>
         " has both assignments to, and derivatives of, the grid functions " <>
         ToString[gfsDifferentiatedAndOnLHS] <>
         ".  This is not allowed, as it gives results which are dependent" <>

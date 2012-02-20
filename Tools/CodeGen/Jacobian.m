@@ -79,7 +79,7 @@ insertDerivInEqs[deriv_, defs_, eqs_, shorthands_, zeroDims_] :=
     lhss = Map[First, eqs];
     positions = Map[Position[lhss, #, {1}, 1] &, shortsUsed];
     MapThread[If[Length[#2] === 0,
-      Throw["Shorthand " <> ToString[#1] <> " used in derivative " <> ToString[deriv] <>
+      ThrowError["Shorthand " <> ToString[#1] <> " used in derivative " <> ToString[deriv] <>
         " but not defined in calculation"]] &, {shortsUsed, positions}];
     positions2 = Map[#[[1,1]] &, positions];
     position = If[Length[positions2] === 0, 1, Max[positions2]+1];
@@ -160,7 +160,7 @@ JacobianCheckGroups[groups_] :=
   Module[{int},
     int = Intersection[allGroupVariables[groups], allGroupVariables[JacobianGroups[]]];
     If[int =!= {},
-      Throw["Error: Some group variables conflict with reserved Jacobian variable names: " <> ToString[int]]]];
+      ThrowError["Error: Some group variables conflict with reserved Jacobian variable names: " <> ToString[int]]]];
 
 (* These gridfunctions are only given local variable copies if the use_jacobian variable is true *)
 JacobianConditionalGridFunctions[] :=

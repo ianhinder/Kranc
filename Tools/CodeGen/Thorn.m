@@ -425,7 +425,7 @@ scheduleFunction[spec_] :=
                  ConditionalOnParameter[parameter, value, u],
                  
                  If[condition != {},
-                    Throw["Unrecognized conditional structure", condition],
+                    ThrowError["Unrecognized conditional structure", condition],
                     u]]],
            u];
 
@@ -447,7 +447,7 @@ scheduleFunction[spec_] :=
                       ConditionalOnParameter[parameter, value, x],
                         
                       If[condition != {},
-                         Throw["Unrecognized conditional structure", condition],
+                         ThrowError["Unrecognized conditional structure", condition],
                          x]],
                    x]],
                 v, conditions],
@@ -499,7 +499,7 @@ CreateSetterSource[calcs_, debug_, include_,
   Module[{calc = First[calcs],bodyFunction},
 
   If[!MatchQ[include, _List],
-    Throw["CreateSetterSource: Include should be a list but is in fact " <> ToString[include]]];
+    ThrowError["CreateSetterSource: Include should be a list but is in fact " <> ToString[include]]];
 
   SetDataType[If[OptionValue[UseVectors],"CCTK_REAL_VEC", "CCTK_REAL"]];
 

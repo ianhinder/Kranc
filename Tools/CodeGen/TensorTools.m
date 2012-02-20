@@ -562,7 +562,7 @@ makeSum[x_?nontensorialQ] :=
   x;
 
 makeSum[x_] :=
-  Throw["Expression " <> ToString[x] <> 
+  ThrowError["Expression " <> ToString[x] <> 
     " is not recognized, and tensor indices will not be expanded"];
 
 sumComponentsOfDummyIndex[x_, i_] := 

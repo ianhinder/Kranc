@@ -120,17 +120,10 @@ CreateGroupFromTensor[t_Symbol?xTensorQ[inds__]] := Module[{tCharString, nInds, 
   Return[group]
 ];
 
-ReflectionSymmetries[x___]:= Throw["ReflectionSymmetries error: "<>ToString[x]];
-CreateGroupFromTensor[x___]:= Throw["CreateGroupFromTensor error: "<>ToString[x]];
+ReflectionSymmetries[x___]:= ThrowError["ReflectionSymmetries error: "<>ToString[x]];
+CreateGroupFromTensor[x___]:= ThrowError["CreateGroupFromTensor error: "<>ToString[x]];
 
 CheckTensors[expr_] := Validate[expr];
 
 End[];
 EndPackage[];
-
-
-
-
-
-
-

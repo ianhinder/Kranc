@@ -86,7 +86,7 @@ DefFn[
 DefFn[
   DataType[] :=
   If[dataType === Symbol["datatype"],
-     Throw["DataType: Have not set a data type"],
+     ThrowError["DataType: Have not set a data type"],
      dataType]];
 
 DefFn[

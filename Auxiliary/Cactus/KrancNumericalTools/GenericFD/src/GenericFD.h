@@ -70,7 +70,7 @@ void GenericFD_GetBoundaryInfo(cGH const * restrict cctkGH,
                                int * restrict is_ipbnd);
 
 void GenericFD_AssertGroupStorage(cGH const * restrict const cctkGH, const char *calc,
-                                  int ngroups, const char *group_names[]);
+                                  int ngroups, const char *const group_names[]);
 
 /* Summation by parts */
 

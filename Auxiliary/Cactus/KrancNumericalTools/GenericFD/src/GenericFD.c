@@ -503,7 +503,7 @@ void GenericFD_PenaltyPrim2Char(cGH const * restrict const cctkGH, int const dir
 }
 
 void GenericFD_AssertGroupStorage(cGH const * restrict const cctkGH, const char *calc,
-                                  int ngroups, const char *group_names[ngroups])
+                                  int ngroups, const char *const group_names[ngroups])
 {
   for (int i = 0; i < ngroups; i++)
   {

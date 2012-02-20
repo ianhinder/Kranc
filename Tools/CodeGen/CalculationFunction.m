@@ -759,7 +759,7 @@ DefFn[
         CheckStencil[pddefs, eqs, functionName, OptionValue[ZeroDimensions],
                      lookup[{opts}, IntParameters, {}]],
 
-        If[where === Everywhere && MatchQ[stencilSize, {0,0,0}] =!= True,
+        If[where === Everywhere && !OptionValue[UseDGFE] && MatchQ[stencilSize, {0,0,0}] =!= True,
            ThrowError["Calculation "<>functionName<>" uses derivative operators but is computed Everywhere.  Specify Where -> Interior for calculations that use derivative operators."]];
         "\n",
   

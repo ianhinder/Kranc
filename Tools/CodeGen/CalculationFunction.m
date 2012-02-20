@@ -717,7 +717,7 @@ DefFn[
 
     }],
 
-    (* OpenCL kernel epologue *)
+    (* OpenCL kernel epilogue *)
     If[OptionValue[UseOpenCL],
        {
          ";\n\n",

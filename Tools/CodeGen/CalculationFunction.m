@@ -176,8 +176,8 @@ CheckGroupStorage[groupNames_, calcName_] :=
     ignoreGroups = {"TmunuBase::stress_energy_scalar", "TmunuBase::stress_energy_vector",
       "TmunuBase::stress_energy_tensor"};
     groupNames2 = Select[groupNames, !MemberQ[ignoreGroups, #] &];
-    {"\nconst char *groups[] = {",
-    Riffle[Map[Quote,groupNames2], ","],
+    {"\nconst char *const groups[] = {\n  ",
+    Riffle[Map[Quote,groupNames2], ",\n  "],
     "};\n",
     "GenericFD_AssertGroupStorage(cctkGH, ", Quote[calcName],", ", Length[groupNames2], ", groups);\n"}];
 

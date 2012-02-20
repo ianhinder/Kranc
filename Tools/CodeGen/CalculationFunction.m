@@ -729,8 +729,8 @@ DefFn[
            groupNames = groupsInCalculation[cleancalc, imp];
            groupNames = Select[groupNames, !MemberQ[ignoreGroups, #] &];
            {
-             "char const *const groups[] = {",
-               Riffle[Join[Map[Quote, groupNames], {"NULL"}], ","],
+             "char const *const groups[] = {\n  ",
+               Riffle[Join[Map[Quote, groupNames], {"NULL"}], ",\n  "],
                "};\n\n"
            }
          ],

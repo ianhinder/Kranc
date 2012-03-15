@@ -1,0 +1,11 @@
+ABSTOL 1.e-11
+
+TEST wavehost_gaussian_2proc
+{
+  NPROCS 2
+}
+
+TEST wavehost_gaussian_1proc
+{
+  NPROCS 1
+}

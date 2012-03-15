@@ -17,13 +17,13 @@ CCTK_INT verbose "verbose" STEERABLE=ALWAYS
 } 0
 
 restricted:
-CCTK_INT SimpleWaveCaKernel_MaxNumEvolvedVars "Number of evolved variables used by this thorn" ACCUMULATOR-BASE=MethodofLines::MoL_Num_Evolved_Vars STEERABLE=RECOVER
+CCTK_INT WaveCaKernel_MaxNumEvolvedVars "Number of evolved variables used by this thorn" ACCUMULATOR-BASE=MethodofLines::MoL_Num_Evolved_Vars STEERABLE=RECOVER
 {
   2:2 :: "Number of evolved variables used by this thorn"
 } 2
 
 restricted:
-CCTK_INT SimpleWaveCaKernel_MaxNumArrayEvolvedVars "Number of Array evolved variables used by this thorn" ACCUMULATOR-BASE=MethodofLines::MoL_Num_ArrayEvolved_Vars STEERABLE=RECOVER
+CCTK_INT WaveCaKernel_MaxNumArrayEvolvedVars "Number of Array evolved variables used by this thorn" ACCUMULATOR-BASE=MethodofLines::MoL_Num_ArrayEvolved_Vars STEERABLE=RECOVER
 {
   0:0 :: "Number of Array evolved variables used by this thorn"
 } 0
@@ -59,13 +59,13 @@ CCTK_INT calc_rhs_calc_every "calc_rhs_calc_every" STEERABLE=ALWAYS
 } 1
 
 restricted:
-CCTK_INT copy_to_device_calc_every "copy_to_device_calc_every" STEERABLE=ALWAYS
+CCTK_INT calc_bound_rhs_calc_every "calc_bound_rhs_calc_every" STEERABLE=ALWAYS
 {
   *:* :: ""
 } 1
 
 restricted:
-CCTK_INT calc_bound_rhs_calc_every "calc_bound_rhs_calc_every" STEERABLE=ALWAYS
+CCTK_INT copy_to_device_calc_every "copy_to_device_calc_every" STEERABLE=ALWAYS
 {
   *:* :: ""
 } 1
@@ -83,13 +83,13 @@ CCTK_INT calc_rhs_calc_offset "calc_rhs_calc_offset" STEERABLE=ALWAYS
 } 0
 
 restricted:
-CCTK_INT copy_to_device_calc_offset "copy_to_device_calc_offset" STEERABLE=ALWAYS
+CCTK_INT calc_bound_rhs_calc_offset "calc_bound_rhs_calc_offset" STEERABLE=ALWAYS
 {
   *:* :: ""
 } 0
 
 restricted:
-CCTK_INT calc_bound_rhs_calc_offset "calc_bound_rhs_calc_offset" STEERABLE=ALWAYS
+CCTK_INT copy_to_device_calc_offset "copy_to_device_calc_offset" STEERABLE=ALWAYS
 {
   *:* :: ""
 } 0

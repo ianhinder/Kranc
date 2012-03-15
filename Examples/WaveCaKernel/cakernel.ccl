@@ -25,21 +25,6 @@ CCTK_CUDA_KERNEL calc_rhs TYPE=gpu_cuda/3dblock TILE="8,8,8" SHARECODE=yes STENC
   "pirhs"
 }
 
-CCTK_CUDA_KERNEL copy_to_device TYPE=gpu_cuda/3dblock TILE="8,8,8" SHARECODE=yes STENCIL="0,0,0,0,0,0"
-{
-  CCTK_CUDA_KERNEL_VARIABLE  cached=no intent=inout
-  {
-    phi
-  }
-  "phi"
-  
-  CCTK_CUDA_KERNEL_VARIABLE  cached=no intent=inout
-  {
-    pi
-  }
-  "pi"
-}
-
 CCTK_CUDA_KERNEL calc_bound_rhs TYPE=gpu_cuda/boundary TILE="8,8,8" SHARECODE=yes
 {
   CCTK_CUDA_KERNEL_VARIABLE  cached=no intent=out
@@ -59,5 +44,20 @@ CCTK_CUDA_KERNEL calc_bound_rhs TYPE=gpu_cuda/boundary TILE="8,8,8" SHARECODE=ye
     xCopy
   }
   "xCopy"
+}
+
+CCTK_CUDA_KERNEL copy_to_device TYPE=gpu_cuda/3dblock TILE="8,8,8" SHARECODE=yes STENCIL="0,0,0,0,0,0"
+{
+  CCTK_CUDA_KERNEL_VARIABLE  cached=no intent=inout
+  {
+    phi
+  }
+  "phi"
+  
+  CCTK_CUDA_KERNEL_VARIABLE  cached=no intent=inout
+  {
+    pi
+  }
+  "pi"
 }
 

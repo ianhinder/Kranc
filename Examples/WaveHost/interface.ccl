@@ -1,0 +1,58 @@
+# File produced by Kranc
+
+implements: WaveHost
+
+inherits:   Grid GenericFD Boundary
+
+
+
+USES INCLUDE: GenericFD.h
+USES INCLUDE: Symmetry.h
+USES INCLUDE: sbp_calc_coeffs.h
+USES INCLUDE: Boundary.h
+USES INCLUDE: loopcontrol.h
+
+CCTK_INT FUNCTION MoLRegisterEvolved(CCTK_INT IN EvolvedIndex, CCTK_INT IN RHSIndex)
+USES FUNCTION MoLRegisterEvolved
+
+SUBROUTINE Diff_coeff(CCTK_POINTER_TO_CONST IN cctkGH, CCTK_INT IN dir, CCTK_INT IN nsize, CCTK_INT OUT ARRAY imin, CCTK_INT OUT ARRAY imax, CCTK_REAL OUT ARRAY q, CCTK_INT IN table_handle)
+USES FUNCTION Diff_coeff
+
+CCTK_INT FUNCTION MultiPatch_GetMap(CCTK_POINTER_TO_CONST IN cctkGH)
+USES FUNCTION MultiPatch_GetMap
+
+CCTK_INT FUNCTION Boundary_SelectGroupForBC(CCTK_POINTER_TO_CONST IN GH, CCTK_INT IN faces, CCTK_INT IN boundary_width, CCTK_INT IN table_handle, CCTK_STRING IN group_name, CCTK_STRING IN bc_name)
+USES FUNCTION Boundary_SelectGroupForBC
+
+CCTK_INT FUNCTION Boundary_SelectVarForBC(CCTK_POINTER_TO_CONST IN GH, CCTK_INT IN faces, CCTK_INT IN boundary_width, CCTK_INT IN table_handle, CCTK_STRING IN var_name, CCTK_STRING IN bc_name)
+USES FUNCTION Boundary_SelectVarForBC
+
+public:
+CCTK_REAL xCopy_g type=GF timelevels=1 tags=''
+{
+  xCopy
+} "xCopy_g"
+
+public:
+CCTK_REAL phi_g type=GF timelevels=2 tags=''
+{
+  phi
+} "phi_g"
+
+public:
+CCTK_REAL pi_g type=GF timelevels=2 tags=''
+{
+  pi
+} "pi_g"
+
+public:
+CCTK_REAL phi_grhs type=GF timelevels=2 tags=''
+{
+  phirhs
+} "phi_grhs"
+
+public:
+CCTK_REAL pi_grhs type=GF timelevels=2 tags=''
+{
+  pirhs
+} "pi_grhs"

@@ -1,0 +1,141 @@
+# File produced by Kranc
+
+
+if (other_timelevels == 1)
+{
+  STORAGE: xCopy_g[1]
+}
+
+if (timelevels == 1)
+{
+  STORAGE: phi_g[1]
+}
+if (timelevels == 2)
+{
+  STORAGE: phi_g[2]
+}
+
+if (timelevels == 1)
+{
+  STORAGE: pi_g[1]
+}
+if (timelevels == 2)
+{
+  STORAGE: pi_g[2]
+}
+
+if (rhs_timelevels == 1)
+{
+  STORAGE: phi_grhs[1]
+}
+if (rhs_timelevels == 2)
+{
+  STORAGE: phi_grhs[2]
+}
+
+if (rhs_timelevels == 1)
+{
+  STORAGE: pi_grhs[1]
+}
+if (rhs_timelevels == 2)
+{
+  STORAGE: pi_grhs[2]
+}
+
+schedule WaveCaKernel_Startup at STARTUP
+{
+  LANG: C
+  OPTIONS: meta
+} "create banner"
+
+schedule WaveCaKernel_RegisterSymmetries in SymmetryRegister
+{
+  LANG: C
+  OPTIONS: meta
+} "register symmetries"
+
+schedule initial_gaussian AT INITIAL
+{
+  LANG: C
+  READS:    grid::coordinates
+  WRITES:   WaveCaKernel::phi_g
+  WRITES:   WaveCaKernel::pi_g
+  WRITES:   WaveCaKernel::xCopy_g
+} "initial_gaussian"
+
+schedule CAKERNEL_Launch_calc_rhs in MoL_CalcRHS
+{
+  LANG: C
+  TAGS: Device=1
+  READS:    WaveCaKernel::phi_g
+  READS:    WaveCaKernel::pi_g
+  WRITES:   WaveCaKernel::phi_grhs
+  WRITES:   WaveCaKernel::pi_grhs
+} "calc_rhs"
+
+schedule CAKERNEL_Launch_calc_rhs at ANALYSIS
+{
+  LANG: C
+  SYNC: phi_grhs
+  SYNC: pi_grhs
+  TAGS: Device=1
+  READS:    WaveCaKernel::phi_g
+  READS:    WaveCaKernel::pi_g
+  WRITES:   WaveCaKernel::phi_grhs
+  WRITES:   WaveCaKernel::pi_grhs
+} "calc_rhs"
+
+schedule CAKERNEL_Launch_calc_bound_rhs in MoL_RHSBoundaries
+{
+  LANG: C
+  TAGS: Device=1
+  READS:    WaveCaKernel::xCopy_g
+  WRITES:   WaveCaKernel::phi_grhs
+  WRITES:   WaveCaKernel::pi_grhs
+} "calc_bound_rhs"
+
+schedule CAKERNEL_Launch_calc_bound_rhs at ANALYSIS
+{
+  LANG: C
+  SYNC: phi_grhs
+  SYNC: pi_grhs
+  TAGS: Device=1
+  READS:    WaveCaKernel::xCopy_g
+  WRITES:   WaveCaKernel::phi_grhs
+  WRITES:   WaveCaKernel::pi_grhs
+} "calc_bound_rhs"
+
+schedule CAKERNEL_Launch_copy_to_device at INITIAL after initial_gaussian
+{
+  LANG: C
+  TAGS: Device=1
+  READS:    WaveCaKernel::phi_g
+  READS:    WaveCaKernel::pi_g
+  WRITES:   WaveCaKernel::phi_g
+  WRITES:   WaveCaKernel::pi_g
+} "copy_to_device"
+
+schedule WaveCaKernel_SelectBoundConds in MoL_PostStep
+{
+  LANG: C
+  OPTIONS: level
+  SYNC: phi_g
+  SYNC: pi_g
+} "select boundary conditions"
+
+schedule WaveCaKernel_CheckBoundaries at BASEGRID
+{
+  LANG: C
+  OPTIONS: meta
+} "check boundaries treatment"
+
+schedule WaveCaKernel_RegisterVars in MoL_Register
+{
+  LANG: C
+  OPTIONS: meta
+} "Register Variables for MoL"
+
+schedule group ApplyBCs as WaveCaKernel_ApplyBCs in MoL_PostStep after WaveCaKernel_SelectBoundConds
+{
+  # no language specified
+} "Apply boundary conditions controlled by thorn Boundary"

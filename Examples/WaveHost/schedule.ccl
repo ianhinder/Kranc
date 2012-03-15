@@ -1,0 +1,127 @@
+# File produced by Kranc
+
+
+if (other_timelevels == 1)
+{
+  STORAGE: xCopy_g[1]
+}
+
+if (timelevels == 1)
+{
+  STORAGE: phi_g[1]
+}
+if (timelevels == 2)
+{
+  STORAGE: phi_g[2]
+}
+
+if (timelevels == 1)
+{
+  STORAGE: pi_g[1]
+}
+if (timelevels == 2)
+{
+  STORAGE: pi_g[2]
+}
+
+if (rhs_timelevels == 1)
+{
+  STORAGE: phi_grhs[1]
+}
+if (rhs_timelevels == 2)
+{
+  STORAGE: phi_grhs[2]
+}
+
+if (rhs_timelevels == 1)
+{
+  STORAGE: pi_grhs[1]
+}
+if (rhs_timelevels == 2)
+{
+  STORAGE: pi_grhs[2]
+}
+
+schedule WaveHost_Startup at STARTUP
+{
+  LANG: C
+  OPTIONS: meta
+} "create banner"
+
+schedule WaveHost_RegisterSymmetries in SymmetryRegister
+{
+  LANG: C
+  OPTIONS: meta
+} "register symmetries"
+
+schedule initial_gaussian AT INITIAL
+{
+  LANG: C
+  READS:    grid::coordinates
+  WRITES:   WaveHost::phi_g
+  WRITES:   WaveHost::pi_g
+  WRITES:   WaveHost::xCopy_g
+} "initial_gaussian"
+
+schedule calc_rhs in MoL_CalcRHS
+{
+  LANG: C
+  READS:    WaveHost::phi_g
+  READS:    WaveHost::pi_g
+  WRITES:   WaveHost::phi_grhs
+  WRITES:   WaveHost::pi_grhs
+} "calc_rhs"
+
+schedule calc_rhs at ANALYSIS
+{
+  LANG: C
+  SYNC: phi_grhs
+  SYNC: pi_grhs
+  READS:    WaveHost::phi_g
+  READS:    WaveHost::pi_g
+  WRITES:   WaveHost::phi_grhs
+  WRITES:   WaveHost::pi_grhs
+} "calc_rhs"
+
+schedule calc_bound_rhs in MoL_RHSBoundaries
+{
+  LANG: C
+  READS:    WaveHost::xCopy_g
+  WRITES:   WaveHost::phi_grhs
+  WRITES:   WaveHost::pi_grhs
+} "calc_bound_rhs"
+
+schedule calc_bound_rhs at ANALYSIS
+{
+  LANG: C
+  SYNC: phi_grhs
+  SYNC: pi_grhs
+  READS:    WaveHost::xCopy_g
+  WRITES:   WaveHost::phi_grhs
+  WRITES:   WaveHost::pi_grhs
+} "calc_bound_rhs"
+
+schedule WaveHost_SelectBoundConds in MoL_PostStep
+{
+  LANG: C
+  OPTIONS: level
+  SYNC: phi_g
+  SYNC: pi_g
+} "select boundary conditions"
+
+schedule WaveHost_CheckBoundaries at BASEGRID
+{
+  LANG: C
+  OPTIONS: meta
+} "check boundaries treatment"
+
+schedule WaveHost_RegisterVars in MoL_Register
+{
+  LANG: C
+  OPTIONS: meta
+} "Register Variables for MoL"
+
+schedule group ApplyBCs as WaveHost_ApplyBCs in MoL_PostStep after WaveHost_SelectBoundConds
+{
+  # no language specified
+} "Apply boundary conditions controlled by thorn Boundary"

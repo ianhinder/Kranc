@@ -2,9 +2,9 @@
 
 #include "cctk.h"
 
-extern "C" int SimpleWaveCaKernel_Startup(void)
+extern "C" int WaveCaKernel_Startup(void)
 {
-  const char * banner = "SimpleWaveCaKernel";
+  const char * banner = "WaveCaKernel";
   CCTK_RegisterBanner(banner);
   return 0;
 }

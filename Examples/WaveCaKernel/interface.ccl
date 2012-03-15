@@ -1,6 +1,6 @@
 # File produced by Kranc
 
-implements: SimpleWaveCaKernel
+implements: WaveCaKernel
 
 inherits:   Grid GenericFD Boundary
 

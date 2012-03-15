@@ -17,7 +17,7 @@
 /* are currently applied in separate functions      */
 
 
-extern "C" void SimpleWaveCaKernel_CheckBoundaries(CCTK_ARGUMENTS)
+extern "C" void WaveHost_CheckBoundaries(CCTK_ARGUMENTS)
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
@@ -25,7 +25,7 @@ extern "C" void SimpleWaveCaKernel_CheckBoundaries(CCTK_ARGUMENTS)
   return;
 }
 
-extern "C" void SimpleWaveCaKernel_SelectBoundConds(CCTK_ARGUMENTS)
+extern "C" void WaveHost_SelectBoundConds(CCTK_ARGUMENTS)
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
@@ -38,9 +38,9 @@ extern "C" void SimpleWaveCaKernel_SelectBoundConds(CCTK_ARGUMENTS)
       CCTK_EQUALS(phi_g_bound, "zero"  ) )
   {
     ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
-                      "SimpleWaveCaKernel::phi_g", phi_g_bound);
+                      "WaveHost::phi_g", phi_g_bound);
     if (ierr < 0)
-       CCTK_WARN(0, "Failed to register phi_g_bound BC for SimpleWaveCaKernel::phi_g!");
+       CCTK_WARN(0, "Failed to register phi_g_bound BC for WaveHost::phi_g!");
   }
   
   if (CCTK_EQUALS(pi_g_bound, "none"  ) ||
@@ -49,9 +49,9 @@ extern "C" void SimpleWaveCaKernel_SelectBoundConds(CCTK_ARGUMENTS)
       CCTK_EQUALS(pi_g_bound, "zero"  ) )
   {
     ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
-                      "SimpleWaveCaKernel::pi_g", pi_g_bound);
+                      "WaveHost::pi_g", pi_g_bound);
     if (ierr < 0)
-       CCTK_WARN(0, "Failed to register pi_g_bound BC for SimpleWaveCaKernel::pi_g!");
+       CCTK_WARN(0, "Failed to register pi_g_bound BC for WaveHost::pi_g!");
   }
   
   if (CCTK_EQUALS(phi_bound, "none"  ) ||
@@ -60,9 +60,9 @@ extern "C" void SimpleWaveCaKernel_SelectBoundConds(CCTK_ARGUMENTS)
       CCTK_EQUALS(phi_bound, "zero"  ) )
   {
     ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
-                      "SimpleWaveCaKernel::phi", phi_bound);
+                      "WaveHost::phi", phi_bound);
     if (ierr < 0)
-       CCTK_WARN(0, "Failed to register phi_bound BC for SimpleWaveCaKernel::phi!");
+       CCTK_WARN(0, "Failed to register phi_bound BC for WaveHost::phi!");
   }
   
   if (CCTK_EQUALS(pi_bound, "none"  ) ||
@@ -71,9 +71,9 @@ extern "C" void SimpleWaveCaKernel_SelectBoundConds(CCTK_ARGUMENTS)
       CCTK_EQUALS(pi_bound, "zero"  ) )
   {
     ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
-                      "SimpleWaveCaKernel::pi", pi_bound);
+                      "WaveHost::pi", pi_bound);
     if (ierr < 0)
-       CCTK_WARN(0, "Failed to register pi_bound BC for SimpleWaveCaKernel::pi!");
+       CCTK_WARN(0, "Failed to register pi_bound BC for WaveHost::pi!");
   }
   
   if (CCTK_EQUALS(phi_g_bound, "radiative"))
@@ -88,10 +88,10 @@ extern "C" void SimpleWaveCaKernel_SelectBoundConds(CCTK_ARGUMENTS)
        CCTK_WARN(0, "could not set SPEED value in table!");
   
     ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, 1, handle_phi_g_bound, 
-                      "SimpleWaveCaKernel::phi_g", "Radiation");
+                      "WaveHost::phi_g", "Radiation");
   
     if (ierr < 0)
-       CCTK_WARN(0, "Failed to register Radiation BC for SimpleWaveCaKernel::phi_g!");
+       CCTK_WARN(0, "Failed to register Radiation BC for WaveHost::phi_g!");
   
   }
   
@@ -107,10 +107,10 @@ extern "C" void SimpleWaveCaKernel_SelectBoundConds(CCTK_ARGUMENTS)
        CCTK_WARN(0, "could not set SPEED value in table!");
   
     ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, 1, handle_pi_g_bound, 
-                      "SimpleWaveCaKernel::pi_g", "Radiation");
+                      "WaveHost::pi_g", "Radiation");
   
     if (ierr < 0)
-       CCTK_WARN(0, "Failed to register Radiation BC for SimpleWaveCaKernel::pi_g!");
+       CCTK_WARN(0, "Failed to register Radiation BC for WaveHost::pi_g!");
   
   }
   
@@ -126,10 +126,10 @@ extern "C" void SimpleWaveCaKernel_SelectBoundConds(CCTK_ARGUMENTS)
         CCTK_WARN(0, "could not set SPEED value in table!");
   
     ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, handle_phi_bound, 
-                      "SimpleWaveCaKernel::phi", "Radiation");
+                      "WaveHost::phi", "Radiation");
   
     if (ierr < 0)
-       CCTK_WARN(0, "Failed to register Radiation BC for SimpleWaveCaKernel::phi!");
+       CCTK_WARN(0, "Failed to register Radiation BC for WaveHost::phi!");
   
   }
   
@@ -145,10 +145,10 @@ extern "C" void SimpleWaveCaKernel_SelectBoundConds(CCTK_ARGUMENTS)
         CCTK_WARN(0, "could not set SPEED value in table!");
   
     ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, handle_pi_bound, 
-                      "SimpleWaveCaKernel::pi", "Radiation");
+                      "WaveHost::pi", "Radiation");
   
     if (ierr < 0)
-       CCTK_WARN(0, "Failed to register Radiation BC for SimpleWaveCaKernel::pi!");
+       CCTK_WARN(0, "Failed to register Radiation BC for WaveHost::pi!");
   
   }
   
@@ -162,10 +162,10 @@ extern "C" void SimpleWaveCaKernel_SelectBoundConds(CCTK_ARGUMENTS)
         CCTK_WARN(0, "could not set SCALAR value in table!");
   
     ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, 1, handle_phi_g_bound, 
-                      "SimpleWaveCaKernel::phi_g", "scalar");
+                      "WaveHost::phi_g", "scalar");
   
     if (ierr < 0)
-       CCTK_WARN(0, "Failed to register Scalar BC for SimpleWaveCaKernel::phi_g!");
+       CCTK_WARN(0, "Failed to register Scalar BC for WaveHost::phi_g!");
   
   }
   
@@ -179,10 +179,10 @@ extern "C" void SimpleWaveCaKernel_SelectBoundConds(CCTK_ARGUMENTS)
         CCTK_WARN(0, "could not set SCALAR value in table!");
   
     ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, 1, handle_pi_g_bound, 
-                      "SimpleWaveCaKernel::pi_g", "scalar");
+                      "WaveHost::pi_g", "scalar");
   
     if (ierr < 0)
-       CCTK_WARN(0, "Failed to register Scalar BC for SimpleWaveCaKernel::pi_g!");
+       CCTK_WARN(0, "Failed to register Scalar BC for WaveHost::pi_g!");
   
   }
   
@@ -196,10 +196,10 @@ extern "C" void SimpleWaveCaKernel_SelectBoundConds(CCTK_ARGUMENTS)
       CCTK_WARN(0, "could not set SCALAR value in table!");
   
     ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, handle_phi_bound, 
-                      "SimpleWaveCaKernel::phi", "scalar");
+                      "WaveHost::phi", "scalar");
   
     if (ierr < 0)
-       CCTK_WARN(0, "Error in registering Scalar BC for SimpleWaveCaKernel::phi!");
+       CCTK_WARN(0, "Error in registering Scalar BC for WaveHost::phi!");
   
   }
   
@@ -213,10 +213,10 @@ extern "C" void SimpleWaveCaKernel_SelectBoundConds(CCTK_ARGUMENTS)
       CCTK_WARN(0, "could not set SCALAR value in table!");
   
     ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, handle_pi_bound, 
-                      "SimpleWaveCaKernel::pi", "scalar");
+                      "WaveHost::pi", "scalar");
   
     if (ierr < 0)
-       CCTK_WARN(0, "Error in registering Scalar BC for SimpleWaveCaKernel::pi!");
+       CCTK_WARN(0, "Error in registering Scalar BC for WaveHost::pi!");
   
   }
   return;
@@ -225,25 +225,25 @@ extern "C" void SimpleWaveCaKernel_SelectBoundConds(CCTK_ARGUMENTS)
 
 
 /* template for entries in parameter file:
-#$bound$#SimpleWaveCaKernel::phi_g_bound       = "skip"
-#$bound$#SimpleWaveCaKernel::phi_g_bound_speed = 1.0
-#$bound$#SimpleWaveCaKernel::phi_g_bound_limit = 0.0
-#$bound$#SimpleWaveCaKernel::phi_g_bound_scalar = 0.0
+#$bound$#WaveHost::phi_g_bound       = "skip"
+#$bound$#WaveHost::phi_g_bound_speed = 1.0
+#$bound$#WaveHost::phi_g_bound_limit = 0.0
+#$bound$#WaveHost::phi_g_bound_scalar = 0.0
 
-#$bound$#SimpleWaveCaKernel::pi_g_bound       = "skip"
-#$bound$#SimpleWaveCaKernel::pi_g_bound_speed = 1.0
-#$bound$#SimpleWaveCaKernel::pi_g_bound_limit = 0.0
-#$bound$#SimpleWaveCaKernel::pi_g_bound_scalar = 0.0
+#$bound$#WaveHost::pi_g_bound       = "skip"
+#$bound$#WaveHost::pi_g_bound_speed = 1.0
+#$bound$#WaveHost::pi_g_bound_limit = 0.0
+#$bound$#WaveHost::pi_g_bound_scalar = 0.0
 
-#$bound$#SimpleWaveCaKernel::phi_bound       = "skip"
-#$bound$#SimpleWaveCaKernel::phi_bound_speed = 1.0
-#$bound$#SimpleWaveCaKernel::phi_bound_limit = 0.0
-#$bound$#SimpleWaveCaKernel::phi_bound_scalar = 0.0
+#$bound$#WaveHost::phi_bound       = "skip"
+#$bound$#WaveHost::phi_bound_speed = 1.0
+#$bound$#WaveHost::phi_bound_limit = 0.0
+#$bound$#WaveHost::phi_bound_scalar = 0.0
 
-#$bound$#SimpleWaveCaKernel::pi_bound       = "skip"
-#$bound$#SimpleWaveCaKernel::pi_bound_speed = 1.0
-#$bound$#SimpleWaveCaKernel::pi_bound_limit = 0.0
-#$bound$#SimpleWaveCaKernel::pi_bound_scalar = 0.0
+#$bound$#WaveHost::pi_bound       = "skip"
+#$bound$#WaveHost::pi_bound_speed = 1.0
+#$bound$#WaveHost::pi_bound_limit = 0.0
+#$bound$#WaveHost::pi_bound_scalar = 0.0
 
 */
 

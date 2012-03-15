@@ -118,11 +118,15 @@ extern "C" void initial_gaussian(CCTK_ARGUMENTS)
     return;
   }
   
-  const char *groups[] = {"grid::coordinates","SimpleWaveCaKernel::phi_g","SimpleWaveCaKernel::pi_g","SimpleWaveCaKernel::xCopy_g"};
+  const char *const groups[] = {
+    "grid::coordinates",
+    "WaveHost::phi_g",
+    "WaveHost::pi_g",
+    "WaveHost::xCopy_g"};
   GenericFD_AssertGroupStorage(cctkGH, "initial_gaussian", 4, groups);
   
   
-  GenericFD_LoopOverEverything(cctkGH, &initial_gaussian_Body);
+  GenericFD_LoopOverEverything(cctkGH, initial_gaussian_Body);
   
   if (verbose > 1)
   {

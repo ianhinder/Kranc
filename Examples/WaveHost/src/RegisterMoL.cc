@@ -4,7 +4,7 @@
 #include "cctk_Arguments.h"
 #include "cctk_Parameters.h"
 
-extern "C" void SimpleWaveCaKernel_RegisterVars(CCTK_ARGUMENTS)
+extern "C" void WaveHost_RegisterVars(CCTK_ARGUMENTS)
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
@@ -12,8 +12,8 @@ extern "C" void SimpleWaveCaKernel_RegisterVars(CCTK_ARGUMENTS)
   CCTK_INT ierr = 0;
   
   /* Register all the evolved grid functions with MoL */
-  ierr += MoLRegisterEvolved(CCTK_VarIndex("SimpleWaveCaKernel::phi"),  CCTK_VarIndex("SimpleWaveCaKernel::phirhs"));
-  ierr += MoLRegisterEvolved(CCTK_VarIndex("SimpleWaveCaKernel::pi"),  CCTK_VarIndex("SimpleWaveCaKernel::pirhs"));
+  ierr += MoLRegisterEvolved(CCTK_VarIndex("WaveHost::phi"),  CCTK_VarIndex("WaveHost::phirhs"));
+  ierr += MoLRegisterEvolved(CCTK_VarIndex("WaveHost::pi"),  CCTK_VarIndex("WaveHost::pirhs"));
   
   /* Register all the evolved Array functions with MoL */
   return;

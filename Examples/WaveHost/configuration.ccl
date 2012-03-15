@@ -1,0 +1,6 @@
+# File produced by Kranc
+
+REQUIRES GenericFD
+OPTIONAL LoopControl
+{
+}

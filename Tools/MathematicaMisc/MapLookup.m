@@ -32,7 +32,7 @@ DefFn[
   lookup[map_List, key_Symbol, default_] :=
   lookupDefault[map, key, default]];
 
-DefFn[lookup[map_List, key_Symbol] :=
+DefFn[lookup[map_List, key:(_Symbol|_String)] :=
   Module[{values},
     VerifyMap[map];
 

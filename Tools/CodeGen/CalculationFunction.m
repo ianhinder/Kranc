@@ -144,7 +144,7 @@ VerifyCalculation[calc_] :=
          PartialDerivatives, PreDefinitions, Schedule,Equations,
          Shorthands, ConditionalOnKeyword, Before, After,
          ConditionalOnTextuals, Where, ConditionalOnKeywords,
-         CollectList, AllowedSymbols, ApplyBCs};
+         CollectList, AllowedSymbols, ApplyBCs, Conditional};
 
     usedKeys = Map[First, calc];
     unknownKeys = Complement[usedKeys, allowedKeys];

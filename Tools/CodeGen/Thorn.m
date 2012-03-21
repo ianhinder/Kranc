@@ -363,7 +363,7 @@ CreateInterface[implementation_, inheritedImplementations_, includeFiles_,
 (* Given a storage group structure defined above, return a CodeGen
    structure for inclusion in the schedule.ccl file to allocate
    storage for this group. *)
-groupStorage[spec_] :=
+groupStorage[spec_, params_] :=
   If[mapContains[spec, MaxTimelevels],
      Flatten[Table[{"if (", lookup[spec, MaxTimelevels], " == ", i, ")\n",
                     "{\n",
@@ -404,8 +404,8 @@ scheduleUnconditionalFunction[spec_] :=
       Quote[lookup[spec, Comment]]]};
 
 (* Handle the aspect of scheduling the function conditionally *)
-scheduleFunction[spec_] :=
-  Module[{condition, conditions, parameter, value, u, v, w, x},
+scheduleFunction[spec_,params_] :=
+  Module[{condition, conditions, parameter, value, u, v, w, x, y},
 
     u = scheduleUnconditionalFunction[spec];
 
@@ -452,25 +452,38 @@ scheduleFunction[spec_] :=
                    x]],
                 v, conditions],
            v];
-    
-    w];
+
+    y = If[mapContains[spec, NewConditional],
+           cond = lookup[spec, NewConditional];
+           Module[
+             {render},
+             render[Equal[a_Symbol,b_String]] := {"CCTK_EQUALS(", render[a], ",", render[b],")"};
+             render[Equal[a_Symbol,b_?NumberQ]] := {"(", render[a], " == ", render[b],")"};
+             render[a_String] := a; (* Allow literal pass-through *)
+             render[a_?NumberQ] := ToString[a];
+             render[a_ /; MemberQ[params,a]] := ToString[a];
+             render[x_] := ThrowError["Unrecognized value in conditional expression:", x, "in", cond];
+             ConditionalOnParameterTextual[render[cond], w]],
+           w];
+
+    y];
 
 
 (* Schedule a schedule group.  Use a slightly dirty trick; given that
    the structure is identical to that for a function except with the
    word "GROUP" added before the function name, just use the existing
    function. *)
-scheduleGroup[spec_] :=
-  scheduleFunction[mapReplace[spec, Name, "group " <> lookup[spec, Name]]];
+scheduleGroup[spec_,params_] :=
+  scheduleFunction[mapReplace[spec, Name, "group " <> lookup[spec, Name]],params];
 
 (* Taking a list of group storage specifications for global storage,
    and lists of scheduled function and scheduled group structures,
    return a CodeGen block representing a schedule.ccl file. *)
-CreateSchedule[globalStorageGroups_, scheduledGroups_, scheduledFunctions_] :=
+CreateSchedule[globalStorageGroups_, scheduledGroups_, scheduledFunctions_, params_] :=
   {whoWhen["CCL"],
-   Map[SeparatedBlock[groupStorage[#]]     &, globalStorageGroups],
-   Map[SeparatedBlock[scheduleFunction[#]] &, scheduledFunctions],
-   Map[SeparatedBlock[scheduleGroup[#]]    &, scheduledGroups]};
+   Map[SeparatedBlock[groupStorage[#,params]]     &, globalStorageGroups],
+   Map[SeparatedBlock[scheduleFunction[#,params]] &, scheduledFunctions],
+   Map[SeparatedBlock[scheduleGroup[#,params]]    &, scheduledGroups]};
 
 
 (* ------------------------------------------------------------------------ 

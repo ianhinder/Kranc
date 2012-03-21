@@ -147,7 +147,8 @@ scheduleCalc[calc_, groups_, thornName_, OptionsPattern[]] :=
        If[conditional, {Conditional -> {Parameter -> keyword, Value -> value}},
           {}],
        If[conditionals, {Conditionals -> keywordvaluepairs},
-          {}]
+          {}],
+        If[mapContains[calc, Conditional], {NewConditional -> lookup[calc,Conditional]}, {}]
       ] &,
       lookup[calc, Schedule]]],
 
@@ -221,7 +222,7 @@ scheduleCalc[calc_, groups_, thornName_, OptionsPattern[]] :=
 Options[CreateKrancScheduleFile] = ThornOptions;
 CreateKrancScheduleFile[calcs_, groups_, evolvedGroups_, rhsGroups_, nonevolvedGroups_, thornName_, 
                         evolutionTimelevels_, opts:OptionsPattern[]] :=
-  Module[{scheduledCalcs, scheduledStartup, scheduleMoLRegister, globalStorageGroups, scheduledFunctions, schedule},
+  Module[{scheduledCalcs, scheduledStartup, scheduleMoLRegister, globalStorageGroups, scheduledFunctions, schedule, allParams},
 
     scheduledCalcs = Flatten[Map[scheduleCalc[#, groups, thornName, opts] &, calcs], 1];
     scheduledStartup = 
@@ -272,8 +273,9 @@ CreateKrancScheduleFile[calcs_, groups_, evolvedGroups_, rhsGroups_, nonevolvedG
     If[OptionValue[UseCaKernel],
        scheduledFunctions = Join[scheduledFunctions, CaKernelSchedule[]]];
 
+    allParams = Union@@((lookup[#,Parameters] &) /@ calcs);
     schedule = CreateSchedule[globalStorageGroups, 
-      CactusBoundary`GetScheduledGroups[thornName], scheduledFunctions];
+      CactusBoundary`GetScheduledGroups[thornName], scheduledFunctions, allParams];
 
     Return[schedule]];
 

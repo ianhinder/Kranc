@@ -1,0 +1,24 @@
+begin thorn WaveCaKernelScript
+
+use cakernel
+
+begin variables
+  phi pi
+end variables
+
+begin calculation initial_gaussian_calc scheduled at initial
+  phi = exp(-1*((t+x)/0.1)**2)
+  pi = -2*(t+x)/0.1**2 * exp(-1*((t+x)/0.1)**2)
+end calculation
+
+begin calculation calc_rhs scheduled at MoL_CalcRHS
+  D_t phi = pi
+  D_t pi = Euc^ij*D_ij phi
+end calculation
+
+begin calculation calc_bound_rhs scheduled at MoL_RHSBoundaries
+  D_t phi = 2*(t+x)/0.1**2 * exp(-1*((t+x)/0.1)**2)
+  D_t pi = -2/(exp((t+x)**2/0.1**2) * 0.1**2) + (4*(t+x)**2)/(exp((t+x)**2/0.1**2) * 0.1**4)
+end calculation
+
+end thorn

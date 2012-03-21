@@ -456,14 +456,34 @@ scheduleFunction[spec_,params_] :=
     y = If[mapContains[spec, NewConditional],
            cond = lookup[spec, NewConditional];
            Module[
-             {render},
-             render[Equal[a_Symbol,b_String]] := {"CCTK_EQUALS(", render[a], ",", render[b],")"};
-             render[Equal[a_Symbol,b_?NumberQ]] := {"(", render[a], " == ", render[b],")"};
-             render[a_String] := a; (* Allow literal pass-through *)
-             render[a_?NumberQ] := ToString[a];
-             render[a_ /; MemberQ[params,a]] := ToString[a];
-             render[x_] := ThrowError["Unrecognized value in conditional expression:", x, "in", cond];
-             ConditionalOnParameterTextual[render[cond], w]],
+             {render, renderbool, paramPattern},
+
+             paramPattern = Except[True | False, _Symbol | _Parameter];
+
+             renderbool[Equal[a:paramPattern,b_String]] := {"CCTK_EQUALS(", rendervalue[a], ",\"", b,"\")"};
+             renderbool[Unequal[a:paramPattern,b_String]] := {"!CCTK_EQUALS(", rendervalue[a], ",\"", b,"\")"};
+             renderbool[Equal[a:paramPattern,b_?NumberQ]] := {rendervalue[a], " == ", rendervalue[b]};
+             renderbool[Unequal[a:paramPattern,b_?NumberQ]] := {rendervalue[a], " != ", rendervalue[b]};
+
+             renderbool[Or[a_,b_]] := {"(",renderbool[a]," || ", renderbool[b],")"};
+             renderbool[And[a_,b_]] := {"(",renderbool[a]," && ", renderbool[b],")"};
+             renderbool[Not[a_]] := {"(!", renderbool[a],")"};
+             renderbool[a:paramPattern] := ToString[a]; (* Boolean parameter *)
+
+             (* rendervalue[a_String] := a; -- Allow literal pass-through *)
+             rendervalue[a_?NumberQ] := ToString[a];
+             rendervalue[Parameter[a_String]] := a;
+             rendervalue[a_ /; MemberQ[params,a]] := ToString[a];
+             renderbool[x_] := ThrowError["Unexpected value in run-time conditional expression (boolean):", x, "in", cond];
+             render[x_] := ThrowError["Unexpected value in run-time conditional expression (value):", x, "in", cond];
+
+             unparen[s_] := 
+             Module[
+               {s2 = FlattenBlock[s],result},
+               result = StringReplace[FlattenBlock[s2],StartOfString ~~ "(" ~~ any__ ~~ ")" ~~ EndOfString :> any];
+               If[result === s2, result, unparen[result]]];
+
+             ConditionalOnParameterTextual[unparen@renderbool[cond], w]],
            w];
 
     y];

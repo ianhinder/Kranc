@@ -446,7 +446,7 @@ Where -> Everywhere
 \subsubsection{Conditional}
 
 This key allows a calculation to be performed conditionally based on
-parameter set by the user at run time.  Setting
+parameters set by the user at run time.  Setting
 \begin{center}
 \begin{minipage}{0.8 \textwidth}
 \begin{verbatim}
@@ -454,24 +454,25 @@ Conditional -> <expr>
 \end{verbatim}
 \end{minipage}
 \end{center}
-where \verb|<expr>| is an expression will cause the calculation to be
-performed only if that parameter is set to \verb|<value>|.  An
-expression can be one of the following:
+where \verb|<expr>| is a boolean expression over parameter names and
+literal values will cause the calculation to be performed only if the
+expression evaluates to true at runtime.
 
-\begin{itemize}
-\item \verb!<expr> == <expr>!
-\item \verb!<expr> || <expr>!
-\item \verb!<expr> && <expr>!
-\item An integer
-\item A string
-\item A parameter name either as a Mathematica symbol, or as
-  \verb|Parameter[<string>]| for the cases where the parameter name cannot be
-  represented as a Mathematica symbol (e.g.~if it contains
-  underscores).
-\end{itemize} 
+The expression can contain \verb|&&| (and), \verb!||! (or), \verb|!|
+(not) operators as well as symbolic parameter names and numeric and
+string constants.
+
+Comparison of parameters with literal values can be expressed using
+\verb|<param> == <value>| or \verb|<param> != <value>|.
+
+In the case that a parameter name cannot be represented as a
+Mathematica symbol (e.g.~if it contains underscores), it should be
+represented as \verb|Parameter[<string>]| where \verb|<string>| is a
+string containing the parameter name.
 
 Note that the construct \verb|<string> == <string>| will be evaluated
-by Mathematica as either True or False, and so should not be used.
+immediately by Mathematica as either True or False, and so should not
+be used.
  
 Example:
 

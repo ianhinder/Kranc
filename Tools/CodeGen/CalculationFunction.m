@@ -760,6 +760,8 @@ DefFn[
     If[lookup[calcp,CallerFunction],
       DefineCCTKSubroutine[functionName,
       FlattenBlock[{
+        If[haveCondTextuals, Map[ConditionalOnParameterTextual["!(" <> # <> ")", "return;\n"] &,condTextuals], {}],
+
         ConditionalOnParameterTextual["verbose > 1",
           "CCTK_VInfo(CCTK_THORNSTRING,\"Entering " <> bodyFunctionName <> "\");\n"],
 
@@ -775,8 +777,6 @@ DefFn[
         If[where === Everywhere && !OptionValue[UseDGFE] && MatchQ[stencilSize, {0,0,0}] =!= True,
            ThrowError["Calculation "<>functionName<>" uses derivative operators but is computed Everywhere.  Specify Where -> Interior for calculations that use derivative operators."]];
         "\n",
-  
-        If[haveCondTextuals, Map[ConditionalOnParameterTextual["!(" <> # <> ")", "return;\n"] &,condTextuals], {}],
 
         DGFEInit,
 

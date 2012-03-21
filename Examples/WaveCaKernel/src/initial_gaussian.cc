@@ -55,12 +55,24 @@ static void initial_gaussian_Body(cGH const * restrict const cctkGH, int const d
   CCTK_REAL const hdzi = 0.5 * dzi;
   
   /* Initialize predefined quantities */
+  CCTK_REAL const p1o12dx = 0.0833333333333333333333333333333*INV(dx);
+  CCTK_REAL const p1o12dy = 0.0833333333333333333333333333333*INV(dy);
+  CCTK_REAL const p1o12dz = 0.0833333333333333333333333333333*INV(dz);
+  CCTK_REAL const p1o144dxdy = 0.00694444444444444444444444444444*INV(dx*dy);
+  CCTK_REAL const p1o144dxdz = 0.00694444444444444444444444444444*INV(dx*dz);
+  CCTK_REAL const p1o144dydz = 0.00694444444444444444444444444444*INV(dy*dz);
   CCTK_REAL const p1o2dx = 0.5*INV(dx);
   CCTK_REAL const p1o2dy = 0.5*INV(dy);
   CCTK_REAL const p1o2dz = 0.5*INV(dz);
+  CCTK_REAL const p1o4dxdy = 0.25*INV(dx*dy);
+  CCTK_REAL const p1o4dxdz = 0.25*INV(dx*dz);
+  CCTK_REAL const p1o4dydz = 0.25*INV(dy*dz);
   CCTK_REAL const p1odx2 = INV(SQR(dx));
   CCTK_REAL const p1ody2 = INV(SQR(dy));
   CCTK_REAL const p1odz2 = INV(SQR(dz));
+  CCTK_REAL const pm1o12dx2 = -0.0833333333333333333333333333333*INV(SQR(dx));
+  CCTK_REAL const pm1o12dy2 = -0.0833333333333333333333333333333*INV(SQR(dy));
+  CCTK_REAL const pm1o12dz2 = -0.0833333333333333333333333333333*INV(SQR(dz));
   
   /* Assign local copies of arrays functions */
   

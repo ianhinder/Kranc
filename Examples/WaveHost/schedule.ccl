@@ -63,25 +63,61 @@ schedule initial_gaussian AT INITIAL
   WRITES:   WaveHost::xCopy_g
 } "initial_gaussian"
 
-schedule calc_rhs in MoL_CalcRHS
-{
-  LANG: C
-  READS:    WaveHost::phi_g
-  READS:    WaveHost::pi_g
-  WRITES:   WaveHost::phi_grhs
-  WRITES:   WaveHost::pi_grhs
-} "calc_rhs"
 
-schedule calc_rhs at ANALYSIS
+if (fdOrder == 2)
 {
-  LANG: C
-  SYNC: phi_grhs
-  SYNC: pi_grhs
-  READS:    WaveHost::phi_g
-  READS:    WaveHost::pi_g
-  WRITES:   WaveHost::phi_grhs
-  WRITES:   WaveHost::pi_grhs
-} "calc_rhs"
+  schedule calc_rhs_2 in MoL_CalcRHS
+  {
+    LANG: C
+    READS:    WaveHost::phi_g
+    READS:    WaveHost::pi_g
+    WRITES:   WaveHost::phi_grhs
+    WRITES:   WaveHost::pi_grhs
+  } "calc_rhs_2"
+}
+
+
+if (fdOrder == 2)
+{
+  schedule calc_rhs_2 at ANALYSIS
+  {
+    LANG: C
+    SYNC: phi_grhs
+    SYNC: pi_grhs
+    READS:    WaveHost::phi_g
+    READS:    WaveHost::pi_g
+    WRITES:   WaveHost::phi_grhs
+    WRITES:   WaveHost::pi_grhs
+  } "calc_rhs_2"
+}
+
+
+if (fdOrder == 4)
+{
+  schedule calc_rhs_4 in MoL_CalcRHS
+  {
+    LANG: C
+    READS:    WaveHost::phi_g
+    READS:    WaveHost::pi_g
+    WRITES:   WaveHost::phi_grhs
+    WRITES:   WaveHost::pi_grhs
+  } "calc_rhs_4"
+}
+
+
+if (fdOrder == 4)
+{
+  schedule calc_rhs_4 at ANALYSIS
+  {
+    LANG: C
+    SYNC: phi_grhs
+    SYNC: pi_grhs
+    READS:    WaveHost::phi_g
+    READS:    WaveHost::pi_g
+    WRITES:   WaveHost::phi_grhs
+    WRITES:   WaveHost::pi_grhs
+  } "calc_rhs_4"
+}
 
 schedule calc_bound_rhs in MoL_RHSBoundaries
 {

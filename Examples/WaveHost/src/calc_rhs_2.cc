@@ -22,7 +22,7 @@
 #define SQR(x) ((x) * (x))
 #define CUB(x) ((x) * (x) * (x))
 
-extern "C" void calc_bound_rhs_SelectBCs(CCTK_ARGUMENTS)
+extern "C" void calc_rhs_2_SelectBCs(CCTK_ARGUMENTS)
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
@@ -37,7 +37,7 @@ extern "C" void calc_bound_rhs_SelectBCs(CCTK_ARGUMENTS)
   return;
 }
 
-static void calc_bound_rhs_Body(cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const imin[3], int const imax[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[])
+static void calc_rhs_2_Body(cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const imin[3], int const imax[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[])
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
@@ -99,7 +99,7 @@ static void calc_bound_rhs_Body(cGH const * restrict const cctkGH, int const dir
   
   /* Loop over the grid points */
   #pragma omp parallel
-  CCTK_LOOP3(calc_bound_rhs,
+  CCTK_LOOP3(calc_rhs_2,
     i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
     cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
   {
@@ -107,27 +107,31 @@ static void calc_bound_rhs_Body(cGH const * restrict const cctkGH, int const dir
     
     /* Assign local copies of grid functions */
     
-    CCTK_REAL xCopyL = xCopy[index];
+    CCTK_REAL phiL = phi[index];
+    CCTK_REAL piL = pi[index];
     
     
     /* Include user supplied include files */
     
     /* Precompute derivatives */
+    CCTK_REAL const PDstandard2th11phi = PDstandard2th11(&phi[index]);
+    CCTK_REAL const PDstandard2th22phi = PDstandard2th22(&phi[index]);
+    CCTK_REAL const PDstandard2th33phi = PDstandard2th33(&phi[index]);
     
     /* Calculate temporaries and grid functions */
-    CCTK_REAL phirhsL = -200.*(xCopyL + t)*exp(-100.*SQR(xCopyL + t));
+    CCTK_REAL phirhsL = piL;
     
-    CCTK_REAL pirhsL = exp(-100.*SQR(xCopyL + t))*(-200. + 
-      80000.*xCopyL*t + 40000.*(SQR(xCopyL) + SQR(t)));
+    CCTK_REAL pirhsL = PDstandard2th11phi + PDstandard2th22phi + 
+      PDstandard2th33phi;
     
     /* Copy local copies back to grid functions */
     phirhs[index] = phirhsL;
     pirhs[index] = pirhsL;
   }
-  CCTK_ENDLOOP3(calc_bound_rhs);
+  CCTK_ENDLOOP3(calc_rhs_2);
 }
 
-extern "C" void calc_bound_rhs(CCTK_ARGUMENTS)
+extern "C" void calc_rhs_2(CCTK_ARGUMENTS)
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
@@ -135,25 +139,27 @@ extern "C" void calc_bound_rhs(CCTK_ARGUMENTS)
   
   if (verbose > 1)
   {
-    CCTK_VInfo(CCTK_THORNSTRING,"Entering calc_bound_rhs_Body");
+    CCTK_VInfo(CCTK_THORNSTRING,"Entering calc_rhs_2_Body");
   }
   
-  if (cctk_iteration % calc_bound_rhs_calc_every != calc_bound_rhs_calc_offset)
+  if (cctk_iteration % calc_rhs_2_calc_every != calc_rhs_2_calc_offset)
   {
     return;
   }
   
   const char *const groups[] = {
+    "WaveHost::phi_g",
     "WaveHost::phi_grhs",
-    "WaveHost::pi_grhs",
-    "WaveHost::xCopy_g"};
-  GenericFD_AssertGroupStorage(cctkGH, "calc_bound_rhs", 3, groups);
+    "WaveHost::pi_g",
+    "WaveHost::pi_grhs"};
+  GenericFD_AssertGroupStorage(cctkGH, "calc_rhs_2", 4, groups);
   
+  GenericFD_EnsureStencilFits(cctkGH, "calc_rhs_2", 1, 1, 1);
   
-  GenericFD_LoopOverBoundary(cctkGH, calc_bound_rhs_Body);
+  GenericFD_LoopOverInterior(cctkGH, calc_rhs_2_Body);
   
   if (verbose > 1)
   {
-    CCTK_VInfo(CCTK_THORNSTRING,"Leaving calc_bound_rhs_Body");
+    CCTK_VInfo(CCTK_THORNSTRING,"Leaving calc_rhs_2_Body");
   }
 }

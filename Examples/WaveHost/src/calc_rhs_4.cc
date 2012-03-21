@@ -22,7 +22,7 @@
 #define SQR(x) ((x) * (x))
 #define CUB(x) ((x) * (x) * (x))
 
-extern "C" void calc_rhs_SelectBCs(CCTK_ARGUMENTS)
+extern "C" void calc_rhs_4_SelectBCs(CCTK_ARGUMENTS)
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
@@ -37,7 +37,7 @@ extern "C" void calc_rhs_SelectBCs(CCTK_ARGUMENTS)
   return;
 }
 
-static void calc_rhs_Body(cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const imin[3], int const imax[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[])
+static void calc_rhs_4_Body(cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const imin[3], int const imax[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[])
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
@@ -70,12 +70,24 @@ static void calc_rhs_Body(cGH const * restrict const cctkGH, int const dir, int 
   CCTK_REAL const hdzi = 0.5 * dzi;
   
   /* Initialize predefined quantities */
+  CCTK_REAL const p1o12dx = 0.0833333333333333333333333333333*INV(dx);
+  CCTK_REAL const p1o12dy = 0.0833333333333333333333333333333*INV(dy);
+  CCTK_REAL const p1o12dz = 0.0833333333333333333333333333333*INV(dz);
+  CCTK_REAL const p1o144dxdy = 0.00694444444444444444444444444444*INV(dx*dy);
+  CCTK_REAL const p1o144dxdz = 0.00694444444444444444444444444444*INV(dx*dz);
+  CCTK_REAL const p1o144dydz = 0.00694444444444444444444444444444*INV(dy*dz);
   CCTK_REAL const p1o2dx = 0.5*INV(dx);
   CCTK_REAL const p1o2dy = 0.5*INV(dy);
   CCTK_REAL const p1o2dz = 0.5*INV(dz);
+  CCTK_REAL const p1o4dxdy = 0.25*INV(dx*dy);
+  CCTK_REAL const p1o4dxdz = 0.25*INV(dx*dz);
+  CCTK_REAL const p1o4dydz = 0.25*INV(dy*dz);
   CCTK_REAL const p1odx2 = INV(SQR(dx));
   CCTK_REAL const p1ody2 = INV(SQR(dy));
   CCTK_REAL const p1odz2 = INV(SQR(dz));
+  CCTK_REAL const pm1o12dx2 = -0.0833333333333333333333333333333*INV(SQR(dx));
+  CCTK_REAL const pm1o12dy2 = -0.0833333333333333333333333333333*INV(SQR(dy));
+  CCTK_REAL const pm1o12dz2 = -0.0833333333333333333333333333333*INV(SQR(dz));
   
   /* Assign local copies of arrays functions */
   
@@ -87,7 +99,7 @@ static void calc_rhs_Body(cGH const * restrict const cctkGH, int const dir, int 
   
   /* Loop over the grid points */
   #pragma omp parallel
-  CCTK_LOOP3(calc_rhs,
+  CCTK_LOOP3(calc_rhs_4,
     i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
     cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
   {
@@ -102,24 +114,24 @@ static void calc_rhs_Body(cGH const * restrict const cctkGH, int const dir, int 
     /* Include user supplied include files */
     
     /* Precompute derivatives */
-    CCTK_REAL const PDstandard2nd11phi = PDstandard2nd11(&phi[index]);
-    CCTK_REAL const PDstandard2nd22phi = PDstandard2nd22(&phi[index]);
-    CCTK_REAL const PDstandard2nd33phi = PDstandard2nd33(&phi[index]);
+    CCTK_REAL const PDstandard4th11phi = PDstandard4th11(&phi[index]);
+    CCTK_REAL const PDstandard4th22phi = PDstandard4th22(&phi[index]);
+    CCTK_REAL const PDstandard4th33phi = PDstandard4th33(&phi[index]);
     
     /* Calculate temporaries and grid functions */
     CCTK_REAL phirhsL = piL;
     
-    CCTK_REAL pirhsL = PDstandard2nd11phi + PDstandard2nd22phi + 
-      PDstandard2nd33phi;
+    CCTK_REAL pirhsL = PDstandard4th11phi + PDstandard4th22phi + 
+      PDstandard4th33phi;
     
     /* Copy local copies back to grid functions */
     phirhs[index] = phirhsL;
     pirhs[index] = pirhsL;
   }
-  CCTK_ENDLOOP3(calc_rhs);
+  CCTK_ENDLOOP3(calc_rhs_4);
 }
 
-extern "C" void calc_rhs(CCTK_ARGUMENTS)
+extern "C" void calc_rhs_4(CCTK_ARGUMENTS)
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
@@ -127,10 +139,10 @@ extern "C" void calc_rhs(CCTK_ARGUMENTS)
   
   if (verbose > 1)
   {
-    CCTK_VInfo(CCTK_THORNSTRING,"Entering calc_rhs_Body");
+    CCTK_VInfo(CCTK_THORNSTRING,"Entering calc_rhs_4_Body");
   }
   
-  if (cctk_iteration % calc_rhs_calc_every != calc_rhs_calc_offset)
+  if (cctk_iteration % calc_rhs_4_calc_every != calc_rhs_4_calc_offset)
   {
     return;
   }
@@ -140,14 +152,14 @@ extern "C" void calc_rhs(CCTK_ARGUMENTS)
     "WaveHost::phi_grhs",
     "WaveHost::pi_g",
     "WaveHost::pi_grhs"};
-  GenericFD_AssertGroupStorage(cctkGH, "calc_rhs", 4, groups);
+  GenericFD_AssertGroupStorage(cctkGH, "calc_rhs_4", 4, groups);
   
-  GenericFD_EnsureStencilFits(cctkGH, "calc_rhs", 1, 1, 1);
+  GenericFD_EnsureStencilFits(cctkGH, "calc_rhs_4", 2, 2, 2);
   
-  GenericFD_LoopOverInterior(cctkGH, calc_rhs_Body);
+  GenericFD_LoopOverInterior(cctkGH, calc_rhs_4_Body);
   
   if (verbose > 1)
   {
-    CCTK_VInfo(CCTK_THORNSTRING,"Leaving calc_rhs_Body");
+    CCTK_VInfo(CCTK_THORNSTRING,"Leaving calc_rhs_4_Body");
   }
 }

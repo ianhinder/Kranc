@@ -14,7 +14,7 @@
 #define SQR(x) ((x) * (x))
 #define CUB(x) ((x) * (x) * (x))
 
-CAKERNEL_calc_rhs_Begin
+CAKERNEL_calc_rhs_4_Begin
   
   /* Include user-supplied include files */
   
@@ -37,12 +37,24 @@ CAKERNEL_calc_rhs_Begin
   CCTK_REAL const hdzi = 0.5 * dzi;
   
   /* Initialize predefined quantities */
+  CCTK_REAL const p1o12dx = 0.0833333333333333333333333333333*INV(dx);
+  CCTK_REAL const p1o12dy = 0.0833333333333333333333333333333*INV(dy);
+  CCTK_REAL const p1o12dz = 0.0833333333333333333333333333333*INV(dz);
+  CCTK_REAL const p1o144dxdy = 0.00694444444444444444444444444444*INV(dx*dy);
+  CCTK_REAL const p1o144dxdz = 0.00694444444444444444444444444444*INV(dx*dz);
+  CCTK_REAL const p1o144dydz = 0.00694444444444444444444444444444*INV(dy*dz);
   CCTK_REAL const p1o2dx = 0.5*INV(dx);
   CCTK_REAL const p1o2dy = 0.5*INV(dy);
   CCTK_REAL const p1o2dz = 0.5*INV(dz);
+  CCTK_REAL const p1o4dxdy = 0.25*INV(dx*dy);
+  CCTK_REAL const p1o4dxdz = 0.25*INV(dx*dz);
+  CCTK_REAL const p1o4dydz = 0.25*INV(dy*dz);
   CCTK_REAL const p1odx2 = INV(SQR(dx));
   CCTK_REAL const p1ody2 = INV(SQR(dy));
   CCTK_REAL const p1odz2 = INV(SQR(dz));
+  CCTK_REAL const pm1o12dx2 = -0.0833333333333333333333333333333*INV(SQR(dx));
+  CCTK_REAL const pm1o12dy2 = -0.0833333333333333333333333333333*INV(SQR(dy));
+  CCTK_REAL const pm1o12dz2 = -0.0833333333333333333333333333333*INV(SQR(dz));
   
   /* Assign local copies of arrays functions */
   
@@ -51,7 +63,7 @@ CAKERNEL_calc_rhs_Begin
   /* Calculate temporaries and arrays functions */
   
   /* Copy local copies back to grid functions */
-  CAKERNEL_calc_rhs_Computations_Begin
+  CAKERNEL_calc_rhs_4_Computations_Begin
     
     /* Assign local copies of grid functions */
     
@@ -62,20 +74,20 @@ CAKERNEL_calc_rhs_Begin
     /* Include user supplied include files */
     
     /* Precompute derivatives */
-    CCTK_REAL const PDstandard2nd11phi = PDstandard2nd11(phi);
-    CCTK_REAL const PDstandard2nd22phi = PDstandard2nd22(phi);
-    CCTK_REAL const PDstandard2nd33phi = PDstandard2nd33(phi);
+    CCTK_REAL const PDstandard4th11phi = PDstandard4th11(phi);
+    CCTK_REAL const PDstandard4th22phi = PDstandard4th22(phi);
+    CCTK_REAL const PDstandard4th33phi = PDstandard4th33(phi);
     
     /* Calculate temporaries and grid functions */
     CCTK_REAL phirhsL = piL;
     
-    CCTK_REAL pirhsL = PDstandard2nd11phi + PDstandard2nd22phi + 
-      PDstandard2nd33phi;
+    CCTK_REAL pirhsL = PDstandard4th11phi + PDstandard4th22phi + 
+      PDstandard4th33phi;
     
     /* Copy local copies back to grid functions */
     I3D(phirhs,0,0,0) = phirhsL;
     I3D(pirhs,0,0,0) = pirhsL;
     
-  CAKERNEL_calc_rhs_Computations_End
+  CAKERNEL_calc_rhs_4_Computations_End
   
-CAKERNEL_calc_rhs_End
+CAKERNEL_calc_rhs_4_End

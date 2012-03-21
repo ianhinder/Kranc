@@ -34,10 +34,7 @@ DefFn[
 
     code = Parse["kranc2.peg", "thorn", filename];
 
-    code = code /. ("startIndex" -> _) :> Sequence[];
-    code = code /. ("endIndex" -> _) :> Sequence[];
-
-    stringRules = XMLElement[s_,_,c_] :> s@@c;
+    stringRules = XMLElement["node",{___,"name"->s_,___},c_] :> s@@c;
 
     thorn = code[[2]] //. stringRules;
 

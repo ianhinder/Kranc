@@ -148,13 +148,15 @@ process["func"["name"[name_],exprs__]] :=
 
 process["expr"[mul_]] := process[mul];
 process["expr"[]] := 0;
-process["expr"[a_, "addop"["-"], b_,cs___]] := process[a] - process[b] + process["expr"[cs]];
-process["expr"[a_, "addop"["+"], bs__]] := process[a] + process["expr"[bs]];
+
+(* Addition, subtraction, multiplication and division are all left-associative *)
+process["expr"[cs___, a_, "addop"["+"], b_]] := process["expr"[cs,a]] + process[b];
+process["expr"[cs___, a_, "addop"["-"], b_]] := process["expr"[cs,a]] - process[b];
 
 process["mul"[pow_]] := process[pow];
 process["mul"[]] := 1;
-process["mul"[a_, "mulop"["/"], b_,cs___]] := Times[process[a] / process[b],process["mul"[cs]]];
-process["mul"[a_, "mulop"["*"], bs__]] := process[a] * process["mul"[bs]];
+process["mul"[cs___, a_, "mulop"["*"], b_]] := process["mul"[cs,a]] * process[b];
+process["mul"[cs___, a_, "mulop"["/"], b_]] := process["mul"[cs,a]] / process[b];
 
 process["pow"[a_,b_]] := process[a]^process[b];
 process["pow"[a_]] := process[a];

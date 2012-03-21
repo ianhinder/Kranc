@@ -3,3 +3,8 @@
 # author: S. Husa
 
 # $Header$ 
+
+if (allocate_genericfd_jacobian)
+{
+  STORAGE: jacobian, jacobian2
+}

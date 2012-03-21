@@ -45,3 +45,15 @@ USES FUNCTION MultiPatch_GetBoundarySpecification
 CCTK_INT FUNCTION \
     SymmetryTableHandleForGrid (CCTK_POINTER_TO_CONST IN cctkGH)
 REQUIRES FUNCTION SymmetryTableHandleForGrid
+
+CCTK_REAL jacobian type=GF timelevels=1 tags='checkpoint="no" prolongation="none"'
+{
+  J11, J12, J13, J21, J22, J23, J31, J32, J33
+} "Jacobian J_(ik) = da^i/dx^k of the coordinate transformation (a: local, x: global)"
+
+CCTK_REAL jacobian2 type=GF timelevels=1 tags='checkpoint="no" prolongation="none"'
+{
+  dJ111, dJ112, dJ113, dJ122, dJ123, dJ133,
+  dJ211, dJ212, dJ213, dJ222, dJ223, dJ233,
+  dJ311, dJ312, dJ313, dJ322, dJ323, dJ333,
+} "Derivative of the Jacobian  d^2[local]/d[global]^2"

@@ -313,6 +313,7 @@ structure has the following form:
   Schedule & List of Strings & Cactus schedule specifications & Automatic \\
   Shorthands & List of Symbols & Temporary variables which will be used in this calculation & \{\} \\
   Where &  Everywhere / Interior / Boundary & Which part of the grid this calculation will be performed on & Everywhere \\
+  Conditional & conditional-expression &A conditional expression which determines whether this calculation should be performed. & True \\
   ConditionalOnKeyword & \{String, String\} &
     The calculation will only be performed if the parameter named by the first string has the value specified by the second string.   &  \\
   ConditionalOnKeywords & \{\{String, String\}, \ldots \} &
@@ -442,7 +443,49 @@ Where -> Everywhere
 \end{minipage}
 \end{center}
 
+\subsubsection{Conditional}
+
+This key allows a calculation to be performed conditionally based on
+parameter set by the user at run time.  Setting
+\begin{center}
+\begin{minipage}{0.8 \textwidth}
+\begin{verbatim}
+Conditional -> <expr>
+\end{verbatim}
+\end{minipage}
+\end{center}
+where \verb|<expr>| is an expression will cause the calculation to be
+performed only if that parameter is set to \verb|<value>|.  An
+expression can be one of the following:
+
+\begin{itemize}
+\item \verb!<expr> == <expr>!
+\item \verb!<expr> || <expr>!
+\item \verb!<expr> && <expr>!
+\item An integer
+\item A string
+\item A parameter name either as a Mathematica symbol, or as
+  \verb|Parameter[<string>]| for the cases where the parameter name cannot be
+  represented as a Mathematica symbol (e.g.~if it contains
+  underscores).
+\end{itemize} 
+
+Note that the construct \verb|<string> == <string>| will be evaluated
+by Mathematica as either True or False, and so should not be used.
+ 
+Example:
+
+\begin{center}
+\begin{minipage}{0.8 \textwidth}
+\begin{verbatim}
+Conditional -> lapseCondition == "1+log" && fdOrder == 4
+\end{verbatim}
+\end{minipage}
+\end{center}
+
 \subsubsection{ConditionalOnKeyword}
+
+(deprecated: use Conditional instead)
 
 This key allows a calculation to be performed conditionally based on
 the value of a parameter set by the user at run time.  Setting
@@ -469,12 +512,16 @@ ConditionalOnKeyword -> {"gauge_condition", "harmonic"}
 
 \subsubsection{ConditionalOnKeywords}
 
+(deprecated: use Conditional instead)
+
 The ConditionalOnKeywords key takes a list of
 \verb|{<param>, <value>}| pairs as described under
 ConditionalOnKeyword.  All the parameters must match for the
 calculation to be scheduled.
 
 \subsubsection{ConditionalOnTextuals}
+
+(deprecated: use Conditional instead)
 
 This key can be set to a string which is used verbatim in the Cactus
 schedule.ccl file.  Any valid Cactus conditional string can be used.

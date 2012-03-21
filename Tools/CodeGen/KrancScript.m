@@ -172,7 +172,7 @@ process["option"["implement"[imp_]]] :=
   {Implementation -> process[imp]};
 
 flags = {"loopcontrol"->UseLoopControl,"vectors"->UseVectors,"opencl"->UseOpenCL,
-         "jacobian"->UseJacobian, "cse" -> CSE};
+         "jacobian"->UseJacobian, "cse" -> CSE, "cakernel" -> UseCaKernel};
 
 process["option"["use"[features__]]] :=
   Map[(lookup[flags,#] -> True) &,{features}/.(("feature"[n_]):>n)];

@@ -1,0 +1,19 @@
+begin thorn SimpleWaveScriptCaKernel
+
+use cakernel
+
+begin variables
+  phi pi
+end variables
+
+begin calculation initial_sine_calc scheduled at initial
+  phi = sin(2*PI*(x-t))
+  pi = -2*pi*cos(2*PI*(x-t))
+end calculation
+
+begin calculation calc_rhs scheduled at mol_calcrhs
+  D_t phi = pi
+  D_t pi = Euc^ij*D_ij phi
+end calculation
+
+end thorn

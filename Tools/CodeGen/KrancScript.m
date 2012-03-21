@@ -142,7 +142,7 @@ process["func"["name"[name_],exprs__]] :=
   Module[
     {fns},
     fns = {"sin" -> Sin, "cos" -> Cos, "if" -> IfThen, "max" -> Max,
-           "sqrt" -> Sqrt};
+           "sqrt" -> Sqrt, "exp" -> Exp};
     If[MemberQ[First/@fns,name], (name/.fns)@@Map[process,{exprs}],
        ThrowError["Unrecognised function: ", name]]];
 

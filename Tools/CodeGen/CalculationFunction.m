@@ -136,7 +136,20 @@ VerifyCalculation[calc_] :=
       VerifyListContent[lookup[calc, Equations], Rule,
         " while checking the equation" <> ToString[calcName]],
       ThrowError["Invalid Calculation structure. Must contain Equations element: ",
-        ToString[calc], " while checking the calculation called ", ToString[calcName]]]];
+        ToString[calc], " while checking the calculation called ", ToString[calcName]]];
+
+    allowedKeys = {BodyFunction, CallerFunction, ExecuteOn,
+         GFAccessFunction, Groups, Implementation, InitFDVariables,
+         LoopFunction, MacroPointer, Name, ODEGroups, Parameters,
+         PartialDerivatives, PreDefinitions, Schedule,Equations,
+         Shorthands, ConditionalOnKeyword, Before, After,
+         ConditionalOnTextuals, Where, ConditionalOnKeywords,
+         CollectList, AllowedSymbols, ApplyBCs};
+
+    usedKeys = Map[First, calc];
+    unknownKeys = Complement[usedKeys, allowedKeys];
+    If[unknownKeys =!= {},
+      ThrowError["Unrecognised key(s) in calculation: ", unknownKeys]]];
 
 (* Remove equations in the calculation which assign to shorthands
    which are never used. Do not modify the Shorthands entry. An unused

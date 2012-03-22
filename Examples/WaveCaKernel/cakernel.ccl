@@ -52,7 +52,7 @@ CCTK_CUDA_KERNEL calc_rhs_4 TYPE=gpu_cuda/3dblock TILE="8,8,8" SHARECODE=yes STE
   "pirhs"
 }
 
-CCTK_CUDA_KERNEL calc_bound_rhs TYPE=gpu_cuda/boundary TILE="8,8,8" SHARECODE=yes
+CCTK_CUDA_KERNEL calc_bound_rhs TYPE=gpu_cuda/boundary_s TILE="8,8,8" SHARECODE=yes
 {
   CCTK_CUDA_KERNEL_VARIABLE  cached=no intent=out
   {

@@ -67,7 +67,7 @@ DefFn[
      int, attrs},
     int = !bnd;
 
-    attrs = {"TYPE" -> If[int, "gpu_cuda/3dblock", "gpu_cuda/boundary"],
+    attrs = {"TYPE" -> If[int, "gpu_cuda/3dblock", "gpu_cuda/boundary_s"],
              "TILE" -> Quote["8,8,8"],
              "SHARECODE" -> "yes"};
 

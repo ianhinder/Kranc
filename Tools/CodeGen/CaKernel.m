@@ -61,14 +61,14 @@ DefFn[
       "\n"]]];
 
 DefFn[
-  kernelCCLBlock[calc_] :=
+  kernelCCLBlock[calc_, tileSize_List] :=
   Module[
     {bnd = (GetCalculationWhere[calc] === Boundary),
      int, attrs},
     int = !bnd;
 
     attrs = {"TYPE" -> If[int, "gpu_cuda/3dblock", "gpu_cuda/boundary_s"],
-             "TILE" -> Quote["8,8,8"],
+             "TILE" -> Quote[StringJoin[Riffle[ToString/@tileSize,","]]],
              "SHARECODE" -> "yes"};
 
     If[int,
@@ -81,10 +81,11 @@ DefFn[
     CCLBlock["CCTK_CUDA_KERNEL", lookup[calc, Name], attrs,
              variableBlocks[calc]]]];
 
-DefFn[CaKernelCCL[calcs_List] :=
+Options[CaKernelCCL] = ThornOptions;
+DefFn[CaKernelCCL[calcs_List, opts:OptionsPattern[]] :=
   Module[
     {},
-    Map[kernelCCLBlock, Select[calcs, CalculationOnDevice]]]];
+    Map[kernelCCLBlock[#,OptionValue[TileSize]] &, Select[calcs, CalculationOnDevice]]]];
 
 DefFn[CaKernelSchedule[] :=
       {}];

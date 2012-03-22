@@ -246,7 +246,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     (* Construct the cakernel file *)
     If[OptionValue[UseCaKernel],
        InfoMessage[Terse, "Creating CaKernel file"];
-       cakernel = CaKernelCCL[calcs];
+       cakernel = CaKernelCCL[calcs, opts];
     ,
        cakernel = None;
     ];

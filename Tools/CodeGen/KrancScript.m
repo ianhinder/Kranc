@@ -125,6 +125,8 @@ fprint[x_] := (Print[x//InputForm]; x);
 
 process["dtensor"["dname"[dname_],inds_,tensor_]] := ToExpression[dname][process[tensor],Sequence@@process[inds]];
 
+process["dtensor"["dname"["D"],inds_,tensor_]] := PD[process[tensor],Sequence@@process[inds]];
+
 process["dtensor"["dname"["D"], "indices"["lower_index"["index_symbol"["t"]]],tensor_]] :=
   dot[process[tensor]];
 

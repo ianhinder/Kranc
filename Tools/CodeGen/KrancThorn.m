@@ -104,6 +104,9 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     cktCheckNamedArgs[{opts}];
 
     calcs = OptionValue[Calculations];
+
+    calcs = SplitCalculations[calcs];
+
     calcs = Map[mapReplaceAdd[#, Shorthands, Join[lookup[#,Shorthands,{}],OptionValue[Shorthands]]] &, calcs];
 
     declaredGroups = OptionValue[DeclaredGroups];

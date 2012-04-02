@@ -30,6 +30,7 @@ GetCalculationParameters;
 CalculationStencilSize;
 CalculationOnDevice;
 GetCalculationWhere;
+SplitCalculations;
 
 Begin["`Private`"];
 
@@ -100,6 +101,40 @@ DefFn[
 DefFn[
   CalculationOnDevice[calc_List] :=
   lookupDefault[calc, ExecuteOn, Automatic] === Device];
+
+partialCalculation[calc_, suffix_, updates_, evolVars_] :=
+Module[
+  {name, calc1, replaces, calc2, vars, patterns, eqs, calc3},
+  (* Add suffix to name *)
+  name     = lookup[calc, Name] <> suffix;
+  calc1    = mapReplace[calc, Name, name];
+  (* Replace some entries in the calculation *)
+  replaces = updates //. (lhs_ -> rhs_) -> (mapReplace[#, lhs, rhs]&);
+  calc2 = Apply[Composition, replaces][calc1];
+  (* Remove unnecessary equations *)
+  vars     = Join[evolVars, lookup[calc2, Shorthands]];
+  patterns = Replace[vars, {    Tensor[n_,__]  ->     Tensor[n,__] ,
+                            dot[Tensor[n_,__]] -> dot[Tensor[n,__]]}, 1];
+  eqs      = FilterRules[lookup[calc, Equations], patterns];
+  calc3    = mapReplace[calc2, Equations, eqs];
+  calc3
+];
+
+DefFn[
+  SplitCalculations[calcs_List] :=
+  Flatten[SplitCalculation/@calcs,1]];
+
+DefFn[
+  SplitCalculation[calc_] :=
+  Module[
+    {splitBy = lookup[calc,SplitBy, {}]},
+    If[splitBy === {},
+       {calc},
+       Table[partialCalculation[calc, 
+                                "_"<>StringReplace[ToString[var],{"["->"","]"->"",","->""}],
+                                {},
+                                {var}]~Join~{CachedVariables -> {(* var[[1]] *)}}, (* This is not general *)
+             {var, splitBy}]]]];
 
 End[];
 

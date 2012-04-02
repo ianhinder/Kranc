@@ -43,7 +43,7 @@ Boundary, Interior, InteriorNoSync, Where, AddToStencilWidth,
 Everywhere, normal1, normal2, normal3, INV, SQR, CUB, QAD, dot, pow,
 exp, dt, dx, dy, dz, idx, idy, idz, t, MinMod, VanLeer, BodyFunction,
 CallerFunction, LoopFunction, GFAccessFunction, InitFDVariables,
-MacroPointer, CachedVariables}
+MacroPointer, CachedVariables, SplitBy}
 
 {ConditionalOnKeyword, ConditionalOnKeywords, CollectList, Interior,
 InteriorNoSync, Boundary, BoundaryWithGhosts, Where, PreDefinitions,

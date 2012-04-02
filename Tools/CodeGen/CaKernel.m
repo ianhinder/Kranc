@@ -31,8 +31,8 @@ CaKernelInterfaceCLL;
 Begin["`Private`"];
 
 DefFn[
-  variableBlock[var_, intent_String] :=
-  CCLBlock["CCTK_CUDA_KERNEL_VARIABLE", "", {"cached" -> "no", "intent" -> intent}, {var,"\n"}, ToString[var]]];
+  variableBlock[var_, intent_String, cached_] :=
+  CCLBlock["CCTK_CUDA_KERNEL_VARIABLE", "", {"cached" -> If[cached,"yes","no"], "intent" -> intent}, {var,"\n"}, ToString[var]]];
 
 DefFn[
   parameterBlock[par_] :=
@@ -41,7 +41,7 @@ DefFn[
 DefFn[
   variableBlocks[calc_] :=
   Module[
-    {in,out,all,inOnly,outOnly,inOut,params},
+    {in,out,all,inOnly,outOnly,inOut,params, cachedVars},
 
     params = GetCalculationParameters[calc];
     in = Join[InputGridFunctions[calc]];
@@ -52,11 +52,14 @@ DefFn[
     outOnly = Complement[out, in];
     inOut = Intersection[in,out];
 
+    cachedVars = lookupDefault[calc, CachedVariables, {}];
+
     Riffle[
       Map[variableBlock[#, Which[MemberQ[inOnly, #], "in",
                                  MemberQ[outOnly, #], "out",
                                  MemberQ[inOut, #], "inout",
-                                 True,ThrowError["Unable to determine use of variable "<>ToString[#]]]] &, all]~Join~
+                                 True,ThrowError["Unable to determine use of variable "<>ToString[#]]],
+                       MemberQ[cachedVars,#]] &, all]~Join~
       Map[parameterBlock, params],
       "\n"]]];
 

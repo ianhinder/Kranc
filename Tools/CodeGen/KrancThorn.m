@@ -105,8 +105,6 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     calcs = OptionValue[Calculations];
 
-    calcs = SplitCalculations[calcs];
-
     calcs = Map[mapReplaceAdd[#, Shorthands, Join[lookup[#,Shorthands,{}],OptionValue[Shorthands]]] &, calcs];
 
     declaredGroups = OptionValue[DeclaredGroups];
@@ -115,6 +113,9 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
       If[OptionValue[Implementation] =!= None, 
         OptionValue[Implementation],
         thornName];
+
+    calcs = Map[Append[#, Implementation -> implementation] &, calcs];
+
     inheritedImplementations = OptionValue[InheritedImplementations];
     includeFiles = OptionValue[IncludeFiles];
     evolutionTimelevels = OptionValue[EvolutionTimelevels]; (* Redundant *)
@@ -137,11 +138,17 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        partialDerivs = Join[partialDerivs, ConservationDifferencingOperators[]]];
     reflectionSymmetries = OptionValue[ReflectionSymmetries];
 
+    calcs = Map[Append[#, PartialDerivatives -> partialDerivs] &, calcs];
+
     coordGroup = {"grid::coordinates", {Kranc`x,Kranc`y,Kranc`z,Kranc`r}};
 
     CheckGroups[groupsOrig];
 
     groups = Union[Join[groupsOrig, {coordGroup}]];
+
+    calcs = SeparateDerivatives[calcs];
+
+    groups = DeleteDuplicates[Join[groups, Flatten[Map[lookup[#,LocalGroups,{}] &, calcs],1]]];
     includeFiles = Join[includeFiles, {"GenericFD.h", "Symmetry.h", "sbp_calc_coeffs.h"}];
 
     inheritedImplementations = Join[inheritedImplementations, {"Grid",
@@ -178,6 +185,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     groups = Join[groups, consGroups];
     declaredGroups = Join[declaredGroups, Map[groupName, consGroups]];
 
+    declaredGroups = DeleteDuplicates[Join[declaredGroups, Flatten[Map[Map[groupName,lookup[#,LocalGroups,{}]] &, calcs],1]]];
+
     (* Get the different types of group *)
     evolvedGroups = extractEvolvedGroups[declaredGroups, calcs, groups];
     nonevolvedGroups = extractNonevolvedGroups[declaredGroups, calcs, groups];
@@ -200,8 +209,12 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     (* Add the groups into the calcs *)
     calcs = Map[Join[#, {Groups -> groups}] &, calcs];
 
+    calcs = SplitCalculations[calcs];
+
     rhsGroups = Map[groupName, rhsGroupDefinitions];
     rhsODEGroups = Map[groupName, rhsODEGroupDefinitions];
+
+    calcs = Map[Append[#, ODEGroups -> Join[odeGroups, rhsODEGroups]] &, calcs];
 
     (* Construct a source file for each calculation *)
     allParams = Join[Map[ParamName, realParamDefs],
@@ -210,11 +223,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
                      Map[unqualifiedName, inheritedIntParams], 
                      Map[unqualifiedName, inheritedKeywordParams]];
 
-    calcs = Map[Join[#,
-                     {ODEGroups -> Join[odeGroups, rhsODEGroups],
-                      Parameters -> allParams,
-                      PartialDerivatives -> partialDerivs,
-                      Implementation -> implementation}] &, calcs];
+    calcs = Map[Append[#, Parameters -> allParams] &, calcs];
 
     calcs = Map[If[!OptionValue[UseCaKernel], #, If[mapContains[#,ExecuteOn], #, Append[#,ExecuteOn->Device]]] &, calcs];
 

@@ -43,7 +43,7 @@ Boundary, Interior, InteriorNoSync, Where, AddToStencilWidth,
 Everywhere, normal1, normal2, normal3, INV, SQR, CUB, QAD, dot, pow,
 exp, dt, dx, dy, dz, idx, idy, idz, t, MinMod, VanLeer, BodyFunction,
 CallerFunction, LoopFunction, GFAccessFunction, InitFDVariables,
-MacroPointer, CachedVariables, SplitBy}
+MacroPointer, CachedVariables, SplitBy, SeparatedDerivatives}
 
 {ConditionalOnKeyword, ConditionalOnKeywords, CollectList, Interior,
 InteriorNoSync, Boundary, BoundaryWithGhosts, Where, PreDefinitions,
@@ -94,6 +94,7 @@ ThornOptions =
 ExecuteOn;
 Device;
 Host;
+LocalGroups;
 
 (* Thorn.m *)
 

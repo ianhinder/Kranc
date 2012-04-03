@@ -1,6 +1,6 @@
 
-script = $CommandLine[[-1]];
-Kranc`KrancDirectory = Environment["KRANCDIR"];
+script = If[ValueQ[$KrancScript],$KrancScript,$CommandLine[[-1]]];
+Kranc`KrancDirectory = If[ValueQ[$KrancDirectory], $KrancDirectory, Environment["KRANCDIR"]];
 
 $Path = Join[$Path,
   {Kranc`KrancDirectory <> "/Tools/CodeGen",

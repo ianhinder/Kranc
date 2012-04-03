@@ -124,12 +124,21 @@ DefFn[
   SplitCalculations[calcs_List] :=
   Flatten[SplitCalculation/@calcs,1]];
 
+(* Split a calculation into a set of equivalent calculations.  Any
+   required shorthands are recomputed in each calculation.  The split
+   is determined by the SplitVars calculation option, which is a list
+   of split specifications.  A split specification can be a single
+   variable, in which case the calculation will compute only that
+   variable, and will be named oldName_<varname>, or it can be a list
+   of variables, in which case the calculation will compute all those
+   variables and will be named with a numeric index. *)
 DefFn[
   SplitCalculation[calc_] :=
   Module[
     {splitBy = lookup[calc,SplitBy, {}],
      oldName = lookup[calc,Name]},
-    If[splitBy === {},
+
+    If[Intersection[Flatten[splitBy,1],OutputGridFunctions[calc]] === {},
        {calc},
        MapIndexed[
          Function[
@@ -137,10 +146,10 @@ DefFn[
            Module[
              {nameSuffix, splitVars},
              nameSuffix = If[ListQ[var],
-                             ToString[i],
-                             StringReplace[ToString[var],{"["->"","]"->"",","->""}]];
+                             ToString[i[[1]]],
+                             "_"<>StringReplace[ToString[var],{"["->"","]"->"",","->""}]];
              splitVars = If[ListQ[var], var, {var}];
-             partialCalculation[calc, "_"<>nameSuffix, {}, splitVars]]],
+             partialCalculation[calc, nameSuffix, {}, splitVars]]],
          splitBy]]]];
 
 End[];

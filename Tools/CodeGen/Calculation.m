@@ -127,14 +127,21 @@ DefFn[
 DefFn[
   SplitCalculation[calc_] :=
   Module[
-    {splitBy = lookup[calc,SplitBy, {}]},
+    {splitBy = lookup[calc,SplitBy, {}],
+     oldName = lookup[calc,Name]},
     If[splitBy === {},
        {calc},
-       Table[partialCalculation[calc, 
-                                "_"<>StringReplace[ToString[var],{"["->"","]"->"",","->""}],
-                                {},
-                                {var}]~Join~{CachedVariables -> {(* var[[1]] *)}}, (* This is not general *)
-             {var, splitBy}]]]];
+       MapIndexed[
+         Function[
+           {var,i},
+           Module[
+             {nameSuffix, splitVars},
+             nameSuffix = If[ListQ[var],
+                             ToString[i],
+                             StringReplace[ToString[var],{"["->"","]"->"",","->""}]];
+             splitVars = If[ListQ[var], var, {var}];
+             partialCalculation[calc, "_"<>nameSuffix, {}, splitVars]]],
+         splitBy]]]];
 
 End[];
 

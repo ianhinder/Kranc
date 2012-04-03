@@ -62,7 +62,7 @@ SetOptions["stdout", PageWidth -> Infinity];
 exception = Catch[Catch[
   Check[
     Block[
-      {$RecursionLimit = Infinity},
+      {(*$RecursionLimit = Infinity*)},
 
       Switch[
         FileExtension[script],

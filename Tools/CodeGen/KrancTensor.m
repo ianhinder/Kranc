@@ -89,13 +89,16 @@ computeReflectionSymmetries[declaredGroups_, groups_] :=
     syms];
 
 makeCalculationExplicit[calc_] :=
+  Module[{splice},
   mapValueMapMultiple[calc, 
     {Shorthands -> ExpandComponents,
+     CachedVariables -> ExpandComponents,
+     SplitBy -> (Map[Function[x,If[ListQ[x], ExpandComponents[x], splice@ExpandComponents[{x}]]], #] /. (splice[{y___}] -> Sequence@@y) &),
      CollectList -> ExpandComponents,
      Equations -> ExpandComponents,
      PrimitiveEquations -> MakeExplicit,
      ConservedEquations -> MakeExplicit,
-     Primitives -> MakeExplicit}];
+     Primitives -> MakeExplicit}]];
 
 (* DeleteDuplicates is not available in Mathematica before version 7 *)
 deleteDuplicates[l_] :=

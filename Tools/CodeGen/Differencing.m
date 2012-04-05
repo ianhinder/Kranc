@@ -275,11 +275,22 @@ DefFn[
    of the logic is repeated *)
 DefFn[
   StencilSize[derivOps_, eqs_, name_, zeroDims_] :=
-  Module[{gfds, rgzList, rgz},
-    gfds = Map[GridFunctionDerivativesInExpression[{#}, eqs, zeroDims] &, derivOps];
-    rgzList = MapThread[If[Length[#2] > 0, DerivativeOperatorStencilWidth[#1,zeroDims], {0,0,0}] &, {derivOps, gfds}];
-    If[Length[rgzList] === 0, Return[{0,0,0}]];
-    rgz = Map[Max, Transpose[rgzList]]]];
+  Module[
+    {gfds, gfops, allCompOps, usedCompOps, widths, stencilWidth},
+
+    (* {PD[alpha,1,2], ...} *)
+    gfds = Flatten[Map[GridFunctionDerivativesInExpression[{#}, eqs, zeroDims] &, derivOps],1];
+
+    (* Drop the variable name from the gfd *)
+    (* {PD[1,2], ...} *)
+    gfops = Map[Drop[#,1] &, gfds];
+
+    allCompOps = Flatten[(DerivativeOperatorToComponents[#,zeroDims] &) /@ derivOps,1];
+    usedCompOps = Select[allCompOps, MemberQ[gfops, First[#]] &];
+    If[usedCompOps === {}, Return[{0,0,0}]];
+    widths = ComponentDerivativeOperatorStencilWidth/@usedCompOps;
+    stencilWidth = Map[Max,Transpose[widths]];
+    stencilWidth]];
 
 DefFn[
   StencilSize[derivOps_, eqs_, name_, zeroDims_, intParams_] :=

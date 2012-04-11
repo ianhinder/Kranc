@@ -176,9 +176,13 @@ separateDerivativesInCalculation[calc_] :=
           ThrowError["Separating derivatives in an automatically scheduled function is not supported"]];
 
        Module[
-         {derivGFName, derivs, sepDerivs, calc2, replaceSymmetric},
+         {derivGFName, derivGFName2, derivs, sepDerivs, calc2, replaceSymmetric},
          derivGFName[pd_[var_,inds___]] :=
          Symbol["Global`D"<>ToString[pd]<>ToString[var]<>Apply[StringJoin,Map[ToString,{inds}]]];
+
+         derivGFName2[pd_[var_,inds___]] :=
+         "D"<>ToString[pd]<>ToString[var]<>"_"<>Apply[StringJoin,Map[ToString,{inds}]];
+
 
          replaceSymmetric = pd_[var_,i_,j_] /; i > j :> pd[var,j,i];
          derivs = DeleteDuplicates[GetDerivatives[calc] /. replaceSymmetric];
@@ -191,7 +195,7 @@ separateDerivativesInCalculation[calc_] :=
                               Equations, 
                               {derivName -> sepDeriv}];
            calc1 = mapReplace[calc1, Schedule, Map[#<>" before "<>lookup[calc,Name] &, lookup[calc,Schedule]]];
-           calc1 = mapReplace[calc1, Name, lookup[calc,Name]<>"_"<>ToString@derivName];
+           calc1 = mapReplace[calc1, Name, lookup[calc,Name]<>"_"<>derivGFName2[sepDeriv]];
            currentGroups = lookup[calc, LocalGroups, {}];
            localGroups = Append[currentGroups, {ToString@derivName<>"_group", {derivName}}];
            calc1 = mapReplaceAdd[calc1, LocalGroups, localGroups];

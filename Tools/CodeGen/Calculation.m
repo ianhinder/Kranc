@@ -186,27 +186,27 @@ separateDerivativesInCalculation[calc_] :=
 
          replaceSymmetric = pd_[var_,i_,j_] /; i > j :> pd[var,j,i];
          derivs = DeleteDuplicates[GetDerivatives[calc] /. replaceSymmetric];
-         sepDerivs = Flatten[Map[Cases[derivs, #] &, sepPat],1];
+         sepDerivs = Map[List,Flatten[Map[Cases[derivs, #] &, sepPat],1]];
          
-         derivCalc[sepDeriv_] :=
+         derivCalc[derivs_List] :=
          Module[
-           {calc1, currentGroups, localGroups, derivName = derivGFName[sepDeriv]},
+           {calc1, currentGroups, localGroups, derivNames = Map[derivGFName,derivs]},
            calc1 = mapReplace[calc, 
                               Equations, 
-                              {derivName -> sepDeriv}];
+                              Thread[derivNames -> derivs]];
            calc1 = mapReplace[calc1, Schedule, Map[#<>" before "<>lookup[calc,Name] &, lookup[calc,Schedule]]];
-           calc1 = mapReplace[calc1, Name, lookup[calc,Name]<>"_"<>derivGFName2[sepDeriv]];
+           calc1 = mapReplace[calc1, Name, lookup[calc,Name]<>"_"<>StringJoin[Riffle[derivGFName2/@derivs,"_"]]];
            (* calc1 = Append[calc1, CachedVariables -> {sepDeriv[[1]]}]; *)
            currentGroups = lookup[calc, LocalGroups, {}];
-           localGroups = Append[currentGroups, {ToString@derivName<>"_group", {derivName}}];
+           localGroups = Join[currentGroups, Map[{ToString@#<>"_group", {#}} &, derivNames]];
            calc1 = mapReplaceAdd[calc1, LocalGroups, localGroups];
            calc1];
 
-         derivCalcs = Map[derivCalc, sepDerivs];
+         derivCalcs = Map[derivCalc[#] &, sepDerivs];
 
          calc2 = mapReplace[calc,
                             Equations,
-                            (GetEquations[calc]/.replaceSymmetric) /. Map[# -> derivGFName[#] &, sepDerivs]];
+                            (GetEquations[calc]/.replaceSymmetric) /. Map[# -> derivGFName[#] &, Flatten[sepDerivs,1]]];
 
          Append[derivCalcs, calc2]]]];
 

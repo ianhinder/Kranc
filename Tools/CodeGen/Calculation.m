@@ -186,8 +186,13 @@ separateDerivativesInCalculation[calc_] :=
 
          replaceSymmetric = pd_[var_,i_,j_] /; i > j :> pd[var,j,i];
          derivs = DeleteDuplicates[GetDerivatives[calc] /. replaceSymmetric];
-         sepDerivs = Map[List,Flatten[Map[Cases[derivs, #] &, sepPat],1]];
-         
+
+         sepDerivs = Flatten[Map[Cases[derivs, #] &, sepPat],1];
+
+         (* sepDerivs = GatherBy[sepDerivs, Function[d, d /. {pd_[var_, i_] -> pd[var,i], pd_[var_, i_, i_] -> pd[var,i]}]]; *)
+
+         sepDerivs = Map[List, sepDerivs];
+
          derivCalc[derivs_List] :=
          Module[
            {calc1, currentGroups, localGroups, derivNames = Map[derivGFName,derivs]},

@@ -201,7 +201,7 @@ separateDerivativesInCalculation[calc_] :=
                               Thread[derivNames -> derivs]];
            calc1 = mapReplace[calc1, Schedule, Map[#<>" before "<>lookup[calc,Name] &, lookup[calc,Schedule]]];
            calc1 = mapReplace[calc1, Name, lookup[calc,Name]<>"_"<>StringJoin[Riffle[derivGFName2/@derivs,"_"]]];
-           (* calc1 = Append[calc1, CachedVariables -> {sepDeriv[[1]]}]; *)
+           calc1 = Append[calc1, CachedVariables -> (First/@derivs)];
            currentGroups = lookup[calc, LocalGroups, {}];
            localGroups = Join[currentGroups, Map[{ToString@#<>"_group", {#}} &, derivNames]];
            calc1 = mapReplaceAdd[calc1, LocalGroups, localGroups];

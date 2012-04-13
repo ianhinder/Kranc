@@ -122,8 +122,8 @@ Module[
   patterns = Replace[vars, {    Tensor[n_,__]  ->     Tensor[n,__] ,
                             dot[Tensor[n_,__]] -> dot[Tensor[n,__]]}, 1];
   eqs      = FilterRules[lookup[calc, Equations], patterns];
-  calc3    = mapReplace[calc2, Equations, eqs];
-  calc3
+  calc3    = mapReplace[calc2, Equations, eqs]
+  (* Append[calc3,CachedVariables -> (GetDerivatives[calc3]/.pd_[var_,___]->var)] *)
 ];
 
 DefFn[

@@ -212,6 +212,7 @@ separateDerivativesInCalculation[calc_] :=
            currentGroups = lookup[calc, LocalGroups, {}];
            localGroups = Join[currentGroups, Map[{ToString@#<>"_group", {#}} &, derivNames]];
            calc1 = mapReplaceAdd[calc1, LocalGroups, localGroups];
+           calc1 = Append[calc1, SimpleCode -> True];
            calc1];
 
          derivCalcs = Map[derivCalc[#] &, sepDerivs];

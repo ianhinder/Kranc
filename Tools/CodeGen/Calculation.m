@@ -189,21 +189,24 @@ separateDerivativesInCalculation[calc_] :=
 
          sepDerivs = Flatten[Map[Cases[derivs, #] &, sepPat],1];
 
-         sepDerivs = GatherBy[sepDerivs, Function[d, d /. {pd_[var_, i_] -> pd[var,i], pd_[var_, i_, i_] -> pd[var,i]}]];
-
-         (* sepDerivs = Map[List, sepDerivs]; *)
+         (* Group _i and _ii derivatives together in the same calculation *)
+         sepDerivs = GatherBy[sepDerivs, Function[d, d /. {pd_[var_, i_] -> pd1, pd_[var_, i_, i_] -> pd1}]];
 
          derivCalc[derivs_List] :=
          Module[
            {calc1, currentGroups, localGroups, derivNames = Map[derivGFName,derivs]},
-           Print["derivs = ", derivs];
-           Print["derivNames = ", derivNames];
            calc1 = mapReplace[calc, 
                               Equations, 
-                              Thread[derivNames -> derivs]];
+                              (* Sort by the differentiated variable to localise accesses to its data *)
+                              Sort[Thread[derivNames -> derivs],
+                                   OrderedQ[{ToString[#1[[2,1]]]<>ToString[#1[[2,2]]],
+                                             ToString[#2[[2,1]]]<>ToString[#2[[2,2]]]}] &]];
+
            calc1 = mapReplace[calc1, Schedule, Map[#<>" before "<>lookup[calc,Name] &, lookup[calc,Schedule]]];
-           calc1 = mapReplace[calc1, Name, StringReplace[lookup[calc,Name]<>"_"<>StringJoin[Riffle[derivGFName2/@derivs,"_"]],"PDstandardNth"->""]];
-           calc1 = Append[calc1, CachedVariables -> (First/@derivs)];
+           calc1 = mapReplace[calc1, Name,
+                              StringReplace[lookup[calc,Name]<>"_"<>derivGFName2[derivs[[1]]]<>
+                                            If[Length[derivs]>1,"_"<>"etc",""],"PDstandardNth"->""]];
+
            currentGroups = lookup[calc, LocalGroups, {}];
            localGroups = Join[currentGroups, Map[{ToString@#<>"_group", {#}} &, derivNames]];
            calc1 = mapReplaceAdd[calc1, LocalGroups, localGroups];

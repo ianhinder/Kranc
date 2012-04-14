@@ -47,7 +47,8 @@ MacroPointer, CachedVariables, SplitBy, SeparatedDerivatives}
 
 {ConditionalOnKeyword, ConditionalOnKeywords, CollectList, Interior,
 InteriorNoSync, Boundary, BoundaryWithGhosts, Where, PreDefinitions,
-AllowedSymbols, Parameters, ConditionalOnTextuals, ApplyBCs};
+AllowedSymbols, Parameters, ConditionalOnTextuals, ApplyBCs,
+SimpleCode};
 
 (* Differencing.m *)
 

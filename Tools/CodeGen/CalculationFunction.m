@@ -145,7 +145,7 @@ VerifyCalculation[calc_] :=
          Shorthands, ConditionalOnKeyword, Before, After,
          ConditionalOnTextuals, Where, ConditionalOnKeywords,
          CollectList, AllowedSymbols, ApplyBCs, Conditional, CachedVariables, SplitBy,
-         SeparatedDerivatives, LocalGroups, NoSimplify, UseDGFE};
+         SeparatedDerivatives, LocalGroups, NoSimplify, UseDGFE, SimpleCode};
 
     usedKeys = Map[First, calc];
     unknownKeys = Complement[usedKeys, allowedKeys];
@@ -725,7 +725,9 @@ DefFn[
 
     If[gfs != {},
       {
-	eqLoop = equationLoop[eqs, cleancalc, gfs, shorts, {}, groups, odeGroups,
+	eqLoop = If[lookup[calcp, SimpleCode, False], 
+                    simpleEquationLoop,
+                    equationLoop][eqs, cleancalc, gfs, shorts, {}, groups, odeGroups,
           pddefs, where, addToStencilWidth, opts]},
       {}]
 
@@ -995,6 +997,28 @@ DefFn[
            Map[AssignVariableInLoop[gridName[#], localName[#]] &, gfsInLHS]]],
 
       If[debugInLoop, Map[InfoVariable[gridName[#]] &, gfsInLHS], ""]}, opts]}]];
+
+Options[simpleEquationLoop] = ThornOptions;
+DefFn[
+  simpleEquationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, odeGroups_, pddefs_,
+                     where_, addToStencilWidth_,
+                     opts:OptionsPattern[]] :=
+  Module[
+    {functionName, eqs2, gridName},
+    functionName = ToString@lookup[cleancalc, Name];
+    eqs2 = eqs;
+    eqs2 = ReplaceDerivatives[pddefs, eqs2, False, OptionValue[ZeroDimensions], 
+                              lookup[cleancalc, MacroPointer]];
+    gridName = lookup[cleancalc, GFAccessFunction];
+    
+    lookup[cleancalc,LoopFunction][
+      {
+        CommentedBlock[
+          "Calculate temporaries and grid functions", 
+          Map[
+            assignVariableFromExpression[FlattenBlock@gridName[#[[1]]], #[[2]], False, False, True] &, eqs2]]
+      }, opts]]];
+
 
 (* Unsorted *)
 

@@ -207,6 +207,8 @@ separateDerivativesInCalculation[calc_] :=
                               StringReplace[lookup[calc,Name]<>"_"<>derivGFName2[derivs[[1]]]<>
                                             If[Length[derivs]>1,"_"<>"etc",""],"PDstandardNth"->""]];
 
+           If[Length[derivs] === 1,
+              calc1 = Append[calc1, CachedVariables -> (First/@derivs)]];
            currentGroups = lookup[calc, LocalGroups, {}];
            localGroups = Join[currentGroups, Map[{ToString@#<>"_group", {#}} &, derivNames]];
            calc1 = mapReplaceAdd[calc1, LocalGroups, localGroups];

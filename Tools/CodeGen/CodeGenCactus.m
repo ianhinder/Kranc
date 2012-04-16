@@ -75,6 +75,7 @@ PartitionVarList::usage = "";
 DataType::usage = "DataType[] returns a string for the grid function data type (e.g. CCTK_REAL)";
 SetDataType::usage = "SetDataType[type] sets a string for the grid function data type (e.g. CCTK_REAL)";
 CCLBlock;
+CCLBlockCompact;
 CalculationMacros;
 
 Begin["`Private`"];
@@ -759,6 +760,15 @@ DefFn[
    Map[" "<>#[[1]]<>"="<>#[[2]] &, attrs], "\n",
    CBlock[contents],
    If[comment === "", "", Quote[comment]],"\n"}];
+
+DefFn[
+  CCLBlockCompact[type_String, name_String, attrs:{(_String -> CodeGenBlock)...},
+           contents:CodeGenBlock,comment_String:""] :=
+  {type, " ", name,
+   Map[" "<>#[[1]]<>"="<>#[[2]] &, attrs],
+   " {", contents, "}",
+   If[comment === "", "", {" ",Quote[comment]}],"\n"}];
+
 
 CalculationMacros[vectorise_:False] :=
   CommentedBlock["Define macros used in calculations",

@@ -32,7 +32,7 @@ Begin["`Private`"];
 
 DefFn[
   variableBlock[var_, intent_String, cached_] :=
-  CCLBlock["CCTK_CUDA_KERNEL_VARIABLE", "", {"cached" -> If[cached,"yes","no"], "intent" -> intent}, {var,"\n"}, ToString[var]]];
+  CCLBlockCompact["CCTK_CUDA_KERNEL_VARIABLE", "", {"cached" -> If[cached,"yes","no"], "intent" -> intent}, {var}, ToString[var]]];
 
 DefFn[
   parameterBlock[par_] :=
@@ -61,7 +61,7 @@ DefFn[
                                  True,ThrowError["Unable to determine use of variable "<>ToString[#]]],
                        MemberQ[cachedVars,#]] &, all]~Join~
       Map[parameterBlock, params],
-      "\n"]]];
+      ""]]];
 
 DefFn[
   kernelCCLBlock[calc_, tileSize_List] :=

@@ -27,6 +27,7 @@ CaKernelEpilogue;
 CaKernelSchedule;
 CaKernelConfigurationCLL;
 CaKernelInterfaceCLL;
+WithHostCalculations;
 
 Begin["`Private`"];
 
@@ -182,6 +183,39 @@ DefFn[CaKernelCode[calc_List,opts___] :=
 
     "\n", CreateCalculationFunction[calc2, LoopName -> kernel<>"_Computations",
                                     opts]}]];
+
+DefFn[
+  splitHostCaKernel[calc_List] :=
+
+    (* Each calculation is marked as ExecuteOn Host, Device or
+       Automatic.  The default is Automatic.  Only calculations
+       specified as Host are the special ones.  These ones will ALWAYS
+       execute on the host.  Otherwise, they will execute on the
+       device for a CaKernel run, and the host for a host run. 
+
+       Any calculation which is scheduled to execute on the host
+       should be left alone.  We don't need to modify it.  Any
+       calculation which has ExecuteOn -> Automatic should be split
+       into two.  One will be a host calculation and one a CaKernel
+       one.  Which is scheduled will depend on the global variable.
+       *)
+
+  If[lookup[calc,ExecuteOn,Automatic] === Host,
+     {calc},
+     {mapReplaceAdd[
+       mapReplaceAdd[
+         AddConditionSuffix[calc, "Accelerator::device_process"],
+         UseCaKernel, True],
+       ExecuteOn, Device],
+      mapReplaceAdd[
+        mapReplaceAdd[
+          AddConditionSuffix[calc, "Accelerator::host_process"],
+          UseCaKernel,False],
+        ExecuteOn, Host]}]];
+
+DefFn[
+  WithHostCalculations[calcs_List] :=
+    Flatten[Map[splitHostCaKernel, calcs],1]];
 
 End[];
 

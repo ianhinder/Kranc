@@ -468,7 +468,7 @@ scheduleFunction[spec_,params_] :=
              renderbool[Or[a_,b_]] := {"(",renderbool[a]," || ", renderbool[b],")"};
              renderbool[And[a_,b_]] := {"(",renderbool[a]," && ", renderbool[b],")"};
              renderbool[Not[a_]] := {"(!", renderbool[a],")"};
-             renderbool[a:paramPattern] := ToString[a]; (* Boolean parameter *)
+             renderbool[a:paramPattern] := ToString[a/.(Parameter[x_]->x)]; (* Boolean parameter *)
 
              (* rendervalue[a_String] := a; -- Allow literal pass-through *)
              rendervalue[a_?NumberQ] := ToString[a];

@@ -32,6 +32,8 @@ CalculationOnDevice;
 GetCalculationWhere;
 SplitCalculations;
 SeparateDerivatives;
+AddCondition;
+AddConditionSuffix;
 
 Begin["`Private`"];
 
@@ -222,6 +224,15 @@ separateDerivativesInCalculation[calc_] :=
                             (GetEquations[calc]/.replaceSymmetric) /. Map[# -> derivGFName[#] &, Flatten[sepDerivs,1]]];
 
          Append[derivCalcs, calc2]]]];
+
+DefFn[
+  AddCondition[calc_List, condition_] :=
+  mapReplaceAdd[calc, Conditional, lookup[calc,Conditional, True] && condition]];
+
+DefFn[
+  AddConditionSuffix[calc_List, condition_] :=
+  mapReplaceAdd[calc, Schedule, Map[#<>" IF "<>condition &, lookup[calc,Schedule]]]];
+
 
 End[];
 

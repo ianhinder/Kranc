@@ -138,6 +138,15 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        partialDerivs = Join[partialDerivs, ConservationDifferencingOperators[]]];
     reflectionSymmetries = OptionValue[ReflectionSymmetries];
 
+    (* Make the CaKernel option calculation-specific *)
+    calcs = Map[Append[#,UseCaKernel -> OptionValue[UseCaKernel]] &, calcs];
+
+    If[OptionValue[GenerateHostCode],
+       calcs = WithHostCalculations[calcs]];
+
+    If[!And@@Map[ListQ, calcs], Print[Short[calcs//InputForm]]; ThrowError["Result of WithHostCalculations is not a list of lists"]];
+
+
     calcs = Map[Append[#, PartialDerivatives -> partialDerivs] &, calcs];
 
     coordGroup = {"grid::coordinates", {Kranc`x,Kranc`y,Kranc`z,Kranc`r}};
@@ -156,6 +165,9 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     inheritedImplementations = Join[inheritedImplementations, {"Grid",
      "GenericFD"}, CactusBoundary`GetInheritedImplementations[]];
+
+    If[OptionValue[UseCaKernel],
+       inheritedImplementations = Append[inheritedImplementations, "Accelerator"]];
 
     InfoMessage[Terse, "Verifying arguments"];
 
@@ -228,7 +240,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     calcs = Map[Append[#, Parameters -> allParams] &, calcs];
 
-    calcs = Map[If[!OptionValue[UseCaKernel], #, If[mapContains[#,ExecuteOn], #, Append[#,ExecuteOn->Device]]] &, calcs];
+    calcs = Map[If[!lookup[#,UseCaKernel,False], #, If[mapContains[#,ExecuteOn], #, Append[#,ExecuteOn->Device]]] &, calcs];
 
     (* Construct the configuration file *)
     InfoMessage[Terse, "Creating configuration file"];

@@ -86,6 +86,7 @@ ThornOptions =
   CSE -> False,
   UseJacobian -> False,
   UseCaKernel -> False,
+  GenerateHostCode -> False,
   TileSize -> {8,8,8},
   LoopName -> "" (* internal hack - do not use *),
   Variables -> Automatic,

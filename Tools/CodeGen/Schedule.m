@@ -127,11 +127,12 @@ scheduleCalc[calc_, groups_, thornName_, OptionsPattern[]] :=
     applyBCs = lookupDefault[calc, ApplyBCs, False];
     userSchedule = lookupDefault[calc, Schedule, Automatic];
 
+
     If[userSchedule =!= Automatic && !applyBCs,
     Return[Map[
       Join[
       {
-        Name               -> If[OptionValue[UseCaKernel] && CalculationOnDevice[calc], "CAKERNEL_Launch_",""]<>lookup[calc, Name],
+        Name               -> If[lookup[calc, UseCaKernel] && CalculationOnDevice[calc], "CAKERNEL_Launch_",""]<>lookup[calc, Name],
         SchedulePoint      -> # <> relStr,
         SynchronizedGroups -> If[StringMatchQ[#, "*MoL_CalcRHS*", IgnoreCase -> True] || StringMatchQ[#, "*MoL_RHSBoundaries*", IgnoreCase -> True],
                                  {},

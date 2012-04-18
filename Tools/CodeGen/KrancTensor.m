@@ -29,7 +29,7 @@ $KrancTensorPackage = "TensorToolsKranc`";
 BeginPackage["KrancTensor`", {"Errors`", "KrancThorn`", "MapLookup`", "KrancGroups`",
                               "Kranc`", $KrancTensorPackage, "ConservationCalculation`",
                               "TensorTools`", "KrancGroups`", "Differencing`",
-                              "Piraha`"}];
+                              "Piraha`", "ScriptOutput`"}];
 
 CreateKrancThornTT::usage = "Construct a Kranc thorn using tensor expressions.";
 CreateKrancThornTT2::usage = "Construct a Kranc thorn using tensor expressions.";
@@ -54,6 +54,11 @@ CreateKrancThornTT[groups_, parentDirectory_, thornName_, opts:OptionsPattern[]]
     consCalcs = lookupDefault[{opts}, ConservationCalculations, {}];
     derivs = lookupDefault[{opts}, PartialDerivatives, {}];
     Map[CheckCalculationTensors, calcs];
+
+    If[OptionValue[GenerateScript], WriteScript[groups, parentDirectory, thornName, opts]];
+    (* Print["Exiting (debug)"]; *)
+    (* Quit[]; *)
+
     expCalcs = Map[makeCalculationExplicit, calcs];
     expConsCalcs = Map[makeCalculationExplicit, consCalcs];
 

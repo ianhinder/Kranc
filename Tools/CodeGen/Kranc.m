@@ -91,7 +91,8 @@ ThornOptions =
   LoopName -> "" (* internal hack - do not use *),
   Variables -> Automatic,
   Shorthands -> {},
-  ParentDirectory -> "."};
+  ParentDirectory -> ".",
+  GenerateScript -> False};
 
 ExecuteOn;
 Device;

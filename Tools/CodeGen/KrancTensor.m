@@ -44,7 +44,9 @@ Begin["`Private`"];
    Tensor Tools
    -------------------------------------------------------------------------- *)
 
-CreateKrancThornTT[groups_, parentDirectory_, thornName_, opts___] :=
+Options[CreateKrancThornTT] = ThornOptions;
+
+CreateKrancThornTT[groups_, parentDirectory_, thornName_, opts:OptionsPattern[]] :=
   Module[{calcs, expCalcs, expGroups, options, derivs, expDerivs, reflectionSymmetries, declaredGroups, consCalcs, expConsCalcs},
     InfoMessage[Terse, "Creating thorn "<>thornName];
     InfoMessage[Terse, "Processing tensorial arguments"];

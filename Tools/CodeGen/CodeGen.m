@@ -37,6 +37,7 @@ CommaSeparated::usage = "";
 Stringify::usage = "";
 Quote::usage = "Quote[x] returns x surrounded by quotes";
 IndentBlock::usage = "";
+IndentBlock2::usage = "";
 CheckBlock::usage = "";
 
 CodeGenBlock := _String | _?AtomQ | List[(_?(MatchQ[#, CodeGenBlock] &)) ...];
@@ -69,6 +70,12 @@ DefFn[
 DefFn[
   IndentBlock[block:CodeGenBlock] :=
   StringDrop["  " <> StringReplace[FlattenBlock[block], {"\n" -> "\n  "}],-2]];
+
+(* This should be used everywhere - need to tidy up the newline convention in CodeGen *)
+DefFn[
+  IndentBlock2[block:CodeGenBlock] :=
+  Riffle[Map[StringJoin["  ",#] &,
+      StringSplit[FlattenBlock[block],"\n"]],"\n"]];
 
 DefFn[
   SeparatedBlock[block:CodeGenBlock] := {"\n", block}];

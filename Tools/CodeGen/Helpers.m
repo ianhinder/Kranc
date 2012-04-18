@@ -61,7 +61,7 @@ TensorName[t_[i__]] := t  (* remove indices from a tensor *)
 
 AddSuffix[object_,suffix_] := ToExpression[ToString@object <> ToString@suffix]
 
-EnsureDirectory[name_] := If[FileType[name] == None, CreateDirectory[name]];
+EnsureDirectory[name_] := If[FileType[name] == None, CreateDirectory[name, CreateIntermediateDirectories -> True]];
 
 SafeDelete[filename_?StringQ] := If[FileType@filename == File, DeleteFile@filename];
 

@@ -65,18 +65,18 @@ DefFn[
                 Riffle[Map[writeExpression, lookup[calc, Equations]],"\n"],
                 Indent -> True]];
 
-DefFn[writeExpression[lhs_ -> rhs_] :=
-      {writeExpression[lhs], " = ", writeExpression[rhs]}];
+writeExpression[lhs_ -> rhs_] :=
+  {writeExpression[lhs], " = ", writeExpression[rhs]};
 
-DefFn[writeExpression[Tensor[T_, inds___]] :=
-      {ToString[T], writeExpression[{inds}]}];
+writeExpression[Tensor[T_, inds___]] :=
+  {ToString[T], writeExpression[{inds}]};
 
-DefFn[writeExpression[List[inds__TensorIndex]] :=
-      Map[{#[[1,2]]/.{"u"->"^","l"->"_"},writeExpression/@#} &,
-          SplitBy[{inds},#[[2]]&]]];
+writeExpression[List[inds__TensorIndex]] :=
+  Map[{#[[1,2]]/.{"u"->"^","l"->"_"},writeExpression/@#} &,
+      SplitBy[{inds},#[[2]]&]];
 
-DefFn[writeExpression[TensorIndex[sym_, _]] :=
-      ToString[sym]];
+writeExpression[TensorIndex[sym_, _]] :=
+  ToString[sym];
 
 writeExpression[lhs_] :=
       "@{"<>ToString[FullForm@lhs]<>"}";

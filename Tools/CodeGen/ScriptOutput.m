@@ -62,11 +62,17 @@ DefFn[
 DefFn[
   writeCalculation[calc_List] :=
   beginEndBlock["calculation", lookup[calc, Name],
-                Riffle[Map[writeExpression, lookup[calc, Equations]],"\n"],
+                writeExpression[lookup[calc, Equations]],
                 Indent -> True]];
 
-writeExpression[lhs_ -> rhs_] :=
-  {writeExpression[lhs], " = ", writeExpression[rhs]};
+writeExpression[eqs:List[___Rule]] :=
+  Module[
+    {lhss = FlattenBlock/@writeExpression/@First/@eqs,
+     rhss = FlattenBlock/@writeExpression/@Last/@eqs,
+     maxlhs,lhss2},
+    maxlhs = Max[StringLength /@ lhss];
+    lhss2 = Map[#<>StringJoin[ConstantArray[" ",maxlhs-StringLength[#]]]<>" = "&, lhss];
+  Riffle[Thread[{lhss2,rhss}],"\n"]];
 
 writeExpression[Tensor[T_, inds___]] :=
   {ToString[T], writeExpression[{inds}]};
@@ -148,7 +154,6 @@ writeExpression[MatrixInverse[Tensor[t_,i_,j_]]] :=
 
    * Minimise parentheses
    * Wrap long lines
-   * Align '=' signs
 
 *)
 

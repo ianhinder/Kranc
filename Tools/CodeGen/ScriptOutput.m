@@ -40,13 +40,19 @@ Options[WriteScript] = ThornOptions;
 DefFn[
   WriteScript[groups_List, parentDirectory_String, thornName_String, OptionsPattern[]] :=
   Module[
-    {script, docDir, scriptFile},
+    {script, docDir, scriptFile, derivs},
     Print["Writing script"];
+
+    derivs = Head/@Map[First,OptionValue[PartialDerivatives]];
+
+    Block[{$DerivativeNames = derivs},
+
     script = 
     {"# Expressions within @{...} are not yet supported by the script generator\n",
      beginEndBlock["thorn", thornName, 
                    {"\n",Riffle[Map[writeCalculation, OptionValue[Calculations]],"\n"],"\n"}]};
-    
+         ];
+
     docDir = FileNameJoin[{parentDirectory,thornName,"doc"}];
     EnsureDirectory[docDir];
     scriptFile = FileNameJoin[{docDir, thornName<>".kranc"}];
@@ -113,7 +119,48 @@ writeExpression[a_Times] :=
   Riffle[Map[paren[writeExpression[#]] &,List@@a],"*"];
 
 writeExpression[Power[a_,b_]] :=
-  {paren@writeExpression[a],"**",paren@writeExpression[b]}
+  {paren@writeExpression[a],"**",paren@writeExpression[b]};
+
+writeExpression[Unequal[a_,b_]] :=
+  {paren@writeExpression[a],"!=",paren@writeExpression[b]};
+
+writeExpression[Log[a_]] :=
+  {"log(",writeExpression[a],")"};
+
+writeExpression[Sign[a_]] :=
+  {"sign(",writeExpression[a],")"};
+
+writeExpression[Abs[a_]] :=
+  {"abs(",writeExpression[a],")"};
+
+writeExpression[Max[a_,b_]] :=
+  {"max(",writeExpression[a], ",", writeExpression[b],")"};
+
+writeExpression[dot[a_]] :=
+  {"D_t ",paren@writeExpression[a]};
+
+writeExpression[d_?(MemberQ[$DerivativeNames,#]&)[var_,inds___]] :=
+  {"D",Map[writeIndex,{inds}]," ",paren@writeExpression[var]};
+
+writeExpression[MatrixInverse[Tensor[t_,i_,j_]]] :=
+  {"inverse(",ToString@t,")",Map[writeIndex,{i,j}]};
+
+(* Remaining tasks:
+
+   * Eliminate repeated ^ and _ characters
+   * Express derivatives by name
+   * Implement covariant derivatives
+   * Implement scheduling
+   * Implement all additional calculation and thorn options
+   * Implement remaining generated code in script parser
+
+   Aesthetics:
+
+   * Minimise parentheses
+   * Wrap long lines
+   * Align '=' signs
+
+*)
 
 (*
 

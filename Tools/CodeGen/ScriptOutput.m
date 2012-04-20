@@ -69,13 +69,14 @@ DefFn[writeExpression[lhs_ -> rhs_] :=
       {writeExpression[lhs], " = ", writeExpression[rhs]}];
 
 DefFn[writeExpression[Tensor[T_, inds___]] :=
-      {ToString[T], Map[writeExpression, {inds}]}];
+      {ToString[T], writeExpression[{inds}]}];
 
-DefFn[writeExpression[TensorIndex[sym_, "l"]] :=
-      {"_", ToString[sym]}];
+DefFn[writeExpression[List[inds__TensorIndex]] :=
+      Map[{#[[1,2]]/.{"u"->"^","l"->"_"},writeExpression/@#} &,
+          SplitBy[{inds},#[[2]]&]]];
 
-DefFn[writeExpression[TensorIndex[sym_, "u"]] :=
-      {"^", ToString[sym]}];
+DefFn[writeExpression[TensorIndex[sym_, _]] :=
+      ToString[sym]];
 
 writeExpression[lhs_] :=
       "@{"<>ToString[FullForm@lhs]<>"}";
@@ -131,14 +132,13 @@ writeExpression[dot[a_]] :=
   {"D_t ",paren@writeExpression[a]};
 
 writeExpression[d_?(MemberQ[$DerivativeNames,#]&)[var_,inds___]] :=
-  {"D",Map[writeExpression,{inds}]," ",paren@writeExpression[var]};
+  {"D",writeExpression[{inds}]," ",paren@writeExpression[var]};
 
 writeExpression[MatrixInverse[Tensor[t_,i_,j_]]] :=
   {"inverse(",ToString@t,")",Map[writeExpression,{i,j}]};
 
 (* Remaining tasks:
 
-   * Eliminate repeated ^ and _ characters
    * Express derivatives by name
    * Implement covariant derivatives
    * Implement scheduling

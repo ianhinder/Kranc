@@ -62,28 +62,19 @@ DefFn[
 DefFn[
   writeCalculation[calc_List] :=
   beginEndBlock["calculation", lookup[calc, Name],
-                Riffle[Map[writeEquation, lookup[calc, Equations]],"\n"],
+                Riffle[Map[writeExpression, lookup[calc, Equations]],"\n"],
                 Indent -> True]];
 
-DefFn[writeEquation[lhs_ -> rhs_] :=
-      {writeLHS[lhs], " = ", writeExpression[rhs]}];
+DefFn[writeExpression[lhs_ -> rhs_] :=
+      {writeExpression[lhs], " = ", writeExpression[rhs]}];
 
-DefFn[writeLHS[lhs_Tensor] :=
-      writeTensor[lhs]];
+DefFn[writeExpression[Tensor[T_, inds___]] :=
+      {ToString[T], Map[writeExpression, {inds}]}];
 
-DefFn[writeLHS[lhs:dot[t_]] :=
-      {"D_t ",writeLHS[t]}];
-
-DefFn[writeLHS[lhs_Symbol] :=
-      ToString[lhs]];
-
-DefFn[writeTensor[Tensor[T_, inds___]] :=
-      {ToString[T], Map[writeIndex, {inds}]}];
-
-DefFn[writeIndex[TensorIndex[sym_, "l"]] :=
+DefFn[writeExpression[TensorIndex[sym_, "l"]] :=
       {"_", ToString[sym]}];
 
-DefFn[writeIndex[TensorIndex[sym_, "u"]] :=
+DefFn[writeExpression[TensorIndex[sym_, "u"]] :=
       {"^", ToString[sym]}];
 
 writeExpression[lhs_] :=
@@ -108,7 +99,7 @@ writeExpression[IfThen[a_,b_,c_]] :=
   {"(",paren@writeExpression[a], " ? ", paren@writeExpression[b], " : ", paren@writeExpression[c],")"};
 
 writeExpression[KroneckerDelta[i1_TensorIndex,i2_TensorIndex]] :=
-  {"delta", Map[writeIndex, {i1,i2}]};
+  {"delta", Map[writeExpression, {i1,i2}]};
 
 paren[x_] := {"(",x,")"};
 
@@ -140,10 +131,10 @@ writeExpression[dot[a_]] :=
   {"D_t ",paren@writeExpression[a]};
 
 writeExpression[d_?(MemberQ[$DerivativeNames,#]&)[var_,inds___]] :=
-  {"D",Map[writeIndex,{inds}]," ",paren@writeExpression[var]};
+  {"D",Map[writeExpression,{inds}]," ",paren@writeExpression[var]};
 
 writeExpression[MatrixInverse[Tensor[t_,i_,j_]]] :=
-  {"inverse(",ToString@t,")",Map[writeIndex,{i,j}]};
+  {"inverse(",ToString@t,")",Map[writeExpression,{i,j}]};
 
 (* Remaining tasks:
 

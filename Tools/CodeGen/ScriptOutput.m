@@ -132,14 +132,13 @@ writeExpression[dot[a_]] :=
   {"D_t ",paren@writeExpression[a]};
 
 writeExpression[d_?(MemberQ[$DerivativeNames,#]&)[var_,inds___]] :=
-  {"D",writeExpression[{inds}]," ",paren@writeExpression[var]};
+  {writeExpression[d],writeExpression[{inds}]," ",paren@writeExpression[var]};
 
 writeExpression[MatrixInverse[Tensor[t_,i_,j_]]] :=
   {"inverse(",ToString@t,")",Map[writeExpression,{i,j}]};
 
 (* Remaining tasks:
 
-   * Express derivatives by name
    * Implement covariant derivatives
    * Implement scheduling
    * Implement all additional calculation and thorn options

@@ -65,14 +65,26 @@ DefFn[
                 writeExpression[lookup[calc, Equations]],
                 Indent -> True]];
 
+wrap[s_String, indent_Integer, chars_Integer:80] :=
+  Module[
+    {spaces = StringPosition[s," "],
+     breakpoint, indentStr},
+    indentStr = StringJoin@ConstantArray[" ", indent];
+    If[spaces === {},Return[s]];
+
+    breakpoint = TakeWhile[spaces,#[[1]]<chars &][[-1,1]];
+    StringTake[s,breakpoint-1]<>"\n"<>indentStr<>wrap[StringDrop[s,breakpoint],indent,chars]];
+
 writeExpression[eqs:List[___Rule]] :=
   Module[
     {lhss = FlattenBlock/@writeExpression/@First/@eqs,
      rhss = FlattenBlock/@writeExpression/@Last/@eqs,
-     maxlhs,lhss2},
+     maxlhs,lhss2,rhss2},
     maxlhs = Max[StringLength /@ lhss];
-    lhss2 = Map[#<>StringJoin[ConstantArray[" ",maxlhs-StringLength[#]]]<>" = "&, lhss];
-  Riffle[Thread[{lhss2,rhss}],"\n"]];
+    lhss2 = Map[#<>StringJoin[ConstantArray[" ",maxlhs-StringLength[#]]]
+                <>" = "&, lhss];
+    rhss2 = Map[wrap[#,maxlhs+3,80-(maxlhs+3)]&,rhss];
+  Riffle[Thread[{lhss2,rhss2}],"\n"]];
 
 writeExpression[Tensor[T_, inds___]] :=
   {ToString[T], writeExpression[{inds}]};
@@ -111,10 +123,10 @@ writeExpression[KroneckerDelta[i1_TensorIndex,i2_TensorIndex]] :=
 paren[x_] := {"(",x,")"};
 
 writeExpression[a_Plus] :=
-  Riffle[Map[paren[writeExpression[#]] &,List@@a],"+"];
+  Riffle[Map[paren[writeExpression[#]] &,List@@a]," + "];
 
 writeExpression[a_Times] :=
-  Riffle[Map[paren[writeExpression[#]] &,List@@a],"*"];
+  Riffle[Map[paren[writeExpression[#]] &,List@@a]," * "];
 
 writeExpression[Power[a_,b_]] :=
   {paren@writeExpression[a],"**",paren@writeExpression[b]};
@@ -153,7 +165,6 @@ writeExpression[MatrixInverse[Tensor[t_,i_,j_]]] :=
    Aesthetics:
 
    * Minimise parentheses
-   * Wrap long lines
 
 *)
 

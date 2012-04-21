@@ -203,20 +203,14 @@ separateDerivativesInCalculation[calc_] :=
             pd_[var_,i_,j_] /; i < j :> pd[derivGFName[pd[var,j]],i]];
          derivs = DeleteDuplicates[GetDerivatives[calc] /. replaceSymmetric];
 
-         Print["sepPat=",sepPat];
-         Print["sepPat2=",sepPat2];
          sepDerivs  = Flatten[Map[Cases[derivs, #] &, sepPat],1];
-         Print["sepDerivs=",sepDerivs];
          sepDerivs2 = If[sepPat2===None, {},
                          Flatten[Map[Cases[derivs, #] &, sepPat2],1]];
          sepDerivs2 = sepDerivs2 /. replaceMixed;
-         Print["sepDerivs2=",sepDerivs2];
 
          (* Group _i and _ii derivatives together in the same calculation *)
          sepDerivs  = GatherBy[sepDerivs , Function[d, d /. {pd_[var_, i_] -> pd1, pd_[var_, i_, i_] -> pd1}]];
          sepDerivs2 = GatherBy[sepDerivs2, Function[d, d /. {pd_[var_, i_] -> pd1, pd_[var_, i_, i_] -> pd1}]];
-         Print["sepDerivs=",sepDerivs];
-         Print["sepDerivs2=",sepDerivs2];
 
          derivCalc[derivs_List] :=
          Module[
@@ -242,7 +236,6 @@ separateDerivativesInCalculation[calc_] :=
            calc1];
 
          derivCalcs  = Map[derivCalc, sepDerivs ];
-         Print["derivCalcs=",derivCalcs];
          derivCalcs2 = Map[derivCalc, sepDerivs2];
          (* TODO: Only add real dependencies, do not enforce all
             SeparatedDerivatives to be calculated before all
@@ -254,9 +247,7 @@ separateDerivativesInCalculation[calc_] :=
            thisSchedule = lookup[theCalc, Schedule];
            newSchedule = Map[# <> afterNames &, thisSchedule];
            mapReplace[theCalc, Schedule, newSchedule]];
-         Print["derivCalcs2a=",derivCalcs2];
          derivCalcs2 = Map[addAfter[#, derivCalcs]&, derivCalcs2];
-         Print["derivCalcs2b=",derivCalcs2];
 
          calc2 = mapReplace[calc,
                             Equations,

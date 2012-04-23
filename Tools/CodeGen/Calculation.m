@@ -34,6 +34,7 @@ SplitCalculations;
 SeparateDerivatives;
 AddCondition;
 AddConditionSuffix;
+InNewScheduleGroup;
 
 Begin["`Private`"];
 
@@ -233,6 +234,18 @@ DefFn[
   AddConditionSuffix[calc_List, condition_] :=
   mapReplaceAdd[calc, Schedule, Map[#<>" IF "<>condition &, lookup[calc,Schedule]]]];
 
+InNewScheduleGroup[groupName_String, calc_List] :=
+  Module[
+    {newGroup},
+    newGroup = {Name          -> groupName,
+                Language      -> "None", (* groups do not have a language *)
+                SchedulePoint -> lookup[calc,Schedule,Automatic],
+                Comment       -> ""};
+    mapReplaceAdd[
+      mapReplaceAdd[
+        calc,
+        Schedule, {"in "<>groupName}],
+      ScheduleGroups, Append[lookup[calc, ScheduleGroups, {}],newGroup]]];
 
 End[];
 

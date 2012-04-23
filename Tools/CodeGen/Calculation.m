@@ -25,6 +25,7 @@ InputGridFunctions;
 OutputGridFunctions;
 AllGridFunctions;
 GetCalculationName;
+GetCalculationScheduleName;
 GetEquations;
 GetCalculationParameters;
 CalculationStencilSize;
@@ -92,6 +93,12 @@ DefFn[
 DefFn[
   GetCalculationName[calc_List] :=
   lookup[calc,Name]];
+
+DefFn[
+  GetCalculationScheduleName[calc_List] :=
+  If[lookup[calc, UseCaKernel] && CalculationOnDevice[calc],
+     "CAKERNEL_Launch_",""]
+  <>lookup[calc, Name]];
 
 DefFn[
   GetCalculationWhere[calc_List] :=

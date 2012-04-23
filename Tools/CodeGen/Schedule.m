@@ -132,7 +132,7 @@ scheduleCalc[calc_, groups_, thornName_, OptionsPattern[]] :=
     Return[Map[
       Join[
       {
-        Name               -> If[lookup[calc, UseCaKernel] && CalculationOnDevice[calc], "CAKERNEL_Launch_",""]<>lookup[calc, Name],
+        Name               -> GetCalculationScheduleName[calc]<>" as "<>GetCalculationName[calc],
         SchedulePoint      -> # <> relStr,
         SynchronizedGroups -> If[StringMatchQ[#, "*MoL_CalcRHS*", IgnoreCase -> True] || StringMatchQ[#, "*MoL_RHSBoundaries*", IgnoreCase -> True],
                                  {},

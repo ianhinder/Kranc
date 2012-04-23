@@ -205,13 +205,14 @@ separateDerivativesInCalculation[calc_] :=
           ThrowError["Separating derivatives in an automatically scheduled function is not supported"]];
 
        Module[
-         {derivGFName, derivGFName2, derivs, sepDerivs, calc2, replaceSymmetric},
+         {derivGFName, derivGFName2, derivs, sepDerivs, calc2, replaceSymmetric,compCalcName},
          derivGFName[pd_[var_,inds___]] :=
          Symbol["Global`D"<>ToString[pd]<>ToString[var]<>Apply[StringJoin,Map[ToString,{inds}]]];
 
          derivGFName2[pd_[var_,inds___]] :=
          "D"<>ToString[pd]<>ToString[var]<>"_"<>Apply[StringJoin,Map[ToString,{inds}]];
 
+         compCalcName = lookup[calc,Name]<>"_NonDerivatives";
 
          replaceSymmetric = pd_[var_,i_,j_] /; i > j :> pd[var,j,i];
          derivs = DeleteDuplicates[GetDerivatives[calc] /. replaceSymmetric];
@@ -231,7 +232,6 @@ separateDerivativesInCalculation[calc_] :=
                                    OrderedQ[{ToString[#1[[2,1]]]<>ToString[#1[[2,2]]],
                                              ToString[#2[[2,1]]]<>ToString[#2[[2,2]]]}] &]];
 
-           calc1 = mapReplace[calc1, Schedule, Map[#<>" before "<>lookup[calc,Name] &, lookup[calc,Schedule]]];
            calc1 = mapReplace[calc1, Name,
                               StringReplace[lookup[calc,Name]<>"_"<>derivGFName2[derivs[[1]]]<>
                                             If[Length[derivs]>1,"_"<>"etc",""],"PDstandardNth"->""]];
@@ -246,9 +246,16 @@ separateDerivativesInCalculation[calc_] :=
 
          derivCalcs = Map[derivCalc[#] &, sepDerivs];
 
-         calc2 = mapReplace[calc,
+         derivCalcs = Map[InNewScheduleGroup[lookup[calc,Name], #] &, derivCalcs];
+
+         calc2 = mapReplace[mapReplace[calc, Name, compCalcName],
                             Equations,
-                            (GetEquations[calc]/.replaceSymmetric) /. Map[# -> derivGFName[#] &, Flatten[sepDerivs,1]]];
+                            (GetEquations[calc]/.replaceSymmetric) /. 
+                            Map[# -> derivGFName[#] &, Flatten[sepDerivs,1]]];
+
+         derivCalcs = Map[mapReplace[#, Schedule, Map[#<>" before "<>GetCalculationName[calc2] &, lookup[#,Schedule]]] &, derivCalcs];
+
+         calc2 = InNewScheduleGroup[lookup[calc,Name], calc2];
 
          Append[derivCalcs, calc2]]]];
 

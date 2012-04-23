@@ -202,16 +202,37 @@ DefFn[
 
   If[lookup[calc,ExecuteOn,Automatic] === Host,
      {calc},
-     {mapReplaceAdd[
+
+     Module[
+       {deviceCalc, hostCalc, newCalcs},
+
+       deviceCalc =
        mapReplaceAdd[
-         AddConditionSuffix[calc, "Accelerator::device_process"],
-         UseCaKernel, True],
-       ExecuteOn, Device],
-      mapReplaceAdd[
-        mapReplaceAdd[
-          AddConditionSuffix[mapReplace[calc,Name,"HOST__"<>lookup[calc,Name]], "Accelerator::host_process"],
-          UseCaKernel,False],
-        ExecuteOn, Host]}]];
+         mapReplaceAdd[
+           mapReplace[
+             calc,
+             Name,"DEVICE_"<>lookup[calc,Name]],
+           UseCaKernel, True],
+         ExecuteOn, Device];
+
+       hostCalc =
+       mapReplaceAdd[
+         mapReplaceAdd[
+           mapReplace[
+             calc,
+             Name,"HOST_"<>lookup[calc,Name]],
+           UseCaKernel,False],
+         ExecuteOn, Host];
+
+       newCalcs = Map[InNewScheduleGroup[lookup[calc,Name],#] &, {hostCalc, deviceCalc}];
+
+       (* Apply the conditional to the routines, not to the group *)
+       newCalcs = MapThread[AddConditionSuffix,
+                            {newCalcs,
+                             {"Accelerator::host_process",
+                              "Accelerator::device_process"}}];
+
+       newCalcs]]];
 
 DefFn[
   WithHostCalculations[calcs_List] :=

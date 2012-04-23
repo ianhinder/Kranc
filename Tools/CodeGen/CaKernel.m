@@ -209,7 +209,7 @@ DefFn[
        ExecuteOn, Device],
       mapReplaceAdd[
         mapReplaceAdd[
-          AddConditionSuffix[calc, "Accelerator::host_process"],
+          AddConditionSuffix[mapReplace[calc,Name,"HOST__"<>lookup[calc,Name]], "Accelerator::host_process"],
           UseCaKernel,False],
         ExecuteOn, Host]}]];
 

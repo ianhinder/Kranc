@@ -152,7 +152,17 @@ DefFn[
   SplitCalculation[calc_] :=
   Module[
     {splitBy = lookup[calc,SplitBy, {}],
-     oldName = lookup[calc,Name]},
+     oldName = lookup[calc,Name],
+     oldSchedule = lookup[calc, Schedule, Automatic],
+     newGroup},
+
+    If[ListQ[oldSchedule] && Length[oldSchedule] > 1,
+       ThrowError["Cannot split a calculation which is scheduled in more than one place"]];
+
+    newGroup = {Name          -> oldName,
+                Language      -> "None", (* groups do not have a language *)
+                SchedulePoint -> oldSchedule,
+                Comment       -> ""};
 
     If[Intersection[Flatten[splitBy,1],OutputGridFunctions[calc]] === {},
        {calc},
@@ -165,7 +175,16 @@ DefFn[
                              ToString[i[[1]]],
                              "_"<>StringReplace[ToString[var],{"["->"","]"->"",","->""}]];
              splitVars = If[ListQ[var], var, {var}];
-             partialCalculation[calc, nameSuffix, {}, splitVars]]],
+
+             newCalc = partialCalculation[calc, nameSuffix, {}, splitVars];
+
+             newCalc =
+             mapReplaceAdd[
+               mapReplaceAdd[
+                 newCalc,
+                 Schedule, {"in "<>oldName}],
+               ScheduleGroups, Append[lookup[calc, ScheduleGroups, {}],newGroup]]]],
+
          splitBy]]]];
 
 DefFn[

@@ -25,6 +25,7 @@ InputGridFunctions;
 OutputGridFunctions;
 AllGridFunctions;
 GetCalculationName;
+GetCalculationScheduleName;
 GetEquations;
 GetCalculationParameters;
 CalculationStencilSize;
@@ -34,6 +35,7 @@ SplitCalculations;
 SeparateDerivatives;
 AddCondition;
 AddConditionSuffix;
+InNewScheduleGroup;
 
 Begin["`Private`"];
 
@@ -93,6 +95,12 @@ DefFn[
   lookup[calc,Name]];
 
 DefFn[
+  GetCalculationScheduleName[calc_List] :=
+  If[lookup[calc, UseCaKernel] && CalculationOnDevice[calc],
+     "CAKERNEL_Launch_",""]
+  <>lookup[calc, Name]];
+
+DefFn[
   GetCalculationWhere[calc_List] :=
   lookup[calc,Where, Everywhere]];
 
@@ -144,7 +152,17 @@ DefFn[
   SplitCalculation[calc_] :=
   Module[
     {splitBy = lookup[calc,SplitBy, {}],
-     oldName = lookup[calc,Name]},
+     oldName = lookup[calc,Name],
+     oldSchedule = lookup[calc, Schedule, Automatic],
+     newGroup},
+
+    If[ListQ[oldSchedule] && Length[oldSchedule] > 1,
+       ThrowError["Cannot split a calculation which is scheduled in more than one place"]];
+
+    newGroup = {Name          -> oldName,
+                Language      -> "None", (* groups do not have a language *)
+                SchedulePoint -> oldSchedule,
+                Comment       -> ""};
 
     If[Intersection[Flatten[splitBy,1],OutputGridFunctions[calc]] === {},
        {calc},
@@ -157,7 +175,16 @@ DefFn[
                              ToString[i[[1]]],
                              "_"<>StringReplace[ToString[var],{"["->"","]"->"",","->""}]];
              splitVars = If[ListQ[var], var, {var}];
-             partialCalculation[calc, nameSuffix, {}, splitVars]]],
+
+             newCalc = partialCalculation[calc, nameSuffix, {}, splitVars];
+
+             newCalc =
+             mapReplaceAdd[
+               mapReplaceAdd[
+                 newCalc,
+                 Schedule, {"in "<>oldName}],
+               ScheduleGroups, Append[lookup[calc, ScheduleGroups, {}],newGroup]]]],
+
          splitBy]]]];
 
 DefFn[
@@ -180,7 +207,8 @@ separateDerivativesInCalculation[calc_] :=
 
        Module[
          {derivGFName, derivGFName2, derivs, sepDerivs, sepDerivs2, calc2,
-          replaceSymmetric, replaceMixed, derivCalcs, derivCalcs2, addAfter},
+          replaceSymmetric, replaceMixed, derivCalcs, derivCalcs2, addAfter,
+          compCalcName},
 
          (* Removing duplicate "DPDstandardNth" in derivative variable
             names *)
@@ -188,7 +216,10 @@ separateDerivativesInCalculation[calc_] :=
          Symbol[StringReplace["Global`D"<>ToString[pd]<>ToString[var]<>Apply[StringJoin,Map[ToString,{inds}]], "Global`D"<>ToString[pd]<>"D"<>ToString[pd] -> "Global`D"<>ToString[pd]]];
 
          derivGFName2[pd_[var_,inds___]] :=
-         StringReplace["D"<>ToString[pd]<>ToString[var]<>"_"<>Apply[StringJoin,Map[ToString,{inds}]], "D"<>ToString[pd]<>"D"<>ToString[pd] -> "D"<>ToString[pd]];
+         StringReplace["D"<>ToString[pd]<>ToString[var]<>"_"<>Apply[StringJoin,Map[ToString,{inds}]],
+                       "D"<>ToString[pd]<>"D"<>ToString[pd] -> "D"<>ToString[pd]];
+
+         compCalcName = lookup[calc,Name]<>"_NonDerivatives";
 
          replaceSymmetric = pd_[var_,i_,j_] /; i > j :> pd[var,j,i];
          (* Replace mixed derivatives with first derivatives of
@@ -223,7 +254,6 @@ separateDerivativesInCalculation[calc_] :=
                                    OrderedQ[{ToString[#1[[2,1]]]<>ToString[#1[[2,2]]],
                                              ToString[#2[[2,1]]]<>ToString[#2[[2,2]]]}] &]];
 
-           calc1 = mapReplace[calc1, Schedule, Map[#<>" before "<>lookup[calc,Name] &, lookup[calc,Schedule]]];
            calc1 = mapReplace[calc1, Name,
                               StringReplace[lookup[calc,Name]<>"_"<>derivGFName2[derivs[[1]]]<>
                                             If[Length[derivs]>1,"_"<>"etc",""],"PDstandardNth"->""]];
@@ -250,9 +280,16 @@ separateDerivativesInCalculation[calc_] :=
             derivative calculations that require it *)
          derivCalcs2 = Map[addAfter[#, derivCalcs]&, derivCalcs2];
 
-         calc2 = mapReplace[calc,
+         derivCalcs = Map[InNewScheduleGroup[lookup[calc,Name], #] &, derivCalcs];
+
+         calc2 = mapReplace[mapReplace[calc, Name, compCalcName],
                             Equations,
-                            (GetEquations[calc]/.replaceSymmetric/.replaceMixed) /. Map[# -> derivGFName[#] &, Flatten[Join[sepDerivs,sepDerivs2],1]]];
+                            (GetEquations[calc]/.replaceSymmetric/.replaceMixed) /. 
+                            Map[# -> derivGFName[#] &, Flatten[Join[sepDerivs,sepDerivs2],1]]];
+
+         derivCalcs = Map[mapReplace[#, Schedule, Map[#<>" before "<>GetCalculationName[calc2] &, lookup[#,Schedule]]] &, derivCalcs];
+
+         calc2 = InNewScheduleGroup[lookup[calc,Name], calc2];
 
          Join[derivCalcs, derivCalcs2, {calc2}]]]];
 
@@ -264,6 +301,18 @@ DefFn[
   AddConditionSuffix[calc_List, condition_] :=
   mapReplaceAdd[calc, Schedule, Map[#<>" IF "<>condition &, lookup[calc,Schedule]]]];
 
+InNewScheduleGroup[groupName_String, calc_List] :=
+  Module[
+    {newGroup},
+    newGroup = {Name          -> groupName,
+                Language      -> "None", (* groups do not have a language *)
+                SchedulePoint -> lookup[calc,Schedule,Automatic],
+                Comment       -> ""};
+    mapReplaceAdd[
+      mapReplaceAdd[
+        calc,
+        Schedule, {"in "<>groupName}],
+      ScheduleGroups, Append[lookup[calc, ScheduleGroups, {}],newGroup]]];
 
 End[];
 

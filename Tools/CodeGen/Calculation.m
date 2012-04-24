@@ -179,14 +179,8 @@ separateDerivativesInCalculation[calc_] :=
           ThrowError["Separating derivatives in an automatically scheduled function is not supported"]];
 
        Module[
-         {derivGFName, derivGFName2, derivs, sepDerivs, sepDerivs2,
-          sepDerivsx, sepDerivsy, sepDerivsz,
-          sepDerivs2xy,sepDerivs2xz, sepDerivs2yz,
-          calc2,
-          replaceSymmetric, replaceMixed, derivCalcs, derivCalcs2,
-          derivCalcsx, derivCalcsy, derivCalcsz,
-          derivCalcs2xy, derivCalcs2xz, derivCalcs2yz,
-          addAfter},
+         {derivGFName, derivGFName2, derivs, sepDerivs, sepDerivs2, calc2,
+          replaceSymmetric, replaceMixed, derivCalcs, derivCalcs2, addAfter},
 
          (* Removing duplicate "DPDstandardNth" in derivative variable
             names *)
@@ -196,11 +190,10 @@ separateDerivativesInCalculation[calc_] :=
          derivGFName2[pd_[var_,inds___]] :=
          StringReplace["D"<>ToString[pd]<>ToString[var]<>"_"<>Apply[StringJoin,Map[ToString,{inds}]], "D"<>ToString[pd]<>"D"<>ToString[pd] -> "D"<>ToString[pd]];
 
-
          replaceSymmetric = pd_[var_,i_,j_] /; i > j :> pd[var,j,i];
          (* Replace mixed derivatives with first derivatives of
             derivatives we already take. Ensure that we prefer to take
-            x derivatives insted of z derivatives, since these are
+            x derivatives instead of z derivatives, since these are
             likely to be faster. This works because derivatives are
             currently calculated where possible, including on ghost
             zones. *)
@@ -209,54 +202,16 @@ separateDerivativesInCalculation[calc_] :=
             pd_[var_,i_,j_] /; i < j :> pd[derivGFName[pd[var,j]],i]];
          derivs = DeleteDuplicates[GetDerivatives[calc] /. replaceSymmetric];
 
-         (* TODO: This code is evil: (1) it treats 3 dimensions
-            explicitly instead of in looops, (2) it assumes that
-            sepPat has been written in terms of global symbols i and
-            j, (3) it performs pattern replacement on patterns, which
-            is difficult to understand *)
-         (* TODO: Ian suggests to use GatherBy for this splitting *)
-         (*
          sepDerivs  = Flatten[Map[Cases[derivs, #] &, sepPat],1];
-         *)
-         sepDerivsx = Flatten[Map[Cases[derivs, #] &, sepPat/.{Verbatim[Global`i_]->1}],1];
-         sepDerivsy = Flatten[Map[Cases[derivs, #] &, sepPat/.{Verbatim[Global`i_]->2}],1];
-         sepDerivsz = Flatten[Map[Cases[derivs, #] &, sepPat/.{Verbatim[Global`i_]->3}],1];
-         (*
          sepDerivs2 = If[sepPat2===None, {},
                          Flatten[Map[Cases[derivs, #] &, sepPat2],1]];
          sepDerivs2 = sepDerivs2 /. replaceMixed;
-          *)
-         Print["sepPat2",sepPat2];
-         sepDerivs2xy = If[sepPat2===None, {},
-                           Flatten[Map[Cases[derivs, #] &,
-                                       sepPat2/.{Verbatim[Global`i_]->1,Verbatim[Global`j_]->2,Global`i->1,Global`j->2}],1]];
-         sepDerivs2xz = If[sepPat2===None, {},
-                           Flatten[Map[Cases[derivs, #] &,
-                                       sepPat2/.{Verbatim[Global`i_]->1,Verbatim[Global`j_]->3,Global`i->1,Global`j->3}],1]];
-         sepDerivs2yz = If[sepPat2===None, {},
-                           Flatten[Map[Cases[derivs, #] &,
-                                       sepPat2/.{Verbatim[Global`i_]->2,Verbatim[Global`j_]->3,Global`i->2,Global`j->3}],1]];
-         sepDerivs2xy = sepDerivs2xy /. replaceMixed;
-         sepDerivs2xz = sepDerivs2xz /. replaceMixed;
-         sepDerivs2yz = sepDerivs2yz /. replaceMixed;
 
          (* Group _i and _ii derivatives together in the same calculation *)
          (* NOTE: This should really be "close together if they are in
             the same calculation"? *)
-         (* TODO: Use pd[i] instead of pd1 when splitting directions
-            via GatherBy *)
-         sepDerivsx  = GatherBy[sepDerivsx , Function[d, d /. {pd_[var_, i_] -> pd1, pd_[var_, i_, i_] -> pd1}]];
-         sepDerivsy  = GatherBy[sepDerivsy , Function[d, d /. {pd_[var_, i_] -> pd1, pd_[var_, i_, i_] -> pd1}]];
-         sepDerivsz  = GatherBy[sepDerivsz , Function[d, d /. {pd_[var_, i_] -> pd1, pd_[var_, i_, i_] -> pd1}]];
-         sepDerivs2xy = GatherBy[sepDerivs2xy, Function[d, d /. {pd_[var_, i_] -> pd1, pd_[var_, i_, i_] -> pd1}]];
-         sepDerivs2xz = GatherBy[sepDerivs2xz, Function[d, d /. {pd_[var_, i_] -> pd1, pd_[var_, i_, i_] -> pd1}]];
-         sepDerivs2yz = GatherBy[sepDerivs2yz, Function[d, d /. {pd_[var_, i_] -> pd1, pd_[var_, i_, i_] -> pd1}]];
-         Print["sepDerivsx=",sepDerivsx];
-         Print["sepDerivsy=",sepDerivsy];
-         Print["sepDerivsz=",sepDerivsz];
-         Print["sepDerivs2xy=",sepDerivs2xy];
-         Print["sepDerivs2xz=",sepDerivs2xz];
-         Print["sepDerivs2yz=",sepDerivs2yz];
+         sepDerivs  = GatherBy[sepDerivs , Function[d, d /. {pd_[var_, i_] -> pd[i], pd_[var_, i_, i_] -> pd[i]}]];
+         sepDerivs2 = GatherBy[sepDerivs2, Function[d, d /. {pd_[var_, i_] -> pd[i], pd_[var_, i_, i_] -> pd[i]}]];
 
          derivCalc[derivs_List] :=
          Module[
@@ -272,12 +227,6 @@ separateDerivativesInCalculation[calc_] :=
            calc1 = mapReplace[calc1, Name,
                               StringReplace[lookup[calc,Name]<>"_"<>derivGFName2[derivs[[1]]]<>
                                             If[Length[derivs]>1,"_"<>"etc",""],"PDstandardNth"->""]];
-           (* TODO: Ian suggests the line below when splitting
-              directions via GatherBy:
-           calc1 = mapReplace[calc1, Name,
-                              StringReplace[lookup[calc,Name]<>"_"<>derivGFName2[derivs[[1]]]<>
-                                            If[Length[derivs]>1,"_"<>ToString[derivs[[1,2]]]<>"_etc",""],"PDstandardNth"->""]];
-           *)
            If[Length[derivs] === 1,
               calc1 = Append[calc1, CachedVariables -> (First/@derivs)]];
            currentGroups = lookup[calc, LocalGroups, {}];
@@ -286,22 +235,8 @@ separateDerivativesInCalculation[calc_] :=
            calc1 = Append[calc1, SimpleCode -> True];
            calc1];
 
-         (*
          derivCalcs  = Map[derivCalc, sepDerivs ];
          derivCalcs2 = Map[derivCalc, sepDerivs2];
-         *)
-         derivCalcsx   = Map[derivCalc, sepDerivsx  ];
-         derivCalcsy   = Map[derivCalc, sepDerivsy  ];
-         derivCalcsz   = Map[derivCalc, sepDerivsz  ];
-         derivCalcs2xy = Map[derivCalc, sepDerivs2xy];
-         derivCalcs2xz = Map[derivCalc, sepDerivs2xz];
-         derivCalcs2yz = Map[derivCalc, sepDerivs2yz];
-         Print["derivCalcsx=",derivCalcsx];
-         Print["derivCalcsy=",derivCalcsy];
-         Print["derivCalcsz=",derivCalcsz];
-         Print["derivCalcs2xy=",derivCalcs2xy];
-         Print["derivCalcs2xz=",derivCalcs2xz];
-         Print["derivCalcs2yz=",derivCalcs2yz];
          addAfter[theCalc_, otherCalcs_] := Module[
            {otherNames, afterNames, thisSchedule, newSchedule},
            otherNames = Map[lookup[#, Name]&, otherCalcs];
@@ -311,17 +246,15 @@ separateDerivativesInCalculation[calc_] :=
            thisSchedule = lookup[theCalc, Schedule];
            newSchedule = Map[# <> afterNames &, thisSchedule];
            mapReplace[theCalc, Schedule, newSchedule]];
-         derivCalcs2xy = Map[addAfter[#, derivCalcsy]&, derivCalcs2xy];
-         derivCalcs2xz = Map[addAfter[#, derivCalcsz]&, derivCalcs2xz];
-         derivCalcs2yz = Map[addAfter[#, derivCalcsz]&, derivCalcs2yz];
+         (* TODO: could instead enforce order only between those
+            derivative calculations that require it *)
+         derivCalcs2 = Map[addAfter[#, derivCalcs]&, derivCalcs2];
 
          calc2 = mapReplace[calc,
                             Equations,
-                            (GetEquations[calc]/.replaceSymmetric/.replaceMixed) /. Map[# -> derivGFName[#] &, Flatten[Join[sepDerivsx,sepDerivsy,sepDerivsz,
-                                                                                                                            sepDerivs2xy,sepDerivs2xz,sepDerivs2yz],1]]];
+                            (GetEquations[calc]/.replaceSymmetric/.replaceMixed) /. Map[# -> derivGFName[#] &, Flatten[Join[sepDerivs,sepDerivs2],1]]];
 
-         Join[derivCalcsx, derivCalcsy, derivCalcsz,
-              derivCalcs2xy, derivCalcs2xz, derivCalcs2yz, {calc2}]]]];
+         Join[derivCalcs, derivCalcs2, {calc2}]]]];
 
 DefFn[
   AddCondition[calc_List, condition_] :=

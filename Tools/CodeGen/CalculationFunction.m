@@ -1016,8 +1016,13 @@ DefFn[
       {
         CommentedBlock[
           "Calculate temporaries and grid functions", 
-          Map[
-            assignVariableFromExpression[FlattenBlock@gridName[#[[1]]], #[[2]], False, False, True] &, eqs2]]
+          If[OptionValue[UseVectors],
+             {
+               PrepareStorePartialVariableInLoop["i", "lc_imin", "lc_imax"],
+               Map[StorePartialVariableInLoop[FlattenBlock@gridName[#[[1]]], #[[2]]] &, eqs2]
+             },
+             Map[
+               assignVariableFromExpression[FlattenBlock@gridName[#[[1]]], #[[2]], False, False, True] &, eqs2]]]
       }, opts]]];
 
 

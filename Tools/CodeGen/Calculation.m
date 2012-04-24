@@ -267,6 +267,10 @@ separateDerivativesInCalculation[calc_] :=
 
          derivCalcs  = Map[derivCalc, sepDerivs ];
          derivCalcs2 = Map[derivCalc, sepDerivs2];
+
+         derivCalcs  = Map[InNewScheduleGroup[lookup[calc,Name], #] &, derivCalcs ];
+         derivCalcs2 = Map[InNewScheduleGroup[lookup[calc,Name], #] &, derivCalcs2];
+
          addAfter[theCalc_, otherCalcs_] := Module[
            {otherNames, afterNames, thisSchedule, newSchedule},
            otherNames = Map[lookup[#, Name]&, otherCalcs];
@@ -280,14 +284,13 @@ separateDerivativesInCalculation[calc_] :=
             derivative calculations that require it *)
          derivCalcs2 = Map[addAfter[#, derivCalcs]&, derivCalcs2];
 
-         derivCalcs = Map[InNewScheduleGroup[lookup[calc,Name], #] &, derivCalcs];
-
          calc2 = mapReplace[mapReplace[calc, Name, compCalcName],
                             Equations,
                             (GetEquations[calc]/.replaceSymmetric/.replaceMixed) /. 
                             Map[# -> derivGFName[#] &, Flatten[Join[sepDerivs,sepDerivs2],1]]];
 
-         derivCalcs = Map[mapReplace[#, Schedule, Map[#<>" before "<>GetCalculationName[calc2] &, lookup[#,Schedule]]] &, derivCalcs];
+         derivCalcs  = Map[mapReplace[#, Schedule, Map[#<>" before "<>GetCalculationName[calc2] &, lookup[#,Schedule]]] &, derivCalcs ];
+         derivCalcs2 = Map[mapReplace[#, Schedule, Map[#<>" before "<>GetCalculationName[calc2] &, lookup[#,Schedule]]] &, derivCalcs2];
 
          calc2 = InNewScheduleGroup[lookup[calc,Name], calc2];
 

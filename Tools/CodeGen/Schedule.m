@@ -132,7 +132,7 @@ scheduleCalc[calc_, groups_, thornName_, OptionsPattern[]] :=
     Return[Map[
       Join[
       {
-        Name               -> GetCalculationScheduleName[calc]<>" as "<>GetCalculationName[calc],
+        Name               -> GetCalculationScheduleName[calc]<>If[GetCalculationScheduleName[calc] =!= GetCalculationName[calc], " as "<>GetCalculationName[calc],""],
         SchedulePoint      -> # <> relStr,
         SynchronizedGroups -> If[StringMatchQ[#, "*MoL_CalcRHS*", IgnoreCase -> True] || StringMatchQ[#, "*MoL_RHSBoundaries*", IgnoreCase -> True],
                                  {},

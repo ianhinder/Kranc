@@ -36,6 +36,7 @@ SeparateDerivatives;
 AddCondition;
 AddConditionSuffix;
 InNewScheduleGroup;
+BoundaryCalculationQ;
 
 Begin["`Private`"];
 
@@ -103,6 +104,13 @@ DefFn[
 DefFn[
   GetCalculationWhere[calc_List] :=
   lookup[calc,Where, Everywhere]];
+
+DefFn[
+  BoundaryCalculationQ[calc_List] :=
+  (* NB: CaKernel does not distinguish between these two.  It
+     ALWAYS computes everywhere that it can, based on the stencil
+     description.  *)
+  MemberQ[{Boundary,BoundaryWithGhosts}, GetCalculationWhere[calc]]];
 
 DefFn[
   CalculationStencilSize[calc_List] :=

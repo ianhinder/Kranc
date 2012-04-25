@@ -229,8 +229,9 @@ separateDerivativesInCalculation[calc_] :=
             currently calculated where possible, including on ghost
             zones. *)
          replaceMixed =
-         If[sepPat2===None, {},
-            pd_[var_,i_,j_] /; i < j :> pd[derivGFName[pd[var,j]],i]];
+         If[sepPat2=!=None && lookupDefault[calc, UseCaKernel, False],
+            pd_[var_,i_,j_] /; i < j :> pd[derivGFName[pd[var,j]],i],
+            {}];
          derivs = DeleteDuplicates[GetDerivatives[calc] /. replaceSymmetric];
 
          sepDerivs  = Flatten[Map[Cases[derivs, #] &, sepPat],1];

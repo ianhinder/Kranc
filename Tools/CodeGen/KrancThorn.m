@@ -141,7 +141,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     (* Make the CaKernel option calculation-specific *)
     calcs = Map[Append[#,UseCaKernel -> OptionValue[UseCaKernel]] &, calcs];
 
-    If[OptionValue[GenerateHostCode],
+    If[OptionValue[GenerateHostCode] && OptionValue[UseCaKernel],
        calcs = WithHostCalculations[calcs]];
 
     If[!And@@Map[ListQ, calcs], Print[Short[calcs//InputForm]]; ThrowError["Result of WithHostCalculations is not a list of lists"]];

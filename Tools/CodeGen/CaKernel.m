@@ -67,7 +67,7 @@ DefFn[
 DefFn[
   kernelCCLBlock[calc_, tileSize_List] :=
   Module[
-    {bnd = (GetCalculationWhere[calc] === Boundary),
+    {bnd = BoundaryCalculationQ[calc],
      int, attrs},
     int = !bnd;
 
@@ -156,7 +156,7 @@ DefFn[CaKernelCode[calc_List,opts___] :=
 
     SetDataType["CCTK_REAL"];
 
-    int = (GetCalculationWhere[calc] =!= Boundary);
+    int = !BoundaryCalculationQ[calc];
     loopFunction = If[int, cakernelLoopFunctionInt, cakernelLoopFunctionBnd];
 
     calc2 = Join[calc, {BodyFunction -> (codeBlock[kernel, #] &), 

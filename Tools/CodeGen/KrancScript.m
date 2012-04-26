@@ -172,8 +172,7 @@ process["option"["inherit"[imps__]]] :=
 process["option"["implement"[imp_]]] :=
   {Implementation -> process[imp]};
 
-flags = {"loopcontrol"->UseLoopControl,"vectors"->UseVectors,"opencl"->UseOpenCL,
-         "jacobian"->UseJacobian, "cse" -> CSE, "cakernel" -> UseCaKernel};
+flags = ScriptFlags;
 
 process["option"["use"[features__]]] :=
   Map[(lookup[flags,#] -> True) &,{features}/.(("feature"[n_]):>n)];

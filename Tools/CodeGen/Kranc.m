@@ -126,4 +126,13 @@ Steerable, Never, Always, Recover, Primitives, CaKernel, ScheduleGroups};
 (* ConservationCalculation.m *)
 {flux, slopeL, slopeR, slope};
 
+(* KrancScript.m *)
+ScriptFlags =
+  {"loopcontrol" -> UseLoopControl,
+   "vectors" -> UseVectors,
+   "opencl" -> UseOpenCL,
+   "jacobian"-> UseJacobian,
+   "cse" -> CSE,
+   "cakernel" -> UseCaKernel};
+
 EndPackage[];

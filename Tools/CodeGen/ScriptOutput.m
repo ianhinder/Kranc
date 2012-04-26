@@ -40,16 +40,40 @@ Options[WriteScript] = ThornOptions;
 DefFn[
   WriteScript[groups_List, parentDirectory_String, thornName_String, OptionsPattern[]] :=
   Module[
-    {script, docDir, scriptFile, derivs},
+    {script, docDir, scriptFile, derivs, allOptionNames, setOptions, 
+     setOptionsWithValues},
     Print["Writing script"];
 
     derivs = Head/@Map[First,OptionValue[PartialDerivatives]];
     Block[{$DerivativeNames = derivs},
 
+    allOptionNames = First/@ThornOptions;
+    setOptions = Select[allOptionNames, OptionValue[#] =!= (#/.ThornOptions) &];
+    setOptionsWithValues = Map[(#->OptionValue[#]) &,setOptions];
+
+    setOptions = Complement[setOptions,
+                            Join[{Calculations,
+                                  DeclaredGroups,
+                                  InheritedImplementations}, Last/@ScriptFlags]];
+    remainingOptionsWithValues = Map[(#->OptionValue[#]) &,setOptions];
+
     script = 
     {"# Expressions within @{...} are not yet supported by the script generator\n",
      beginEndBlock["thorn", thornName, 
                    {"\n",
+                    Riffle[Map["# " <> ToString[#,InputForm] &,
+                               remainingOptionsWithValues],"\n\n"],
+                    "\n\n",
+
+                    If[OptionValue[InheritedImplementations] =!= {},
+                       {"inherit ", 
+                        Riffle[Map[ToString,
+                                   OptionValue[InheritedImplementations]],
+                               " "], "\n\n"},{}],
+
+                    writeFlags[setOptionsWithValues],
+                    "\n",
+
                     writeVariables[Join@@(variablesInGroup[#,groups]&/@OptionValue[DeclaredGroups])],
                     "\n",
                     writeTemporaries[OptionValue[Calculations]],
@@ -71,6 +95,12 @@ DefFn[writeTemporaries[calcs_List] :=
       beginEndBlock[
         "temporaries","",
         wrap[FlattenBlock[Riffle[Map[writeExpression,Union@@Map[lookup[#,Shorthands,{}]&,calcs]]," "]],0],Indent->True]];
+
+DefFn[writeFlags[options_List] :=
+      Module[{rFlags, flagsSet},
+        rFlags = Map[Reverse, ScriptFlags];
+        flagsSet = Intersection[First/@options, Last/@ScriptFlags];
+        Map[{If[#/.options,"use","disable"]," ", #/.rFlags, "\n"} &, flagsSet]]];
 
 DefFn[
   writeCalculation[calc_List] :=

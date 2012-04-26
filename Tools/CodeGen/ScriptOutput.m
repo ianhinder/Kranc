@@ -118,7 +118,7 @@ writeExpression[IfThen[a_,b_,c_]] :=
   {"(",paren@writeExpression[a], " ? ", paren@writeExpression[b], " : ", paren@writeExpression[c],")"};
 
 writeExpression[KroneckerDelta[i1_TensorIndex,i2_TensorIndex]] :=
-  {"delta", Map[writeExpression, {i1,i2}]};
+  {"delta", writeExpression[{i1,i2}]};
 
 paren[x_] := {"(",x,")"};
 

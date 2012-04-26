@@ -18,7 +18,7 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-BeginPackage["ScriptOutput`", {"Errors`", "Helpers`", "Kranc`", "CodeGen`", "MapLookup`", "TensorTools`"}];
+BeginPackage["ScriptOutput`", {"Errors`", "Helpers`", "Kranc`", "CodeGen`", "MapLookup`", "TensorTools`", "KrancGroups`"}];
 
 WriteScript;
 
@@ -44,13 +44,17 @@ DefFn[
     Print["Writing script"];
 
     derivs = Head/@Map[First,OptionValue[PartialDerivatives]];
-
     Block[{$DerivativeNames = derivs},
 
     script = 
     {"# Expressions within @{...} are not yet supported by the script generator\n",
      beginEndBlock["thorn", thornName, 
-                   {"\n",Riffle[Map[writeCalculation, OptionValue[Calculations]],"\n"],"\n"}]};
+                   {"\n",
+                    writeVariables[Join@@(variablesInGroup[#,groups]&/@OptionValue[DeclaredGroups])],
+                    "\n",
+                    writeTemporaries[OptionValue[Calculations]],
+                    "\n",
+                    Riffle[Map[writeCalculation, OptionValue[Calculations]],"\n"],"\n"}]};
          ];
 
     docDir = FileNameJoin[{parentDirectory,thornName,"doc"}];
@@ -58,6 +62,15 @@ DefFn[
     scriptFile = FileNameJoin[{docDir, thornName<>".kranc"}];
     GenerateFile[scriptFile, script];
     Print["Generated script "<> scriptFile]]];
+
+DefFn[writeVariables[vars_List] :=
+      beginEndBlock["variables","",
+                    wrap[FlattenBlock[Riffle[Map[writeExpression,vars]," "]],0],Indent->True]];
+
+DefFn[writeTemporaries[calcs_List] :=
+      beginEndBlock[
+        "temporaries","",
+        wrap[FlattenBlock[Riffle[Map[writeExpression,Union@@Map[lookup[#,Shorthands,{}]&,calcs]]," "]],0],Indent->True]];
 
 DefFn[
   writeCalculation[calc_List] :=

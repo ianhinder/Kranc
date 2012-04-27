@@ -147,7 +147,7 @@ VerifyCalculation[calc_] :=
          CollectList, AllowedSymbols, ApplyBCs, Conditional, CachedVariables, SplitBy,
          SeparatedDerivatives, SeparatedDerivatives2,
          LocalGroups, NoSimplify, UseDGFE, SimpleCode, UseCaKernel,
-         ScheduleGroups};
+         ScheduleGroups, TriggerGroups};
 
     usedKeys = Map[First, calc];
     unknownKeys = Complement[usedKeys, allowedKeys];

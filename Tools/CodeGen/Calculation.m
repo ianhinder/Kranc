@@ -164,6 +164,10 @@ DefFn[
      oldSchedule = lookup[calc, Schedule, Automatic],
      newGroup},
 
+    (* If there is nothing to split, return the calculation without any changes *)
+    If[Intersection[Flatten[splitBy,1],OutputGridFunctions[calc]] === {},
+       Return[{calc}]];
+
     If[ListQ[oldSchedule] && Length[oldSchedule] > 1,
        ThrowError["Cannot split a calculation which is scheduled in more than one place"]];
 
@@ -172,28 +176,27 @@ DefFn[
                 SchedulePoint -> oldSchedule,
                 Comment       -> ""};
 
-    If[Intersection[Flatten[splitBy,1],OutputGridFunctions[calc]] === {},
-       {calc},
-       MapIndexed[
-         Function[
-           {var,i},
-           Module[
-             {nameSuffix, splitVars},
-             nameSuffix = If[ListQ[var],
-                             ToString[i[[1]]],
-                             "_"<>StringReplace[ToString[var],{"["->"","]"->"",","->""}]];
-             splitVars = If[ListQ[var], var, {var}];
+    MapIndexed[
+      Function[
+        {var,i},
+        Module[
+          {nameSuffix, splitVars},
+          nameSuffix = If[ListQ[var],
+                          ToString[i[[1]]],
+                          "_"<>StringReplace[ToString[var],{"["->"","]"->"",","->""}]];
+          splitVars = If[ListQ[var], var, {var}];
 
-             newCalc = partialCalculation[calc, nameSuffix, {}, splitVars];
+          newCalc = partialCalculation[calc, nameSuffix, {}, splitVars];
 
-             newCalc =
-             mapReplaceAdd[
-               mapReplaceAdd[
-                 newCalc,
-                 Schedule, {"in "<>oldName}],
-               ScheduleGroups, Append[lookup[calc, ScheduleGroups, {}],newGroup]]]],
-
-         splitBy]]]];
+          newCalc =
+          mapReplaceAdd[
+            mapReplaceAdd[
+              newCalc,
+              Schedule, {"in "<>oldName}],
+            ScheduleGroups, Append[lookup[calc, ScheduleGroups, {}],newGroup]]]],
+      splitBy]
+  ]
+];
 
 DefFn[
   SeparateDerivatives[calcs_List] :=

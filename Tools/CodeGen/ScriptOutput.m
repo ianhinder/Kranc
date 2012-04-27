@@ -108,9 +108,16 @@ DefFn[writeFlags[options_List] :=
 
 DefFn[
   writeCalculation[calc_List] :=
-  beginEndBlock["calculation", lookup[calc, Name],
-                writeExpression[lookup[calc, Equations]],
-                Indent -> True]];
+  Module[
+    {opts,except},
+    except = {Equations, Name, Shorthands};
+    opts = Select[calc,(!MemberQ[except,#[[1]]]) &];
+    beginEndBlock["calculation", lookup[calc, Name],
+                  {"\n",
+                   Riffle[Map["# " <> ToString[#,InputForm] &, opts],"\n\n"],
+                   "\n\n",
+                   writeExpression[lookup[calc, Equations]]},
+                  Indent -> True]]];
 
 DefFn[
   writeDerivatives[pdefs_] :=

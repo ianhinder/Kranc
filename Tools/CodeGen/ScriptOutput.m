@@ -74,6 +74,9 @@ DefFn[
                     writeFlags[setOptionsWithValues],
                     "\n",
 
+                    writeDerivatives[OptionValue[PartialDerivatives]],
+                    "\n",
+
                     writeVariables[Join@@(variablesInGroup[#,groups]&/@OptionValue[DeclaredGroups])],
                     "\n",
                     writeTemporaries[OptionValue[Calculations]],
@@ -107,6 +110,55 @@ DefFn[
   beginEndBlock["calculation", lookup[calc, Name],
                 writeExpression[lookup[calc, Equations]],
                 Indent -> True]];
+
+DefFn[
+  writeDerivatives[pdefs_] :=
+  beginEndBlock["derivatives", "",
+                Map[{writeDerivative[#],"\n"} &, pdefs],
+                Indent -> True]];
+
+derivIndex[i_Integer] := i;
+derivIndex[p_] := If[Head[p] === Pattern, p[[1]], ThrowError["Unknown derivative index "<>ToString[p,InputForm]]];
+
+DefFn[
+  writeDerivative[arg:(op_[inds___] -> def_)] :=
+  {ToString[op], " u_", StringJoin[ToString/@derivIndex/@{inds}], " = ", writeDerivativeDefinition[def,{inds}],"\n"}];
+
+DefFn[
+  writeDerivativeDefinition[def_, indList_List] :=
+  Module[{u = DerivVar["u", indList]},
+  writeExpression[Simplify[Expand[u def] //. shiftRule]]]];
+
+(* writeExpression[DerivVar[n_String, indList_List]] := *)
+(*   n; *)
+
+derivIndex[i_,p_/;p>0] :=
+  {"(", ToString[i], "+", ToString[p], ")"};
+
+derivIndex[i_,0] :=
+  {"(", ToString[i], ")"};
+
+derivIndex[i_,p_/;p<0] :=
+  {"(", ToString[i], "-", ToString[-p], ")"};
+
+derivIndex[i_,p_] :=
+  {"(", ToString[i+writeExpression[p]], ")"};
+
+shiftRule = Times[DerivVar[n_, indList_List],shifts:(((shift[_]^_)|shift[_])...),rest___] ->
+  Times[DerivVar[n,indList, {shifts}], rest];
+
+
+
+writeExpression[DerivVar[n_, indList_List, shifts_]] :=
+  Module[
+    {inds = Map[Replace[#,{shift[i_]^(p_) :> derivIndex[i,p],
+                           shift[i_] :> derivIndex[i,0]}] &,shifts]},
+    (* Print["{shifts} = ", {shifts}//FullForm]; *)
+    (* Print["inds = ", inds]; *)
+    FlattenBlock[{ToString[n], "_", inds}]];
+
+writeExpression[spacing[i_]] :=
+  "h";
 
 wrap[s_String, indent_Integer, chars_Integer:80] :=
   Module[
@@ -223,10 +275,10 @@ writeExpression[Max[a_,b_]] :=
   {"max(",writeExpression[a], ",", writeExpression[b],")"};
 
 writeExpression[dot[a_]] :=
-  {"D_t ",paren@writeExpression[a]};
+  {"D_t ",paren2[dot,a]@writeExpression[a]};
 
 writeExpression[d_?(MemberQ[$DerivativeNames,#]&)[var_,inds___]] :=
-  {writeExpression[d],writeExpression[{inds}]," ",paren@writeExpression[var]};
+  {writeExpression[d],writeExpression[{inds}]," ",paren2[Derivative,var]@writeExpression[var]};
 
 writeExpression[MatrixInverse[Tensor[t_,i_,j_]]] :=
   {"inverse(",ToString@t,")",Map[writeExpression,{i,j}]};

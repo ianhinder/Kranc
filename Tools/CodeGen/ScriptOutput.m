@@ -158,21 +158,54 @@ writeExpression[s_Symbol] :=
   ToString[s];
 
 writeExpression[IfThen[a_,b_,c_]] :=
-  {"(",paren@writeExpression[a], " ? ", paren@writeExpression[b], " : ", paren@writeExpression[c],")"};
+  {"(",paren2[IfThen,a]@writeExpression[a], " ? ", paren2[IfThen,b]@writeExpression[b], " : ", paren2[IfThen,c]@writeExpression[c],")"};
 
 writeExpression[KroneckerDelta[i1_TensorIndex,i2_TensorIndex]] :=
   {"delta", writeExpression[{i1,i2}]};
 
 paren[x_] := {"(",x,")"};
 
+(* paren2[_,_?NumberQ][x_] :=  *)
+(*   x; *)
+
+(* paren2[_,_Symbol][x_] :=  *)
+(*   x; *)
+
+(* paren2[_,_Tensor][x_] :=  *)
+(*   x; *)
+
+(* paren2[Times,_Power][x_] :=  *)
+(*   x; *)
+
+precedenceTable = {Rational, Tensor, Derivative, Power, Times, Plus, Equal, IfThen};
+
+(* paren2[Plus,_Power][x_] :=  *)
+(*   x; *)
+
+paren2[where_,what_][x_] := 
+  x;
+
+paren2[where_,what_[___]][x_] := 
+  If[!And@@Map[MemberQ[precedenceTable,#]&,{where,what}],
+     paren[x],
+     (* Print[where," ", what, " ", Position[precedenceTable,where], " ", Position[precedenceTable,where]]; *)
+     If[Position[precedenceTable,where][[1,1]] < Position[precedenceTable,what][[1,1]],
+        paren[x],
+        x]];
+
+    (* Print["where = ", where, ", what = ", what, ", positions = ", positions]; *)
+
+(* paren2[_,_][x_] :=  *)
+(*   paren[x]; *)
+
 writeExpression[a_Plus] :=
-  Riffle[Map[paren[writeExpression[#]] &,List@@a]," + "];
+  Riffle[Map[paren2[Plus,#][writeExpression[#]] &,List@@a]," + "];
 
 writeExpression[a_Times] :=
-  Riffle[Map[paren[writeExpression[#]] &,List@@a]," * "];
+  Riffle[Map[paren2[Times,#][writeExpression[#]] &,List@@a]," * "];
 
 writeExpression[Power[a_,b_]] :=
-  {paren@writeExpression[a],"**",paren@writeExpression[b]};
+  {paren2[Power,a]@writeExpression[a],"**",paren2[Power,b]@writeExpression[b]};
 
 writeExpression[Unequal[a_,b_]] :=
   {paren@writeExpression[a],"!=",paren@writeExpression[b]};

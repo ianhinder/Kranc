@@ -54,7 +54,8 @@ DefFn[
     setOptions = Complement[setOptions,
                             Join[{Calculations,
                                   DeclaredGroups,
-                                  InheritedImplementations}, Last/@ScriptFlags]];
+                                  InheritedImplementations,
+                                  PartialDerivatives}, Last/@ScriptFlags]];
     remainingOptionsWithValues = Map[(#->OptionValue[#]) &,setOptions];
 
     script = 

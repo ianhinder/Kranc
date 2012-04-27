@@ -110,14 +110,17 @@ DefFn[
   writeCalculation[calc_List] :=
   Module[
     {opts,except},
-    except = {Equations, Name, Shorthands};
+    except = {Equations, Name, Shorthands, Schedule};
     opts = Select[calc,(!MemberQ[except,#[[1]]]) &];
-    beginEndBlock["calculation", lookup[calc, Name],
+    beginEndBlock["calculation", FlattenBlock@{lookup[calc, Name], " ", writeSchedule[calc]},
                   {"\n",
                    Riffle[Map["# " <> ToString[#,InputForm] &, opts],"\n\n"],
                    "\n\n",
                    writeExpression[lookup[calc, Equations]]},
                   Indent -> True]]];
+
+writeSchedule[calc_] :=
+  If[lookup[calc,Schedule,Automatic] =!= Automatic, FlattenBlock@Riffle[{"scheduled \"", #, "\""}&/@ lookup[calc,Schedule,Automatic]," "],""];
 
 DefFn[
   writeDerivatives[pdefs_] :=

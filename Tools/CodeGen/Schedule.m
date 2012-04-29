@@ -103,7 +103,8 @@ scheduleCalc[calc_, groups_, thornName_, OptionsPattern[]] :=
           groupsToSync, tags,
           prefixWithScope, groupsToRequire, groupsToProvide,
           groupName, userSchedule, groupSched, fnSched,
-          selbcSched, appbcSched, bcGroupName, condParams, bcGroupSched, before, after, relStr},
+          selbcSched, appbcSched, bcGroupName, condParams, bcGroupSched, before, after, relStr,
+          variablesToRead, variablesToWrite},
     conditional = mapContains[calc, ConditionalOnKeyword];
     conditionals = mapContains[calc, ConditionalOnKeywords];
     triggered = mapContains[calc, TriggerGroups];
@@ -138,8 +139,12 @@ scheduleCalc[calc_, groups_, thornName_, OptionsPattern[]] :=
       If[StringMatchQ[ToString[group], __~~"::"~~__],
          ToString[group],
          thornName <> "::" <> ToString[group]];
-    groupsToRequire = prefixWithScope /@ groupsReadInCalc[calc, groups];
-    groupsToProvide = prefixWithScope /@ groupsSetInCalc[calc, groups];
+    (* groupsToRequire = prefixWithScope /@ groupsReadInCalc[calc, groups]; *)
+    (* groupsToProvide = prefixWithScope /@ groupsSetInCalc[calc, groups]; *)
+
+    variablesToRead = qualifyGFName[#, groups, thornName] & /@ variablesReadInCalc[calc, groups];
+    variablesToWrite = qualifyGFName[#, groups, thornName] & /@ variablesSetInCalc[calc, groups];
+
 
     before = lookupDefault[calc, Before, None];
     after = lookupDefault[calc, After, None];
@@ -162,8 +167,8 @@ scheduleCalc[calc_, groups_, thornName_, OptionsPattern[]] :=
                                  groupsToSync],
         Language           -> CodeGenC`SOURCELANGUAGE, 
         Tags               -> tags,
-        RequiredGroups     -> groupsToRequire,
-        ProvidedGroups     -> groupsToProvide,
+        RequiredGroups     -> variablesToRead,
+        ProvidedGroups     -> variablesToWrite,
         Comment            -> lookup[calc, Name]
       },
        If[triggered, {TriggerGroups -> lookup[calc, TriggerGroups]},

@@ -60,12 +60,14 @@ groupsSetInCalc[calc_, groups_] :=
   ];
 
 groupsReadInCalc[calc_, groups_] :=
-  Module[{gfs, eqs, lhss, gfsInLHS, lhsGroupNames},
+  Module[{gfs, eqs, lhss, gfsInLHS, rhsGroupNames},
     gfs = allGroupVariables[groups];
     eqs = lookup[calc, Equations];
     rhss = Map[Last, eqs];
     gfsInRHS = Union[Cases[rhss, _ ? (MemberQ[gfs,#] &), Infinity]];
     rhsGroupNames = containingGroups[gfsInRHS, groups];
+    (* TODO: eliminate variables from this list that have been set in
+       this calculation before they were used *)
     Return[rhsGroupNames]
   ];
 

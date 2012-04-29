@@ -71,6 +71,27 @@ groupsReadInCalc[calc_, groups_] :=
     Return[rhsGroupNames]
   ];
 
+variablesSetInCalc[calc_, groups_] :=
+  Module[{gfs, eqs, lhss, gfsInLHS},
+    gfs = allGroupVariables[groups];
+    eqs = lookup[calc, Equations];
+    lhss = Map[First, eqs];
+    gfsInLHS = Union[Cases[lhss, _ ? (MemberQ[gfs,#] &), Infinity]];
+    Return[gfsInLHS]
+  ];
+
+variablesReadInCalc[calc_, groups_] :=
+  Module[{gfs, eqs, lhss, gfsInLHS},
+    gfs = allGroupVariables[groups];
+    eqs = lookup[calc, Equations];
+    rhss = Map[Last, eqs];
+    gfsInRHS = Union[Cases[rhss, _ ? (MemberQ[gfs,#] &), Infinity]];
+    (* TODO: eliminate variables from this list that have been set in
+       this calculation before they were used *)
+    Return[gfsInRHS]
+  ];
+
+
 (* Each calculation can be scheduled at multiple points, so this
    function returns a LIST of schedule structures for each calculation
    *)

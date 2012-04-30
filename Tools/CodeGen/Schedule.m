@@ -213,8 +213,8 @@ scheduleCalc[calc_, groups_, thornName_, OptionsPattern[]] :=
         SchedulePoint      -> "in " <> groupName,
         Language           -> CodeGenC`SOURCELANGUAGE,
         Tags               -> tags,
-        RequiredGroups     -> groupsToRequire,
-        ProvidedGroups     -> groupsToProvide,
+        RequiredGroups     -> variablesToRead,
+        ProvidedGroups     -> variablesToWrite,
         Comment            -> lookup[calc, Name]
       };
 

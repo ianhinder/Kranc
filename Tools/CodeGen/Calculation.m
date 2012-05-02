@@ -37,6 +37,7 @@ AddCondition;
 AddConditionSuffix;
 InNewScheduleGroup;
 BoundaryCalculationQ;
+GetSchedule;
 
 Begin["`Private`"];
 
@@ -328,6 +329,15 @@ InNewScheduleGroup[groupName_String, calc_List] :=
         calc,
         Schedule, {"in "<>groupName}],
       ScheduleGroups, Append[lookup[calc, ScheduleGroups, {}],newGroup]]];
+
+DefFn[
+  GetSchedule[calc_List] :=
+  Module[
+    {s = lookup[calc,Schedule,Automatic]},
+    If[s =!= Automatic && !ListQ[s],
+       ThrowError["Calculation "<>lookup[calc,Name]<>" has an invalid Schedule entry: ",
+                  s]];
+    s]];
 
 End[];
 

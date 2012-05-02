@@ -57,7 +57,14 @@ extern "C" {
   (*(CCTK_REAL const*)&((char const*)(var))[cdi*(i)+cdj*(j)+cdk*(k)])
 
 /* Implement the signum function, used for Mathematica's Sign function */
-static inline CCTK_REAL sgn(CCTK_REAL x)
+
+#ifdef __CUDACC__
+#define KRANC_WHERE __device__
+#else
+#define KRANC_WHERE
+#endif
+
+KRANC_WHERE static inline CCTK_REAL sgn(CCTK_REAL x)
 {
  return x==(CCTK_REAL)0.0 ? (CCTK_REAL)0.0 : copysign((CCTK_REAL)1.0, x);
 }

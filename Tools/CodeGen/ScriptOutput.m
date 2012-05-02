@@ -18,7 +18,7 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-BeginPackage["ScriptOutput`", {"Errors`", "Helpers`", "Kranc`", "CodeGen`", "MapLookup`", "TensorTools`", "KrancGroups`"}];
+BeginPackage["ScriptOutput`", {"Errors`", "Helpers`", "Kranc`", "CodeGen`", "MapLookup`", "TensorTools`", "KrancGroups`", "Calculation`"}];
 
 WriteScript;
 
@@ -120,7 +120,7 @@ DefFn[
                   Indent -> True]]];
 
 writeSchedule[calc_] :=
-  If[lookup[calc,Schedule,Automatic] =!= Automatic, FlattenBlock@Riffle[{"scheduled \"", #, "\""}&/@ lookup[calc,Schedule,Automatic]," "],""];
+  If[GetSchedule[calc] =!= Automatic, FlattenBlock@Riffle[{"scheduled \"", #, "\""}&/@ GetSchedule[calc]," "],""];
 
 DefFn[
   writeDerivatives[pdefs_] :=

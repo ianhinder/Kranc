@@ -153,7 +153,7 @@ scheduleCalc[calc_, groups_, thornName_, OptionsPattern[]] :=
              <> If[after =!= None, " after " <> after, ""];
 
     applyBCs = lookupDefault[calc, ApplyBCs, False];
-    userSchedule = lookupDefault[calc, Schedule, Automatic];
+    userSchedule = GetSchedule[calc];
 
 
     If[userSchedule =!= Automatic && !applyBCs,
@@ -179,7 +179,7 @@ scheduleCalc[calc_, groups_, thornName_, OptionsPattern[]] :=
           {}],
         If[mapContains[calc, Conditional], {NewConditional -> lookup[calc,Conditional]}, {}]
       ] &,
-      lookup[calc, Schedule]]],
+      GetSchedule[calc]]],
 
       (* Scheduling is automatic.  For the moment, all automatically
       scheduled functions are going to be performed in

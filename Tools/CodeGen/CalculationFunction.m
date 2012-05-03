@@ -501,7 +501,7 @@ DefFn[
       "GenericFD_LoopOverInterior(cctkGH, " <> bodyFunctionName <> ");\n",
     InteriorNoSync,
       "GenericFD_LoopOverInterior(cctkGH, " <> bodyFunctionName <> ");\n",
-    Boundary,
+    Boundary | BoundaryNoSync,
       "GenericFD_LoopOverBoundary(cctkGH, " <> bodyFunctionName <> ");\n",
     BoundaryWithGhosts,
       "GenericFD_LoopOverBoundaryWithGhosts(cctkGH, " <> bodyFunctionName <> ");\n",

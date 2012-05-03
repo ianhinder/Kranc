@@ -37,6 +37,7 @@ AddCondition;
 AddConditionSuffix;
 InNewScheduleGroup;
 BoundaryCalculationQ;
+GetSchedule;
 
 Begin["`Private`"];
 
@@ -161,7 +162,7 @@ DefFn[
   Module[
     {splitBy = lookup[calc,SplitBy, {}],
      oldName = lookup[calc,Name],
-     oldSchedule = lookup[calc, Schedule, Automatic],
+     oldSchedule = GetSchedule[calc],
      newGroup},
 
     (* If there is nothing to split, return the calculation without any changes *)
@@ -213,7 +214,7 @@ separateDerivativesInCalculation[calc_] :=
     {sepPat  = lookup[calc, SeparatedDerivatives , None],
      sepPat2 = lookup[calc, SeparatedDerivatives2, None]},
     If[sepPat === None, {calc},
-       If[lookupDefault[calc, Schedule, Automatic] === Automatic,
+       If[GetSchedule[calc] === Automatic,
           ThrowError["Separating derivatives in an automatically scheduled function is not supported"]];
 
        Module[
@@ -289,7 +290,7 @@ separateDerivativesInCalculation[calc_] :=
            (* TODO: "after" modifiers currently don't work with
               CaKernel *)
            afterNames = StringJoin[Map[" after " <> # &, otherNames]];
-           thisSchedule = lookup[theCalc, Schedule];
+           thisSchedule = GetSchedule[theCalc];
            newSchedule = Map[# <> afterNames &, thisSchedule];
            mapReplace[theCalc, Schedule, newSchedule]];
          (* TODO: could instead enforce order only between those
@@ -301,8 +302,8 @@ separateDerivativesInCalculation[calc_] :=
                             (GetEquations[calc]/.replaceSymmetric/.replaceMixed) /. 
                             Map[# -> derivGFName[#] &, Flatten[Join[sepDerivs,sepDerivs2],1]]];
 
-         derivCalcs  = Map[mapReplace[#, Schedule, Map[#<>" before "<>GetCalculationName[calc2] &, lookup[#,Schedule]]] &, derivCalcs ];
-         derivCalcs2 = Map[mapReplace[#, Schedule, Map[#<>" before "<>GetCalculationName[calc2] &, lookup[#,Schedule]]] &, derivCalcs2];
+         derivCalcs  = Map[mapReplace[#, Schedule, Map[#<>" before "<>GetCalculationName[calc2] &, GetSchedule[#]]] &, derivCalcs ];
+         derivCalcs2 = Map[mapReplace[#, Schedule, Map[#<>" before "<>GetCalculationName[calc2] &, GetSchedule[#]]] &, derivCalcs2];
 
          calc2 = InNewScheduleGroup[lookup[calc,Name], calc2];
 
@@ -314,20 +315,29 @@ DefFn[
 
 DefFn[
   AddConditionSuffix[calc_List, condition_] :=
-  mapReplaceAdd[calc, Schedule, Map[#<>" IF "<>condition &, lookup[calc,Schedule]]]];
+  mapReplaceAdd[calc, Schedule, Map[#<>" IF "<>condition &, GetSchedule[calc]]]];
 
 InNewScheduleGroup[groupName_String, calc_List] :=
   Module[
     {newGroup},
     newGroup = {Name          -> groupName,
                 Language      -> "None", (* groups do not have a language *)
-                SchedulePoint -> lookup[calc,Schedule,Automatic],
+                SchedulePoint -> GetSchedule[calc],
                 Comment       -> ""};
     mapReplaceAdd[
       mapReplaceAdd[
         calc,
         Schedule, {"in "<>groupName}],
       ScheduleGroups, Append[lookup[calc, ScheduleGroups, {}],newGroup]]];
+
+DefFn[
+  GetSchedule[calc_List] :=
+  Module[
+    {s = lookup[calc,Schedule,Automatic]},
+    If[s =!= Automatic && !ListQ[s],
+       ThrowError["Calculation "<>lookup[calc,Name]<>" has an invalid Schedule entry: ",
+                  s]];
+    s]];
 
 End[];
 

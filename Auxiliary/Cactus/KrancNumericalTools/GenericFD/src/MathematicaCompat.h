@@ -40,11 +40,11 @@
 #define Csch(x)       (1.0/sinh(x))
 #define Coth(x)       (1.0/tanh(x))
 
+#define Sign(x)       (sgn(x))
+
 #ifdef KRANC_C
-#  define Sign(x)     (copysign( (CCTK_REAL) 1.0,(CCTK_REAL) (x)))
 #  define ToReal(x)   ((CCTK_REAL)(x))
 #else
-#  define Sign(x)     (sgn(x))
 #  define ToReal(x)   (real((x),kind(khalf)))
 #endif
 

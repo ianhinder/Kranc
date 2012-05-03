@@ -49,16 +49,6 @@
 /* TODO: provide functions for differencing, use FD macros to evaluate
    corresponding functions */
 
-int sgn(CCTK_REAL x)
-{
-  if (x < 0)
-    return -1;
-  else if (x > 0)
-    return 1;
-  else 
-    return 0;
-}
-
 void GenericFD_GetBoundaryWidths(cGH const * restrict const cctkGH, int nboundaryzones[6])
 {
   int is_internal[6];

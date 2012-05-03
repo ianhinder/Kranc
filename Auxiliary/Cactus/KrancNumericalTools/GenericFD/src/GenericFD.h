@@ -30,6 +30,8 @@
 
 #include "cctk.h"
 
+#include <math.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -54,7 +56,18 @@ extern "C" {
 #define KRANC_GFOFFSET3D(var,i,j,k)                                     \
   (*(CCTK_REAL const*)&((char const*)(var))[cdi*(i)+cdj*(j)+cdk*(k)])
 
-int sgn(CCTK_REAL x);
+/* Implement the signum function, used for Mathematica's Sign function */
+
+#ifdef __CUDACC__
+#define KRANC_WHERE __device__
+#else
+#define KRANC_WHERE
+#endif
+
+KRANC_WHERE static inline CCTK_REAL sgn(CCTK_REAL x)
+{
+ return x==(CCTK_REAL)0.0 ? (CCTK_REAL)0.0 : copysign((CCTK_REAL)1.0, x);
+}
 
 int GenericFD_GetBoundaryWidth(cGH const * restrict const cctkGH);
 

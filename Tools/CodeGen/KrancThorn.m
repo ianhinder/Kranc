@@ -29,7 +29,7 @@ BeginPackage["KrancThorn`", {"CodeGen`", "Thorn`",
  "MapLookup`", "KrancGroups`", "Differencing`",
  "CalculationFunction`", "Errors`", "Helpers`", "CactusBoundary`",
  "KrancTensor`", "Param`", "Schedule`", "Interface`", "Kranc`", "Jacobian`",
- "ConservationCalculation`", "CaKernel`", "Calculation`"}];
+ "ConservationCalculation`", "CaKernel`", "Calculation`", "ParamCheck`"}];
 
 CreateKrancThorn::usage = "Construct a Kranc thorn";
 
@@ -331,7 +331,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     (* Makefile *)
     InfoMessage[Terse, "Creating make file"];
     make = CreateMakefile[Join[{"Startup.cc", "RegisterSymmetries.cc"},
-                               {"RegisterMoL.cc"},
+                               {"RegisterMoL.cc"}, If[Length[OptionValue[ParameterConditions]] > 0, {"ParamCheck.cc"}, {}],
                                incFilenames,
                                Map[lookup[#, Filename] &, boundarySources]]];
 
@@ -350,7 +350,11 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
                   {Filename -> "RegisterSymmetries.cc", Contents -> symregister},
                   {Filename -> "Differencing.h", Contents -> diffHeader}},
                   MapThread[{Filename -> #1, Contents -> #2} &, 
-                            {calcFilenames, calcSources}], boundarySources]};
+                            {calcFilenames, calcSources}], boundarySources, 
+                  If[Length[OptionValue[ParameterConditions]] > 0,
+                     {{Filename -> "ParamCheck.cc",
+                      Contents -> ParameterCheckSource[thornName, OptionValue[ParameterConditions]]}},
+                     {}]]};
     InfoMessage[Terse, "Creating thorn"];
     CreateThorn[thornspec]];
 

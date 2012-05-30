@@ -22,7 +22,8 @@ BeginPackage["Kranc`"];
 
 (* CodeGen.m *)
 
-{INV, SQR, CUB, QAD, IfThen, Parenthesis, Scalar, ToReal,
+{INV, SQR, CUB, QAD, ScalarINV, ScalarSQR, ScalarCUB, ScalarQAD,
+ IfThen, Parenthesis, Scalar, ToReal,
  sqrt, exp, log, pow, atan2, cos, sin, tan, acos, asin, atan,
  cosh, sinh, tanh, acosh, asinh, atanh, fmax, fmin, fabs,
  kmadd, kmsub, knmadd, knmsub, kpos, kneg, kadd, ksub, kmul, kdiv,

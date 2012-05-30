@@ -513,6 +513,23 @@ DefFn[
     {expr, undoVect, undoSomeVect},
     expr = exprp;
     
+    (* Remove SQR etc. *)
+    expr = expr //. {
+      SQR[x_] -> x^2,
+      CUB[x_] -> x^3,
+      QAD[x_] -> x^4,
+      INV[x_] -> 1/x};
+    expr = expr //. Power[x_,y_] -> pow[x,y];
+    
+    (* Handle division *)
+    expr = expr //. pow[x_,n_Integer] /; n<0 :> kdiv[1,pow[x,-n]];
+    (* Implement integer powers efficiently *)
+    expr = expr //. {
+      pow[x_,0] -> 1,
+      pow[x_,1] -> x,
+      pow[x_,n_Integer] /; n>1 && Mod[n,2]==0 :> kmul[pow[x,n/2],pow[x,n/2]],
+      pow[x_,n_Integer] /; n>1 && Mod[n,2]==1 :> kmul[x,pow[x,n-1]]};
+    
     (* Constants *)
     expr = expr /. {
       x_Integer -> ToReal[x],
@@ -520,47 +537,31 @@ DefFn[
       E         -> ToReal[E],
       Pi        -> ToReal[Pi]};
     
+    ToRealQ[expr_] := Head[expr] == ToReal;
+    notToRealQ[expr_] := Head[expr] != ToReal;
+    
     (* Operators *)
     expr = expr //. {
-      -x_                 -> kneg[x],
-      kmul[-1,x_]         -> kneg[x],
-      kmul[x_,-1]         -> kneg[x],
-      kmul[ToReal[-1],x_] -> kneg[x],
-      kmul[x_,ToReal[-1]] -> kneg[x],
-      kneg[kneg[x_]]      -> x,
+      -x_ -> kneg[x],
       
-      x_ + y_           -> kadd[x,y],
-      x_ - y_           -> ksub[x,y],
-      kadd[kneg[x_],y_] -> ksub[y,x],
-      ksub[kneg[x_],y_] -> kneg[kadd[x,y]],
-      kadd[x_,kneg[y_]] -> ksub[x,y],
-      ksub[x_,kneg[y_]] -> kadd[x,y],
-      kneg[ksub[x_,y_]] -> ksub[y,x],
-      ksub[x_,x_]       -> ToReal[0],
+      x_ + y_ -> kadd[x,y],
+      x_ - y_ -> ksub[x,y],
       
-      x_ * y_              -> kmul[x,y],
-      x_ / y_              -> kdiv[x,y],
-      kdiv[x_,kdiv[y_,z_]] -> kdiv[kmul[x,z],y],
-      kdiv[kdiv[x_,y_],z_] -> kdiv[x,kmul[y,z]],
-      kmul[kneg[x_],y_]    -> kneg[kmul[x,y]],
-      kmul[x_,kneg[y_]]    -> kneg[kmul[x,y]],
-      kdiv[kneg[x_],y_]    -> kneg[kdiv[x,y]],
-      kdiv[x_,kneg[y_]]    -> kneg[kdiv[x,y]],
-      kdiv[x_,x_]          -> ToReal[1],
+      x_ * y_ -> kmul[x,y],
+      x_ / y_ -> kdiv[x,y],
       
-      Abs[x_] -> kfabs[x],
-      acos[xx_]     -> kacos[xx],
-      acosh[xx_]    -> kacosh[xx],
-      asin[xx_]     -> kasin[xx],
-      asinh[xx_]    -> kasinh[xx],
-      atan[xx_]     -> katan[xx],
-      atanh[xx_]    -> katanh[xx],
-      cos[xx_]      -> kcos[xx],
-      cosh[xx_]     -> kcosh[xx],
-      sin[xx_]      -> ksin[xx],
-      sinh[xx_]     -> ksinh[xx],
-      tan[xx_]      -> ktan[xx],
-      tanh[xx_]     -> ktanh[xx],
+      acos[xx_]  -> kacos[xx],
+      acosh[xx_] -> kacosh[xx],
+      asin[xx_]  -> kasin[xx],
+      asinh[xx_] -> kasinh[xx],
+      atan[xx_]  -> katan[xx],
+      atanh[xx_] -> katanh[xx],
+      cos[xx_]   -> kcos[xx],
+      cosh[xx_]  -> kcosh[xx],
+      sin[xx_]   -> ksin[xx],
+      sinh[xx_]  -> ksinh[xx],
+      tan[xx_]   -> ktan[xx],
+      tanh[xx_]  -> ktanh[xx],
       
       exp[x_]     -> kexp[x],
       fabs[x_]    -> kfabs[x],
@@ -568,9 +569,60 @@ DefFn[
       fmin[x_,y_] -> kfmin[x,y],
       log[x_]     -> klog[x],
       pow[x_,y_]  -> kpow[x,y],
-      sqrt[x_]    -> ksqrt[x],
-      (* acos[kneg[xx_]]           -> kacos[kneg[xx]], *)
-      (* acosh[kneg[xx_]]          -> kacosh[kneg[xx]], *)
+      sqrt[x_]    -> ksqrt[x]};
+
+    (* Optimise *)
+    expr = expr //. {
+      kneg[ToReal[a_]]    -> ToReal[-a],
+      kmul[ToReal[-1],x_] -> kneg[x],
+      kmul[x_,ToReal[-1]] -> kneg[x],
+      kneg[kneg[x_]]      -> x,
+      
+      kadd[ToReal[0],x_]             -> x,
+      kadd[x_,ToReal[0]]             -> x,
+      ksub[ToReal[0],x_]             -> kneg[x],
+      ksub[x_,ToReal[0]]             -> x,
+      kadd[kneg[x_],y_]              -> ksub[y,x],
+      ksub[kneg[x_],y_]              -> kneg[kadd[x,y]],
+      kadd[x_,kneg[y_]]              -> ksub[x,y],
+      ksub[x_,kneg[y_]]              -> kadd[x,y],
+      kneg[ksub[x_,y_]]              -> ksub[y,x],
+      kadd[x_,x_]                    -> kmul[ToReal[2],x],
+      ksub[x_,x_]                    -> ToReal[0],
+      kadd[ToReal[a_],ToReal[b_]]    -> ToReal[kadd[a,b]],
+      ksub[ToReal[a_],ToReal[b_]]    -> ToReal[ksub[a,b]],
+      kadd[x_?notToRealQ,ToReal[a_]] -> kadd[ToReal[a],x],
+      kadd[kadd[ToReal[a_],x_],y_]   -> kadd[ToReal[a],kadd[x,y]],
+      kadd[kadd[ToReal[a_],x_],
+           kadd[ToReal[b_],y_]]      -> kadd[ToReal[kadd[a,b]],kadd[x,y]],
+      kadd[x_?notToRealQ,
+           kadd[ToReal[a_],y_]]      -> kadd[ToReal[a],kadd[x,y]],
+      
+      kmul[ToReal[0],x_]             -> ToReal[0],
+      kmul[x_,ToReal[0]]             -> ToReal[0],
+      kmul[ToReal[+1],x_]            -> x,
+      kmul[x_,ToReal[+1]]            -> x,
+      kdiv[ToReal[0],x_]             -> ToReal[0],
+      (* kdiv[x_,ToReal[0]]           -> ToReal[nan], *)
+      kdiv[x_,ToReal[+1]]            -> x,
+      kdiv[x_,kdiv[y_,z_]]           -> kdiv[kmul[x,z],y],
+      kdiv[kdiv[x_,y_],z_]           -> kdiv[x,kmul[y,z]],
+      kmul[x_,kdiv[y_,z_]]           -> kdiv[kmul[x,y],z],
+      kmul[kdiv[x_,y_],z_]           -> kdiv[kmul[x,z],y],
+      kmul[kneg[x_],y_]              -> kneg[kmul[x,y]],
+      kmul[x_,kneg[y_]]              -> kneg[kmul[x,y]],
+      kdiv[kneg[x_],y_]              -> kneg[kdiv[x,y]],
+      kdiv[x_,kneg[y_]]              -> kneg[kdiv[x,y]],
+      kdiv[x_,x_]                    -> ToReal[1],
+      kmul[ToReal[a_],ToReal[b_]]    -> ToReal[kmul[a,b]],
+      kdiv[x_,ToReal[y_]]            -> kmul[x,ToReal[kdiv[1,y]]],
+      kmul[x_?notToRealQ,ToReal[a_]] -> kmul[ToReal[a],x],
+      kmul[kmul[ToReal[a_],x_],y_]   -> kmul[ToReal[a],kmul[x,y]],
+      kmul[kmul[ToReal[a_],x_],
+           kmul[ToReal[b_],y_]]      -> kmul[ToReal[kmul[a,b]],kmul[x,y]],
+      kmul[x_?notToRealQ,
+           kmul[ToReal[a_],y_]]      -> kmul[ToReal[a],kmul[x,y]],
+      
       kasin[kneg[xx_]]           -> kneg[kasin[xx]],
       kasinh[kneg[xx_]]          -> kneg[kasinh[xx]],
       katan[kneg[xx_]]           -> kneg[katan[xx]],
@@ -586,8 +638,7 @@ DefFn[
       kfabs[kneg[xx_]]           -> kfabs[xx],
       kfnabs[kneg[xx_]]          -> kfnabs[xx],
       kneg[kfabs[xx_]]           -> kfnabs[xx],
-      kneg[kfnabs[xx_]]          -> kfabs[xx],
-      kneg[kneg[xx_]]            -> xx};
+      kneg[kfnabs[xx_]]          -> kfabs[xx]};
 
     (* FMA (fused multiply-add) *)
     (* kmadd (x,y,z) =   xy+z
@@ -617,7 +668,14 @@ DefFn[
       kadd[x_,y_] -> x+y,
       ksub[x_,y_] -> x-y,
       kmul[x_,y_] -> x*y,
-      kdiv[x_,y_] -> x/y};
+      kdiv[x_,y_] -> x/y,
+      
+      x_^2 -> ScalarSQR[x],
+      x_^3 -> ScalarCUB[x],
+      x_^4 -> ScalarQAD[x],
+      x_^-2 -> 1/ScalarSQR[x],
+      x_^-3 -> 1/ScalarCUB[x],
+      x_^-4 -> 1/ScalarQAD[x]};
     
     undoSomeVect[expr_] := (
       expr
@@ -680,8 +738,8 @@ DefFn[
 
         (* Simple optimisations *)
         rhs = rhs /. IfThen[_, aa_, aa_] -> aa;
-        rhs = rhs /. IfThen[xx_?IntegerQ, aa_, bb_] /; xx!=0 :> aa;
-        rhs = rhs /. IfThen[xx_?IntegerQ, aa_, bb_] /; xx==0 :> bb;
+        rhs = rhs /. IfThen[xx_Integer, aa_, bb_] /; xx!=0 :> aa;
+        rhs = rhs /. IfThen[xx_Integer, aa_, bb_] /; xx==0 :> bb;
         rhs = rhs /. IfThen[True , aa_, bb_] -> aa;
         rhs = rhs /. IfThen[False, aa_, bb_] -> bb;
 
@@ -704,7 +762,7 @@ DefFn[
         rhs = rhs //. Power[E, power_] -> exp[power];
         rhs = rhs //. Log[x_] -> log[x];
         (* rhs = rhs //. Power[x_, n_Integer] -> pown[x,n]; *)
-        rhs = rhs //. Power[x_, power_] :> pow[x,power];
+        rhs = rhs //. Power[x_, power_] -> pow[x,power];
         rhs = rhs //. Sin[x_] -> sin[x];
         rhs = rhs //. Cos[x_] -> cos[x];
         rhs = rhs //. Tan[x_] -> tan[x];
@@ -776,7 +834,11 @@ CalculationMacros[vectorise_:False] :=
          {"INITVALUE (42)",
           "QAD(x) (SQR(SQR(x)))"} ~Join~
           If[vectorise,
-           {"INV(x) (kdiv(ToReal(1.0),x))",
+           {"ScalarINV(x) ((CCTK_REAL)1.0 / (x))",
+            "ScalarSQR(x) ((x) * (x))",
+            "ScalarCUB(x) ((x) * ScalarSQR(x))",
+            "ScalarQAD(x) (ScalarSQR(ScalarSQR(x)))",
+            "INV(x) (kdiv(ToReal(1.0),x))",
             "SQR(x) (kmul(x,x))",
             "CUB(x) (kmul(x,SQR(x)))"},
            {"INV(x) ((1.0) / (x))",

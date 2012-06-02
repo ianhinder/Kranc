@@ -147,6 +147,7 @@ VerifyCalculation[calc_] :=
          CollectList, AllowedSymbols, ApplyBCs, Conditional, CachedVariables, SplitBy,
          SeparatedDerivatives, SeparatedDerivatives2,
          LocalGroups, NoSimplify, UseDGFE, SimpleCode, UseCaKernel,
+         UseJacobian,
          ScheduleGroups, TriggerGroups};
 
     usedKeys = Map[First, calc];
@@ -394,9 +395,11 @@ DefFn[
           shorts, eqs, parameters, parameterRules, odeGroups,
           functionName, dsUsed, groups, pddefs, cleancalc, eqLoop, where,
           addToStencilWidth, pDefs, haveCondTextuals, condTextuals, calc,
-          kernelCall, DGFEDefs, DGFEInit, DGFECall, debug, imp, gridName, stencilSize},
+          kernelCall, DGFEDefs, DGFEInit, DGFECall, debug, useJacobian,
+          imp, gridName, stencilSize},
 
   debug = OptionValue[Debug];
+  useJacobian = OptionValue[UseJacobian] && lookupDefault[calcp, UseJacobian, True];
   imp = lookup[calcp, Implementation];
   gridName = lookup[calcp, GFAccessFunction];
 
@@ -407,7 +410,7 @@ DefFn[
 
   InfoMessage[InfoFull, "Calculation sets "<>ToString[Map[First,lookup[calcp, Equations]]]];
 
-  calc = If[OptionValue[UseJacobian], InsertJacobian[calcp, opts], calcp];
+  calc = If[useJacobian, InsertJacobian[calcp, opts], calcp];
 
   cleancalc = removeUnusedShorthands[calc];
   If[OptionValue[CSE],
@@ -419,7 +422,7 @@ DefFn[
   parameters = lookupDefault[cleancalc, Parameters, {}];
   groups = lookup[cleancalc, Groups];
   odeGroups = lookupDefault[cleancalc, ODEGroups, {}];
-  If[OptionValue[UseJacobian], groups = Join[groups, JacobianGroups[]]];
+  If[useJacobian, groups = Join[groups, JacobianGroups[]]];
   pddefs = lookupDefault[cleancalc, PartialDerivatives, {}];
   where = lookupDefault[cleancalc, Where, Everywhere];
   addToStencilWidth = lookupDefault[cleancalc, AddToStencilWidth, 0];
@@ -486,7 +489,7 @@ DefFn[
   knownSymbols = Join[lookupDefault[cleancalc, AllowedSymbols, {}], gfs, shorts, parameters,
     {dx,dy,dz,dt,idx,idy,idz,t, Pi, E, Symbol["i"], Symbol["j"], Symbol["k"], normal1, normal2,
     normal3, tangentA1, tangentA2, tangentA3, tangentB1, tangentB2, tangentB3},
-    If[OptionValue[UseJacobian], JacobianSymbols[], {}]];
+    If[useJacobian, JacobianSymbols[], {}]];
 
   unknownSymbols = Complement[allSymbols, knownSymbols];
 
@@ -718,7 +721,7 @@ DefFn[
 
     definePreDefinitions[pDefs],
 
-    If[OptionValue[UseJacobian], CreateJacobianVariables[], {}],
+    If[useJacobian, CreateJacobianVariables[], {}],
 
     If[Cases[{pddefs}, SBPDerivative[_], Infinity] != {},
       CommentedBlock["Compute Summation By Parts derivatives",
@@ -807,9 +810,12 @@ DefFn[
           gfsInBoth, gfsDifferentiated,
           gfsDifferentiatedAndOnLHS, declare, eqsReplaced,
           arraysInRHS, arraysInLHS, arraysOnlyInRHS, odeVars,
-          generateEquationCode, groupedIfs, IfThenGroup, noSimplify,gridName},
+          generateEquationCode, groupedIfs, IfThenGroup, noSimplify,
+          gridName, useJacobian},
 
     InfoMessage[InfoFull, "Equation loop"];
+
+    useJacobian = OptionValue[UseJacobian] && lookupDefault[cleancalc, UseJacobian, True];
 
     gridName = Function[x,FlattenBlock[lookup[cleancalc, GFAccessFunction][x]]];
 
@@ -973,7 +979,7 @@ DefFn[
       (* DeclareDerivatives[defsWithoutShorts, eqsOrdered], *)
 
       CommentedBlock["Assign local copies of grid functions",
-        assignLocalGridFunctions[gfsInRHS, OptionValue[UseVectors], OptionValue[UseJacobian]]],
+        assignLocalGridFunctions[gfsInRHS, OptionValue[UseVectors], useJacobian]],
 
       CommentedBlock["Include user supplied include files",
         Map[IncludeFile, incs]],

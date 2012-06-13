@@ -668,14 +668,20 @@ DefFn[
       kadd[x_,y_] -> x+y,
       ksub[x_,y_] -> x-y,
       kmul[x_,y_] -> x*y,
-      kdiv[x_,y_] -> x/y,
+      kdiv[x_,y_] -> x*ScalarINV[y],
+      
+      kmadd[x_,y_,z_]  -> x*y+z,
+      kmsub[x_,y_,z_]  -> x*y-z,
+      knmadd[x_,y_,z_] -> -(x*y+z),
+      knmsub[x_,y_,z_] -> -(x*y-z),
       
       x_^2 -> ScalarSQR[x],
       x_^3 -> ScalarCUB[x],
       x_^4 -> ScalarQAD[x],
-      x_^-2 -> 1/ScalarSQR[x],
-      x_^-3 -> 1/ScalarCUB[x],
-      x_^-4 -> 1/ScalarQAD[x]};
+      x_^-1 -> ScalarINV[x],
+      x_^-2 -> ScalarINV[ScalarSQR[x]],
+      x_^-3 -> ScalarINV[ScalarCUB[x]],
+      x_^-4 -> ScalarINV[ScalarQAD[x]]};
     
     undoSomeVect[expr_] := (
       expr
@@ -831,8 +837,7 @@ DefFn[
 CalculationMacros[vectorise_:False] :=
   CommentedBlock["Define macros used in calculations",
       Map[{"#define ", #, "\n"} &,
-         {"INITVALUE (42)",
-          "QAD(x) (SQR(SQR(x)))"} ~Join~
+         {"INITVALUE (42)"} ~Join~
           If[vectorise,
            {"ScalarINV(x) ((CCTK_REAL)1.0 / (x))",
             "ScalarSQR(x) ((x) * (x))",
@@ -840,10 +845,12 @@ CalculationMacros[vectorise_:False] :=
             "ScalarQAD(x) (ScalarSQR(ScalarSQR(x)))",
             "INV(x) (kdiv(ToReal(1.0),x))",
             "SQR(x) (kmul(x,x))",
-            "CUB(x) (kmul(x,SQR(x)))"},
-           {"INV(x) ((1.0) / (x))",
+            "CUB(x) (kmul(x,SQR(x)))",
+            "QAD(x) (SQR(SQR(x)))"},
+           {"INV(x) ((CCTK_REAL)1.0 / (x))",
             "SQR(x) ((x) * (x))",
-            "CUB(x) ((x) * (x) * (x))"}]
+            "CUB(x) ((x) * SQR(x))",
+            "QAD(x) (SQR(SQR(x)))"}]
          ]];
 
 End[];

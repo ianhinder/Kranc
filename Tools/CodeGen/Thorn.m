@@ -1241,7 +1241,7 @@ headerComment2,
 "  assert (len);\n\n",
 
 "  for (d = 0; d < 3; ++d) {\n",
-"    assert (off[d] >= 0 && len[d] >= 0 && off[d] + len[d] <= CCTK_LSSH(0,d));\n",
+"    assert (off[d] >= 0 && len[d] >= 0 && off[d] + len[d] <= cctk_lsh[d]);\n",
 "  }\n\n",
 
 "  assert (modes);\n",

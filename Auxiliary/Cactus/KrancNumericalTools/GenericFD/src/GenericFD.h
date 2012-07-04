@@ -66,8 +66,8 @@ KRANC_WHERE static inline CCTK_REAL sgn(CCTK_REAL x)
 int GenericFD_GetBoundaryWidth(cGH const * restrict const cctkGH);
 
 void GenericFD_GetBoundaryInfo(cGH const * restrict cctkGH,
+                               int const * restrict cctk_ash,
                                int const * restrict cctk_lsh,
-                               int const * restrict cctk_lssh,
                                int const * restrict cctk_bbox,
 			       int const * restrict cctk_nghostzones,
                                int * restrict imin, 

@@ -111,8 +111,8 @@ int GenericFD_GetBoundaryWidth(cGH const * restrict const cctkGH)
    boundaries are treated as interprocessor boundaries.
 */
 void GenericFD_GetBoundaryInfo(cGH const * restrict const cctkGH,
+                               int const * restrict const cctk_ash,
                                int const * restrict const cctk_lsh,
-                               int const * restrict const cctk_lssh,
                                int const * restrict const cctk_bbox,
 			       int const * restrict const cctk_nghostzones,
                                int * restrict const imin, 
@@ -211,7 +211,7 @@ void GenericFD_GetBoundaryInfo(cGH const * restrict const cctkGH,
 	imin[dir] = npoints;
 	break;
       case 1: /* Upper boundary */
-	imax[dir] = CCTK_LSSH(0,dir) - npoints;
+	imax[dir] = cctk_lsh[dir] - npoints;
 	break;
       default:
 	CCTK_WARN(0, "internal error");
@@ -231,7 +231,7 @@ void GenericFD_LoopOverEverything(cGH const * restrict const cctkGH, Kranc_Calcu
   CCTK_REAL  tangentA[] = {0,0,0};
   CCTK_REAL  tangentB[] = {0,0,0};
   int   bmin[] = {0,0,0};
-  int   bmax[] = {CCTK_LSSH(0,0),CCTK_LSSH(0,1),CCTK_LSSH(0,2)};
+  int   bmax[] = {cctk_lsh[0],cctk_lsh[1],cctk_lsh[2]};
 
   calc(cctkGH, dir, face, normal, tangentA, tangentB, bmin, bmax, 0, NULL);
   return;
@@ -258,7 +258,7 @@ void GenericFD_LoopOverBoundary(cGH const * restrict const cctkGH, Kranc_Calcula
   int        old_dir = 0;
   int        old_face = 0;
 
-  GenericFD_GetBoundaryInfo(cctkGH, cctk_lsh, cctk_lssh, cctk_bbox,
+  GenericFD_GetBoundaryInfo(cctkGH, cctk_ash, cctk_lsh, cctk_bbox,
                             cctk_nghostzones, 
                             imin, imax, is_symbnd, is_physbnd, is_ipbnd);
 
@@ -293,7 +293,7 @@ void GenericFD_LoopOverBoundary(cGH const * restrict const cctkGH, Kranc_Calcula
             break;
           case +1:
             bmin[d] = imax[d];
-            bmax[d] = CCTK_LSSH(0,d);
+            bmax[d] = cctk_lsh[d];
             have_bnd = 1;
             all_physbnd = all_physbnd && is_physbnd[2*d+1];
             break;
@@ -351,7 +351,7 @@ void GenericFD_LoopOverBoundaryWithGhosts(cGH const * restrict const cctkGH, Kra
   int        old_dir = 0;
   int        old_face = 0;
 
-  GenericFD_GetBoundaryInfo(cctkGH, cctk_lsh, cctk_lssh, cctk_bbox,
+  GenericFD_GetBoundaryInfo(cctkGH, cctk_ash, cctk_lsh, cctk_bbox,
                             cctk_nghostzones, 
                             imin, imax, is_symbnd, is_physbnd, is_ipbnd);
 
@@ -386,7 +386,7 @@ void GenericFD_LoopOverBoundaryWithGhosts(cGH const * restrict const cctkGH, Kra
             break;
           case +1:
             bmin[d] = imax[d];
-            bmax[d] = CCTK_LSSH(0,d);
+            bmax[d] = cctk_lsh[d];
             have_bnd = 1;
             have_physbnd = have_physbnd || is_physbnd[2*d+1];
             break;
@@ -437,7 +437,7 @@ void GenericFD_LoopOverInterior(cGH const * restrict const cctkGH, Kranc_Calcula
   int        dir = 0;
   int        face = 0;
 
-  GenericFD_GetBoundaryInfo(cctkGH, cctk_lsh, cctk_lssh, cctk_bbox,
+  GenericFD_GetBoundaryInfo(cctkGH, cctk_ash, cctk_lsh, cctk_bbox,
                             cctk_nghostzones, 
                             imin, imax, is_symbnd, is_physbnd, is_ipbnd);
 

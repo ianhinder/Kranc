@@ -95,7 +95,7 @@ DefFn[CaKernelSchedule[] :=
       {}];
 
 CaKernelConfigurationCLL[] :=
-  "REQUIRES CUDA";
+  "REQUIRES CUDA MPI\n";
 
 CaKernelInterfaceCLL[] :=
 "

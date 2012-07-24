@@ -111,7 +111,7 @@ DefFn[
   (* NB: CaKernel does not distinguish between these two.  It
      ALWAYS computes everywhere that it can, based on the stencil
      description.  *)
-  MemberQ[{Boundary,BoundaryWithGhosts}, GetCalculationWhere[calc]]];
+  MemberQ[{Boundary, BoundaryWithGhosts, BoundaryNoSync}, GetCalculationWhere[calc]]];
 
 DefFn[
   CalculationStencilSize[calc_List] :=

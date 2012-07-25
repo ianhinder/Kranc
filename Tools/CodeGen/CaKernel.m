@@ -71,7 +71,7 @@ DefFn[
      int, attrs},
     int = !bnd;
 
-    attrs = {"TYPE" -> If[int, "gpu_cuda_dc/3dblock2", "gpu_cuda_dc/boundary_s"],
+    attrs = {"TYPE" -> If[int, "gpu_cuda/3dblock", "gpu_cuda/boundary_s"],
              "TILE" -> Quote[StringJoin[Riffle[ToString/@tileSize,","]]],
              "SHARECODE" -> "yes"};
 

@@ -60,7 +60,7 @@ extern "C" {
 
 KRANC_WHERE static inline CCTK_REAL sgn(CCTK_REAL x)
 {
- return x==(CCTK_REAL)0.0 ? (CCTK_REAL)0.0 : copysign((CCTK_REAL)1.0, x);
+  return x==(CCTK_REAL)0.0 ? (CCTK_REAL)0.0 : copysign((CCTK_REAL)1.0, x);
 }
 
 int GenericFD_GetBoundaryWidth(cGH const * restrict const cctkGH);

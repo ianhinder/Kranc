@@ -303,7 +303,7 @@ CreateKrancScheduleFile[calcs_, groups_, evolvedGroups_, rhsGroups_, nonevolvedG
            {scheduleMoLRegister}];
 
     If[OptionValue[UseCaKernel],
-       scheduledFunctions = Join[scheduledFunctions, CaKernelSchedule[]]];
+       scheduledFunctions = Join[scheduledFunctions, CaKernelSchedule[thornName]]];
 
     allParams = Union@@((lookup[#,Parameters] &) /@ calcs);
     schedule = CreateSchedule[globalStorageGroups, 

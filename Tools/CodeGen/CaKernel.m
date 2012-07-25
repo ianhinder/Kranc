@@ -91,8 +91,16 @@ DefFn[CaKernelCCL[calcs_List, opts:OptionsPattern[]] :=
     {},
     Map[kernelCCLBlock[#,OptionValue[TileSize]] &, Select[calcs, CalculationOnDevice]]]];
 
-DefFn[CaKernelSchedule[] :=
-      {}];
+DefFn[CaKernelSchedule[thornName_] :=
+{
+    {
+      Name          -> thornName <> "_Init",
+      SchedulePoint -> "in CCTK_BASEGRID after Accelerator_SetDevice",
+      Language      -> "C",
+      Options       -> "local",
+      Comment       -> "Initialize CUDA Device"
+    }
+}]
 
 CaKernelConfigurationCLL[] :=
   "REQUIRES CUDA MPI\n";

@@ -532,7 +532,7 @@ DefFn[
     
     (* Constants *)
     expr = expr /. {
-      x_Integer -> ToReal[x],
+      x_Integer -> ToReal[1.0*x], (* don't generate large integer constants *)
       x_Real    -> ToReal[x],
       E         -> ToReal[E],
       Pi        -> ToReal[Pi]};

@@ -532,7 +532,8 @@ DefFn[
     
     (* Constants *)
     expr = expr /. {
-      x_Integer -> ToReal[1.0*x], (* don't generate large integer constants *)
+      x_Integer -> ToReal[x],
+      x_Ratio   -> ToReal[x],
       x_Real    -> ToReal[x],
       E         -> ToReal[E],
       Pi        -> ToReal[Pi]};
@@ -663,6 +664,9 @@ DefFn[
     (* Undo some transformations *)
     undoVect[expr_] := expr //. {
       ToReal[x_] -> x,
+      
+      x_Integer -> 1.0*x,   (* don't generate large integer constants *)
+      x_Ratio   -> N[x,30],
       
       kneg[x_] -> -x,
       

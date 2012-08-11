@@ -1172,7 +1172,7 @@ extractMapDomain[m_] :=
   RemoveDuplicates[Map[#[[1]] &, m]];
 
 removeDuplicatesFromMap[m_] :=
-  Map[# -> (# /. m) &, extractMapDomain[m]];
+  Map[# -> (# /. m) &, removeSymmetryCopies@extractMapDomain[m]];
 
 
 abstractToExplicitMap[m_] :=
@@ -1181,8 +1181,11 @@ abstractToExplicitMap[m_] :=
     domain = extractMapDomain[explicitMap1];
     Map[# -> (# /. explicitMap1) &, domain]];
 
+removeSymmetryCopies[l_List] := 
+  DeleteCases[l, Times[-1,_Symbol]|0];
+
 explicitVariableList[l_] :=
-  RemoveDuplicates[Flatten[Map[MakeExplicit, l], 1]];
+  removeSymmetryCopies@RemoveDuplicates[Flatten[Map[MakeExplicit, l], 1]];
 
 (* -------------------------------------------------------------------------- 
    Checking tensor expressions for consistency

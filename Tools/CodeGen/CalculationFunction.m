@@ -269,7 +269,7 @@ simpCollect[collectList_, eqrhs_, localvar_, debug_] :=
 (* Return a CodeGen block which assigns dest by evaluating expr *)
 assignVariableFromExpression[dest_, expr_, declare_, vectorise_, noSimplify:Boolean : False] :=
   Module[{type, cleanExpr, code},
-    type = If[StringMatchQ[ToString[dest], "dir*"], "ptrdiff_t", DataType[]];
+    type = DataType[];
     cleanExpr = ReplacePowers[expr, vectorise, noSimplify];
 
     If[SOURCELANGUAGE == "C",

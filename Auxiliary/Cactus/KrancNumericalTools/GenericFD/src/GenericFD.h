@@ -63,6 +63,17 @@ KRANC_WHERE static inline CCTK_REAL sgn(CCTK_REAL x)
   return x==(CCTK_REAL)0.0 ? (CCTK_REAL)0.0 : copysign((CCTK_REAL)1.0, x);
 }
 
+KRANC_WHERE static inline int isgn(CCTK_REAL x)
+{
+  if (x == (CCTK_REAL)0.0) return 0;
+#ifdef __cplusplus
+  int s = std::signbit(x);
+#else
+  int s = signbit(x);
+#endif
+  return s ? -1 : +1;
+}
+
 int GenericFD_GetBoundaryWidth(cGH const * restrict const cctkGH);
 
 void GenericFD_GetBoundaryInfo(cGH const * restrict cctkGH,

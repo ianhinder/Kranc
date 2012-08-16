@@ -25,10 +25,10 @@ BeginPackage["Kranc`"];
 {INV, SQR, CUB, QAD, ScalarINV, ScalarSQR, ScalarCUB, ScalarQAD,
  IfThen, Parenthesis, Scalar, ToReal,
  sqrt, exp, log, pow, atan2, cos, sin, tan, acos, asin, atan,
- cosh, sinh, tanh, acosh, asinh, atanh, fmax, fmin, fabs,
+ cosh, sinh, tanh, acosh, asinh, atanh, fmax, fmin, fabs, isgn, sgn,
  kmadd, kmsub, knmadd, knmsub, kpos, kneg, kadd, ksub, kmul, kdiv,
  kacos, kacosh, kasin, kasinh, katan, katanh, kcopysign, kcos, kcosh, kfabs,
- kfmax, kfmin, ksqrt, kexp, klog, kpow, ksgn, ksin, ksinh, ktan, ktanh,
+ kfmax, kfmin, kisgn, ksqrt, kexp, klog, kpow, ksgn, ksin, ksinh, ktan, ktanh,
  dir1, dir2, dir3, dt, dx, dy, dz,
  khalf, kthird, ktwothird, kfourthird, keightthird};
 

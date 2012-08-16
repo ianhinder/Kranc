@@ -568,6 +568,7 @@ DefFn[
       fabs[x_]    -> kfabs[x],
       fmax[x_,y_] -> kfmax[x,y],
       fmin[x_,y_] -> kfmin[x,y],
+      isgn[x_]    -> kisgn[x],
       log[x_]     -> klog[x],
       pow[x_,y_]  -> kpow[x,y],
       sgn[x_]     -> ksgn[x],
@@ -810,7 +811,7 @@ DefFn[
         rhs = rhs //. Max[xx_, yy__] -> fmax[xx, Max[yy]];
         rhs = rhs //. Min[xx_, yy__] -> fmin[xx, Min[yy]];
         rhs = rhs //. Abs[x_] -> fabs[x];
-        rhs = rhs //. Sign[x_] -> sgn[x];
+        rhs = rhs //. Sign[x_] -> isgn[x];
         rhs = rhs //. IntAbs[x_] -> abs[x];
 
         If[vectorise === True,

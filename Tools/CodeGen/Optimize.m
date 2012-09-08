@@ -27,7 +27,7 @@ TopologicallySortEquations::usage = "TopologicallySortEquations[eqs, v] sorts eq
 Begin["`Private`"];
 
 CSEPrint[___] = null;
-(* CSEPrint = Print; *)
+(* CSEPrint[values___] := Apply[Print, Map[InputForm, {values}]]; *)
 
 Options[EliminateCommonSubexpressions] = ThornOptions;
 EliminateCommonSubexpressions[calc_List, OptionsPattern[]] :=
@@ -57,10 +57,40 @@ EliminateCommonSubexpressions[calc_List, OptionsPattern[]] :=
   newCalc
 ];
 
-cse[eqs_, v_, exceptions_, minSaving_:0] :=
- Module[{subexprs, replacements, replace, newEqs, defs, newDefs, i, relabelVars, allEqs, sortedEqs, newVars},
+(* Hide Piecewise[] by replacing it with piecewise[], expanding the
+   nested list arguments. We may be able to handle Piecewise specially
+   in the replacements below, introducing additional rules when
+   creating the subexpressions and performing the replacements, but
+   this would probably be more cumbersome. Also, matching Piecewise[]
+   in patterns is difficult, since e.g. even the pattern Piecewise[__]
+   already leads to warnings about the arguments not being nested
+   lists. *)
+hidePiecewise[eqs_] :=
+  Module[{piecewise1},
+         eqs
+         (* Replace Piecewise by piecewise1, so that we can write
+            patterns below without warnings *)
+         /. Piecewise -> piecewise1
+         /. {piecewise1[pairs_List] :>
+                Apply[piecewise, Flatten[pairs,2]],
+             piecewise1[pairs_List, val_] :>
+                Apply[piecewise, Append[Flatten[pairs,2], val]]}];
+(* Re-instate Piecewise[] from piecewise[], re-creating the nested
+   list arguments *)
+showPiecewise[eqs_] :=
+  Module[{piecewise1},
+         eqs
+         /. {piecewise[args__] :>
+             If[Mod[Length[{args}],2]==0,
+                piecewise1[Partition[{args},2]],
+                piecewise1[Partition[{args},2], Last[{args}]]]}
+         /. piecewise1 -> Piecewise]
+
+cse[eqs1_, v_, exceptions_, minSaving_:0] :=
+ Module[{eps, subexprs, replacements, replace, newEqs, defs, newDefs, i, relabelVars, allEqs, sortedEqs, newVars},
   (* Find all possible subexpressions and how many times they occur *)
   CSEPrint["CSE"];
+  eqs = hidePiecewise[eqs1];
   CSEPrint["CSE: eqs=", eqs];
   subexprs = Reap[Scan[If[! AtomQ[#], Sow[#]] &, eqs[[All,2]], Infinity]];
   CSEPrint["CSE: subexprs=", subexprs];
@@ -144,7 +174,7 @@ cse[eqs_, v_, exceptions_, minSaving_:0] :=
   relabelVars = (# -> Symbol[ToString[v] <> ToString[i++]]) & /@ newVars;
 
   (* Return the list of new variables and the new equations *)
-  {newVars, sortedEqs} /. relabelVars
+  showPiecewise[{newVars, sortedEqs} /. relabelVars]
 ];
 
 TopologicallySortEquations[eqs_] := Module[{lhs, rhs, lhsInrhs, dag, sortedVars, indVars, allVars, sortedEqs},

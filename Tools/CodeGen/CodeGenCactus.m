@@ -741,6 +741,16 @@ DefFn[
            rhs = rhs /.  8/3 ->  keightthird;
            rhs = rhs /. -8/3 -> -keightthird;
            *)
+
+        (* Handle Piecewise function *)
+        (* TODO: This does not work with vectorisation, since IfThen
+           there expects a constant condition *)
+        rhs = rhs /. Piecewise -> piecewise1
+                  //. piecewise1[pairs_List, val_:0] :>
+                         If[pairs==={}, val,
+                            IfThen[First[pairs][[2]],
+                                   First[pairs][[1]],
+                                   piecewise1[Rest[pairs], val]]];
         
         (* Remove parentheses *)
         rhs = rhs //. Parenthesis[xx_] -> xx;

@@ -666,8 +666,10 @@ DefFn[
     undoVect[expr_] := expr //. {
       ToReal[x_] -> x,
       
-      x_Integer -> 1.0*x,   (* don't generate large integer constants *)
-      x_Ratio   -> N[x,30],
+      (* don't generate large integer constants *)
+      x_Integer /; Abs[x]>10^9 :> 1.0*x,
+      (* generate sufficient precision *)
+      x_Ratio :> N[x,30],
       
       kneg[x_] -> -x,
       

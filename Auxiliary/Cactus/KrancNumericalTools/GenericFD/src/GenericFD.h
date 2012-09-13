@@ -70,7 +70,8 @@ KRANC_WHERE static inline int isgn(CCTK_REAL x)
 {
   if (x == (CCTK_REAL)0.0) return 0;
 #ifdef __cplusplus
-  int s = std::signbit(x);
+  using namespace std;
+  int s = signbit(x);
 #else
   int s = signbit(x);
 #endif

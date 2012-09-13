@@ -724,6 +724,7 @@ DefFn[
         rhs = rhs //. QAD[x_] QAD[y_] -> QAD[x y];
         rhs = rhs //. INV[x_] INV[y_] -> INV[x y];
         rhs = rhs //. sqrt[x_] sqrt[y_] -> sqrt[x y];
+        rhs = rhs //. INV[sqrt[x_]] sqrt[y_] -> sqrt[INV[x] y];
         
         (*
            rhs = rhs /.  1/2 ->  khalf

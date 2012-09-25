@@ -37,7 +37,16 @@ CCTK_STRING jacobian_group "Name of group containing Jacobian" STEERABLE=RECOVER
   "" :: "String of the form <implementation>::<groupname>"
 } ""
 
-restricted:
+CCTK_STRING jacobian_determinant_group "Name of group containing Jacobian determinant" STEERABLE=RECOVER
+{
+  "" :: "String of the form <implementation>::<groupname>"
+} ""
+
+CCTK_STRING jacobian_inverse_group "Name of group containing Jacobian inverse" STEERABLE=RECOVER
+{
+  "" :: "String of the form <implementation>::<groupname>"
+} ""
+
 CCTK_STRING jacobian_derivative_group "Name of group containing Jacobian derivative" STEERABLE=RECOVER
 {
   "" :: "String of the form <implementation>::<groupname>"

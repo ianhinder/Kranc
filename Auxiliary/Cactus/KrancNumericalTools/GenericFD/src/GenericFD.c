@@ -49,6 +49,7 @@
 /* TODO: provide functions for differencing, use FD macros to evaluate
    corresponding functions */
 
+static
 void GenericFD_GetBoundaryWidths(cGH const * restrict const cctkGH, int nboundaryzones[6])
 {
   int is_internal[6];
@@ -447,6 +448,7 @@ void GenericFD_LoopOverInterior(cGH const * restrict const cctkGH, Kranc_Calcula
 }
 
 
+static
 void GenericFD_PenaltyPrim2Char(cGH const * restrict const cctkGH, int const dir,
                                 int const face,
                                 CCTK_REAL const * restrict const base,

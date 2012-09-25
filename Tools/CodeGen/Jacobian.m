@@ -117,16 +117,30 @@ InsertJacobian[calc_List, opts:OptionsPattern[]] :=
    derivatives groups *)
 CreateJacobianVariables[] :=
 CommentedBlock["Jacobian variable pointers",
-  {"bool const use_jacobian = (!CCTK_IsFunctionAliased(\"MultiPatch_GetMap\") || MultiPatch_GetMap(cctkGH) != jacobian_identity_map)\n                     && strlen(jacobian_group) > 0;\n",
-   "if (use_jacobian && strlen(jacobian_derivative_group) == 0)\n",
+  {"bool const use_jacobian = (!CCTK_IsFunctionAliased(\"MultiPatch_GetMap\") || MultiPatch_GetMap(cctkGH) != jacobian_identity_map)\n",
+   "                     && strlen(jacobian_group) > 0;\n",
+   "bool const usejacobian = use_jacobian;\n",
+   "if (use_jacobian && (strlen(jacobian_determinant_group) == 0 || strlen(jacobian_inverse_group) == 0 || strlen(jacobian_derivative_group) == 0))\n",
    "{\n",
-   "  CCTK_WARN (1, \"GenericFD::jacobian_group and GenericFD::jacobian_derivative_group must both be set to valid group names\");\n",
+   "  CCTK_WARN (1, \"GenericFD::jacobian_group, GenericFD::jacobian_determinant_group, GenericFD::jacobian_inverse_group, and GenericFD::jacobian_derivative_group must all be set to valid group names\");\n",
    "}\n\n",
    "CCTK_REAL const *restrict jacobian_ptrs[9];\n",
    "if (use_jacobian) GenericFD_GroupDataPointers(cctkGH, jacobian_group,\n",
    "                                              9, jacobian_ptrs);\n",
     "\n",
     Table[{"CCTK_REAL const *restrict const J",i,j," = use_jacobian ? jacobian_ptrs[",(i-1)*3+j-1,"] : 0;\n"},{i,1,3},{j,1,3}],
+    "\n",
+   "CCTK_REAL const *restrict jacobian_determinant_ptrs[1];\n",
+   "if (use_jacobian) GenericFD_GroupDataPointers(cctkGH, jacobian_determinant_group,\n",
+   "                                              1, jacobian_determinant_ptrs);\n",
+    "\n",
+    {"CCTK_REAL const *restrict const detJ = use_jacobian ? jacobian_ptrs[0] : 0;\n"},
+    "\n",
+   "CCTK_REAL const *restrict jacobian_inverse_ptrs[9];\n",
+   "if (use_jacobian) GenericFD_GroupDataPointers(cctkGH, jacobian_inverse_group,\n",
+   "                                              9, jacobian_inverse_ptrs);\n",
+    "\n",
+    Table[{"CCTK_REAL const *restrict const iJ",i,j," = use_jacobian ? jacobian_inverse_ptrs[",(i-1)*3+j-1,"] : 0;\n"},{i,1,3},{j,1,3}],
    "\n",
    "CCTK_REAL const *restrict jacobian_derivative_ptrs[18];\n",
    "if (use_jacobian) GenericFD_GroupDataPointers(cctkGH, jacobian_derivative_group,\n",
@@ -137,24 +151,31 @@ CommentedBlock["Jacobian variable pointers",
 
 (* List of symbols which should be allowed in a calculation *)
 JacobianSymbols[] :=
-  Map[Symbol, Join[Flatten[Table[FlattenBlock[{"dJ",i,j,k}],{i,1,3},{j,1,3},{k,j,3}],2],
-    Flatten[Table[FlattenBlock[{"J",i,j}],{i,1,3},{j,1,3}],1]]];
+  Map[Symbol, Join[
+    Flatten[Table[FlattenBlock[{"J",i,j}],{i,1,3},{j,1,3}],1],
+    {FlattenBlock[{"detJ"}]},
+    Flatten[Table[FlattenBlock[{"iJ",i,j}],{i,1,3},{j,1,3}],1],
+    Flatten[Table[FlattenBlock[{"dJ",i,j,k}],{i,1,3},{j,1,3},{k,j,3}],2]]];
 
 (* Parameters to inherit from GenericFD *)
 JacobianGenericFDParameters[] :=
-  {{Name -> "jacobian_group",     Type -> "CCTK_STRING"},
-   {Name -> "jacobian_derivative_group",     Type -> "CCTK_STRING"},
-   {Name -> "jacobian_identity_map",     Type -> "CCTK_INT"}};
+  {{Name -> "jacobian_group",             Type -> "CCTK_STRING"},
+   {Name -> "jacobian_determinant_group", Type -> "CCTK_STRING"},
+   {Name -> "jacobian_inverse_group",     Type -> "CCTK_STRING"},
+   {Name -> "jacobian_derivative_group",  Type -> "CCTK_STRING"},
+   {Name -> "jacobian_identity_map",      Type -> "CCTK_INT"}};
 
 (* The symbols which are used for the Jacobian variables in the
    generated source code.  These do not have to coincide with the
    actual variable names, as the variable pointers are read using
    CCTK_VarDataPtr. *)
 JacobianGroups[] :=
-  {{"unknown::unknown",  {Global`J11, Global`J12, Global`J13, Global`J21, Global`J22, Global`J23, Global`J31, Global`J32, Global`J33}},
-   {"unknown::unknown",  {Global`dJ111, Global`dJ112, Global`dJ113, Global`dJ122, Global`dJ123, Global`dJ133,
-                               Global`dJ211, Global`dJ212, Global`dJ213, Global`dJ222, Global`dJ223, Global`dJ233,
-                               Global`dJ311, Global`dJ312, Global`dJ313, Global`dJ322, Global`dJ323, Global`dJ333}}};
+  {{"unknown::unknown", {Global`J11, Global`J12, Global`J13, Global`J21, Global`J22, Global`J23, Global`J31, Global`J32, Global`J33}},
+   {"unknown::unknown", {Global`detJ}},
+   {"unknown::unknown", {Global`iJ11, Global`iJ12, Global`iJ13, Global`iJ21, Global`iJ22, Global`iJ23, Global`iJ31, Global`iJ32, Global`iJ33}},
+   {"unknown::unknown", {Global`dJ111, Global`dJ112, Global`dJ113, Global`dJ122, Global`dJ123, Global`dJ133,
+                         Global`dJ211, Global`dJ212, Global`dJ213, Global`dJ222, Global`dJ223, Global`dJ233,
+                         Global`dJ311, Global`dJ312, Global`dJ313, Global`dJ322, Global`dJ323, Global`dJ333}}};
 
 JacobianCheckGroups[groups_] :=
   Module[{int},
@@ -164,7 +185,10 @@ JacobianCheckGroups[groups_] :=
 
 (* These gridfunctions are only given local variable copies if the use_jacobian variable is true *)
 JacobianConditionalGridFunctions[] :=
-  {("dJ" ~~ DigitCharacter ~~ DigitCharacter ~~ DigitCharacter) | ("J" ~~ DigitCharacter ~~ DigitCharacter),
+  {("J" ~~ DigitCharacter ~~ DigitCharacter) |
+   ("detJ") |
+   ("iJ" ~~ DigitCharacter ~~ DigitCharacter) |
+   ("dJ" ~~ DigitCharacter ~~ DigitCharacter ~~ DigitCharacter),
    "use_jacobian",
    None};
 

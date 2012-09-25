@@ -30,6 +30,7 @@ BeginPackage["Kranc`"];
  kacos, kacosh, kasin, kasinh, katan, katanh, kcopysign, kcos, kcosh, kfabs,
  kfmax, kfmin, kisgn, ksqrt, kexp, klog, kpow, ksgn, ksin, ksinh, ktan, ktanh,
  dir1, dir2, dir3, dt, dx, dy, dz,
+ usejacobian,
  khalf, kthird, ktwothird, kfourthird, keightthird};
 
 (* Helpers.m *)

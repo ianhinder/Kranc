@@ -532,11 +532,11 @@ DefFn[
     
     (* Constants *)
     expr = expr /. {
-      x_Integer -> ToReal[x],
-      x_Ratio   -> ToReal[x],
-      x_Real    -> ToReal[x],
-      E         -> ToReal[E],
-      Pi        -> ToReal[Pi]};
+      x_Integer  -> ToReal[x],
+      x_Rational -> ToReal[x],
+      x_Real     -> ToReal[x],
+      E          -> ToReal[E],
+      Pi         -> ToReal[Pi]};
     
     ToRealQ[expr_] := Head[expr] == ToReal;
     notToRealQ[expr_] := Head[expr] != ToReal;
@@ -618,8 +618,9 @@ DefFn[
       kdiv[x_,kneg[y_]]              -> kneg[kdiv[x,y]],
       kdiv[x_,x_]                    -> ToReal[1],
       kmul[ToReal[a_],ToReal[b_]]    -> ToReal[kmul[a,b]],
-      kdiv[x_,ToReal[y_]]            -> kmul[x,ToReal[kdiv[1,y]]],
+      kdev[ToReal[a_],ToReal[b_]]    -> ToReal[kdiv[a,b]],
       kmul[x_?notToRealQ,ToReal[a_]] -> kmul[ToReal[a],x],
+      kdiv[x_?notToRealQ,ToReal[y_]] -> kmul[ToReal[kdiv[1,y]],x],
       kmul[kmul[ToReal[a_],x_],y_]   -> kmul[ToReal[a],kmul[x,y]],
       kmul[kmul[ToReal[a_],x_],
            kmul[ToReal[b_],y_]]      -> kmul[ToReal[kmul[a,b]],kmul[x,y]],
@@ -667,9 +668,9 @@ DefFn[
       ToReal[x_] -> x,
       
       (* don't generate large integer constants *)
-      x_Integer /; Abs[x]>10^9 :> 1.0*x,
+      x_Integer /; Abs[x]>10^10 :> 1.0*x,
       (* generate sufficient precision *)
-      x_Ratio :> N[x,30],
+      x_Rational :> N[x,30],
       
       kneg[x_] -> -x,
       
@@ -759,7 +760,7 @@ DefFn[
         rhs = rhs //. Parenthesis[xx_] -> xx;
 
         (* Avoid rational numbers *)
-        rhs = rhs /. Rational[xx_,yy_] :> N[xx/yy, 30];
+        rhs = rhs /. xx_Rational :> N[xx, 30];
 
         (* Simple optimisations *)
         rhs = rhs /. IfThen[_, aa_, aa_] -> aa;

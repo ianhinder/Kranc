@@ -188,7 +188,7 @@ test[FullSimplify[MakeExplicit[MatrixInverse[a[ua, ub]] a[lb, lc]]],
 test[MakeExplicit[PD[u[la], lb]], {PD[u1, 1], PD[u1, 2], PD[u1, 3], PD[u2, 1],
    PD[u2, 2], PD[u2, 3], PD[u3, 1], PD[u3, 2], PD[u3, 3]}];
 
-test[MakeExplicit[PD[u[ua], la]], {PD[u1, 1], PD[u2, 2], PD[u3, 3]}];
+test[MakeExplicit[PD[u[ua], la]], {PD[u1, 1] + PD[u2, 2] + PD[u3, 3]}];
 
 test[Simplify[MakeExplicit[PD[MatrixInverse[a[ua, ub]] a[lb, lc], ld]]], {0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,

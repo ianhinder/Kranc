@@ -189,9 +189,14 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     (* Add in calculations to solve any conservation laws that have
        been provided *)
-    calcs = Join[calcs,
-      consCalcs = Flatten[Map[ProcessConservationCalculation[#,thornName] &,
-        consCalcsIn],1]];
+
+    consCalcs = Flatten[Map[ProcessConservationCalculation[#,thornName] &,
+                            consCalcsIn],1];
+
+    consCalcs = Map[Join[#, {PartialDerivatives -> partialDerivs,
+                             Implementation -> implementation}] &, consCalcs];
+
+    calcs = Join[calcs,consCalcs];
     (* Print["consCalcs = ", consCalcs]; *)
 
     consGroups = Union@Flatten[

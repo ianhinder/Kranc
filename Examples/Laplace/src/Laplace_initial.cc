@@ -17,10 +17,10 @@
 
 /* Define macros used in calculations */
 #define INITVALUE (42)
-#define QAD(x) (SQR(SQR(x)))
-#define INV(x) ((1.0) / (x))
+#define INV(x) ((CCTK_REAL)1.0 / (x))
 #define SQR(x) ((x) * (x))
-#define CUB(x) ((x) * (x) * (x))
+#define CUB(x) ((x) * SQR(x))
+#define QAD(x) (SQR(SQR(x)))
 
 extern "C" void Laplace_initial_SelectBCs(CCTK_ARGUMENTS)
 {
@@ -39,8 +39,6 @@ static void Laplace_initial_Body(cGH const * restrict const cctkGH, int const di
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  
-  /* Declare finite differencing variables */
   
   /* Include user-supplied include files */
   
@@ -72,10 +70,10 @@ static void Laplace_initial_Body(cGH const * restrict const cctkGH, int const di
   CCTK_REAL const p1o1 = 1;
   CCTK_REAL const p1o12dx = 0.0833333333333333333333333333333*INV(dx);
   CCTK_REAL const p1o12dy = 0.0833333333333333333333333333333*INV(dy);
-  CCTK_REAL const p1o144dxdy = 0.00694444444444444444444444444444*INV(dx)*INV(dy);
+  CCTK_REAL const p1o144dxdy = 0.00694444444444444444444444444444*INV(dx*dy);
   CCTK_REAL const p1o2dx = 0.5*INV(dx);
   CCTK_REAL const p1o2dy = 0.5*INV(dy);
-  CCTK_REAL const p1o4dxdy = 0.25*INV(dx)*INV(dy);
+  CCTK_REAL const p1o4dxdy = 0.25*INV(dx*dy);
   CCTK_REAL const p1odx2 = INV(SQR(dx));
   CCTK_REAL const p1ody2 = INV(SQR(dy));
   CCTK_REAL const pm1o12dx2 = -0.0833333333333333333333333333333*INV(SQR(dx));
@@ -91,9 +89,9 @@ static void Laplace_initial_Body(cGH const * restrict const cctkGH, int const di
   
   /* Loop over the grid points */
   #pragma omp parallel
-  CCTK_LOOP3 (Laplace_initial,
+  CCTK_LOOP3(Laplace_initial,
     i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-    cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+    cctk_ash[0],cctk_ash[1],cctk_ash[2])
   {
     ptrdiff_t const index = di*i + dj*j + dk*k;
     
@@ -118,12 +116,12 @@ static void Laplace_initial_Body(cGH const * restrict const cctkGH, int const di
     
     /* Calculate temporaries and grid functions */
     CCTK_REAL phiL = 
-      4*Csch(Pi*INV(ToReal(Lx))*ToReal(Ly))*INV(Pi)*Sin(xL*Pi*INV(ToReal(Lx)))*Sinh(yL*Pi*INV(ToReal(Lx)))*ToReal(phi0);
+      4*cosh(yL*Pi*INV(ToReal(Lx)))*INV(Pi)*INV(sinh(Pi*INV(ToReal(Lx))*ToReal(Ly)))*sin(xL*Pi*INV(ToReal(Lx)))*ToReal(phi0);
     
     /* Copy local copies back to grid functions */
     phi[index] = phiL;
   }
-  CCTK_ENDLOOP3 (Laplace_initial);
+  CCTK_ENDLOOP3(Laplace_initial);
 }
 
 extern "C" void Laplace_initial(CCTK_ARGUMENTS)
@@ -142,7 +140,9 @@ extern "C" void Laplace_initial(CCTK_ARGUMENTS)
     return;
   }
   
-  const char *groups[] = {"grid::coordinates","Laplace::phi_group"};
+  const char *const groups[] = {
+    "grid::coordinates",
+    "Laplace::phi_group"};
   GenericFD_AssertGroupStorage(cctkGH, "Laplace_initial", 2, groups);
   
   switch(fdOrder)
@@ -154,7 +154,7 @@ extern "C" void Laplace_initial(CCTK_ARGUMENTS)
       break;
   }
   
-  GenericFD_LoopOverInterior(cctkGH, &Laplace_initial_Body);
+  GenericFD_LoopOverInterior(cctkGH, Laplace_initial_Body);
   
   if (verbose > 1)
   {

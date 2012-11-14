@@ -1,4 +1,4 @@
-static char const * const differencing =
+static char const *const differencing =
 "#ifndef KRANC_DIFF_FUNCTIONS\n"
 "#  define PDstandard2nd1(u) ((-KRANC_GFOFFSET3D(u,-1,0,0) + KRANC_GFOFFSET3D(u,1,0,0))*p1o2dx)\n"
 "#else\n"

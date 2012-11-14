@@ -175,12 +175,6 @@ schedule EulerAuto_Startup at STARTUP
   OPTIONS: meta
 } "create banner"
 
-schedule EulerAuto_RegisterVars in MoL_Register
-{
-  LANG: C
-  OPTIONS: meta
-} "Register Variables for MoL"
-
 schedule EulerAuto_RegisterSymmetries in SymmetryRegister
 {
   LANG: C
@@ -193,22 +187,53 @@ if (CCTK_EQUALS(initial_data, "shock"))
   schedule eulerauto_initial_shock at CCTK_INITIAL as eulerauto_initial
   {
     LANG: C
+    READS:    grid::x
+    WRITES:   EulerAuto::p
+    WRITES:   EulerAuto::rho
+    WRITES:   EulerAuto::v1
+    WRITES:   EulerAuto::v2
+    WRITES:   EulerAuto::v3
   } "eulerauto_initial_shock"
 }
 
 schedule eulerauto_cons_calc_zero_rhs in MoL_CalcRHS
 {
   LANG: C
+  WRITES:   EulerAuto::Denrhs
+  WRITES:   EulerAuto::Enrhs
+  WRITES:   EulerAuto::S1rhs
+  WRITES:   EulerAuto::S2rhs
+  WRITES:   EulerAuto::S3rhs
 } "eulerauto_cons_calc_zero_rhs"
 
 schedule eulerauto_cons_calc_conserved at POSTINITIAL
 {
   LANG: C
+  READS:    EulerAuto::p
+  READS:    EulerAuto::rho
+  READS:    EulerAuto::v1
+  READS:    EulerAuto::v2
+  READS:    EulerAuto::v3
+  WRITES:   EulerAuto::Den
+  WRITES:   EulerAuto::En
+  WRITES:   EulerAuto::S1
+  WRITES:   EulerAuto::S2
+  WRITES:   EulerAuto::S3
 } "eulerauto_cons_calc_conserved"
 
 schedule eulerauto_cons_calc_primitives in MoL_PostStep after EulerAuto_ApplyBCs
 {
   LANG: C
+  READS:    EulerAuto::Den
+  READS:    EulerAuto::En
+  READS:    EulerAuto::S1
+  READS:    EulerAuto::S2
+  READS:    EulerAuto::S3
+  WRITES:   EulerAuto::p
+  WRITES:   EulerAuto::rho
+  WRITES:   EulerAuto::v1
+  WRITES:   EulerAuto::v2
+  WRITES:   EulerAuto::v3
 } "eulerauto_cons_calc_primitives"
 
 schedule group eulerauto_cons_calc_reconstruct_1_group in MoL_CalcRHS after eulerauto_cons_calc_zero_rhs
@@ -219,6 +244,21 @@ schedule group eulerauto_cons_calc_reconstruct_1_group in MoL_CalcRHS after eule
 schedule eulerauto_cons_calc_reconstruct_1 in eulerauto_cons_calc_reconstruct_1_group
 {
   LANG: C
+  READS:    EulerAuto::p
+  READS:    EulerAuto::rho
+  READS:    EulerAuto::v1
+  READS:    EulerAuto::v2
+  READS:    EulerAuto::v3
+  WRITES:   EulerAuto::pLeft
+  WRITES:   EulerAuto::pRight
+  WRITES:   EulerAuto::rhoLeft
+  WRITES:   EulerAuto::rhoRight
+  WRITES:   EulerAuto::v1Left
+  WRITES:   EulerAuto::v1Right
+  WRITES:   EulerAuto::v2Left
+  WRITES:   EulerAuto::v2Right
+  WRITES:   EulerAuto::v3Left
+  WRITES:   EulerAuto::v3Right
 } "eulerauto_cons_calc_reconstruct_1"
 
 schedule eulerauto_cons_calc_reconstruct_1_SelectBCs in eulerauto_cons_calc_reconstruct_1_bc_group
@@ -250,6 +290,26 @@ schedule group eulerauto_cons_calc_reconstruct_1_bc_group in MoL_PseudoEvolution
 schedule eulerauto_cons_calc_intercell_conserved_1 in MoL_CalcRHS after eulerauto_cons_calc_reconstruct_1
 {
   LANG: C
+  READS:    EulerAuto::pLeft
+  READS:    EulerAuto::pRight
+  READS:    EulerAuto::rhoLeft
+  READS:    EulerAuto::rhoRight
+  READS:    EulerAuto::v1Left
+  READS:    EulerAuto::v1Right
+  READS:    EulerAuto::v2Left
+  READS:    EulerAuto::v2Right
+  READS:    EulerAuto::v3Left
+  READS:    EulerAuto::v3Right
+  WRITES:   EulerAuto::DenLeft
+  WRITES:   EulerAuto::DenRight
+  WRITES:   EulerAuto::EnLeft
+  WRITES:   EulerAuto::EnRight
+  WRITES:   EulerAuto::S1Left
+  WRITES:   EulerAuto::S1Right
+  WRITES:   EulerAuto::S2Left
+  WRITES:   EulerAuto::S2Right
+  WRITES:   EulerAuto::S3Left
+  WRITES:   EulerAuto::S3Right
 } "eulerauto_cons_calc_intercell_conserved_1"
 
 schedule group eulerauto_cons_calc_flux_1_group in MoL_CalcRHS after eulerauto_cons_calc_intercell_conserved_1
@@ -260,6 +320,31 @@ schedule group eulerauto_cons_calc_flux_1_group in MoL_CalcRHS after eulerauto_c
 schedule eulerauto_cons_calc_flux_1 in eulerauto_cons_calc_flux_1_group
 {
   LANG: C
+  READS:    EulerAuto::DenLeft
+  READS:    EulerAuto::DenRight
+  READS:    EulerAuto::EnLeft
+  READS:    EulerAuto::EnRight
+  READS:    EulerAuto::pLeft
+  READS:    EulerAuto::pRight
+  READS:    EulerAuto::rhoLeft
+  READS:    EulerAuto::rhoRight
+  READS:    EulerAuto::S1Left
+  READS:    EulerAuto::S1Right
+  READS:    EulerAuto::S2Left
+  READS:    EulerAuto::S2Right
+  READS:    EulerAuto::S3Left
+  READS:    EulerAuto::S3Right
+  READS:    EulerAuto::v1Left
+  READS:    EulerAuto::v1Right
+  READS:    EulerAuto::v2Left
+  READS:    EulerAuto::v2Right
+  READS:    EulerAuto::v3Left
+  READS:    EulerAuto::v3Right
+  WRITES:   EulerAuto::DenFlux
+  WRITES:   EulerAuto::EnFlux
+  WRITES:   EulerAuto::S1Flux
+  WRITES:   EulerAuto::S2Flux
+  WRITES:   EulerAuto::S3Flux
 } "eulerauto_cons_calc_flux_1"
 
 schedule eulerauto_cons_calc_flux_1_SelectBCs in eulerauto_cons_calc_flux_1_bc_group
@@ -291,6 +376,21 @@ schedule group eulerauto_cons_calc_flux_1_bc_group in MoL_PseudoEvolutionBoundar
 schedule eulerauto_cons_calc_rhs_1 in MoL_CalcRHS after eulerauto_cons_calc_flux_1
 {
   LANG: C
+  READS:    EulerAuto::DenFlux
+  READS:    EulerAuto::Denrhs
+  READS:    EulerAuto::EnFlux
+  READS:    EulerAuto::Enrhs
+  READS:    EulerAuto::S1Flux
+  READS:    EulerAuto::S1rhs
+  READS:    EulerAuto::S2Flux
+  READS:    EulerAuto::S2rhs
+  READS:    EulerAuto::S3Flux
+  READS:    EulerAuto::S3rhs
+  WRITES:   EulerAuto::Denrhs
+  WRITES:   EulerAuto::Enrhs
+  WRITES:   EulerAuto::S1rhs
+  WRITES:   EulerAuto::S2rhs
+  WRITES:   EulerAuto::S3rhs
 } "eulerauto_cons_calc_rhs_1"
 
 schedule group eulerauto_cons_calc_reconstruct_2_group in MoL_CalcRHS after eulerauto_cons_calc_rhs_1
@@ -301,6 +401,21 @@ schedule group eulerauto_cons_calc_reconstruct_2_group in MoL_CalcRHS after eule
 schedule eulerauto_cons_calc_reconstruct_2 in eulerauto_cons_calc_reconstruct_2_group
 {
   LANG: C
+  READS:    EulerAuto::p
+  READS:    EulerAuto::rho
+  READS:    EulerAuto::v1
+  READS:    EulerAuto::v2
+  READS:    EulerAuto::v3
+  WRITES:   EulerAuto::pLeft
+  WRITES:   EulerAuto::pRight
+  WRITES:   EulerAuto::rhoLeft
+  WRITES:   EulerAuto::rhoRight
+  WRITES:   EulerAuto::v1Left
+  WRITES:   EulerAuto::v1Right
+  WRITES:   EulerAuto::v2Left
+  WRITES:   EulerAuto::v2Right
+  WRITES:   EulerAuto::v3Left
+  WRITES:   EulerAuto::v3Right
 } "eulerauto_cons_calc_reconstruct_2"
 
 schedule eulerauto_cons_calc_reconstruct_2_SelectBCs in eulerauto_cons_calc_reconstruct_2_bc_group
@@ -332,6 +447,26 @@ schedule group eulerauto_cons_calc_reconstruct_2_bc_group in MoL_PseudoEvolution
 schedule eulerauto_cons_calc_intercell_conserved_2 in MoL_CalcRHS after eulerauto_cons_calc_reconstruct_2
 {
   LANG: C
+  READS:    EulerAuto::pLeft
+  READS:    EulerAuto::pRight
+  READS:    EulerAuto::rhoLeft
+  READS:    EulerAuto::rhoRight
+  READS:    EulerAuto::v1Left
+  READS:    EulerAuto::v1Right
+  READS:    EulerAuto::v2Left
+  READS:    EulerAuto::v2Right
+  READS:    EulerAuto::v3Left
+  READS:    EulerAuto::v3Right
+  WRITES:   EulerAuto::DenLeft
+  WRITES:   EulerAuto::DenRight
+  WRITES:   EulerAuto::EnLeft
+  WRITES:   EulerAuto::EnRight
+  WRITES:   EulerAuto::S1Left
+  WRITES:   EulerAuto::S1Right
+  WRITES:   EulerAuto::S2Left
+  WRITES:   EulerAuto::S2Right
+  WRITES:   EulerAuto::S3Left
+  WRITES:   EulerAuto::S3Right
 } "eulerauto_cons_calc_intercell_conserved_2"
 
 schedule group eulerauto_cons_calc_flux_2_group in MoL_CalcRHS after eulerauto_cons_calc_intercell_conserved_2
@@ -342,6 +477,31 @@ schedule group eulerauto_cons_calc_flux_2_group in MoL_CalcRHS after eulerauto_c
 schedule eulerauto_cons_calc_flux_2 in eulerauto_cons_calc_flux_2_group
 {
   LANG: C
+  READS:    EulerAuto::DenLeft
+  READS:    EulerAuto::DenRight
+  READS:    EulerAuto::EnLeft
+  READS:    EulerAuto::EnRight
+  READS:    EulerAuto::pLeft
+  READS:    EulerAuto::pRight
+  READS:    EulerAuto::rhoLeft
+  READS:    EulerAuto::rhoRight
+  READS:    EulerAuto::S1Left
+  READS:    EulerAuto::S1Right
+  READS:    EulerAuto::S2Left
+  READS:    EulerAuto::S2Right
+  READS:    EulerAuto::S3Left
+  READS:    EulerAuto::S3Right
+  READS:    EulerAuto::v1Left
+  READS:    EulerAuto::v1Right
+  READS:    EulerAuto::v2Left
+  READS:    EulerAuto::v2Right
+  READS:    EulerAuto::v3Left
+  READS:    EulerAuto::v3Right
+  WRITES:   EulerAuto::DenFlux
+  WRITES:   EulerAuto::EnFlux
+  WRITES:   EulerAuto::S1Flux
+  WRITES:   EulerAuto::S2Flux
+  WRITES:   EulerAuto::S3Flux
 } "eulerauto_cons_calc_flux_2"
 
 schedule eulerauto_cons_calc_flux_2_SelectBCs in eulerauto_cons_calc_flux_2_bc_group
@@ -373,6 +533,21 @@ schedule group eulerauto_cons_calc_flux_2_bc_group in MoL_PseudoEvolutionBoundar
 schedule eulerauto_cons_calc_rhs_2 in MoL_CalcRHS after eulerauto_cons_calc_flux_2
 {
   LANG: C
+  READS:    EulerAuto::DenFlux
+  READS:    EulerAuto::Denrhs
+  READS:    EulerAuto::EnFlux
+  READS:    EulerAuto::Enrhs
+  READS:    EulerAuto::S1Flux
+  READS:    EulerAuto::S1rhs
+  READS:    EulerAuto::S2Flux
+  READS:    EulerAuto::S2rhs
+  READS:    EulerAuto::S3Flux
+  READS:    EulerAuto::S3rhs
+  WRITES:   EulerAuto::Denrhs
+  WRITES:   EulerAuto::Enrhs
+  WRITES:   EulerAuto::S1rhs
+  WRITES:   EulerAuto::S2rhs
+  WRITES:   EulerAuto::S3rhs
 } "eulerauto_cons_calc_rhs_2"
 
 schedule group eulerauto_cons_calc_reconstruct_3_group in MoL_CalcRHS after eulerauto_cons_calc_rhs_2
@@ -383,6 +558,21 @@ schedule group eulerauto_cons_calc_reconstruct_3_group in MoL_CalcRHS after eule
 schedule eulerauto_cons_calc_reconstruct_3 in eulerauto_cons_calc_reconstruct_3_group
 {
   LANG: C
+  READS:    EulerAuto::p
+  READS:    EulerAuto::rho
+  READS:    EulerAuto::v1
+  READS:    EulerAuto::v2
+  READS:    EulerAuto::v3
+  WRITES:   EulerAuto::pLeft
+  WRITES:   EulerAuto::pRight
+  WRITES:   EulerAuto::rhoLeft
+  WRITES:   EulerAuto::rhoRight
+  WRITES:   EulerAuto::v1Left
+  WRITES:   EulerAuto::v1Right
+  WRITES:   EulerAuto::v2Left
+  WRITES:   EulerAuto::v2Right
+  WRITES:   EulerAuto::v3Left
+  WRITES:   EulerAuto::v3Right
 } "eulerauto_cons_calc_reconstruct_3"
 
 schedule eulerauto_cons_calc_reconstruct_3_SelectBCs in eulerauto_cons_calc_reconstruct_3_bc_group
@@ -414,6 +604,26 @@ schedule group eulerauto_cons_calc_reconstruct_3_bc_group in MoL_PseudoEvolution
 schedule eulerauto_cons_calc_intercell_conserved_3 in MoL_CalcRHS after eulerauto_cons_calc_reconstruct_3
 {
   LANG: C
+  READS:    EulerAuto::pLeft
+  READS:    EulerAuto::pRight
+  READS:    EulerAuto::rhoLeft
+  READS:    EulerAuto::rhoRight
+  READS:    EulerAuto::v1Left
+  READS:    EulerAuto::v1Right
+  READS:    EulerAuto::v2Left
+  READS:    EulerAuto::v2Right
+  READS:    EulerAuto::v3Left
+  READS:    EulerAuto::v3Right
+  WRITES:   EulerAuto::DenLeft
+  WRITES:   EulerAuto::DenRight
+  WRITES:   EulerAuto::EnLeft
+  WRITES:   EulerAuto::EnRight
+  WRITES:   EulerAuto::S1Left
+  WRITES:   EulerAuto::S1Right
+  WRITES:   EulerAuto::S2Left
+  WRITES:   EulerAuto::S2Right
+  WRITES:   EulerAuto::S3Left
+  WRITES:   EulerAuto::S3Right
 } "eulerauto_cons_calc_intercell_conserved_3"
 
 schedule group eulerauto_cons_calc_flux_3_group in MoL_CalcRHS after eulerauto_cons_calc_intercell_conserved_3
@@ -424,6 +634,31 @@ schedule group eulerauto_cons_calc_flux_3_group in MoL_CalcRHS after eulerauto_c
 schedule eulerauto_cons_calc_flux_3 in eulerauto_cons_calc_flux_3_group
 {
   LANG: C
+  READS:    EulerAuto::DenLeft
+  READS:    EulerAuto::DenRight
+  READS:    EulerAuto::EnLeft
+  READS:    EulerAuto::EnRight
+  READS:    EulerAuto::pLeft
+  READS:    EulerAuto::pRight
+  READS:    EulerAuto::rhoLeft
+  READS:    EulerAuto::rhoRight
+  READS:    EulerAuto::S1Left
+  READS:    EulerAuto::S1Right
+  READS:    EulerAuto::S2Left
+  READS:    EulerAuto::S2Right
+  READS:    EulerAuto::S3Left
+  READS:    EulerAuto::S3Right
+  READS:    EulerAuto::v1Left
+  READS:    EulerAuto::v1Right
+  READS:    EulerAuto::v2Left
+  READS:    EulerAuto::v2Right
+  READS:    EulerAuto::v3Left
+  READS:    EulerAuto::v3Right
+  WRITES:   EulerAuto::DenFlux
+  WRITES:   EulerAuto::EnFlux
+  WRITES:   EulerAuto::S1Flux
+  WRITES:   EulerAuto::S2Flux
+  WRITES:   EulerAuto::S3Flux
 } "eulerauto_cons_calc_flux_3"
 
 schedule eulerauto_cons_calc_flux_3_SelectBCs in eulerauto_cons_calc_flux_3_bc_group
@@ -455,6 +690,21 @@ schedule group eulerauto_cons_calc_flux_3_bc_group in MoL_PseudoEvolutionBoundar
 schedule eulerauto_cons_calc_rhs_3 in MoL_CalcRHS after eulerauto_cons_calc_flux_3
 {
   LANG: C
+  READS:    EulerAuto::DenFlux
+  READS:    EulerAuto::Denrhs
+  READS:    EulerAuto::EnFlux
+  READS:    EulerAuto::Enrhs
+  READS:    EulerAuto::S1Flux
+  READS:    EulerAuto::S1rhs
+  READS:    EulerAuto::S2Flux
+  READS:    EulerAuto::S2rhs
+  READS:    EulerAuto::S3Flux
+  READS:    EulerAuto::S3rhs
+  WRITES:   EulerAuto::Denrhs
+  WRITES:   EulerAuto::Enrhs
+  WRITES:   EulerAuto::S1rhs
+  WRITES:   EulerAuto::S2rhs
+  WRITES:   EulerAuto::S3rhs
 } "eulerauto_cons_calc_rhs_3"
 
 schedule EulerAuto_SelectBoundConds in MoL_PostStep
@@ -471,6 +721,12 @@ schedule EulerAuto_CheckBoundaries at BASEGRID
   LANG: C
   OPTIONS: meta
 } "check boundaries treatment"
+
+schedule EulerAuto_RegisterVars in MoL_Register
+{
+  LANG: C
+  OPTIONS: meta
+} "Register Variables for MoL"
 
 schedule group ApplyBCs as EulerAuto_ApplyBCs in MoL_PostStep after EulerAuto_SelectBoundConds
 {

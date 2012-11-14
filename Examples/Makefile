@@ -1,5 +1,8 @@
 thornscripts = $(wildcard *.m)
-thorns = ${thornscripts:.m=}
+
+# thorns = ${thornscripts:.m=}
+
+thorns = $(shell cat make.thorns)
 
 kranc = ../Bin/kranc
 

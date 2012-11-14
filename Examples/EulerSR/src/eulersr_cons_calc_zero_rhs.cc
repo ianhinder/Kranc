@@ -17,18 +17,16 @@
 
 /* Define macros used in calculations */
 #define INITVALUE (42)
-#define QAD(x) (SQR(SQR(x)))
-#define INV(x) ((1.0) / (x))
+#define INV(x) ((CCTK_REAL)1.0 / (x))
 #define SQR(x) ((x) * (x))
-#define CUB(x) ((x) * (x) * (x))
+#define CUB(x) ((x) * SQR(x))
+#define QAD(x) (SQR(SQR(x)))
 
 static void eulersr_cons_calc_zero_rhs_Body(cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const imin[3], int const imax[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[])
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  
-  /* Declare finite differencing variables */
   
   /* Include user-supplied include files */
   
@@ -72,9 +70,9 @@ static void eulersr_cons_calc_zero_rhs_Body(cGH const * restrict const cctkGH, i
   
   /* Loop over the grid points */
   #pragma omp parallel
-  CCTK_LOOP3 (eulersr_cons_calc_zero_rhs,
+  CCTK_LOOP3(eulersr_cons_calc_zero_rhs,
     i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-    cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+    cctk_ash[0],cctk_ash[1],cctk_ash[2])
   {
     ptrdiff_t const index = di*i + dj*j + dk*k;
     
@@ -124,7 +122,7 @@ static void eulersr_cons_calc_zero_rhs_Body(cGH const * restrict const cctkGH, i
     S3rhs[index] = S3rhsL;
     taurhs[index] = taurhsL;
   }
-  CCTK_ENDLOOP3 (eulersr_cons_calc_zero_rhs);
+  CCTK_ENDLOOP3(eulersr_cons_calc_zero_rhs);
 }
 
 extern "C" void eulersr_cons_calc_zero_rhs(CCTK_ARGUMENTS)
@@ -143,11 +141,14 @@ extern "C" void eulersr_cons_calc_zero_rhs(CCTK_ARGUMENTS)
     return;
   }
   
-  const char *groups[] = {"EulerSR::Den_grouprhs","EulerSR::S_grouprhs","EulerSR::tau_grouprhs"};
+  const char *const groups[] = {
+    "EulerSR::Den_grouprhs",
+    "EulerSR::S_grouprhs",
+    "EulerSR::tau_grouprhs"};
   GenericFD_AssertGroupStorage(cctkGH, "eulersr_cons_calc_zero_rhs", 3, groups);
   
   
-  GenericFD_LoopOverEverything(cctkGH, &eulersr_cons_calc_zero_rhs_Body);
+  GenericFD_LoopOverEverything(cctkGH, eulersr_cons_calc_zero_rhs_Body);
   
   if (verbose > 1)
   {

@@ -12,21 +12,18 @@ schedule AdvectCaKernel_Startup at STARTUP
   OPTIONS: meta
 } "create banner"
 
-schedule AdvectCaKernel_RegisterVars in MoL_Register
-{
-  LANG: C
-  OPTIONS: meta
-} "Register Variables for MoL"
-
 schedule AdvectCaKernel_RegisterSymmetries in SymmetryRegister
 {
   LANG: C
   OPTIONS: meta
 } "register symmetries"
 
-schedule CAKERNEL_Launch_initial_gaussian AT INITIAL
+schedule CAKERNEL_Launch_initial_gaussian as initial_gaussian AT INITIAL
 {
   LANG: C
+  TAGS: Device=1
+  READS:    grid::x
+  WRITES:   AdvectCaKernel::phi
 } "initial_gaussian"
 
 schedule AdvectCaKernel_SelectBoundConds in MoL_PostStep
@@ -41,17 +38,19 @@ schedule AdvectCaKernel_CheckBoundaries at BASEGRID
   OPTIONS: meta
 } "check boundaries treatment"
 
-schedule CaKernel_CopyFromDev at ANALYSIS
+schedule AdvectCaKernel_RegisterVars in MoL_Register
 {
   LANG: C
-} "Copy variables from devices"
+  OPTIONS: meta
+} "Register Variables for MoL"
+
+schedule AdvectCaKernel_Init in CCTK_BASEGRID after Accelerator_SetDevice
+{
+  LANG: C
+  OPTIONS: local
+} "Initialize CUDA Device"
 
 schedule group ApplyBCs as AdvectCaKernel_ApplyBCs in MoL_PostStep after AdvectCaKernel_SelectBoundConds
 {
   # no language specified
 } "Apply boundary conditions controlled by thorn Boundary"
-
-
-############################################################
-#CAKERNEL AUTO GENERATED PART. DO NOT EDIT BELOW THIS POINT#
-############################################################

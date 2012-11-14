@@ -17,10 +17,10 @@
 
 /* Define macros used in calculations */
 #define INITVALUE (42)
-#define QAD(x) (SQR(SQR(x)))
-#define INV(x) ((1.0) / (x))
+#define INV(x) ((CCTK_REAL)1.0 / (x))
 #define SQR(x) ((x) * (x))
-#define CUB(x) ((x) * (x) * (x))
+#define CUB(x) ((x) * SQR(x))
+#define QAD(x) (SQR(SQR(x)))
 
 extern "C" void euler_flux_1_SelectBCs(CCTK_ARGUMENTS)
 {
@@ -45,8 +45,6 @@ static void euler_flux_1_Body(cGH const * restrict const cctkGH, int const dir, 
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  
-  /* Declare finite differencing variables */
   
   /* Include user-supplied include files */
   
@@ -79,15 +77,15 @@ static void euler_flux_1_Body(cGH const * restrict const cctkGH, int const dir, 
   CCTK_REAL const p1o12dx = 0.0833333333333333333333333333333*INV(dx);
   CCTK_REAL const p1o12dy = 0.0833333333333333333333333333333*INV(dy);
   CCTK_REAL const p1o12dz = 0.0833333333333333333333333333333*INV(dz);
-  CCTK_REAL const p1o144dxdy = 0.00694444444444444444444444444444*INV(dx)*INV(dy);
-  CCTK_REAL const p1o144dxdz = 0.00694444444444444444444444444444*INV(dx)*INV(dz);
-  CCTK_REAL const p1o144dydz = 0.00694444444444444444444444444444*INV(dy)*INV(dz);
+  CCTK_REAL const p1o144dxdy = 0.00694444444444444444444444444444*INV(dx*dy);
+  CCTK_REAL const p1o144dxdz = 0.00694444444444444444444444444444*INV(dx*dz);
+  CCTK_REAL const p1o144dydz = 0.00694444444444444444444444444444*INV(dy*dz);
   CCTK_REAL const p1o2dx = 0.5*INV(dx);
   CCTK_REAL const p1o2dy = 0.5*INV(dy);
   CCTK_REAL const p1o2dz = 0.5*INV(dz);
-  CCTK_REAL const p1o4dxdy = 0.25*INV(dx)*INV(dy);
-  CCTK_REAL const p1o4dxdz = 0.25*INV(dx)*INV(dz);
-  CCTK_REAL const p1o4dydz = 0.25*INV(dy)*INV(dz);
+  CCTK_REAL const p1o4dxdy = 0.25*INV(dx*dy);
+  CCTK_REAL const p1o4dxdz = 0.25*INV(dx*dz);
+  CCTK_REAL const p1o4dydz = 0.25*INV(dy*dz);
   CCTK_REAL const p1odx = INV(dx);
   CCTK_REAL const p1odx2 = INV(SQR(dx));
   CCTK_REAL const p1ody = INV(dy);
@@ -111,9 +109,9 @@ static void euler_flux_1_Body(cGH const * restrict const cctkGH, int const dir, 
   
   /* Loop over the grid points */
   #pragma omp parallel
-  CCTK_LOOP3 (euler_flux_1,
+  CCTK_LOOP3(euler_flux_1,
     i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-    cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+    cctk_ash[0],cctk_ash[1],cctk_ash[2])
   {
     ptrdiff_t const index = di*i + dj*j + dk*k;
     
@@ -189,7 +187,7 @@ static void euler_flux_1_Body(cGH const * restrict const cctkGH, int const dir, 
     SF2[index] = SF2L;
     SF3[index] = SF3L;
   }
-  CCTK_ENDLOOP3 (euler_flux_1);
+  CCTK_ENDLOOP3(euler_flux_1);
 }
 
 extern "C" void euler_flux_1(CCTK_ARGUMENTS)
@@ -208,12 +206,27 @@ extern "C" void euler_flux_1(CCTK_ARGUMENTS)
     return;
   }
   
-  const char *groups[] = {"Euler::DenF_group","Euler::DenLeft_group","Euler::DenRight_group","Euler::EnF_group","Euler::EnLeft_group","Euler::EnRight_group","Euler::pLeft_group","Euler::pRight_group","Euler::rhoLeft_group","Euler::rhoRight_group","Euler::SF_group","Euler::SLeft_group","Euler::SRight_group","Euler::vLeft_group","Euler::vRight_group"};
+  const char *const groups[] = {
+    "Euler::DenF_group",
+    "Euler::DenLeft_group",
+    "Euler::DenRight_group",
+    "Euler::EnF_group",
+    "Euler::EnLeft_group",
+    "Euler::EnRight_group",
+    "Euler::pLeft_group",
+    "Euler::pRight_group",
+    "Euler::rhoLeft_group",
+    "Euler::rhoRight_group",
+    "Euler::SF_group",
+    "Euler::SLeft_group",
+    "Euler::SRight_group",
+    "Euler::vLeft_group",
+    "Euler::vRight_group"};
   GenericFD_AssertGroupStorage(cctkGH, "euler_flux_1", 15, groups);
   
   GenericFD_EnsureStencilFits(cctkGH, "euler_flux_1", 1, 1, 1);
   
-  GenericFD_LoopOverInterior(cctkGH, &euler_flux_1_Body);
+  GenericFD_LoopOverInterior(cctkGH, euler_flux_1_Body);
   
   if (verbose > 1)
   {

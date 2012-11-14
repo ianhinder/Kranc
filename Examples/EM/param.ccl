@@ -23,12 +23,6 @@ CCTK_REAL sigma "sigma"
 } 0
 
 restricted:
-CCTK_REAL hlleAlpha "hlleAlpha"
-{
-  "*:*" :: ""
-} 0
-
-restricted:
 CCTK_INT EM_MaxNumEvolvedVars "Number of evolved variables used by this thorn" ACCUMULATOR-BASE=MethodofLines::MoL_Num_Evolved_Vars STEERABLE=RECOVER
 {
   6:6 :: "Number of evolved variables used by this thorn"

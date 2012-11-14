@@ -69,12 +69,6 @@ schedule EM_Startup at STARTUP
   OPTIONS: meta
 } "create banner"
 
-schedule EM_RegisterVars in MoL_Register
-{
-  LANG: C
-  OPTIONS: meta
-} "Register Variables for MoL"
-
 schedule EM_RegisterSymmetries in SymmetryRegister
 {
   LANG: C
@@ -84,11 +78,31 @@ schedule EM_RegisterSymmetries in SymmetryRegister
 schedule EM_initial at CCTK_INITIAL
 {
   LANG: C
+  READS:    grid::x
+  READS:    grid::y
+  WRITES:   EM::B1
+  WRITES:   EM::B2
+  WRITES:   EM::B3
+  WRITES:   EM::El1
+  WRITES:   EM::El2
+  WRITES:   EM::El3
 } "EM_initial"
 
 schedule EM_evol in MoL_CalcRHS
 {
   LANG: C
+  READS:    EM::B1
+  READS:    EM::B2
+  READS:    EM::B3
+  READS:    EM::El1
+  READS:    EM::El2
+  READS:    EM::El3
+  WRITES:   EM::B1rhs
+  WRITES:   EM::B2rhs
+  WRITES:   EM::B3rhs
+  WRITES:   EM::El1rhs
+  WRITES:   EM::El2rhs
+  WRITES:   EM::El3rhs
 } "EM_evol"
 
 schedule group EM_constraints_group in MoL_PseudoEvolution
@@ -99,6 +113,14 @@ schedule group EM_constraints_group in MoL_PseudoEvolution
 schedule EM_constraints in EM_constraints_group
 {
   LANG: C
+  READS:    EM::B1
+  READS:    EM::B2
+  READS:    EM::B3
+  READS:    EM::El1
+  READS:    EM::El2
+  READS:    EM::El3
+  WRITES:   EM::CB
+  WRITES:   EM::CEl
 } "EM_constraints"
 
 schedule EM_constraints_SelectBCs in EM_constraints_bc_group
@@ -131,6 +153,13 @@ schedule group EM_energy_group in MoL_PseudoEvolution
 schedule EM_energy in EM_energy_group
 {
   LANG: C
+  READS:    EM::B1
+  READS:    EM::B2
+  READS:    EM::B3
+  READS:    EM::El1
+  READS:    EM::El2
+  READS:    EM::El3
+  WRITES:   EM::rho
 } "EM_energy"
 
 schedule EM_SelectBoundConds in MoL_PostStep
@@ -146,6 +175,12 @@ schedule EM_CheckBoundaries at BASEGRID
   LANG: C
   OPTIONS: meta
 } "check boundaries treatment"
+
+schedule EM_RegisterVars in MoL_Register
+{
+  LANG: C
+  OPTIONS: meta
+} "Register Variables for MoL"
 
 schedule group ApplyBCs as EM_ApplyBCs in MoL_PostStep after EM_SelectBoundConds
 {

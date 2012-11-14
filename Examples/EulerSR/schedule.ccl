@@ -190,12 +190,6 @@ schedule EulerSR_Startup at STARTUP
   OPTIONS: meta
 } "create banner"
 
-schedule EulerSR_RegisterVars in MoL_Register
-{
-  LANG: C
-  OPTIONS: meta
-} "Register Variables for MoL"
-
 schedule EulerSR_RegisterSymmetries in SymmetryRegister
 {
   LANG: C
@@ -208,22 +202,68 @@ if (CCTK_EQUALS(initial_data, "shock"))
   schedule eulersr_initial_shock at CCTK_INITIAL as eulersr_initial
   {
     LANG: C
+    READS:    grid::x
+    WRITES:   EulerSR::epsi
+    WRITES:   EulerSR::rho
+    WRITES:   EulerSR::v1
+    WRITES:   EulerSR::v2
+    WRITES:   EulerSR::v3
   } "eulersr_initial_shock"
 }
 
 schedule eulersr_cons_calc_zero_rhs in MoL_CalcRHS
 {
   LANG: C
+  WRITES:   EulerSR::Denrhs
+  WRITES:   EulerSR::S1rhs
+  WRITES:   EulerSR::S2rhs
+  WRITES:   EulerSR::S3rhs
+  WRITES:   EulerSR::taurhs
 } "eulersr_cons_calc_zero_rhs"
 
 schedule eulersr_cons_calc_conserved at POSTINITIAL
 {
   LANG: C
+  READS:    EulerSR::Den
+  READS:    EulerSR::epsi
+  READS:    EulerSR::h
+  READS:    EulerSR::p
+  READS:    EulerSR::rho
+  READS:    EulerSR::v1
+  READS:    EulerSR::v2
+  READS:    EulerSR::v3
+  READS:    EulerSR::W
+  WRITES:   EulerSR::Den
+  WRITES:   EulerSR::h
+  WRITES:   EulerSR::p
+  WRITES:   EulerSR::S1
+  WRITES:   EulerSR::S2
+  WRITES:   EulerSR::S3
+  WRITES:   EulerSR::tau
+  WRITES:   EulerSR::W
 } "eulersr_cons_calc_conserved"
 
 schedule eulersr_cons_calc_primitives in MoL_PostStep after EulerSR_ApplyBCs
 {
   LANG: C
+  READS:    EulerSR::Den
+  READS:    EulerSR::epsi
+  READS:    EulerSR::h
+  READS:    EulerSR::p
+  READS:    EulerSR::rho
+  READS:    EulerSR::S1
+  READS:    EulerSR::S2
+  READS:    EulerSR::S3
+  READS:    EulerSR::tau
+  READS:    EulerSR::W
+  WRITES:   EulerSR::epsi
+  WRITES:   EulerSR::h
+  WRITES:   EulerSR::p
+  WRITES:   EulerSR::rho
+  WRITES:   EulerSR::v1
+  WRITES:   EulerSR::v2
+  WRITES:   EulerSR::v3
+  WRITES:   EulerSR::W
 } "eulersr_cons_calc_primitives"
 
 schedule group eulersr_cons_calc_reconstruct_1_group in MoL_CalcRHS after eulersr_cons_calc_zero_rhs
@@ -234,6 +274,21 @@ schedule group eulersr_cons_calc_reconstruct_1_group in MoL_CalcRHS after eulers
 schedule eulersr_cons_calc_reconstruct_1 in eulersr_cons_calc_reconstruct_1_group
 {
   LANG: C
+  READS:    EulerSR::epsi
+  READS:    EulerSR::rho
+  READS:    EulerSR::v1
+  READS:    EulerSR::v2
+  READS:    EulerSR::v3
+  WRITES:   EulerSR::epsiLeft
+  WRITES:   EulerSR::epsiRight
+  WRITES:   EulerSR::rhoLeft
+  WRITES:   EulerSR::rhoRight
+  WRITES:   EulerSR::v1Left
+  WRITES:   EulerSR::v1Right
+  WRITES:   EulerSR::v2Left
+  WRITES:   EulerSR::v2Right
+  WRITES:   EulerSR::v3Left
+  WRITES:   EulerSR::v3Right
 } "eulersr_cons_calc_reconstruct_1"
 
 schedule eulersr_cons_calc_reconstruct_1_SelectBCs in eulersr_cons_calc_reconstruct_1_bc_group
@@ -265,6 +320,34 @@ schedule group eulersr_cons_calc_reconstruct_1_bc_group in MoL_PseudoEvolutionBo
 schedule eulersr_cons_calc_intercell_conserved_1 in MoL_CalcRHS after eulersr_cons_calc_reconstruct_1
 {
   LANG: C
+  READS:    EulerSR::DenLeft
+  READS:    EulerSR::DenRight
+  READS:    EulerSR::epsiLeft
+  READS:    EulerSR::epsiRight
+  READS:    EulerSR::h
+  READS:    EulerSR::p
+  READS:    EulerSR::rhoLeft
+  READS:    EulerSR::rhoRight
+  READS:    EulerSR::v1Left
+  READS:    EulerSR::v1Right
+  READS:    EulerSR::v2Left
+  READS:    EulerSR::v2Right
+  READS:    EulerSR::v3Left
+  READS:    EulerSR::v3Right
+  READS:    EulerSR::W
+  WRITES:   EulerSR::DenLeft
+  WRITES:   EulerSR::DenRight
+  WRITES:   EulerSR::h
+  WRITES:   EulerSR::p
+  WRITES:   EulerSR::S1Left
+  WRITES:   EulerSR::S1Right
+  WRITES:   EulerSR::S2Left
+  WRITES:   EulerSR::S2Right
+  WRITES:   EulerSR::S3Left
+  WRITES:   EulerSR::S3Right
+  WRITES:   EulerSR::tauLeft
+  WRITES:   EulerSR::tauRight
+  WRITES:   EulerSR::W
 } "eulersr_cons_calc_intercell_conserved_1"
 
 schedule group eulersr_cons_calc_flux_1_group in MoL_CalcRHS after eulersr_cons_calc_intercell_conserved_1
@@ -275,6 +358,27 @@ schedule group eulersr_cons_calc_flux_1_group in MoL_CalcRHS after eulersr_cons_
 schedule eulersr_cons_calc_flux_1 in eulersr_cons_calc_flux_1_group
 {
   LANG: C
+  READS:    EulerSR::DenLeft
+  READS:    EulerSR::DenRight
+  READS:    EulerSR::epsiLeft
+  READS:    EulerSR::epsiRight
+  READS:    EulerSR::rhoLeft
+  READS:    EulerSR::rhoRight
+  READS:    EulerSR::S1Left
+  READS:    EulerSR::S1Right
+  READS:    EulerSR::S2Left
+  READS:    EulerSR::S2Right
+  READS:    EulerSR::S3Left
+  READS:    EulerSR::S3Right
+  READS:    EulerSR::tauLeft
+  READS:    EulerSR::tauRight
+  READS:    EulerSR::v1Left
+  READS:    EulerSR::v1Right
+  WRITES:   EulerSR::DenFlux
+  WRITES:   EulerSR::S1Flux
+  WRITES:   EulerSR::S2Flux
+  WRITES:   EulerSR::S3Flux
+  WRITES:   EulerSR::tauFlux
 } "eulersr_cons_calc_flux_1"
 
 schedule eulersr_cons_calc_flux_1_SelectBCs in eulersr_cons_calc_flux_1_bc_group
@@ -306,6 +410,21 @@ schedule group eulersr_cons_calc_flux_1_bc_group in MoL_PseudoEvolutionBoundarie
 schedule eulersr_cons_calc_rhs_1 in MoL_CalcRHS after eulersr_cons_calc_flux_1
 {
   LANG: C
+  READS:    EulerSR::DenFlux
+  READS:    EulerSR::Denrhs
+  READS:    EulerSR::S1Flux
+  READS:    EulerSR::S1rhs
+  READS:    EulerSR::S2Flux
+  READS:    EulerSR::S2rhs
+  READS:    EulerSR::S3Flux
+  READS:    EulerSR::S3rhs
+  READS:    EulerSR::tauFlux
+  READS:    EulerSR::taurhs
+  WRITES:   EulerSR::Denrhs
+  WRITES:   EulerSR::S1rhs
+  WRITES:   EulerSR::S2rhs
+  WRITES:   EulerSR::S3rhs
+  WRITES:   EulerSR::taurhs
 } "eulersr_cons_calc_rhs_1"
 
 schedule group eulersr_cons_calc_reconstruct_2_group in MoL_CalcRHS after eulersr_cons_calc_rhs_1
@@ -316,6 +435,21 @@ schedule group eulersr_cons_calc_reconstruct_2_group in MoL_CalcRHS after eulers
 schedule eulersr_cons_calc_reconstruct_2 in eulersr_cons_calc_reconstruct_2_group
 {
   LANG: C
+  READS:    EulerSR::epsi
+  READS:    EulerSR::rho
+  READS:    EulerSR::v1
+  READS:    EulerSR::v2
+  READS:    EulerSR::v3
+  WRITES:   EulerSR::epsiLeft
+  WRITES:   EulerSR::epsiRight
+  WRITES:   EulerSR::rhoLeft
+  WRITES:   EulerSR::rhoRight
+  WRITES:   EulerSR::v1Left
+  WRITES:   EulerSR::v1Right
+  WRITES:   EulerSR::v2Left
+  WRITES:   EulerSR::v2Right
+  WRITES:   EulerSR::v3Left
+  WRITES:   EulerSR::v3Right
 } "eulersr_cons_calc_reconstruct_2"
 
 schedule eulersr_cons_calc_reconstruct_2_SelectBCs in eulersr_cons_calc_reconstruct_2_bc_group
@@ -347,6 +481,34 @@ schedule group eulersr_cons_calc_reconstruct_2_bc_group in MoL_PseudoEvolutionBo
 schedule eulersr_cons_calc_intercell_conserved_2 in MoL_CalcRHS after eulersr_cons_calc_reconstruct_2
 {
   LANG: C
+  READS:    EulerSR::DenLeft
+  READS:    EulerSR::DenRight
+  READS:    EulerSR::epsiLeft
+  READS:    EulerSR::epsiRight
+  READS:    EulerSR::h
+  READS:    EulerSR::p
+  READS:    EulerSR::rhoLeft
+  READS:    EulerSR::rhoRight
+  READS:    EulerSR::v1Left
+  READS:    EulerSR::v1Right
+  READS:    EulerSR::v2Left
+  READS:    EulerSR::v2Right
+  READS:    EulerSR::v3Left
+  READS:    EulerSR::v3Right
+  READS:    EulerSR::W
+  WRITES:   EulerSR::DenLeft
+  WRITES:   EulerSR::DenRight
+  WRITES:   EulerSR::h
+  WRITES:   EulerSR::p
+  WRITES:   EulerSR::S1Left
+  WRITES:   EulerSR::S1Right
+  WRITES:   EulerSR::S2Left
+  WRITES:   EulerSR::S2Right
+  WRITES:   EulerSR::S3Left
+  WRITES:   EulerSR::S3Right
+  WRITES:   EulerSR::tauLeft
+  WRITES:   EulerSR::tauRight
+  WRITES:   EulerSR::W
 } "eulersr_cons_calc_intercell_conserved_2"
 
 schedule group eulersr_cons_calc_flux_2_group in MoL_CalcRHS after eulersr_cons_calc_intercell_conserved_2
@@ -357,6 +519,27 @@ schedule group eulersr_cons_calc_flux_2_group in MoL_CalcRHS after eulersr_cons_
 schedule eulersr_cons_calc_flux_2 in eulersr_cons_calc_flux_2_group
 {
   LANG: C
+  READS:    EulerSR::DenLeft
+  READS:    EulerSR::DenRight
+  READS:    EulerSR::epsiLeft
+  READS:    EulerSR::epsiRight
+  READS:    EulerSR::rhoLeft
+  READS:    EulerSR::rhoRight
+  READS:    EulerSR::S1Left
+  READS:    EulerSR::S1Right
+  READS:    EulerSR::S2Left
+  READS:    EulerSR::S2Right
+  READS:    EulerSR::S3Left
+  READS:    EulerSR::S3Right
+  READS:    EulerSR::tauLeft
+  READS:    EulerSR::tauRight
+  READS:    EulerSR::v2Left
+  READS:    EulerSR::v2Right
+  WRITES:   EulerSR::DenFlux
+  WRITES:   EulerSR::S1Flux
+  WRITES:   EulerSR::S2Flux
+  WRITES:   EulerSR::S3Flux
+  WRITES:   EulerSR::tauFlux
 } "eulersr_cons_calc_flux_2"
 
 schedule eulersr_cons_calc_flux_2_SelectBCs in eulersr_cons_calc_flux_2_bc_group
@@ -388,6 +571,21 @@ schedule group eulersr_cons_calc_flux_2_bc_group in MoL_PseudoEvolutionBoundarie
 schedule eulersr_cons_calc_rhs_2 in MoL_CalcRHS after eulersr_cons_calc_flux_2
 {
   LANG: C
+  READS:    EulerSR::DenFlux
+  READS:    EulerSR::Denrhs
+  READS:    EulerSR::S1Flux
+  READS:    EulerSR::S1rhs
+  READS:    EulerSR::S2Flux
+  READS:    EulerSR::S2rhs
+  READS:    EulerSR::S3Flux
+  READS:    EulerSR::S3rhs
+  READS:    EulerSR::tauFlux
+  READS:    EulerSR::taurhs
+  WRITES:   EulerSR::Denrhs
+  WRITES:   EulerSR::S1rhs
+  WRITES:   EulerSR::S2rhs
+  WRITES:   EulerSR::S3rhs
+  WRITES:   EulerSR::taurhs
 } "eulersr_cons_calc_rhs_2"
 
 schedule group eulersr_cons_calc_reconstruct_3_group in MoL_CalcRHS after eulersr_cons_calc_rhs_2
@@ -398,6 +596,21 @@ schedule group eulersr_cons_calc_reconstruct_3_group in MoL_CalcRHS after eulers
 schedule eulersr_cons_calc_reconstruct_3 in eulersr_cons_calc_reconstruct_3_group
 {
   LANG: C
+  READS:    EulerSR::epsi
+  READS:    EulerSR::rho
+  READS:    EulerSR::v1
+  READS:    EulerSR::v2
+  READS:    EulerSR::v3
+  WRITES:   EulerSR::epsiLeft
+  WRITES:   EulerSR::epsiRight
+  WRITES:   EulerSR::rhoLeft
+  WRITES:   EulerSR::rhoRight
+  WRITES:   EulerSR::v1Left
+  WRITES:   EulerSR::v1Right
+  WRITES:   EulerSR::v2Left
+  WRITES:   EulerSR::v2Right
+  WRITES:   EulerSR::v3Left
+  WRITES:   EulerSR::v3Right
 } "eulersr_cons_calc_reconstruct_3"
 
 schedule eulersr_cons_calc_reconstruct_3_SelectBCs in eulersr_cons_calc_reconstruct_3_bc_group
@@ -429,6 +642,34 @@ schedule group eulersr_cons_calc_reconstruct_3_bc_group in MoL_PseudoEvolutionBo
 schedule eulersr_cons_calc_intercell_conserved_3 in MoL_CalcRHS after eulersr_cons_calc_reconstruct_3
 {
   LANG: C
+  READS:    EulerSR::DenLeft
+  READS:    EulerSR::DenRight
+  READS:    EulerSR::epsiLeft
+  READS:    EulerSR::epsiRight
+  READS:    EulerSR::h
+  READS:    EulerSR::p
+  READS:    EulerSR::rhoLeft
+  READS:    EulerSR::rhoRight
+  READS:    EulerSR::v1Left
+  READS:    EulerSR::v1Right
+  READS:    EulerSR::v2Left
+  READS:    EulerSR::v2Right
+  READS:    EulerSR::v3Left
+  READS:    EulerSR::v3Right
+  READS:    EulerSR::W
+  WRITES:   EulerSR::DenLeft
+  WRITES:   EulerSR::DenRight
+  WRITES:   EulerSR::h
+  WRITES:   EulerSR::p
+  WRITES:   EulerSR::S1Left
+  WRITES:   EulerSR::S1Right
+  WRITES:   EulerSR::S2Left
+  WRITES:   EulerSR::S2Right
+  WRITES:   EulerSR::S3Left
+  WRITES:   EulerSR::S3Right
+  WRITES:   EulerSR::tauLeft
+  WRITES:   EulerSR::tauRight
+  WRITES:   EulerSR::W
 } "eulersr_cons_calc_intercell_conserved_3"
 
 schedule group eulersr_cons_calc_flux_3_group in MoL_CalcRHS after eulersr_cons_calc_intercell_conserved_3
@@ -439,6 +680,27 @@ schedule group eulersr_cons_calc_flux_3_group in MoL_CalcRHS after eulersr_cons_
 schedule eulersr_cons_calc_flux_3 in eulersr_cons_calc_flux_3_group
 {
   LANG: C
+  READS:    EulerSR::DenLeft
+  READS:    EulerSR::DenRight
+  READS:    EulerSR::epsiLeft
+  READS:    EulerSR::epsiRight
+  READS:    EulerSR::rhoLeft
+  READS:    EulerSR::rhoRight
+  READS:    EulerSR::S1Left
+  READS:    EulerSR::S1Right
+  READS:    EulerSR::S2Left
+  READS:    EulerSR::S2Right
+  READS:    EulerSR::S3Left
+  READS:    EulerSR::S3Right
+  READS:    EulerSR::tauLeft
+  READS:    EulerSR::tauRight
+  READS:    EulerSR::v3Left
+  READS:    EulerSR::v3Right
+  WRITES:   EulerSR::DenFlux
+  WRITES:   EulerSR::S1Flux
+  WRITES:   EulerSR::S2Flux
+  WRITES:   EulerSR::S3Flux
+  WRITES:   EulerSR::tauFlux
 } "eulersr_cons_calc_flux_3"
 
 schedule eulersr_cons_calc_flux_3_SelectBCs in eulersr_cons_calc_flux_3_bc_group
@@ -470,6 +732,21 @@ schedule group eulersr_cons_calc_flux_3_bc_group in MoL_PseudoEvolutionBoundarie
 schedule eulersr_cons_calc_rhs_3 in MoL_CalcRHS after eulersr_cons_calc_flux_3
 {
   LANG: C
+  READS:    EulerSR::DenFlux
+  READS:    EulerSR::Denrhs
+  READS:    EulerSR::S1Flux
+  READS:    EulerSR::S1rhs
+  READS:    EulerSR::S2Flux
+  READS:    EulerSR::S2rhs
+  READS:    EulerSR::S3Flux
+  READS:    EulerSR::S3rhs
+  READS:    EulerSR::tauFlux
+  READS:    EulerSR::taurhs
+  WRITES:   EulerSR::Denrhs
+  WRITES:   EulerSR::S1rhs
+  WRITES:   EulerSR::S2rhs
+  WRITES:   EulerSR::S3rhs
+  WRITES:   EulerSR::taurhs
 } "eulersr_cons_calc_rhs_3"
 
 schedule EulerSR_SelectBoundConds in MoL_PostStep
@@ -486,6 +763,12 @@ schedule EulerSR_CheckBoundaries at BASEGRID
   LANG: C
   OPTIONS: meta
 } "check boundaries treatment"
+
+schedule EulerSR_RegisterVars in MoL_Register
+{
+  LANG: C
+  OPTIONS: meta
+} "Register Variables for MoL"
 
 schedule group ApplyBCs as EulerSR_ApplyBCs in MoL_PostStep after EulerSR_SelectBoundConds
 {

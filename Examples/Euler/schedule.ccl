@@ -175,12 +175,6 @@ schedule Euler_Startup at STARTUP
   OPTIONS: meta
 } "create banner"
 
-schedule Euler_RegisterVars in MoL_Register
-{
-  LANG: C
-  OPTIONS: meta
-} "Register Variables for MoL"
-
 schedule Euler_RegisterSymmetries in SymmetryRegister
 {
   LANG: C
@@ -193,22 +187,53 @@ if (CCTK_EQUALS(initial_data, "shock"))
   schedule euler_initial_shock at CCTK_INITIAL as euler_initial
   {
     LANG: C
+    READS:    grid::x
+    WRITES:   Euler::p
+    WRITES:   Euler::rho
+    WRITES:   Euler::v1
+    WRITES:   Euler::v2
+    WRITES:   Euler::v3
   } "euler_initial_shock"
 }
 
 schedule euler_primitives in MoL_PostStep after Euler_ApplyBCs
 {
   LANG: C
+  READS:    Euler::Den
+  READS:    Euler::En
+  READS:    Euler::S1
+  READS:    Euler::S2
+  READS:    Euler::S3
+  WRITES:   Euler::p
+  WRITES:   Euler::rho
+  WRITES:   Euler::v1
+  WRITES:   Euler::v2
+  WRITES:   Euler::v3
 } "euler_primitives"
 
 schedule euler_conserved at INITIAL after euler_initial
 {
   LANG: C
+  READS:    Euler::p
+  READS:    Euler::rho
+  READS:    Euler::v1
+  READS:    Euler::v2
+  READS:    Euler::v3
+  WRITES:   Euler::Den
+  WRITES:   Euler::En
+  WRITES:   Euler::S1
+  WRITES:   Euler::S2
+  WRITES:   Euler::S3
 } "euler_conserved"
 
 schedule euler_zero_rhs in MoL_CalcRHS
 {
   LANG: C
+  WRITES:   Euler::Denrhs
+  WRITES:   Euler::Enrhs
+  WRITES:   Euler::S1rhs
+  WRITES:   Euler::S2rhs
+  WRITES:   Euler::S3rhs
 } "euler_zero_rhs"
 
 schedule group euler_reconstruct_1_group in MoL_CalcRHS after euler_zero_rhs
@@ -219,6 +244,21 @@ schedule group euler_reconstruct_1_group in MoL_CalcRHS after euler_zero_rhs
 schedule euler_reconstruct_1 in euler_reconstruct_1_group
 {
   LANG: C
+  READS:    Euler::p
+  READS:    Euler::rho
+  READS:    Euler::v1
+  READS:    Euler::v2
+  READS:    Euler::v3
+  WRITES:   Euler::pLeft
+  WRITES:   Euler::pRight
+  WRITES:   Euler::rhoLeft
+  WRITES:   Euler::rhoRight
+  WRITES:   Euler::vLeft1
+  WRITES:   Euler::vLeft2
+  WRITES:   Euler::vLeft3
+  WRITES:   Euler::vRight1
+  WRITES:   Euler::vRight2
+  WRITES:   Euler::vRight3
 } "euler_reconstruct_1"
 
 schedule euler_reconstruct_1_SelectBCs in euler_reconstruct_1_bc_group
@@ -251,6 +291,26 @@ schedule group euler_reconstruct_1_bc_group in MoL_PseudoEvolutionBoundaries aft
 schedule euler_conserved_flux_1 in MoL_CalcRHS after euler_reconstruct_1
 {
   LANG: C
+  READS:    Euler::pLeft
+  READS:    Euler::pRight
+  READS:    Euler::rhoLeft
+  READS:    Euler::rhoRight
+  READS:    Euler::vLeft1
+  READS:    Euler::vLeft2
+  READS:    Euler::vLeft3
+  READS:    Euler::vRight1
+  READS:    Euler::vRight2
+  READS:    Euler::vRight3
+  WRITES:   Euler::DenLeft
+  WRITES:   Euler::DenRight
+  WRITES:   Euler::EnLeft
+  WRITES:   Euler::EnRight
+  WRITES:   Euler::SLeft1
+  WRITES:   Euler::SLeft2
+  WRITES:   Euler::SLeft3
+  WRITES:   Euler::SRight1
+  WRITES:   Euler::SRight2
+  WRITES:   Euler::SRight3
 } "euler_conserved_flux_1"
 
 schedule group euler_flux_1_group in MoL_CalcRHS after euler_conserved_flux_1
@@ -261,6 +321,31 @@ schedule group euler_flux_1_group in MoL_CalcRHS after euler_conserved_flux_1
 schedule euler_flux_1 in euler_flux_1_group
 {
   LANG: C
+  READS:    Euler::DenLeft
+  READS:    Euler::DenRight
+  READS:    Euler::EnLeft
+  READS:    Euler::EnRight
+  READS:    Euler::pLeft
+  READS:    Euler::pRight
+  READS:    Euler::rhoLeft
+  READS:    Euler::rhoRight
+  READS:    Euler::SLeft1
+  READS:    Euler::SLeft2
+  READS:    Euler::SLeft3
+  READS:    Euler::SRight1
+  READS:    Euler::SRight2
+  READS:    Euler::SRight3
+  READS:    Euler::vLeft1
+  READS:    Euler::vLeft2
+  READS:    Euler::vLeft3
+  READS:    Euler::vRight1
+  READS:    Euler::vRight2
+  READS:    Euler::vRight3
+  WRITES:   Euler::DenF
+  WRITES:   Euler::EnF
+  WRITES:   Euler::SF1
+  WRITES:   Euler::SF2
+  WRITES:   Euler::SF3
 } "euler_flux_1"
 
 schedule euler_flux_1_SelectBCs in euler_flux_1_bc_group
@@ -290,6 +375,21 @@ schedule group euler_flux_1_bc_group in MoL_PseudoEvolutionBoundaries after MoL_
 schedule euler_rhs_1 in MoL_CalcRHS after euler_flux_1
 {
   LANG: C
+  READS:    Euler::DenF
+  READS:    Euler::Denrhs
+  READS:    Euler::EnF
+  READS:    Euler::Enrhs
+  READS:    Euler::S1rhs
+  READS:    Euler::S2rhs
+  READS:    Euler::S3rhs
+  READS:    Euler::SF1
+  READS:    Euler::SF2
+  READS:    Euler::SF3
+  WRITES:   Euler::Denrhs
+  WRITES:   Euler::Enrhs
+  WRITES:   Euler::S1rhs
+  WRITES:   Euler::S2rhs
+  WRITES:   Euler::S3rhs
 } "euler_rhs_1"
 
 schedule Euler_SelectBoundConds in MoL_PostStep
@@ -306,6 +406,12 @@ schedule Euler_CheckBoundaries at BASEGRID
   LANG: C
   OPTIONS: meta
 } "check boundaries treatment"
+
+schedule Euler_RegisterVars in MoL_Register
+{
+  LANG: C
+  OPTIONS: meta
+} "Register Variables for MoL"
 
 schedule group ApplyBCs as Euler_ApplyBCs in MoL_PostStep after Euler_SelectBoundConds
 {

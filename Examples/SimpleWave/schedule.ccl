@@ -33,12 +33,6 @@ schedule SimpleWave_Startup at STARTUP
   OPTIONS: meta
 } "create banner"
 
-schedule SimpleWave_RegisterVars in MoL_Register
-{
-  LANG: C
-  OPTIONS: meta
-} "Register Variables for MoL"
-
 schedule SimpleWave_RegisterSymmetries in SymmetryRegister
 {
   LANG: C
@@ -48,11 +42,18 @@ schedule SimpleWave_RegisterSymmetries in SymmetryRegister
 schedule initial_sine AT INITIAL
 {
   LANG: C
+  READS:    grid::x
+  WRITES:   SimpleWave::phi
+  WRITES:   SimpleWave::pi
 } "initial_sine"
 
 schedule calc_rhs in MoL_CalcRHS
 {
   LANG: C
+  READS:    SimpleWave::phi
+  READS:    SimpleWave::pi
+  WRITES:   SimpleWave::phirhs
+  WRITES:   SimpleWave::pirhs
 } "calc_rhs"
 
 schedule SimpleWave_SelectBoundConds in MoL_PostStep
@@ -67,6 +68,12 @@ schedule SimpleWave_CheckBoundaries at BASEGRID
   LANG: C
   OPTIONS: meta
 } "check boundaries treatment"
+
+schedule SimpleWave_RegisterVars in MoL_Register
+{
+  LANG: C
+  OPTIONS: meta
+} "Register Variables for MoL"
 
 schedule group ApplyBCs as SimpleWave_ApplyBCs in MoL_PostStep after SimpleWave_SelectBoundConds
 {

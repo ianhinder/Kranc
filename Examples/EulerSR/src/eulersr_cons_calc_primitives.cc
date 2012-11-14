@@ -17,18 +17,16 @@
 
 /* Define macros used in calculations */
 #define INITVALUE (42)
-#define QAD(x) (SQR(SQR(x)))
-#define INV(x) ((1.0) / (x))
+#define INV(x) ((CCTK_REAL)1.0 / (x))
 #define SQR(x) ((x) * (x))
-#define CUB(x) ((x) * (x) * (x))
+#define CUB(x) ((x) * SQR(x))
+#define QAD(x) (SQR(SQR(x)))
 
 static void eulersr_cons_calc_primitives_Body(cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const imin[3], int const imax[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[])
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  
-  /* Declare finite differencing variables */
   
   /* Include user-supplied include files */
   
@@ -72,9 +70,9 @@ static void eulersr_cons_calc_primitives_Body(cGH const * restrict const cctkGH,
   
   /* Loop over the grid points */
   #pragma omp parallel
-  CCTK_LOOP3 (eulersr_cons_calc_primitives,
+  CCTK_LOOP3(eulersr_cons_calc_primitives,
     i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-    cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+    cctk_ash[0],cctk_ash[1],cctk_ash[2])
   {
     ptrdiff_t const index = di*i + dj*j + dk*k;
     
@@ -111,7 +109,7 @@ static void eulersr_cons_calc_primitives_Body(cGH const * restrict const cctkGH,
     
     rhoL = DenL*INV(WL);
     
-    hL = Z*INV(rhoL)*INV(SQR(WL));
+    hL = Z*INV(rhoL*SQR(WL));
     
     epsiL = hL - (rhoL + pBar)*INV(rhoL);
     
@@ -136,7 +134,7 @@ static void eulersr_cons_calc_primitives_Body(cGH const * restrict const cctkGH,
     
     rhoL = DenL*INV(WL);
     
-    hL = Z*INV(rhoL)*INV(SQR(WL));
+    hL = Z*INV(rhoL*SQR(WL));
     
     epsiL = hL - (rhoL + pBar)*INV(rhoL);
     
@@ -160,7 +158,7 @@ static void eulersr_cons_calc_primitives_Body(cGH const * restrict const cctkGH,
     
     rhoL = DenL*INV(WL);
     
-    hL = Z*INV(rhoL)*INV(SQR(WL));
+    hL = Z*INV(rhoL*SQR(WL));
     
     epsiL = hL - (rhoL + pBar)*INV(rhoL);
     
@@ -184,7 +182,7 @@ static void eulersr_cons_calc_primitives_Body(cGH const * restrict const cctkGH,
     
     rhoL = DenL*INV(WL);
     
-    hL = Z*INV(rhoL)*INV(SQR(WL));
+    hL = Z*INV(rhoL*SQR(WL));
     
     epsiL = hL - (rhoL + pBar)*INV(rhoL);
     
@@ -208,7 +206,7 @@ static void eulersr_cons_calc_primitives_Body(cGH const * restrict const cctkGH,
     
     rhoL = DenL*INV(WL);
     
-    hL = Z*INV(rhoL)*INV(SQR(WL));
+    hL = Z*INV(rhoL*SQR(WL));
     
     epsiL = hL - (rhoL + pBar)*INV(rhoL);
     
@@ -224,11 +222,11 @@ static void eulersr_cons_calc_primitives_Body(cGH const * restrict const cctkGH,
     
     pL = pBar;
     
-    CCTK_REAL v1L = S1L*INV(hL)*INV(rhoL)*INV(SQR(WL));
+    CCTK_REAL v1L = S1L*INV(hL*rhoL*SQR(WL));
     
-    CCTK_REAL v2L = S2L*INV(hL)*INV(rhoL)*INV(SQR(WL));
+    CCTK_REAL v2L = S2L*INV(hL*rhoL*SQR(WL));
     
-    CCTK_REAL v3L = S3L*INV(hL)*INV(rhoL)*INV(SQR(WL));
+    CCTK_REAL v3L = S3L*INV(hL*rhoL*SQR(WL));
     
     /* Copy local copies back to grid functions */
     epsi[index] = epsiL;
@@ -240,7 +238,7 @@ static void eulersr_cons_calc_primitives_Body(cGH const * restrict const cctkGH,
     v3[index] = v3L;
     W[index] = WL;
   }
-  CCTK_ENDLOOP3 (eulersr_cons_calc_primitives);
+  CCTK_ENDLOOP3(eulersr_cons_calc_primitives);
 }
 
 extern "C" void eulersr_cons_calc_primitives(CCTK_ARGUMENTS)
@@ -259,11 +257,20 @@ extern "C" void eulersr_cons_calc_primitives(CCTK_ARGUMENTS)
     return;
   }
   
-  const char *groups[] = {"EulerSR::Den_group","EulerSR::epsi_group","EulerSR::h_group","EulerSR::p_group","EulerSR::rho_group","EulerSR::S_group","EulerSR::tau_group","EulerSR::v_group","EulerSR::W_group"};
+  const char *const groups[] = {
+    "EulerSR::Den_group",
+    "EulerSR::epsi_group",
+    "EulerSR::h_group",
+    "EulerSR::p_group",
+    "EulerSR::rho_group",
+    "EulerSR::S_group",
+    "EulerSR::tau_group",
+    "EulerSR::v_group",
+    "EulerSR::W_group"};
   GenericFD_AssertGroupStorage(cctkGH, "eulersr_cons_calc_primitives", 9, groups);
   
   
-  GenericFD_LoopOverEverything(cctkGH, &eulersr_cons_calc_primitives_Body);
+  GenericFD_LoopOverEverything(cctkGH, eulersr_cons_calc_primitives_Body);
   
   if (verbose > 1)
   {

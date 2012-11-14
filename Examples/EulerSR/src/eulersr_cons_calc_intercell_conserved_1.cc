@@ -17,18 +17,16 @@
 
 /* Define macros used in calculations */
 #define INITVALUE (42)
-#define QAD(x) (SQR(SQR(x)))
-#define INV(x) ((1.0) / (x))
+#define INV(x) ((CCTK_REAL)1.0 / (x))
 #define SQR(x) ((x) * (x))
-#define CUB(x) ((x) * (x) * (x))
+#define CUB(x) ((x) * SQR(x))
+#define QAD(x) (SQR(SQR(x)))
 
 static void eulersr_cons_calc_intercell_conserved_1_Body(cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const imin[3], int const imax[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[])
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  
-  /* Declare finite differencing variables */
   
   /* Include user-supplied include files */
   
@@ -72,9 +70,9 @@ static void eulersr_cons_calc_intercell_conserved_1_Body(cGH const * restrict co
   
   /* Loop over the grid points */
   #pragma omp parallel
-  CCTK_LOOP3 (eulersr_cons_calc_intercell_conserved_1,
+  CCTK_LOOP3(eulersr_cons_calc_intercell_conserved_1,
     i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-    cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+    cctk_ash[0],cctk_ash[1],cctk_ash[2])
   {
     ptrdiff_t const index = di*i + dj*j + dk*k;
     
@@ -154,7 +152,7 @@ static void eulersr_cons_calc_intercell_conserved_1_Body(cGH const * restrict co
     tauRight[index] = tauRightL;
     W[index] = WL;
   }
-  CCTK_ENDLOOP3 (eulersr_cons_calc_intercell_conserved_1);
+  CCTK_ENDLOOP3(eulersr_cons_calc_intercell_conserved_1);
 }
 
 extern "C" void eulersr_cons_calc_intercell_conserved_1(CCTK_ARGUMENTS)
@@ -173,11 +171,24 @@ extern "C" void eulersr_cons_calc_intercell_conserved_1(CCTK_ARGUMENTS)
     return;
   }
   
-  const char *groups[] = {"EulerSR::Den_lr_group","EulerSR::epsi_lr_group","EulerSR::h_group","EulerSR::p_group","EulerSR::rho_lr_group","EulerSR::S1_lr_group","EulerSR::S2_lr_group","EulerSR::S3_lr_group","EulerSR::tau_lr_group","EulerSR::v1_lr_group","EulerSR::v2_lr_group","EulerSR::v3_lr_group","EulerSR::W_group"};
+  const char *const groups[] = {
+    "EulerSR::Den_lr_group",
+    "EulerSR::epsi_lr_group",
+    "EulerSR::h_group",
+    "EulerSR::p_group",
+    "EulerSR::rho_lr_group",
+    "EulerSR::S1_lr_group",
+    "EulerSR::S2_lr_group",
+    "EulerSR::S3_lr_group",
+    "EulerSR::tau_lr_group",
+    "EulerSR::v1_lr_group",
+    "EulerSR::v2_lr_group",
+    "EulerSR::v3_lr_group",
+    "EulerSR::W_group"};
   GenericFD_AssertGroupStorage(cctkGH, "eulersr_cons_calc_intercell_conserved_1", 13, groups);
   
   
-  GenericFD_LoopOverEverything(cctkGH, &eulersr_cons_calc_intercell_conserved_1_Body);
+  GenericFD_LoopOverEverything(cctkGH, eulersr_cons_calc_intercell_conserved_1_Body);
   
   if (verbose > 1)
   {

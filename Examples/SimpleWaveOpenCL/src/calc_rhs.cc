@@ -18,10 +18,10 @@
 
 /* Define macros used in calculations */
 #define INITVALUE (42)
-#define QAD(x) (SQR(SQR(x)))
-#define INV(x) ((1.0) / (x))
+#define INV(x) ((CCTK_REAL)1.0 / (x))
 #define SQR(x) ((x) * (x))
-#define CUB(x) ((x) * (x) * (x))
+#define CUB(x) ((x) * SQR(x))
+#define QAD(x) (SQR(SQR(x)))
 
 extern "C" void calc_rhs_SelectBCs(CCTK_ARGUMENTS)
 {
@@ -40,7 +40,7 @@ static void calc_rhs_Body(cGH const * restrict const cctkGH, int const dir, int 
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  char const * const source =
+  char const *const source =
   "\n"
   "/* Include user-supplied include files */\n"
   "\n"
@@ -86,9 +86,9 @@ static void calc_rhs_Body(cGH const * restrict const cctkGH, int const dir, int 
   "\n"
   "/* Loop over the grid points */\n"
   "#pragma omp parallel\n"
-  "CCTK_LOOP3 (calc_rhs,\n"
+  "CCTK_LOOP3(calc_rhs,\n"
   "  i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],\n"
-  "  cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])\n"
+  "  cctk_ash[0],cctk_ash[1],cctk_ash[2])\n"
   "{\n"
   "  ptrdiff_t const index = di*i + dj*j + dk*k;\n"
   "  \n"
@@ -112,20 +112,24 @@ static void calc_rhs_Body(cGH const * restrict const cctkGH, int const dir, int 
   "    PDstandard2nd33phi;\n"
   "  \n"
   "  /* Copy local copies back to grid functions */\n"
+  "  vec_store_partial_prepare(i,lc_imin,lc_imax);\n"
   "  vec_store_nta_partial(phirhs[index],phirhsL);\n"
   "  vec_store_nta_partial(pirhs[index],pirhsL);\n"
   "}\n"
-  "CCTK_ENDLOOP3 (calc_rhs);\n"
+  "CCTK_ENDLOOP3(calc_rhs);\n"
   ""
   ;
   
-  char const * const groups[] = {"SimpleWaveOpenCL::evolved_group","SimpleWaveOpenCL::evolved_grouprhs",NULL};
+  char const *const groups[] = {
+    "SimpleWaveOpenCL::evolved_group",
+    "SimpleWaveOpenCL::evolved_grouprhs",
+    NULL};
   
-  static struct OpenCLKernel * kernel = NULL;
-  char const * const sources[] = {differencing, source, NULL};
-  OpenCLRunTime_CallKernel (cctkGH, CCTK_THORNSTRING, "calc_rhs",
-                            sources, groups, NULL, NULL, NULL, -1,
-                            imin, imax, &kernel);
+  static struct OpenCLKernel *kernel = NULL;
+  char const *const sources[] = {differencing, source, NULL};
+  OpenCLRunTime_CallKernel(cctkGH, CCTK_THORNSTRING, "calc_rhs",
+                           sources, groups, NULL, NULL, NULL, -1,
+                           imin, imax, &kernel);
   
 }
 
@@ -145,12 +149,14 @@ extern "C" void calc_rhs(CCTK_ARGUMENTS)
     return;
   }
   
-  const char *groups[] = {"SimpleWaveOpenCL::evolved_group","SimpleWaveOpenCL::evolved_grouprhs"};
+  const char *const groups[] = {
+    "SimpleWaveOpenCL::evolved_group",
+    "SimpleWaveOpenCL::evolved_grouprhs"};
   GenericFD_AssertGroupStorage(cctkGH, "calc_rhs", 2, groups);
   
   GenericFD_EnsureStencilFits(cctkGH, "calc_rhs", 1, 1, 1);
   
-  GenericFD_LoopOverInterior(cctkGH, &calc_rhs_Body);
+  GenericFD_LoopOverInterior(cctkGH, calc_rhs_Body);
   
   if (verbose > 1)
   {

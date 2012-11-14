@@ -323,26 +323,26 @@ static CCTK_REAL PDonesided2nd3_impl(CCTK_REAL const* restrict const u, CCTK_REA
 #endif
 
 #ifndef KRANC_DIFF_FUNCTIONS
-#  define DissfdOrder2(u) (-(p1odxdydz*diss*((6*KRANC_GFOFFSET3D(u,0,0,0) - 4*(KRANC_GFOFFSET3D(u,0,0,-1) + KRANC_GFOFFSET3D(u,0,0,1)) + KRANC_GFOFFSET3D(u,0,0,-2) + KRANC_GFOFFSET3D(u,0,0,2))*INV(dxi)*INV(dyi) + ((6*KRANC_GFOFFSET3D(u,0,0,0) - 4*(KRANC_GFOFFSET3D(u,0,-1,0) + KRANC_GFOFFSET3D(u,0,1,0)) + KRANC_GFOFFSET3D(u,0,-2,0) + KRANC_GFOFFSET3D(u,0,2,0))*INV(dxi) + (6*KRANC_GFOFFSET3D(u,0,0,0) - 4*(KRANC_GFOFFSET3D(u,-1,0,0) + KRANC_GFOFFSET3D(u,1,0,0)) + KRANC_GFOFFSET3D(u,-2,0,0) + KRANC_GFOFFSET3D(u,2,0,0))*INV(dyi))*INV(dzi))))
+#  define DissfdOrder2(u) (-(p1odxdydz*diss*((6*KRANC_GFOFFSET3D(u,0,0,0) - 4*(KRANC_GFOFFSET3D(u,0,0,-1) + KRANC_GFOFFSET3D(u,0,0,1)) + KRANC_GFOFFSET3D(u,0,0,-2) + KRANC_GFOFFSET3D(u,0,0,2))*INV(dxi*dyi) + ((6*KRANC_GFOFFSET3D(u,0,0,0) - 4*(KRANC_GFOFFSET3D(u,0,-1,0) + KRANC_GFOFFSET3D(u,0,1,0)) + KRANC_GFOFFSET3D(u,0,-2,0) + KRANC_GFOFFSET3D(u,0,2,0))*INV(dxi) + (6*KRANC_GFOFFSET3D(u,0,0,0) - 4*(KRANC_GFOFFSET3D(u,-1,0,0) + KRANC_GFOFFSET3D(u,1,0,0)) + KRANC_GFOFFSET3D(u,-2,0,0) + KRANC_GFOFFSET3D(u,2,0,0))*INV(dyi))*INV(dzi))))
 #else
 #  define DissfdOrder2(u) (DissfdOrder2_impl(u,p1odxdydz,cdj,cdk))
 static CCTK_REAL DissfdOrder2_impl(CCTK_REAL const* restrict const u, CCTK_REAL const p1odxdydz, ptrdiff_t const cdj, ptrdiff_t const cdk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;
 static CCTK_REAL DissfdOrder2_impl(CCTK_REAL const* restrict const u, CCTK_REAL const p1odxdydz, ptrdiff_t const cdj, ptrdiff_t const cdk)
 {
   ptrdiff_t const cdi=sizeof(CCTK_REAL);
-  return -(p1odxdydz*diss*((6*KRANC_GFOFFSET3D(u,0,0,0) - 4*(KRANC_GFOFFSET3D(u,0,0,-1) + KRANC_GFOFFSET3D(u,0,0,1)) + KRANC_GFOFFSET3D(u,0,0,-2) + KRANC_GFOFFSET3D(u,0,0,2))*INV(dxi)*INV(dyi) + ((6*KRANC_GFOFFSET3D(u,0,0,0) - 4*(KRANC_GFOFFSET3D(u,0,-1,0) + KRANC_GFOFFSET3D(u,0,1,0)) + KRANC_GFOFFSET3D(u,0,-2,0) + KRANC_GFOFFSET3D(u,0,2,0))*INV(dxi) + (6*KRANC_GFOFFSET3D(u,0,0,0) - 4*(KRANC_GFOFFSET3D(u,-1,0,0) + KRANC_GFOFFSET3D(u,1,0,0)) + KRANC_GFOFFSET3D(u,-2,0,0) + KRANC_GFOFFSET3D(u,2,0,0))*INV(dyi))*INV(dzi)));
+  return -(p1odxdydz*diss*((6*KRANC_GFOFFSET3D(u,0,0,0) - 4*(KRANC_GFOFFSET3D(u,0,0,-1) + KRANC_GFOFFSET3D(u,0,0,1)) + KRANC_GFOFFSET3D(u,0,0,-2) + KRANC_GFOFFSET3D(u,0,0,2))*INV(dxi*dyi) + ((6*KRANC_GFOFFSET3D(u,0,0,0) - 4*(KRANC_GFOFFSET3D(u,0,-1,0) + KRANC_GFOFFSET3D(u,0,1,0)) + KRANC_GFOFFSET3D(u,0,-2,0) + KRANC_GFOFFSET3D(u,0,2,0))*INV(dxi) + (6*KRANC_GFOFFSET3D(u,0,0,0) - 4*(KRANC_GFOFFSET3D(u,-1,0,0) + KRANC_GFOFFSET3D(u,1,0,0)) + KRANC_GFOFFSET3D(u,-2,0,0) + KRANC_GFOFFSET3D(u,2,0,0))*INV(dyi))*INV(dzi)));
 }
 #endif
 
 #ifndef KRANC_DIFF_FUNCTIONS
-#  define DissfdOrder4(u) (p1odxdydz*diss*((-20*KRANC_GFOFFSET3D(u,0,0,0) + 15*(KRANC_GFOFFSET3D(u,0,0,-1) + KRANC_GFOFFSET3D(u,0,0,1)) - 6*(KRANC_GFOFFSET3D(u,0,0,-2) + KRANC_GFOFFSET3D(u,0,0,2)) + KRANC_GFOFFSET3D(u,0,0,-3) + KRANC_GFOFFSET3D(u,0,0,3))*INV(dxi)*INV(dyi) + ((15*(KRANC_GFOFFSET3D(u,0,-1,0) + KRANC_GFOFFSET3D(u,0,1,0)) - 6*(KRANC_GFOFFSET3D(u,0,-2,0) + KRANC_GFOFFSET3D(u,0,2,0)) + KRANC_GFOFFSET3D(u,0,-3,0) + KRANC_GFOFFSET3D(u,0,3,0))*INV(dxi) + (15*(KRANC_GFOFFSET3D(u,-1,0,0) + KRANC_GFOFFSET3D(u,1,0,0)) - 6*(KRANC_GFOFFSET3D(u,-2,0,0) + KRANC_GFOFFSET3D(u,2,0,0)) + KRANC_GFOFFSET3D(u,-3,0,0) + KRANC_GFOFFSET3D(u,3,0,0))*INV(dyi) - 20*KRANC_GFOFFSET3D(u,0,0,0)*(INV(dxi) + INV(dyi)))*INV(dzi)))
+#  define DissfdOrder4(u) (p1odxdydz*diss*((-20*KRANC_GFOFFSET3D(u,0,0,0) + 15*(KRANC_GFOFFSET3D(u,0,0,-1) + KRANC_GFOFFSET3D(u,0,0,1)) - 6*(KRANC_GFOFFSET3D(u,0,0,-2) + KRANC_GFOFFSET3D(u,0,0,2)) + KRANC_GFOFFSET3D(u,0,0,-3) + KRANC_GFOFFSET3D(u,0,0,3))*INV(dxi*dyi) + ((15*(KRANC_GFOFFSET3D(u,0,-1,0) + KRANC_GFOFFSET3D(u,0,1,0)) - 6*(KRANC_GFOFFSET3D(u,0,-2,0) + KRANC_GFOFFSET3D(u,0,2,0)) + KRANC_GFOFFSET3D(u,0,-3,0) + KRANC_GFOFFSET3D(u,0,3,0))*INV(dxi) + (15*(KRANC_GFOFFSET3D(u,-1,0,0) + KRANC_GFOFFSET3D(u,1,0,0)) - 6*(KRANC_GFOFFSET3D(u,-2,0,0) + KRANC_GFOFFSET3D(u,2,0,0)) + KRANC_GFOFFSET3D(u,-3,0,0) + KRANC_GFOFFSET3D(u,3,0,0))*INV(dyi) - 20*KRANC_GFOFFSET3D(u,0,0,0)*(INV(dxi) + INV(dyi)))*INV(dzi)))
 #else
 #  define DissfdOrder4(u) (DissfdOrder4_impl(u,p1odxdydz,cdj,cdk))
 static CCTK_REAL DissfdOrder4_impl(CCTK_REAL const* restrict const u, CCTK_REAL const p1odxdydz, ptrdiff_t const cdj, ptrdiff_t const cdk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;
 static CCTK_REAL DissfdOrder4_impl(CCTK_REAL const* restrict const u, CCTK_REAL const p1odxdydz, ptrdiff_t const cdj, ptrdiff_t const cdk)
 {
   ptrdiff_t const cdi=sizeof(CCTK_REAL);
-  return p1odxdydz*diss*((-20*KRANC_GFOFFSET3D(u,0,0,0) + 15*(KRANC_GFOFFSET3D(u,0,0,-1) + KRANC_GFOFFSET3D(u,0,0,1)) - 6*(KRANC_GFOFFSET3D(u,0,0,-2) + KRANC_GFOFFSET3D(u,0,0,2)) + KRANC_GFOFFSET3D(u,0,0,-3) + KRANC_GFOFFSET3D(u,0,0,3))*INV(dxi)*INV(dyi) + ((15*(KRANC_GFOFFSET3D(u,0,-1,0) + KRANC_GFOFFSET3D(u,0,1,0)) - 6*(KRANC_GFOFFSET3D(u,0,-2,0) + KRANC_GFOFFSET3D(u,0,2,0)) + KRANC_GFOFFSET3D(u,0,-3,0) + KRANC_GFOFFSET3D(u,0,3,0))*INV(dxi) + (15*(KRANC_GFOFFSET3D(u,-1,0,0) + KRANC_GFOFFSET3D(u,1,0,0)) - 6*(KRANC_GFOFFSET3D(u,-2,0,0) + KRANC_GFOFFSET3D(u,2,0,0)) + KRANC_GFOFFSET3D(u,-3,0,0) + KRANC_GFOFFSET3D(u,3,0,0))*INV(dyi) - 20*KRANC_GFOFFSET3D(u,0,0,0)*(INV(dxi) + INV(dyi)))*INV(dzi));
+  return p1odxdydz*diss*((-20*KRANC_GFOFFSET3D(u,0,0,0) + 15*(KRANC_GFOFFSET3D(u,0,0,-1) + KRANC_GFOFFSET3D(u,0,0,1)) - 6*(KRANC_GFOFFSET3D(u,0,0,-2) + KRANC_GFOFFSET3D(u,0,0,2)) + KRANC_GFOFFSET3D(u,0,0,-3) + KRANC_GFOFFSET3D(u,0,0,3))*INV(dxi*dyi) + ((15*(KRANC_GFOFFSET3D(u,0,-1,0) + KRANC_GFOFFSET3D(u,0,1,0)) - 6*(KRANC_GFOFFSET3D(u,0,-2,0) + KRANC_GFOFFSET3D(u,0,2,0)) + KRANC_GFOFFSET3D(u,0,-3,0) + KRANC_GFOFFSET3D(u,0,3,0))*INV(dxi) + (15*(KRANC_GFOFFSET3D(u,-1,0,0) + KRANC_GFOFFSET3D(u,1,0,0)) - 6*(KRANC_GFOFFSET3D(u,-2,0,0) + KRANC_GFOFFSET3D(u,2,0,0)) + KRANC_GFOFFSET3D(u,-3,0,0) + KRANC_GFOFFSET3D(u,3,0,0))*INV(dyi) - 20*KRANC_GFOFFSET3D(u,0,0,0)*(INV(dxi) + INV(dyi)))*INV(dzi));
 }
 #endif
 
@@ -523,114 +523,6 @@ static CCTK_REAL PDplus3_impl(CCTK_REAL const* restrict const u, CCTK_REAL const
 {
   ptrdiff_t const cdi=sizeof(CCTK_REAL);
   return (-KRANC_GFOFFSET3D(u,0,0,0) + KRANC_GFOFFSET3D(u,0,0,1))*p1odz;
-}
-#endif
-
-#ifndef KRANC_DIFF_FUNCTIONS
-#  define DiffPlus1(u) ((-KRANC_GFOFFSET3D(u,0,0,0) + KRANC_GFOFFSET3D(u,1,0,0))*p1o1)
-#else
-#  define DiffPlus1(u) (DiffPlus1_impl(u,p1o1,cdj,cdk))
-static CCTK_REAL DiffPlus1_impl(CCTK_REAL const* restrict const u, CCTK_REAL const p1o1, ptrdiff_t const cdj, ptrdiff_t const cdk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;
-static CCTK_REAL DiffPlus1_impl(CCTK_REAL const* restrict const u, CCTK_REAL const p1o1, ptrdiff_t const cdj, ptrdiff_t const cdk)
-{
-  ptrdiff_t const cdi=sizeof(CCTK_REAL);
-  return (-KRANC_GFOFFSET3D(u,0,0,0) + KRANC_GFOFFSET3D(u,1,0,0))*p1o1;
-}
-#endif
-
-#ifndef KRANC_DIFF_FUNCTIONS
-#  define DiffPlus2(u) ((-KRANC_GFOFFSET3D(u,0,0,0) + KRANC_GFOFFSET3D(u,0,1,0))*p1o1)
-#else
-#  define DiffPlus2(u) (DiffPlus2_impl(u,p1o1,cdj,cdk))
-static CCTK_REAL DiffPlus2_impl(CCTK_REAL const* restrict const u, CCTK_REAL const p1o1, ptrdiff_t const cdj, ptrdiff_t const cdk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;
-static CCTK_REAL DiffPlus2_impl(CCTK_REAL const* restrict const u, CCTK_REAL const p1o1, ptrdiff_t const cdj, ptrdiff_t const cdk)
-{
-  ptrdiff_t const cdi=sizeof(CCTK_REAL);
-  return (-KRANC_GFOFFSET3D(u,0,0,0) + KRANC_GFOFFSET3D(u,0,1,0))*p1o1;
-}
-#endif
-
-#ifndef KRANC_DIFF_FUNCTIONS
-#  define DiffPlus3(u) ((-KRANC_GFOFFSET3D(u,0,0,0) + KRANC_GFOFFSET3D(u,0,0,1))*p1o1)
-#else
-#  define DiffPlus3(u) (DiffPlus3_impl(u,p1o1,cdj,cdk))
-static CCTK_REAL DiffPlus3_impl(CCTK_REAL const* restrict const u, CCTK_REAL const p1o1, ptrdiff_t const cdj, ptrdiff_t const cdk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;
-static CCTK_REAL DiffPlus3_impl(CCTK_REAL const* restrict const u, CCTK_REAL const p1o1, ptrdiff_t const cdj, ptrdiff_t const cdk)
-{
-  ptrdiff_t const cdi=sizeof(CCTK_REAL);
-  return (-KRANC_GFOFFSET3D(u,0,0,0) + KRANC_GFOFFSET3D(u,0,0,1))*p1o1;
-}
-#endif
-
-#ifndef KRANC_DIFF_FUNCTIONS
-#  define DiffMinus1(u) ((KRANC_GFOFFSET3D(u,0,0,0) - KRANC_GFOFFSET3D(u,-1,0,0))*p1o1)
-#else
-#  define DiffMinus1(u) (DiffMinus1_impl(u,p1o1,cdj,cdk))
-static CCTK_REAL DiffMinus1_impl(CCTK_REAL const* restrict const u, CCTK_REAL const p1o1, ptrdiff_t const cdj, ptrdiff_t const cdk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;
-static CCTK_REAL DiffMinus1_impl(CCTK_REAL const* restrict const u, CCTK_REAL const p1o1, ptrdiff_t const cdj, ptrdiff_t const cdk)
-{
-  ptrdiff_t const cdi=sizeof(CCTK_REAL);
-  return (KRANC_GFOFFSET3D(u,0,0,0) - KRANC_GFOFFSET3D(u,-1,0,0))*p1o1;
-}
-#endif
-
-#ifndef KRANC_DIFF_FUNCTIONS
-#  define DiffMinus2(u) ((KRANC_GFOFFSET3D(u,0,0,0) - KRANC_GFOFFSET3D(u,0,-1,0))*p1o1)
-#else
-#  define DiffMinus2(u) (DiffMinus2_impl(u,p1o1,cdj,cdk))
-static CCTK_REAL DiffMinus2_impl(CCTK_REAL const* restrict const u, CCTK_REAL const p1o1, ptrdiff_t const cdj, ptrdiff_t const cdk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;
-static CCTK_REAL DiffMinus2_impl(CCTK_REAL const* restrict const u, CCTK_REAL const p1o1, ptrdiff_t const cdj, ptrdiff_t const cdk)
-{
-  ptrdiff_t const cdi=sizeof(CCTK_REAL);
-  return (KRANC_GFOFFSET3D(u,0,0,0) - KRANC_GFOFFSET3D(u,0,-1,0))*p1o1;
-}
-#endif
-
-#ifndef KRANC_DIFF_FUNCTIONS
-#  define DiffMinus3(u) ((KRANC_GFOFFSET3D(u,0,0,0) - KRANC_GFOFFSET3D(u,0,0,-1))*p1o1)
-#else
-#  define DiffMinus3(u) (DiffMinus3_impl(u,p1o1,cdj,cdk))
-static CCTK_REAL DiffMinus3_impl(CCTK_REAL const* restrict const u, CCTK_REAL const p1o1, ptrdiff_t const cdj, ptrdiff_t const cdk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;
-static CCTK_REAL DiffMinus3_impl(CCTK_REAL const* restrict const u, CCTK_REAL const p1o1, ptrdiff_t const cdj, ptrdiff_t const cdk)
-{
-  ptrdiff_t const cdi=sizeof(CCTK_REAL);
-  return (KRANC_GFOFFSET3D(u,0,0,0) - KRANC_GFOFFSET3D(u,0,0,-1))*p1o1;
-}
-#endif
-
-#ifndef KRANC_DIFF_FUNCTIONS
-#  define ShiftMinus1(u) (KRANC_GFOFFSET3D(u,-1,0,0)*p1o1)
-#else
-#  define ShiftMinus1(u) (ShiftMinus1_impl(u,p1o1,cdj,cdk))
-static CCTK_REAL ShiftMinus1_impl(CCTK_REAL const* restrict const u, CCTK_REAL const p1o1, ptrdiff_t const cdj, ptrdiff_t const cdk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;
-static CCTK_REAL ShiftMinus1_impl(CCTK_REAL const* restrict const u, CCTK_REAL const p1o1, ptrdiff_t const cdj, ptrdiff_t const cdk)
-{
-  ptrdiff_t const cdi=sizeof(CCTK_REAL);
-  return KRANC_GFOFFSET3D(u,-1,0,0)*p1o1;
-}
-#endif
-
-#ifndef KRANC_DIFF_FUNCTIONS
-#  define ShiftMinus2(u) (KRANC_GFOFFSET3D(u,0,-1,0)*p1o1)
-#else
-#  define ShiftMinus2(u) (ShiftMinus2_impl(u,p1o1,cdj,cdk))
-static CCTK_REAL ShiftMinus2_impl(CCTK_REAL const* restrict const u, CCTK_REAL const p1o1, ptrdiff_t const cdj, ptrdiff_t const cdk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;
-static CCTK_REAL ShiftMinus2_impl(CCTK_REAL const* restrict const u, CCTK_REAL const p1o1, ptrdiff_t const cdj, ptrdiff_t const cdk)
-{
-  ptrdiff_t const cdi=sizeof(CCTK_REAL);
-  return KRANC_GFOFFSET3D(u,0,-1,0)*p1o1;
-}
-#endif
-
-#ifndef KRANC_DIFF_FUNCTIONS
-#  define ShiftMinus3(u) (KRANC_GFOFFSET3D(u,0,0,-1)*p1o1)
-#else
-#  define ShiftMinus3(u) (ShiftMinus3_impl(u,p1o1,cdj,cdk))
-static CCTK_REAL ShiftMinus3_impl(CCTK_REAL const* restrict const u, CCTK_REAL const p1o1, ptrdiff_t const cdj, ptrdiff_t const cdk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;
-static CCTK_REAL ShiftMinus3_impl(CCTK_REAL const* restrict const u, CCTK_REAL const p1o1, ptrdiff_t const cdj, ptrdiff_t const cdk)
-{
-  ptrdiff_t const cdi=sizeof(CCTK_REAL);
-  return KRANC_GFOFFSET3D(u,0,0,-1)*p1o1;
 }
 #endif
 

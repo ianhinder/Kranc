@@ -1,24 +1,35 @@
+#!/usr/bin/env MathematicaScript -script
 
-(* Run this script with:
+(* If MathematicaScript is not available on your path, you can run
+   this script with
 
-     math -run 'Get["TestTensorTools.m"]; Quit[]'
+     MathKernel -run 'Get["TestTensorTools.m"]; Quit[]'
 
 *)
 
-
+(****************************************************************)
 (* Initialise *)
+(****************************************************************)
+
+messageHandler = If[Last[#], Print["Messages generated"]; Quit[1]] &;
+Internal`AddHandler["Message", messageHandler]
 
 $Path = Join[{"../Tools/CodeGen", "../Tools/MathematicaMisc"}, $Path];
 SetOptions["stdout", PageWidth -> Infinity];
+SetOptions[$Output, FormatType -> OutputForm];
 
 Print["Loading tensortools"];
 << TensorTools`;
+
+Print["Arguments: ", $ScriptCommandLine];
 
 enhancedTimes = False;
 
 SetEnhancedTimes[enhancedTimes];
 
+(****************************************************************)
 (* Definitions *)
+(****************************************************************)
 
 SetAttributes[test, HoldFirst]
 
@@ -45,7 +56,9 @@ reportResults[] :=
   Print["All " <> ToString[testsPassed] <> " test" <> 
     If[testsPassed > 1, "s", ""] <> " passed"]];
 
+(****************************************************************)
 (* Tests *)
+(****************************************************************)
 
 testsPassed = 0; testsFailed = 0;
 
@@ -85,14 +98,14 @@ test[makeSum[S[ua] TT[la]], S[1] TT[1] + S[2] TT[2] + S[3] TT[3]];
 
 test[makeSum[u[ua] v[la]], u[1] v[1] + u[2] v[2] + u[3] v[3]];
 
-test[makeSum[a S[ua] TT[la] + 1], a (S[1] TT[1] + S[2] TT[2] + S[3] TT[3]) + 1];
+test[makeSum[a S[ua] TT[la] + 1], a * (S[1] TT[1] + S[2] TT[2] + S[3] TT[3]) + 1];
 
 test[makeSum[S[ua] TT[la] + u[ua] v[la]],
  S[1] TT[1] + S[2] TT[2] + S[3] TT[3] + u[1] v[1] + u[2] v[2] + u[3] v[3]];
 
-test[makeSum[a (S[ua] TT[la] + x) + b (u[ua] v[la] + y)],
- a (S[1] TT[1] + S[2] TT[2] + S[3] TT[3] + x) +
-  b (u[1] v[1] + u[2] v[2] + u[3] v[3] + y)];
+test[makeSum[a * (S[ua] TT[la] + x) + b * (u[ua] v[la] + y)],
+ a * (S[1] TT[1] + S[2] TT[2] + S[3] TT[3] + x) +
+  b * (u[1] v[1] + u[2] v[2] + u[3] v[3] + y)];
 
 test[makeSum[
   S[ua] TT[la] u[ub] v[lb]], (S[1] TT[1] + S[2] TT[2] + S[3] TT[3]) (u[1] v[1] +
@@ -185,3 +198,5 @@ test[FullSimplify[MakeExplicit[PD[MatrixInverse[a[ua, ub]], ld] a[lb, lc]] +
   0, 0}];
 
 reportResults[];
+
+Quit[If[testsFailed > 0,1,0]]

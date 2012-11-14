@@ -45,7 +45,7 @@ test[t_, r1_] :=
        Print["Pass"],
        (* else *)
        testsFailed++;
-       Print["Result:", Expand@Evaluate[t]//InputForm];
+       Print["Result: ", Expand@Evaluate[t]//InputForm];
        Print["Fail"]];
     Print[]];
 

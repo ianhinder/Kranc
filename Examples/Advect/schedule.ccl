@@ -1,11 +1,20 @@
 # File produced by Kranc
 
 
-STORAGE: F2rho_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: F2rho_group[1]
+}
 
-STORAGE: Frho_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: Frho_group[1]
+}
 
-STORAGE: v_group[1]
+if (other_timelevels == 1)
+{
+  STORAGE: v_group[1]
+}
 
 if (timelevels == 1)
 {
@@ -39,12 +48,6 @@ schedule Advect_Startup at STARTUP
   OPTIONS: meta
 } "create banner"
 
-schedule Advect_RegisterVars in MoL_Register
-{
-  LANG: C
-  OPTIONS: meta
-} "Register Variables for MoL"
-
 schedule Advect_RegisterSymmetries in SymmetryRegister
 {
   LANG: C
@@ -57,6 +60,11 @@ if (CCTK_EQUALS(initial_data, "sine"))
   schedule advect_initial_sine at CCTK_INITIAL as advect_initial
   {
     LANG: C
+    READS:    grid::x
+    WRITES:   Advect::rho
+    WRITES:   Advect::v1
+    WRITES:   Advect::v2
+    WRITES:   Advect::v3
   } "advect_initial_sine"
 }
 
@@ -66,17 +74,33 @@ if (CCTK_EQUALS(initial_data, "shock"))
   schedule advect_initial_shock at CCTK_INITIAL as advect_initial
   {
     LANG: C
+    READS:    grid::x
+    WRITES:   Advect::rho
+    WRITES:   Advect::v1
+    WRITES:   Advect::v2
+    WRITES:   Advect::v3
   } "advect_initial_shock"
 }
 
 schedule advect_evol in MoL_CalcRHS
 {
   LANG: C
+  READS:    Advect::Frho1
+  READS:    Advect::Frho2
+  READS:    Advect::Frho3
+  WRITES:   Advect::rhorhs
 } "advect_evol"
 
 schedule advect_flux in MoL_PostStep after Advect_ApplyBCs
 {
   LANG: C
+  READS:    Advect::rho
+  READS:    Advect::v1
+  READS:    Advect::v2
+  READS:    Advect::v3
+  WRITES:   Advect::Frho1
+  WRITES:   Advect::Frho2
+  WRITES:   Advect::Frho3
 } "advect_flux"
 
 schedule Advect_SelectBoundConds in MoL_PostStep
@@ -91,6 +115,12 @@ schedule Advect_CheckBoundaries at BASEGRID
   LANG: C
   OPTIONS: meta
 } "check boundaries treatment"
+
+schedule Advect_RegisterVars in MoL_Register
+{
+  LANG: C
+  OPTIONS: meta
+} "Register Variables for MoL"
 
 schedule group ApplyBCs as Advect_ApplyBCs in MoL_PostStep after Advect_SelectBoundConds
 {

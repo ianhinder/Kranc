@@ -29,6 +29,7 @@ BeginPackage["TensorTools`", {"Errors`", "MapLookup`", "Kranc`"}];
 
 DefineTensor::usage = "DefineTensor[kernel] registers kernel as a \
 TensorTools tensor kernel.";
+DefineDerivative::usage = "DefineDerivative[pd] registers a symbol to be used as a derivative operator.";
 
 MakeExplicit::usage = "MakeExplicit[x] converts an expression x \
 containing abstract indices into one containing components \
@@ -145,6 +146,8 @@ replaceConflicting;
 (* This is for compatibility with MathTensor notation *)
 (*OD = PD;*)
 
+$Derivatives;
+
 Begin["`Private`"];
 
 listOfTensors = {};
@@ -153,6 +156,8 @@ TensorTools`null=TensorTools`\[Null];
 upper = "u";
 lower = "l";
 delta = \[Delta]
+
+If[!ValueQ[$Derivatives], $Derivatives = {PD}];
 
 SwapIndices[x_, i1_, i2_] := 
   Module[{temp, unique},
@@ -279,6 +284,9 @@ DefineTensor[T_] :=
 
     TensorAttributes[T] = {TensorWeight -> 0, Symmetries -> {}};
     T];
+
+DefineDerivative[pd_Symbol] :=
+  If[!DerivativeOperatorQ[pd], AppendTo[$Derivatives, pd]];
 
 (* -------------------------------------------------------------------------- 
    Index manipulation

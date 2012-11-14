@@ -1,0 +1,114 @@
+# File produced by Kranc
+
+
+if (timelevels == 1)
+{
+  STORAGE: evolved_group[1]
+}
+if (timelevels == 2)
+{
+  STORAGE: evolved_group[2]
+}
+if (timelevels == 3)
+{
+  STORAGE: evolved_group[3]
+}
+
+if (timelevels == 1)
+{
+  STORAGE: ode_group[1]
+}
+if (timelevels == 2)
+{
+  STORAGE: ode_group[2]
+}
+if (timelevels == 3)
+{
+  STORAGE: ode_group[3]
+}
+
+if (rhs_timelevels == 1)
+{
+  STORAGE: evolved_grouprhs[1]
+}
+if (rhs_timelevels == 2)
+{
+  STORAGE: evolved_grouprhs[2]
+}
+if (rhs_timelevels == 3)
+{
+  STORAGE: evolved_grouprhs[3]
+}
+
+if (rhs_timelevels == 1)
+{
+  STORAGE: ode_grouprhs[1]
+}
+if (rhs_timelevels == 2)
+{
+  STORAGE: ode_grouprhs[2]
+}
+if (rhs_timelevels == 3)
+{
+  STORAGE: ode_grouprhs[3]
+}
+
+schedule SimpleWaveODE_Startup at STARTUP
+{
+  LANG: C
+  OPTIONS: meta
+} "create banner"
+
+schedule SimpleWaveODE_RegisterSymmetries in SymmetryRegister
+{
+  LANG: C
+  OPTIONS: meta
+} "register symmetries"
+
+schedule initial_sine AT INITIAL
+{
+  LANG: C
+  READS:    grid::x
+  WRITES:   SimpleWaveODE::a
+  WRITES:   SimpleWaveODE::b
+  WRITES:   SimpleWaveODE::phi
+  WRITES:   SimpleWaveODE::pi
+} "initial_sine"
+
+schedule calc_rhs in MoL_CalcRHS
+{
+  LANG: C
+  READS:    SimpleWaveODE::a
+  READS:    SimpleWaveODE::b
+  READS:    SimpleWaveODE::phi
+  READS:    SimpleWaveODE::pi
+  WRITES:   SimpleWaveODE::arhs
+  WRITES:   SimpleWaveODE::brhs
+  WRITES:   SimpleWaveODE::phirhs
+  WRITES:   SimpleWaveODE::pirhs
+} "calc_rhs"
+
+schedule SimpleWaveODE_SelectBoundConds in MoL_PostStep
+{
+  LANG: C
+  OPTIONS: level
+  SYNC: evolved_group
+  SYNC: ode_group
+} "select boundary conditions"
+
+schedule SimpleWaveODE_CheckBoundaries at BASEGRID
+{
+  LANG: C
+  OPTIONS: meta
+} "check boundaries treatment"
+
+schedule SimpleWaveODE_RegisterVars in MoL_Register
+{
+  LANG: C
+  OPTIONS: meta
+} "Register Variables for MoL"
+
+schedule group ApplyBCs as SimpleWaveODE_ApplyBCs in MoL_PostStep after SimpleWaveODE_SelectBoundConds
+{
+  # no language specified
+} "Apply boundary conditions controlled by thorn Boundary"

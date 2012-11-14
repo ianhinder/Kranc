@@ -9,6 +9,7 @@
 (* Initialise *)
 
 $Path = Join[{"../Tools/CodeGen", "../Tools/MathematicaMisc"}, $Path];
+SetOptions["stdout", PageWidth -> Infinity];
 
 Print["Loading tensortools"];
 << TensorTools`;
@@ -22,18 +23,19 @@ SetEnhancedTimes[enhancedTimes];
 SetAttributes[test, HoldFirst]
 
 test[t_, r1_] :=
- Module[{r},
-  r = If[enhancedTimes, r1 /. Times -> TensorProduct, r1];
-  If[Expand[Evaluate[t]] === Expand[r], testsPassed++; 
-   Print["Input: ", HoldForm[InputForm@t]];
-   Print["Result: ", Expand[r]//InputForm];
-   Print["Pass"],
-   (* else *)
-   testsFailed++;
-    Print["Input:", HoldForm@t];
-    Print["Expected:", Expand[r], FullForm[Expand@r]];
-    Print["Result:", Expand@Evaluate[t], FullForm[Expand@Evaluate[t]]];
-    Print["Fail"]];
+  Module[
+    {r},
+    Print["Input: ", HoldForm[InputForm@t]];
+    r = If[enhancedTimes, r1 /. Times -> TensorProduct, r1];
+    Print["Expected: ", Expand@r//InputForm];
+    If[Expand[Evaluate[t]] === Expand[r],
+       testsPassed++; 
+       Print["Result: ", Expand[r]//InputForm];
+       Print["Pass"],
+       (* else *)
+       testsFailed++;
+       Print["Result:", Expand@Evaluate[t]//InputForm];
+       Print["Fail"]];
     Print[]];
 
 reportResults[] :=

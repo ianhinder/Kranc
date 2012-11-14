@@ -557,7 +557,9 @@ listComponentsOfDummyIndex[x_, i:(TensorIndex[_,lower])] :=
    contractions of tensorial expressions.
 *)
 
-makeSum[x : PD[Tensor[_, __TensorIndex], __TensorIndex]] :=
+DerivativeOperatorQ[pd_] := MemberQ[$Derivatives, pd];
+
+makeSum[x : (pd_?DerivativeOperatorQ)[Tensor[_, __TensorIndex], __TensorIndex]] :=
   makeSumOverDummies[x];
 
 makeSum[f_[x___]] :=

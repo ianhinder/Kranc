@@ -49,7 +49,7 @@ reportResults[] :=
 
 testsPassed = 0; testsFailed = 0;
 
-DefineTensor /@ {S, SS, T, TT, u, v, w, a};
+DefineTensor /@ {S, SS, T, TT, u, v, w, a, b};
 
 (* We currently only test with correct input as it is CheckTensor's
    responsibility to check that the input is correct.  This should be
@@ -150,8 +150,21 @@ test[MakeExplicit[Sqrt[S[ua] TT[la]]], {Sqrt[S1 TT1 + S2 TT2 + S3 TT3]}];
 
 test[MakeExplicit[Sqrt[u[ua] v[la]]], {Sqrt[u1 v1 + u2  v2 + u3 v3]}];
 
+(* This fails with 
+
+   StringJoin::string: String expected at position 1 in StringJoin[1].
+
+   which is probably an error in the error-detection or formatting
+   code, since the input is not valid according to TensorTools (the
+   tensor u has not been declared with two lower indices).
+
+ *)
+
 (* test[FullSimplify[MakeExplicit[MatrixInverse[u[ua, ub]] u[lb, lc]]], *)
 (*  {1, 0, 0, 0, 1, 0, 0, 0, 1}]; *)
+
+test[FullSimplify[MakeExplicit[MatrixInverse[a[ua, ub]] a[lb, lc]]],
+ {1, 0, 0, 0, 1, 0, 0, 0, 1}];
 
 (****************************************************************)
 (* Partial derivatives *)
@@ -162,13 +175,13 @@ test[MakeExplicit[PD[u[la], lb]], {PD[u1, 1], PD[u1, 2], PD[u1, 3], PD[u2, 1],
 
 test[MakeExplicit[PD[u[ua], la]], {PD[u1, 1], PD[u2, 2], PD[u3, 3]}];
 
-(* test[Simplify[MakeExplicit[PD[MatrixInverse[u[ua, ub]] u[lb, lc], ld]]], {0, *)
-(*   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, *)
-(*   0}]; *)
+test[Simplify[MakeExplicit[PD[MatrixInverse[a[ua, ub]] a[lb, lc], ld]]], {0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0}];
 
-(* test[FullSimplify[MakeExplicit[PD[MatrixInverse[u[ua, ub]], ld] u[lb, lc]] + *)
-(*    MakeExplicit[MatrixInverse[u[ua, ub]] PD[u[lb, lc], ld]]], *)
-(*  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, *)
-(*   0, 0}]; *)
+test[FullSimplify[MakeExplicit[PD[MatrixInverse[a[ua, ub]], ld] a[lb, lc]] +
+   MakeExplicit[MatrixInverse[a[ua, ub]] PD[a[lb, lc], ld]]],
+ {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0}];
 
 reportResults[];

@@ -549,6 +549,9 @@ listComponentsOfDummyIndex[x_, i:(TensorIndex[_,lower])] :=
    contractions of tensorial expressions.
 *)
 
+makeSum[x : PD[Tensor[_, __TensorIndex], __TensorIndex]] :=
+  makeSumOverDummies[x];
+
 makeSum[f_[x___]] :=
   Apply[f, Map[makeSum, {x}]];
 

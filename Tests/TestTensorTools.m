@@ -49,12 +49,14 @@ test[t_, r1_] :=
        Print["Fail"]];
     Print[]];
 
+count[num_Integer, noun_String] :=
+  ToString[num] <> " " <> noun <> If[num === 1, "", "s"];
+
 reportResults[] :=
- If[testsFailed > 0, 
-  Print[ToString[testsFailed] <> " test" <> 
-    If[testsFailed > 1, "s", ""] <> " failed"],
-  Print["All " <> ToString[testsPassed] <> " test" <> 
-    If[testsPassed > 1, "s", ""] <> " passed"]];
+  Module[
+    {},
+    Print[count[testsPassed, "test"], " passed"];
+    Print[count[testsFailed, "test"], " failed"]];
 
 (****************************************************************)
 (* Tests *)

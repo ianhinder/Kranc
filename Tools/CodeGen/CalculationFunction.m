@@ -273,7 +273,7 @@ assignVariableFromExpression[dest_, expr_, declare_, vectorise_, noSimplify:Bool
     cleanExpr = ReplacePowers[expr, vectorise, noSimplify];
 
     If[SOURCELANGUAGE == "C",
-      code = If[declare, type <> " ", ""] <> ToString[dest] <> " = " <>
+      code = If[declare, type <> " CCTK_ATTRIBUTE_UNUSED ", ""] <> ToString[dest] <> " = " <>
         ToString[cleanExpr, CForm,         PageWidth -> Infinity] <> ";\n",
       code = ToString@dest <> ".eq." <> ToString[cleanExpr, FortranForm, PageWidth -> 120]
         <> "\n"];

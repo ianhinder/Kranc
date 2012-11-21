@@ -271,6 +271,7 @@ CreateKrancScheduleFile[calcs_, groups_, evolvedGroups_, rhsGroups_, nonevolvedG
         Map[
           Module[
             {tl},
+            (* Number of timelevels requested for this group, or 1 if no request made *)
             tl = NonevolvedTimelevels[groupFromName[#, groups]];
             If[tl===1,
                storageStructure[#, {"other_timelevels", tl}],

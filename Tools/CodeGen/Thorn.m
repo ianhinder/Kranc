@@ -363,7 +363,7 @@ CreateInterface[implementation_, inheritedImplementations_, includeFiles_,
 (* Given a storage group structure defined above, return a CodeGen
    structure for inclusion in the schedule.ccl file to allocate
    storage for this group. *)
-groupStorage[spec_, params_] :=
+groupStorage[spec_] :=
   If[mapContains[spec, MaxTimelevels],
      Flatten[Table[{"if (", lookup[spec, MaxTimelevels], " == ", i, ")\n",
                     "{\n",
@@ -501,7 +501,7 @@ scheduleGroup[spec_,params_] :=
    return a CodeGen block representing a schedule.ccl file. *)
 CreateSchedule[globalStorageGroups_, scheduledGroups_, scheduledFunctions_, params_] :=
   {whoWhen["CCL"],
-   Map[SeparatedBlock[groupStorage[#,params]]     &, globalStorageGroups],
+   Map[SeparatedBlock[groupStorage[#]]            &, globalStorageGroups],
    Map[SeparatedBlock[scheduleFunction[#,params]] &, scheduledFunctions],
    Map[SeparatedBlock[scheduleGroup[#,params]]    &, scheduledGroups]};
 

@@ -28,21 +28,21 @@ Begin["`Private`"];
    Scheduling
    -------------------------------------------------------------------------- *)
 
-simpleGroupStruct[groupName_, timelevels_, maxtimelevels_] := 
+simpleGroupStruct[groupName_, timelevels_] := 
 {
   Group -> groupName, 
   Timelevels -> timelevels,
   MaxTimelevels -> "other_timelevels"
 };
 
-evolvedGroupStruct[groupName_, timelevels_, maxtimelevels_] := 
+evolvedGroupStruct[groupName_, timelevels_] := 
 {
   Group -> groupName, 
   Timelevels -> timelevels,
   MaxTimelevels -> "timelevels"
 };
 
-rhsGroupStruct[groupName_, timelevels_, maxtimelevels_] := 
+rhsGroupStruct[groupName_, timelevels_] := 
 {
   Group -> groupName, 
   Timelevels -> timelevels,
@@ -288,15 +288,15 @@ CreateKrancScheduleFile[calcs_, groups_, evolvedGroups_, rhsGroups_, nonevolvedG
             {tl},
             tl = NonevolvedTimelevels[groupFromName[#, groups]];
             If[tl===1,
-               simpleGroupStruct[#, tl, evolutionTimelevels],
-               evolvedGroupStruct[#, evolutionTimelevels, evolutionTimelevels]]] &,
+               simpleGroupStruct[#, tl],
+               evolvedGroupStruct[#, evolutionTimelevels]]] &,
           (* over *)
           nonevolvedGroups],
 
-        Map[evolvedGroupStruct[#, evolutionTimelevels, evolutionTimelevels] &,
+        Map[evolvedGroupStruct[#, evolutionTimelevels] &,
             evolvedGroups],
 
-        Map[rhsGroupStruct[#, evolutionTimelevels, evolutionTimelevels] &,
+        Map[rhsGroupStruct[#, evolutionTimelevels] &,
             rhsGroups]];
 
     (* Schedule groups defined in calculations *)

@@ -679,13 +679,15 @@ CreateSymmetriesRegistrationSource[thornName_, implementationName_, GFs_, reflec
         {"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h", "Symmetry.h"}],
 
    DefineCCTKFunction[ thornName <> "_RegisterSymmetries", "void", 
+     If[Length[spec] > 0,
      {CommentedBlock["array holding symmetry definitions",
 
       "CCTK_INT sym[3];\n\n"],
 
       CommentedBlock["Register symmetries of grid functions",
 
-      Map[SymmetriesBlock, spec]]}
+      Map[SymmetriesBlock, spec]]},
+     {}]
 ]
   };
 

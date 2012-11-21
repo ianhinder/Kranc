@@ -283,14 +283,19 @@ CreateKrancScheduleFile[calcs_, groups_, evolvedGroups_, rhsGroups_, nonevolvedG
 
     globalStorageGroups =
       Join[
-        Map[Module[{tl},
-                   tl = NonevolvedTimelevels[groupFromName[#, groups]];
-                   If[tl===1,
-                      simpleGroupStruct[#, tl, evolutionTimelevels],
-                      evolvedGroupStruct[#, evolutionTimelevels, evolutionTimelevels]]] &,
-            nonevolvedGroups],
+        Map[
+          Module[
+            {tl},
+            tl = NonevolvedTimelevels[groupFromName[#, groups]];
+            If[tl===1,
+               simpleGroupStruct[#, tl, evolutionTimelevels],
+               evolvedGroupStruct[#, evolutionTimelevels, evolutionTimelevels]]] &,
+          (* over *)
+          nonevolvedGroups],
+
         Map[evolvedGroupStruct[#, evolutionTimelevels, evolutionTimelevels] &,
             evolvedGroups],
+
         Map[rhsGroupStruct[#, evolutionTimelevels, evolutionTimelevels] &,
             rhsGroups]];
 

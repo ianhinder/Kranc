@@ -17,10 +17,10 @@
 
 /* Define macros used in calculations */
 #define INITVALUE (42)
-#define QAD(x) (SQR(SQR(x)))
-#define INV(x) ((1.0) / (x))
+#define INV(x) ((CCTK_REAL)1.0 / (x))
 #define SQR(x) ((x) * (x))
-#define CUB(x) ((x) * (x) * (x))
+#define CUB(x) ((x) * SQR(x))
+#define QAD(x) (SQR(SQR(x)))
 
 extern "C" void burgers_rhs_1_SelectBCs(CCTK_ARGUMENTS)
 {
@@ -39,8 +39,6 @@ static void burgers_rhs_1_Body(cGH const * restrict const cctkGH, int const dir,
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  
-  /* Declare finite differencing variables */
   
   /* Include user-supplied include files */
   
@@ -84,9 +82,9 @@ static void burgers_rhs_1_Body(cGH const * restrict const cctkGH, int const dir,
   
   /* Loop over the grid points */
   #pragma omp parallel
-  CCTK_LOOP3 (burgers_rhs_1,
+  CCTK_LOOP3(burgers_rhs_1,
     i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-    cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+    cctk_ash[0],cctk_ash[1],cctk_ash[2])
   {
     ptrdiff_t const index = di*i + dj*j + dk*k;
     
@@ -107,7 +105,7 @@ static void burgers_rhs_1_Body(cGH const * restrict const cctkGH, int const dir,
     /* Copy local copies back to grid functions */
     urhs[index] = urhsL;
   }
-  CCTK_ENDLOOP3 (burgers_rhs_1);
+  CCTK_ENDLOOP3(burgers_rhs_1);
 }
 
 extern "C" void burgers_rhs_1(CCTK_ARGUMENTS)
@@ -126,12 +124,14 @@ extern "C" void burgers_rhs_1(CCTK_ARGUMENTS)
     return;
   }
   
-  const char *groups[] = {"Burgers::uF_group","Burgers::u_grouprhs"};
+  const char *const groups[] = {
+    "Burgers::uF_group",
+    "Burgers::u_grouprhs"};
   GenericFD_AssertGroupStorage(cctkGH, "burgers_rhs_1", 2, groups);
   
   GenericFD_EnsureStencilFits(cctkGH, "burgers_rhs_1", 1, 1, 1);
   
-  GenericFD_LoopOverInterior(cctkGH, &burgers_rhs_1_Body);
+  GenericFD_LoopOverInterior(cctkGH, burgers_rhs_1_Body);
   
   if (verbose > 1)
   {

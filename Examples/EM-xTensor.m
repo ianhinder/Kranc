@@ -21,7 +21,15 @@
 
 $KrancTensorPackage="xTensorKranc`";
 Get["KrancTensor`"];
-Get["Metrics`LoadMetric`"];
+
+PrependTo[$Path, "../../EinsteinExact/m"];
+
+Check[Get["Metrics`LoadMetric`"],
+      Print["Cannot load Metrics package"]; Quit[1],
+      Get::noopen];
+
+Print["Using Metrics database at ", FindFile["Metrics`LoadMetric`"]];
+
 $DefInfoQ=False;
 $CVVerbose=False;
 $PrePrint=ScreenDollarIndices;

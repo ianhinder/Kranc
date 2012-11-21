@@ -17,18 +17,16 @@
 
 /* Define macros used in calculations */
 #define INITVALUE (42)
-#define QAD(x) (SQR(SQR(x)))
-#define INV(x) ((1.0) / (x))
+#define INV(x) ((CCTK_REAL)1.0 / (x))
 #define SQR(x) ((x) * (x))
-#define CUB(x) ((x) * (x) * (x))
+#define CUB(x) ((x) * SQR(x))
+#define QAD(x) (SQR(SQR(x)))
 
 static void euler_zero_rhs_Body(cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const imin[3], int const imax[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[])
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  
-  /* Declare finite differencing variables */
   
   /* Include user-supplied include files */
   
@@ -61,15 +59,15 @@ static void euler_zero_rhs_Body(cGH const * restrict const cctkGH, int const dir
   CCTK_REAL const p1o12dx = 0.0833333333333333333333333333333*INV(dx);
   CCTK_REAL const p1o12dy = 0.0833333333333333333333333333333*INV(dy);
   CCTK_REAL const p1o12dz = 0.0833333333333333333333333333333*INV(dz);
-  CCTK_REAL const p1o144dxdy = 0.00694444444444444444444444444444*INV(dx)*INV(dy);
-  CCTK_REAL const p1o144dxdz = 0.00694444444444444444444444444444*INV(dx)*INV(dz);
-  CCTK_REAL const p1o144dydz = 0.00694444444444444444444444444444*INV(dy)*INV(dz);
+  CCTK_REAL const p1o144dxdy = 0.00694444444444444444444444444444*INV(dx*dy);
+  CCTK_REAL const p1o144dxdz = 0.00694444444444444444444444444444*INV(dx*dz);
+  CCTK_REAL const p1o144dydz = 0.00694444444444444444444444444444*INV(dy*dz);
   CCTK_REAL const p1o2dx = 0.5*INV(dx);
   CCTK_REAL const p1o2dy = 0.5*INV(dy);
   CCTK_REAL const p1o2dz = 0.5*INV(dz);
-  CCTK_REAL const p1o4dxdy = 0.25*INV(dx)*INV(dy);
-  CCTK_REAL const p1o4dxdz = 0.25*INV(dx)*INV(dz);
-  CCTK_REAL const p1o4dydz = 0.25*INV(dy)*INV(dz);
+  CCTK_REAL const p1o4dxdy = 0.25*INV(dx*dy);
+  CCTK_REAL const p1o4dxdz = 0.25*INV(dx*dz);
+  CCTK_REAL const p1o4dydz = 0.25*INV(dy*dz);
   CCTK_REAL const p1odx = INV(dx);
   CCTK_REAL const p1odx2 = INV(SQR(dx));
   CCTK_REAL const p1ody = INV(dy);
@@ -93,9 +91,9 @@ static void euler_zero_rhs_Body(cGH const * restrict const cctkGH, int const dir
   
   /* Loop over the grid points */
   #pragma omp parallel
-  CCTK_LOOP3 (euler_zero_rhs,
+  CCTK_LOOP3(euler_zero_rhs,
     i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-    cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+    cctk_ash[0],cctk_ash[1],cctk_ash[2])
   {
     ptrdiff_t const index = di*i + dj*j + dk*k;
     
@@ -125,7 +123,7 @@ static void euler_zero_rhs_Body(cGH const * restrict const cctkGH, int const dir
     S2rhs[index] = S2rhsL;
     S3rhs[index] = S3rhsL;
   }
-  CCTK_ENDLOOP3 (euler_zero_rhs);
+  CCTK_ENDLOOP3(euler_zero_rhs);
 }
 
 extern "C" void euler_zero_rhs(CCTK_ARGUMENTS)
@@ -144,11 +142,14 @@ extern "C" void euler_zero_rhs(CCTK_ARGUMENTS)
     return;
   }
   
-  const char *groups[] = {"Euler::Den_grouprhs","Euler::En_grouprhs","Euler::S_grouprhs"};
+  const char *const groups[] = {
+    "Euler::Den_grouprhs",
+    "Euler::En_grouprhs",
+    "Euler::S_grouprhs"};
   GenericFD_AssertGroupStorage(cctkGH, "euler_zero_rhs", 3, groups);
   
   
-  GenericFD_LoopOverEverything(cctkGH, &euler_zero_rhs_Body);
+  GenericFD_LoopOverEverything(cctkGH, euler_zero_rhs_Body);
   
   if (verbose > 1)
   {

@@ -57,100 +57,100 @@ schedule WaveCaKernel_RegisterSymmetries in SymmetryRegister
 schedule initial_gaussian AT INITIAL
 {
   LANG: C
-  READS:    grid::coordinates
-  WRITES:   WaveCaKernel::phi_g
-  WRITES:   WaveCaKernel::pi_g
-  WRITES:   WaveCaKernel::xCopy_g
+  READS:    grid::x
+  WRITES:   WaveCaKernel::phi
+  WRITES:   WaveCaKernel::pi
+  WRITES:   WaveCaKernel::xCopy
 } "initial_gaussian"
 
 
 if (fdOrder == 2)
 {
-  schedule CAKERNEL_Launch_calc_rhs_2 in MoL_CalcRHS
+  schedule CAKERNEL_Launch_calc_rhs_2 as calc_rhs_2 in MoL_CalcRHS
   {
     LANG: C
     TAGS: Device=1
-    READS:    WaveCaKernel::phi_g
-    READS:    WaveCaKernel::pi_g
-    WRITES:   WaveCaKernel::phi_grhs
-    WRITES:   WaveCaKernel::pi_grhs
+    READS:    WaveCaKernel::phi
+    READS:    WaveCaKernel::pi
+    WRITES:   WaveCaKernel::phirhs
+    WRITES:   WaveCaKernel::pirhs
   } "calc_rhs_2"
 }
 
 
 if (fdOrder == 2)
 {
-  schedule CAKERNEL_Launch_calc_rhs_2 at ANALYSIS
+  schedule CAKERNEL_Launch_calc_rhs_2 as calc_rhs_2 at ANALYSIS
   {
     LANG: C
     SYNC: phi_grhs
     SYNC: pi_grhs
     TAGS: Device=1
-    READS:    WaveCaKernel::phi_g
-    READS:    WaveCaKernel::pi_g
-    WRITES:   WaveCaKernel::phi_grhs
-    WRITES:   WaveCaKernel::pi_grhs
+    READS:    WaveCaKernel::phi
+    READS:    WaveCaKernel::pi
+    WRITES:   WaveCaKernel::phirhs
+    WRITES:   WaveCaKernel::pirhs
   } "calc_rhs_2"
 }
 
 
 if (fdOrder == 4)
 {
-  schedule CAKERNEL_Launch_calc_rhs_4 in MoL_CalcRHS
+  schedule CAKERNEL_Launch_calc_rhs_4 as calc_rhs_4 in MoL_CalcRHS
   {
     LANG: C
     TAGS: Device=1
-    READS:    WaveCaKernel::phi_g
-    READS:    WaveCaKernel::pi_g
-    WRITES:   WaveCaKernel::phi_grhs
-    WRITES:   WaveCaKernel::pi_grhs
+    READS:    WaveCaKernel::phi
+    READS:    WaveCaKernel::pi
+    WRITES:   WaveCaKernel::phirhs
+    WRITES:   WaveCaKernel::pirhs
   } "calc_rhs_4"
 }
 
 
 if (fdOrder == 4)
 {
-  schedule CAKERNEL_Launch_calc_rhs_4 at ANALYSIS
+  schedule CAKERNEL_Launch_calc_rhs_4 as calc_rhs_4 at ANALYSIS
   {
     LANG: C
     SYNC: phi_grhs
     SYNC: pi_grhs
     TAGS: Device=1
-    READS:    WaveCaKernel::phi_g
-    READS:    WaveCaKernel::pi_g
-    WRITES:   WaveCaKernel::phi_grhs
-    WRITES:   WaveCaKernel::pi_grhs
+    READS:    WaveCaKernel::phi
+    READS:    WaveCaKernel::pi
+    WRITES:   WaveCaKernel::phirhs
+    WRITES:   WaveCaKernel::pirhs
   } "calc_rhs_4"
 }
 
-schedule CAKERNEL_Launch_calc_bound_rhs in MoL_RHSBoundaries
+schedule CAKERNEL_Launch_calc_bound_rhs as calc_bound_rhs in MoL_RHSBoundaries
 {
   LANG: C
   TAGS: Device=1
-  READS:    WaveCaKernel::xCopy_g
-  WRITES:   WaveCaKernel::phi_grhs
-  WRITES:   WaveCaKernel::pi_grhs
+  READS:    WaveCaKernel::xCopy
+  WRITES:   WaveCaKernel::phirhs
+  WRITES:   WaveCaKernel::pirhs
 } "calc_bound_rhs"
 
-schedule CAKERNEL_Launch_calc_bound_rhs at ANALYSIS
+schedule CAKERNEL_Launch_calc_bound_rhs as calc_bound_rhs at ANALYSIS
 {
   LANG: C
   SYNC: phi_grhs
   SYNC: pi_grhs
   TAGS: Device=1
-  READS:    WaveCaKernel::xCopy_g
-  WRITES:   WaveCaKernel::phi_grhs
-  WRITES:   WaveCaKernel::pi_grhs
+  READS:    WaveCaKernel::xCopy
+  WRITES:   WaveCaKernel::phirhs
+  WRITES:   WaveCaKernel::pirhs
 } "calc_bound_rhs"
 
-schedule CAKERNEL_Launch_copy_to_device at INITIAL after initial_gaussian
+schedule CAKERNEL_Launch_copy_to_device as copy_to_device at INITIAL after initial_gaussian
 {
   LANG: C
   TAGS: Device=1
-  READS:    WaveCaKernel::phi_g
-  READS:    WaveCaKernel::pi_g
-  WRITES:   WaveCaKernel::phi_g
-  WRITES:   WaveCaKernel::pi_g
+  READS:    WaveCaKernel::phi
+  READS:    WaveCaKernel::pi
+  WRITES:   WaveCaKernel::phi
+  WRITES:   WaveCaKernel::pi
 } "copy_to_device"
 
 schedule WaveCaKernel_SelectBoundConds in MoL_PostStep
@@ -172,6 +172,12 @@ schedule WaveCaKernel_RegisterVars in MoL_Register
   LANG: C
   OPTIONS: meta
 } "Register Variables for MoL"
+
+schedule WaveCaKernel_Init in CCTK_BASEGRID after Accelerator_SetDevice
+{
+  LANG: C
+  OPTIONS: local
+} "Initialize CUDA Device"
 
 schedule group ApplyBCs as WaveCaKernel_ApplyBCs in MoL_PostStep after WaveCaKernel_SelectBoundConds
 {

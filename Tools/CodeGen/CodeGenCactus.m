@@ -112,7 +112,7 @@ DefFn[
 
 DefFn[
   DeclareAssignVariableInLoop[type_String, dest:(_String|_Symbol), src:(_String|_Symbol)] :=
-  {type, " const ", dest, " = vec_load(", src, ")", EOL[]}];
+  {type, " const ", dest, " CCTK_ATTRIBUTE_UNUSED = vec_load(", src, ")", EOL[]}];
 
 DefFn[
   MaybeAssignVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol), cond:Boolean] :=
@@ -128,8 +128,8 @@ DefFn[
     {loader},
     loader[x_] := If[vectorise, {"vec_load(", x, ")"}, x];
     If[mmaCond,
-       {type, " ", dest, " = (", codeCond, ") ? ", loader[src], " : ToReal(0.0)", EOL[]},
-       {type, " ", dest, " = ", loader[src], EOL[]}]]];
+       {type, " ", dest, " CCTK_ATTRIBUTE_UNUSED = (", codeCond, ") ? ", loader[src], " : ToReal(0.0)", EOL[]},
+       {type, " ", dest, " CCTK_ATTRIBUTE_UNUSED = ", loader[src], EOL[]}]]];
 
 DefFn[
   TestForNaN[expr:CodeGenBlock] :=

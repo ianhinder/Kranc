@@ -95,7 +95,8 @@ ThornOptions =
   Variables -> Automatic,
   Shorthands -> {},
   ParentDirectory -> ".",
-  GenerateScript -> False};
+  GenerateScript -> False,
+  ParameterConditions -> {}};
 
 ExecuteOn;
 Device;

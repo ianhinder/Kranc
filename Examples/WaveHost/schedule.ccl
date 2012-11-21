@@ -57,10 +57,10 @@ schedule WaveHost_RegisterSymmetries in SymmetryRegister
 schedule initial_gaussian AT INITIAL
 {
   LANG: C
-  READS:    grid::coordinates
-  WRITES:   WaveHost::phi_g
-  WRITES:   WaveHost::pi_g
-  WRITES:   WaveHost::xCopy_g
+  READS:    grid::x
+  WRITES:   WaveHost::phi
+  WRITES:   WaveHost::pi
+  WRITES:   WaveHost::xCopy
 } "initial_gaussian"
 
 
@@ -69,10 +69,10 @@ if (fdOrder == 2)
   schedule calc_rhs_2 in MoL_CalcRHS
   {
     LANG: C
-    READS:    WaveHost::phi_g
-    READS:    WaveHost::pi_g
-    WRITES:   WaveHost::phi_grhs
-    WRITES:   WaveHost::pi_grhs
+    READS:    WaveHost::phi
+    READS:    WaveHost::pi
+    WRITES:   WaveHost::phirhs
+    WRITES:   WaveHost::pirhs
   } "calc_rhs_2"
 }
 
@@ -84,10 +84,10 @@ if (fdOrder == 2)
     LANG: C
     SYNC: phi_grhs
     SYNC: pi_grhs
-    READS:    WaveHost::phi_g
-    READS:    WaveHost::pi_g
-    WRITES:   WaveHost::phi_grhs
-    WRITES:   WaveHost::pi_grhs
+    READS:    WaveHost::phi
+    READS:    WaveHost::pi
+    WRITES:   WaveHost::phirhs
+    WRITES:   WaveHost::pirhs
   } "calc_rhs_2"
 }
 
@@ -97,10 +97,10 @@ if (fdOrder == 4)
   schedule calc_rhs_4 in MoL_CalcRHS
   {
     LANG: C
-    READS:    WaveHost::phi_g
-    READS:    WaveHost::pi_g
-    WRITES:   WaveHost::phi_grhs
-    WRITES:   WaveHost::pi_grhs
+    READS:    WaveHost::phi
+    READS:    WaveHost::pi
+    WRITES:   WaveHost::phirhs
+    WRITES:   WaveHost::pirhs
   } "calc_rhs_4"
 }
 
@@ -112,19 +112,19 @@ if (fdOrder == 4)
     LANG: C
     SYNC: phi_grhs
     SYNC: pi_grhs
-    READS:    WaveHost::phi_g
-    READS:    WaveHost::pi_g
-    WRITES:   WaveHost::phi_grhs
-    WRITES:   WaveHost::pi_grhs
+    READS:    WaveHost::phi
+    READS:    WaveHost::pi
+    WRITES:   WaveHost::phirhs
+    WRITES:   WaveHost::pirhs
   } "calc_rhs_4"
 }
 
 schedule calc_bound_rhs in MoL_RHSBoundaries
 {
   LANG: C
-  READS:    WaveHost::xCopy_g
-  WRITES:   WaveHost::phi_grhs
-  WRITES:   WaveHost::pi_grhs
+  READS:    WaveHost::xCopy
+  WRITES:   WaveHost::phirhs
+  WRITES:   WaveHost::pirhs
 } "calc_bound_rhs"
 
 schedule calc_bound_rhs at ANALYSIS
@@ -132,9 +132,9 @@ schedule calc_bound_rhs at ANALYSIS
   LANG: C
   SYNC: phi_grhs
   SYNC: pi_grhs
-  READS:    WaveHost::xCopy_g
-  WRITES:   WaveHost::phi_grhs
-  WRITES:   WaveHost::pi_grhs
+  READS:    WaveHost::xCopy
+  WRITES:   WaveHost::phirhs
+  WRITES:   WaveHost::pirhs
 } "calc_bound_rhs"
 
 schedule WaveHost_SelectBoundConds in MoL_PostStep

@@ -72,12 +72,6 @@ schedule Wave_Startup at STARTUP
   OPTIONS: meta
 } "create banner"
 
-schedule Wave_RegisterVars in MoL_Register
-{
-  LANG: C
-  OPTIONS: meta
-} "Register Variables for MoL"
-
 schedule Wave_RegisterSymmetries in SymmetryRegister
 {
   LANG: C
@@ -90,6 +84,11 @@ if (CCTK_EQUALS(initial_data, "sine"))
   schedule wave_exact_sine AT INITIAL before import_exact before import_exact
   {
     LANG: C
+    READS:    grid::x
+    READS:    grid::y
+    READS:    grid::z
+    WRITES:   Wave::phiExact
+    WRITES:   Wave::piExact
   } "wave_exact_sine"
 }
 
@@ -99,6 +98,11 @@ if (CCTK_EQUALS(initial_data, "sine"))
   schedule wave_exact_sine AT POSTSTEP before calc_errors before import_exact
   {
     LANG: C
+    READS:    grid::x
+    READS:    grid::y
+    READS:    grid::z
+    WRITES:   Wave::phiExact
+    WRITES:   Wave::piExact
   } "wave_exact_sine"
 }
 
@@ -108,6 +112,9 @@ if (CCTK_EQUALS(initial_data, "gaussian"))
   schedule wave_exact_gaussian AT INITIAL before import_exact before import_exact
   {
     LANG: C
+    READS:    grid::r
+    WRITES:   Wave::phiExact
+    WRITES:   Wave::piExact
   } "wave_exact_gaussian"
 }
 
@@ -117,28 +124,52 @@ if (CCTK_EQUALS(initial_data, "gaussian"))
   schedule wave_exact_gaussian AT POSTSTEP before calc_errors before import_exact
   {
     LANG: C
+    READS:    grid::r
+    WRITES:   Wave::phiExact
+    WRITES:   Wave::piExact
   } "wave_exact_gaussian"
 }
 
 schedule wave_import_exact at INITIAL as import_exact
 {
   LANG: C
+  READS:    Wave::phiExact
+  READS:    Wave::piExact
+  WRITES:   Wave::phi
+  WRITES:   Wave::pi
 } "wave_import_exact"
 
 schedule wave_evolve in MoL_CalcRHS as evolve
 {
   LANG: C
+  READS:    Wave::phi
+  READS:    Wave::pi
+  WRITES:   Wave::phirhs
+  WRITES:   Wave::pirhs
 } "wave_evolve"
 
 schedule wave_calc_errors at ANALYSIS as calc_errors
 {
   LANG: C
+  READS:    Wave::phi
+  READS:    Wave::phiExact
+  READS:    Wave::pi
+  READS:    Wave::piExact
+  WRITES:   Wave::phiError
+  WRITES:   Wave::piError
 } "wave_calc_errors"
 
 schedule wave_calc_norm at ANALYSIS as calc_norm
 {
   LANG: C
   SYNC: norms
+  READS:    Wave::phi
+  READS:    Wave::phiError
+  READS:    Wave::pi
+  READS:    Wave::piError
+  WRITES:   Wave::EL2
+  WRITES:   Wave::VDP
+  WRITES:   Wave::VL2
 } "wave_calc_norm"
 
 
@@ -147,6 +178,14 @@ if (CCTK_EQUALS(boundary_condition, "radiative"))
   schedule wave_boundary in MoL_RHSBoundaries
   {
     LANG: C
+    READS:    Wave::phi
+    READS:    Wave::pi
+    READS:    grid::r
+    READS:    grid::x
+    READS:    grid::y
+    READS:    grid::z
+    WRITES:   Wave::phirhs
+    WRITES:   Wave::pirhs
   } "wave_boundary"
 }
 
@@ -162,6 +201,12 @@ schedule Wave_CheckBoundaries at BASEGRID
   LANG: C
   OPTIONS: meta
 } "check boundaries treatment"
+
+schedule Wave_RegisterVars in MoL_Register
+{
+  LANG: C
+  OPTIONS: meta
+} "Register Variables for MoL"
 
 schedule group ApplyBCs as Wave_ApplyBCs in MoL_PostStep after Wave_SelectBoundConds
 {

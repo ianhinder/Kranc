@@ -66,17 +66,6 @@ LSUThorns/Vectors
 # Kranc support thorn
 KrancNumericalTools/GenericFD
 
-KrancExamples/Wave
-KrancExamples/SimpleWave
-KrancExamples/EM
-KrancExamples/Euler
-KrancExamples/EulerAuto
-KrancExamples/EulerSR
-KrancExamples/Advect
-KrancExamples/Burgers
-KrancExamples/Laplace
-KrancExamples/SimpleWaveODE
-
 CactusPUGH/PUGH
 CactusPUGH/PUGHReduce
 CactusPUGH/PUGHSlab
@@ -84,8 +73,21 @@ CactusBase/IOASCII
 Carpet/CarpetIOHDF5
 ExternalLibraries/HDF5
 ExternalLibraries/zlib
+ExternalLibraries/MPI
 CactusUtils/TimerReport
 
-CaCUDA/CaCUDAPiraha
-CaCUDA/CaCUDACFD3DWOMOL
-CaCUDA/CaCUDALib
+KrancExamples/Advect
+#KrancExamples/AdvectCaKernel
+KrancExamples/Burgers
+#KrancExamples/EM-xTensor
+KrancExamples/EM
+KrancExamples/Euler
+KrancExamples/EulerAuto
+KrancExamples/EulerSR
+KrancExamples/Laplace
+KrancExamples/SimpleWave
+KrancExamples/SimpleWaveODE
+#KrancExamples/SimpleWaveOpenCL
+KrancExamples/Wave
+#KrancExamples/WaveCaKernel
+KrancExamples/WaveHost

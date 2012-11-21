@@ -17,10 +17,10 @@
 
 /* Define macros used in calculations */
 #define INITVALUE (42)
-#define QAD(x) (SQR(SQR(x)))
-#define INV(x) ((1.0) / (x))
+#define INV(x) ((CCTK_REAL)1.0 / (x))
 #define SQR(x) ((x) * (x))
-#define CUB(x) ((x) * (x) * (x))
+#define CUB(x) ((x) * SQR(x))
+#define QAD(x) (SQR(SQR(x)))
 
 extern "C" void burgers_reconstruct_1_SelectBCs(CCTK_ARGUMENTS)
 {
@@ -42,8 +42,6 @@ static void burgers_reconstruct_1_Body(cGH const * restrict const cctkGH, int co
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  
-  /* Declare finite differencing variables */
   
   /* Include user-supplied include files */
   
@@ -87,9 +85,9 @@ static void burgers_reconstruct_1_Body(cGH const * restrict const cctkGH, int co
   
   /* Loop over the grid points */
   #pragma omp parallel
-  CCTK_LOOP3 (burgers_reconstruct_1,
+  CCTK_LOOP3(burgers_reconstruct_1,
     i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-    cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+    cctk_ash[0],cctk_ash[1],cctk_ash[2])
   {
     ptrdiff_t const index = di*i + dj*j + dk*k;
     
@@ -109,8 +107,8 @@ static void burgers_reconstruct_1_Body(cGH const * restrict const cctkGH, int co
     
     CCTK_REAL slopeR = DiffPlus1u;
     
-    CCTK_REAL slope = IfThen(slopeL*slopeR < 0,0,IfThen(Abs(slopeL) < 
-      Abs(slopeR),slopeL,slopeR));
+    CCTK_REAL slope = IfThen(slopeL*slopeR < 0,0,IfThen(fabs(slopeL) < 
+      fabs(slopeR),slopeL,slopeR));
     
     CCTK_REAL uLeftL = uL - 0.5*slope;
     
@@ -120,7 +118,7 @@ static void burgers_reconstruct_1_Body(cGH const * restrict const cctkGH, int co
     uLeft[index] = uLeftL;
     uR[index] = uRL;
   }
-  CCTK_ENDLOOP3 (burgers_reconstruct_1);
+  CCTK_ENDLOOP3(burgers_reconstruct_1);
 }
 
 extern "C" void burgers_reconstruct_1(CCTK_ARGUMENTS)
@@ -139,12 +137,15 @@ extern "C" void burgers_reconstruct_1(CCTK_ARGUMENTS)
     return;
   }
   
-  const char *groups[] = {"Burgers::u_group","Burgers::uLeft_group","Burgers::uR_group"};
+  const char *const groups[] = {
+    "Burgers::u_group",
+    "Burgers::uLeft_group",
+    "Burgers::uR_group"};
   GenericFD_AssertGroupStorage(cctkGH, "burgers_reconstruct_1", 3, groups);
   
   GenericFD_EnsureStencilFits(cctkGH, "burgers_reconstruct_1", 1, 1, 1);
   
-  GenericFD_LoopOverInterior(cctkGH, &burgers_reconstruct_1_Body);
+  GenericFD_LoopOverInterior(cctkGH, burgers_reconstruct_1_Body);
   
   if (verbose > 1)
   {

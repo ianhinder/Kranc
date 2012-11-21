@@ -98,7 +98,7 @@ DefFn[
 
 DefFn[
   GetCalculationScheduleName[calc_List] :=
-  If[lookup[calc, UseCaKernel] && CalculationOnDevice[calc],
+  If[lookup[calc, UseCaKernel, False] && CalculationOnDevice[calc],
      "CAKERNEL_Launch_",""]
   <>lookup[calc, Name]];
 

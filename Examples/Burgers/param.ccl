@@ -52,12 +52,6 @@ CCTK_REAL alpha "alpha"
   "*:*" :: ""
 } 0
 
-restricted:
-CCTK_REAL hlleAlpha "hlleAlpha"
-{
-  "*:*" :: ""
-} 0
-
 private:
 KEYWORD initial_data "initial_data"
 {

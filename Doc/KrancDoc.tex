@@ -968,6 +968,12 @@ same arguments, but they can be tensorial in nature.
 
   KeywordParameters & list of KeywordParameterDefinition structures & A list of parameter definition structures for all the keyword parameters which this thorn will define and use.  (optional) & \{\} \\
 
+  ParameterConditions & list of parameter conditions & Each condition
+  is of the form \{\textit{condition}, \textit{message}\}, where
+  \textit{condition} is a boolean expression in parameter names, and
+  \textit{message} is the message for a fatal error which is generated
+  when the thorn starts if \textit{condition} is not satisfied & \{\} \\
+
   InheritedImplementations & list of strings & A list of all the implementations which this thorn
                                                will inherit from.  This is necessary to use grid functions
                                                provided by these implementations.  (optional) & \{\} \\

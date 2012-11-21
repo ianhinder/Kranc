@@ -1,15 +1,6 @@
-CCTK_CUDA_KERNEL initial_gaussian TYPE=gpu_cuda/3dblock STENCIL="0,0,0,0,0,0" TILE="8,8,8" SHARECODE=yes
+CCTK_CUDA_KERNEL initial_gaussian TYPE=gpu_cuda/3dblock TILE="8,8,8" SHARECODE=yes STENCIL="0,0,0,0,0,0"
 {
-  CCTK_CUDA_KERNEL_VARIABLE  cached=yes intent=out
-  {
-    phi
-  }
-  "phi"
-  
-  CCTK_CUDA_KERNEL_VARIABLE  cached=yes intent=in
-  {
-    x
-  }
-  "x"
+  CCTK_CUDA_KERNEL_VARIABLE  cached=no intent=out {phi} "phi"
+  CCTK_CUDA_KERNEL_VARIABLE  cached=no intent=in {x} "x"
 }
 

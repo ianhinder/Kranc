@@ -17,18 +17,16 @@
 
 /* Define macros used in calculations */
 #define INITVALUE (42)
-#define QAD(x) (SQR(SQR(x)))
-#define INV(x) ((1.0) / (x))
+#define INV(x) ((CCTK_REAL)1.0 / (x))
 #define SQR(x) ((x) * (x))
-#define CUB(x) ((x) * (x) * (x))
+#define CUB(x) ((x) * SQR(x))
+#define QAD(x) (SQR(SQR(x)))
 
 static void wave_calc_errors_Body(cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const imin[3], int const imax[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[])
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  
-  /* Declare finite differencing variables */
   
   /* Include user-supplied include files */
   
@@ -57,25 +55,24 @@ static void wave_calc_errors_Body(cGH const * restrict const cctkGH, int const d
   CCTK_REAL const hdzi = 0.5 * dzi;
   
   /* Initialize predefined quantities */
-  CCTK_REAL const p1o1 = 1;
   CCTK_REAL const p1o12dx = 0.0833333333333333333333333333333*INV(dx);
   CCTK_REAL const p1o12dy = 0.0833333333333333333333333333333*INV(dy);
   CCTK_REAL const p1o12dz = 0.0833333333333333333333333333333*INV(dz);
-  CCTK_REAL const p1o144dxdy = 0.00694444444444444444444444444444*INV(dx)*INV(dy);
-  CCTK_REAL const p1o144dxdz = 0.00694444444444444444444444444444*INV(dx)*INV(dz);
-  CCTK_REAL const p1o144dydz = 0.00694444444444444444444444444444*INV(dy)*INV(dz);
+  CCTK_REAL const p1o144dxdy = 0.00694444444444444444444444444444*INV(dx*dy);
+  CCTK_REAL const p1o144dxdz = 0.00694444444444444444444444444444*INV(dx*dz);
+  CCTK_REAL const p1o144dydz = 0.00694444444444444444444444444444*INV(dy*dz);
   CCTK_REAL const p1o2dx = 0.5*INV(dx);
   CCTK_REAL const p1o2dy = 0.5*INV(dy);
   CCTK_REAL const p1o2dz = 0.5*INV(dz);
   CCTK_REAL const p1o4dx2 = 0.25*INV(SQR(dx));
-  CCTK_REAL const p1o4dxdy = 0.25*INV(dx)*INV(dy);
-  CCTK_REAL const p1o4dxdz = 0.25*INV(dx)*INV(dz);
+  CCTK_REAL const p1o4dxdy = 0.25*INV(dx*dy);
+  CCTK_REAL const p1o4dxdz = 0.25*INV(dx*dz);
   CCTK_REAL const p1o4dy2 = 0.25*INV(SQR(dy));
-  CCTK_REAL const p1o4dydz = 0.25*INV(dy)*INV(dz);
+  CCTK_REAL const p1o4dydz = 0.25*INV(dy*dz);
   CCTK_REAL const p1o4dz2 = 0.25*INV(SQR(dz));
   CCTK_REAL const p1odx = INV(dx);
   CCTK_REAL const p1odx2 = INV(SQR(dx));
-  CCTK_REAL const p1odxdydz = INV(dx)*INV(dy)*INV(dz);
+  CCTK_REAL const p1odxdydz = INV(dx*dy*dz);
   CCTK_REAL const p1ody = INV(dy);
   CCTK_REAL const p1ody2 = INV(SQR(dy));
   CCTK_REAL const p1odz = INV(dz);
@@ -97,9 +94,9 @@ static void wave_calc_errors_Body(cGH const * restrict const cctkGH, int const d
   
   /* Loop over the grid points */
   #pragma omp parallel
-  CCTK_LOOP3 (wave_calc_errors,
+  CCTK_LOOP3(wave_calc_errors,
     i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-    cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+    cctk_ash[0],cctk_ash[1],cctk_ash[2])
   {
     ptrdiff_t const index = di*i + dj*j + dk*k;
     
@@ -133,7 +130,7 @@ static void wave_calc_errors_Body(cGH const * restrict const cctkGH, int const d
     phiError[index] = phiErrorL;
     piError[index] = piErrorL;
   }
-  CCTK_ENDLOOP3 (wave_calc_errors);
+  CCTK_ENDLOOP3(wave_calc_errors);
 }
 
 extern "C" void wave_calc_errors(CCTK_ARGUMENTS)
@@ -152,7 +149,10 @@ extern "C" void wave_calc_errors(CCTK_ARGUMENTS)
     return;
   }
   
-  const char *groups[] = {"Wave::errors","Wave::evolved","Wave::exact"};
+  const char *const groups[] = {
+    "Wave::errors",
+    "Wave::evolved",
+    "Wave::exact"};
   GenericFD_AssertGroupStorage(cctkGH, "wave_calc_errors", 3, groups);
   
   switch(fdOrder)
@@ -164,7 +164,7 @@ extern "C" void wave_calc_errors(CCTK_ARGUMENTS)
       break;
   }
   
-  GenericFD_LoopOverEverything(cctkGH, &wave_calc_errors_Body);
+  GenericFD_LoopOverEverything(cctkGH, wave_calc_errors_Body);
   
   if (verbose > 1)
   {

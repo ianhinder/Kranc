@@ -17,18 +17,16 @@
 
 /* Define macros used in calculations */
 #define INITVALUE (42)
-#define QAD(x) (SQR(SQR(x)))
-#define INV(x) ((1.0) / (x))
+#define INV(x) ((CCTK_REAL)1.0 / (x))
 #define SQR(x) ((x) * (x))
-#define CUB(x) ((x) * (x) * (x))
+#define CUB(x) ((x) * SQR(x))
+#define QAD(x) (SQR(SQR(x)))
 
 static void initial_sine_Body(cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const imin[3], int const imax[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[])
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  
-  /* Declare finite differencing variables */
   
   /* Include user-supplied include files */
   
@@ -74,9 +72,9 @@ static void initial_sine_Body(cGH const * restrict const cctkGH, int const dir, 
   
   /* Loop over the grid points */
   #pragma omp parallel
-  CCTK_LOOP3 (initial_sine,
+  CCTK_LOOP3(initial_sine,
     i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-    cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+    cctk_ash[0],cctk_ash[1],cctk_ash[2])
   {
     ptrdiff_t const index = di*i + dj*j + dk*k;
     
@@ -90,15 +88,15 @@ static void initial_sine_Body(cGH const * restrict const cctkGH, int const dir, 
     /* Precompute derivatives */
     
     /* Calculate temporaries and grid functions */
-    CCTK_REAL phiL = Sin(2*Pi*(xL - cctk_time));
+    CCTK_REAL phiL = sin(2*Pi*(xL - t));
     
-    CCTK_REAL piL = -2*Pi*Cos(2*Pi*(xL - cctk_time));
+    CCTK_REAL piL = -2*Pi*cos(2*Pi*(xL - t));
     
     /* Copy local copies back to grid functions */
     phi[index] = phiL;
     pi[index] = piL;
   }
-  CCTK_ENDLOOP3 (initial_sine);
+  CCTK_ENDLOOP3(initial_sine);
 }
 
 extern "C" void initial_sine(CCTK_ARGUMENTS)
@@ -117,11 +115,13 @@ extern "C" void initial_sine(CCTK_ARGUMENTS)
     return;
   }
   
-  const char *groups[] = {"SimpleWave::evolved_group","grid::coordinates"};
+  const char *const groups[] = {
+    "SimpleWave::evolved_group",
+    "grid::coordinates"};
   GenericFD_AssertGroupStorage(cctkGH, "initial_sine", 2, groups);
   
   
-  GenericFD_LoopOverEverything(cctkGH, &initial_sine_Body);
+  GenericFD_LoopOverEverything(cctkGH, initial_sine_Body);
   
   if (verbose > 1)
   {

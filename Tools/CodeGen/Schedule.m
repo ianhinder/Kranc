@@ -18,7 +18,7 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-BeginPackage["Schedule`", {"Thorn`", "KrancGroups`", "MapLookup`", "Errors`", "Helpers`", "Kranc`", "CaKernel`", "Calculation`"}];
+BeginPackage["Schedule`", {"Thorn`", "KrancGroups`", "MapLookup`", "Errors`", "Helpers`", "Kranc`", "CaKernel`", "Calculation`", "ParamCheck`"}];
 
 CreateKrancScheduleFile;
 
@@ -300,7 +300,9 @@ CreateKrancScheduleFile[calcs_, groups_, evolvedGroups_, rhsGroups_, nonevolvedG
     scheduledFunctions = 
       Join[{scheduledStartup, scheduleRegisterSymmetries}, 
         scheduledCalcs, CactusBoundary`GetScheduledFunctions[thornName, evolvedGroups],
-           {scheduleMoLRegister}];
+           {scheduleMoLRegister}, If[Length[OptionValue[ParameterConditions]] > 0,
+                                     {ParameterCheckSchedule[thornName]},
+                                     {}]];
 
     If[OptionValue[UseCaKernel],
        scheduledFunctions = Join[scheduledFunctions, CaKernelSchedule[thornName]]];

@@ -17,18 +17,16 @@
 
 /* Define macros used in calculations */
 #define INITVALUE (42)
-#define QAD(x) (SQR(SQR(x)))
-#define INV(x) ((1.0) / (x))
+#define INV(x) ((CCTK_REAL)1.0 / (x))
 #define SQR(x) ((x) * (x))
-#define CUB(x) ((x) * (x) * (x))
+#define CUB(x) ((x) * SQR(x))
+#define QAD(x) (SQR(SQR(x)))
 
 static void wave_exact_gaussian_Body(cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const imin[3], int const imax[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[])
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  
-  /* Declare finite differencing variables */
   
   /* Include user-supplied include files */
   
@@ -57,25 +55,24 @@ static void wave_exact_gaussian_Body(cGH const * restrict const cctkGH, int cons
   CCTK_REAL const hdzi = 0.5 * dzi;
   
   /* Initialize predefined quantities */
-  CCTK_REAL const p1o1 = 1;
   CCTK_REAL const p1o12dx = 0.0833333333333333333333333333333*INV(dx);
   CCTK_REAL const p1o12dy = 0.0833333333333333333333333333333*INV(dy);
   CCTK_REAL const p1o12dz = 0.0833333333333333333333333333333*INV(dz);
-  CCTK_REAL const p1o144dxdy = 0.00694444444444444444444444444444*INV(dx)*INV(dy);
-  CCTK_REAL const p1o144dxdz = 0.00694444444444444444444444444444*INV(dx)*INV(dz);
-  CCTK_REAL const p1o144dydz = 0.00694444444444444444444444444444*INV(dy)*INV(dz);
+  CCTK_REAL const p1o144dxdy = 0.00694444444444444444444444444444*INV(dx*dy);
+  CCTK_REAL const p1o144dxdz = 0.00694444444444444444444444444444*INV(dx*dz);
+  CCTK_REAL const p1o144dydz = 0.00694444444444444444444444444444*INV(dy*dz);
   CCTK_REAL const p1o2dx = 0.5*INV(dx);
   CCTK_REAL const p1o2dy = 0.5*INV(dy);
   CCTK_REAL const p1o2dz = 0.5*INV(dz);
   CCTK_REAL const p1o4dx2 = 0.25*INV(SQR(dx));
-  CCTK_REAL const p1o4dxdy = 0.25*INV(dx)*INV(dy);
-  CCTK_REAL const p1o4dxdz = 0.25*INV(dx)*INV(dz);
+  CCTK_REAL const p1o4dxdy = 0.25*INV(dx*dy);
+  CCTK_REAL const p1o4dxdz = 0.25*INV(dx*dz);
   CCTK_REAL const p1o4dy2 = 0.25*INV(SQR(dy));
-  CCTK_REAL const p1o4dydz = 0.25*INV(dy)*INV(dz);
+  CCTK_REAL const p1o4dydz = 0.25*INV(dy*dz);
   CCTK_REAL const p1o4dz2 = 0.25*INV(SQR(dz));
   CCTK_REAL const p1odx = INV(dx);
   CCTK_REAL const p1odx2 = INV(SQR(dx));
-  CCTK_REAL const p1odxdydz = INV(dx)*INV(dy)*INV(dz);
+  CCTK_REAL const p1odxdydz = INV(dx*dy*dz);
   CCTK_REAL const p1ody = INV(dy);
   CCTK_REAL const p1ody2 = INV(SQR(dy));
   CCTK_REAL const p1odz = INV(dz);
@@ -97,9 +94,9 @@ static void wave_exact_gaussian_Body(cGH const * restrict const cctkGH, int cons
   
   /* Loop over the grid points */
   #pragma omp parallel
-  CCTK_LOOP3 (wave_exact_gaussian,
+  CCTK_LOOP3(wave_exact_gaussian,
     i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-    cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+    cctk_ash[0],cctk_ash[1],cctk_ash[2])
   {
     ptrdiff_t const index = di*i + dj*j + dk*k;
     
@@ -124,26 +121,26 @@ static void wave_exact_gaussian_Body(cGH const * restrict const cctkGH, int cons
     /* Calculate temporaries and grid functions */
     CCTK_REAL rEps = pow(1.e-24 + QAD(rL),0.25);
     
-    CCTK_REAL phiExactL = (-(CUB(-rL + cctk_time + 
-      ToReal(t0))*exp(-(INV(SQR(ToReal(nSigma)))*SQR(-rL + cctk_time + 
-      ToReal(t0))))) + CUB(rL + cctk_time + 
-      ToReal(t0))*exp(-(INV(SQR(ToReal(nSigma)))*SQR(rL + cctk_time + 
+    CCTK_REAL phiExactL = (-(CUB(-rL + t + 
+      ToReal(t0))*exp(-(INV(SQR(ToReal(nSigma)))*SQR(-rL + t + 
+      ToReal(t0))))) + CUB(rL + t + 
+      ToReal(t0))*exp(-(INV(SQR(ToReal(nSigma)))*SQR(rL + t + 
       ToReal(t0)))))*INV(rEps);
     
     CCTK_REAL piExactL = 
       INV(rEps)*(INV(SQR(ToReal(nSigma)))*(2*exp(-(INV(SQR(ToReal(nSigma)))*SQR(-rL 
-      + cctk_time + ToReal(t0))))*QAD(-rL + cctk_time + ToReal(t0)) - 
-      2*exp(-(INV(SQR(ToReal(nSigma)))*SQR(rL + cctk_time + ToReal(t0))))*QAD(rL 
-      + cctk_time + ToReal(t0))) - 3*exp(-(INV(SQR(ToReal(nSigma)))*SQR(-rL + cctk_time + 
-      ToReal(t0))))*SQR(-rL + cctk_time + ToReal(t0)) + 
-      3*exp(-(INV(SQR(ToReal(nSigma)))*SQR(rL + cctk_time + ToReal(t0))))*SQR(rL 
-      + cctk_time + ToReal(t0)));
+      + t + ToReal(t0))))*QAD(-rL + t + ToReal(t0)) - 
+      2*exp(-(INV(SQR(ToReal(nSigma)))*SQR(rL + t + ToReal(t0))))*QAD(rL 
+      + t + ToReal(t0))) - 3*exp(-(INV(SQR(ToReal(nSigma)))*SQR(-rL + t + 
+      ToReal(t0))))*SQR(-rL + t + ToReal(t0)) + 
+      3*exp(-(INV(SQR(ToReal(nSigma)))*SQR(rL + t + ToReal(t0))))*SQR(rL 
+      + t + ToReal(t0)));
     
     /* Copy local copies back to grid functions */
     phiExact[index] = phiExactL;
     piExact[index] = piExactL;
   }
-  CCTK_ENDLOOP3 (wave_exact_gaussian);
+  CCTK_ENDLOOP3(wave_exact_gaussian);
 }
 
 extern "C" void wave_exact_gaussian(CCTK_ARGUMENTS)
@@ -162,7 +159,9 @@ extern "C" void wave_exact_gaussian(CCTK_ARGUMENTS)
     return;
   }
   
-  const char *groups[] = {"Wave::exact","grid::coordinates"};
+  const char *const groups[] = {
+    "Wave::exact",
+    "grid::coordinates"};
   GenericFD_AssertGroupStorage(cctkGH, "wave_exact_gaussian", 2, groups);
   
   switch(fdOrder)
@@ -174,7 +173,7 @@ extern "C" void wave_exact_gaussian(CCTK_ARGUMENTS)
       break;
   }
   
-  GenericFD_LoopOverEverything(cctkGH, &wave_exact_gaussian_Body);
+  GenericFD_LoopOverEverything(cctkGH, wave_exact_gaussian_Body);
   
   if (verbose > 1)
   {

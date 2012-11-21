@@ -48,12 +48,6 @@ schedule Burgers_Startup at STARTUP
   OPTIONS: meta
 } "create banner"
 
-schedule Burgers_RegisterVars in MoL_Register
-{
-  LANG: C
-  OPTIONS: meta
-} "Register Variables for MoL"
-
 schedule Burgers_RegisterSymmetries in SymmetryRegister
 {
   LANG: C
@@ -66,6 +60,8 @@ if (CCTK_EQUALS(initial_data, "sine"))
   schedule burgers_initial_sine at CCTK_INITIAL as burgers_initial
   {
     LANG: C
+    READS:    grid::x
+    WRITES:   Burgers::u
   } "burgers_initial_sine"
 }
 
@@ -75,12 +71,15 @@ if (CCTK_EQUALS(initial_data, "shock"))
   schedule burgers_initial_shock at CCTK_INITIAL as burgers_initial
   {
     LANG: C
+    READS:    grid::x
+    WRITES:   Burgers::u
   } "burgers_initial_shock"
 }
 
 schedule burgers_zero_rhs in MoL_CalcRHS
 {
   LANG: C
+  WRITES:   Burgers::urhs
 } "burgers_zero_rhs"
 
 schedule group burgers_reconstruct_1_group in MoL_CalcRHS after burgers_zero_rhs
@@ -91,6 +90,9 @@ schedule group burgers_reconstruct_1_group in MoL_CalcRHS after burgers_zero_rhs
 schedule burgers_reconstruct_1 in burgers_reconstruct_1_group
 {
   LANG: C
+  READS:    Burgers::u
+  WRITES:   Burgers::uLeft
+  WRITES:   Burgers::uR
 } "burgers_reconstruct_1"
 
 schedule burgers_reconstruct_1_SelectBCs in burgers_reconstruct_1_bc_group
@@ -124,6 +126,9 @@ schedule group burgers_flux_1_group in MoL_CalcRHS after burgers_reconstruct_1
 schedule burgers_flux_1 in burgers_flux_1_group
 {
   LANG: C
+  READS:    Burgers::uLeft
+  READS:    Burgers::uR
+  WRITES:   Burgers::uF
 } "burgers_flux_1"
 
 schedule burgers_flux_1_SelectBCs in burgers_flux_1_bc_group
@@ -151,6 +156,9 @@ schedule group burgers_flux_1_bc_group in MoL_PseudoEvolutionBoundaries after Mo
 schedule burgers_rhs_1 in MoL_CalcRHS after burgers_flux_1
 {
   LANG: C
+  READS:    Burgers::uF
+  READS:    Burgers::urhs
+  WRITES:   Burgers::urhs
 } "burgers_rhs_1"
 
 schedule Burgers_SelectBoundConds in MoL_PostStep
@@ -165,6 +173,12 @@ schedule Burgers_CheckBoundaries at BASEGRID
   LANG: C
   OPTIONS: meta
 } "check boundaries treatment"
+
+schedule Burgers_RegisterVars in MoL_Register
+{
+  LANG: C
+  OPTIONS: meta
+} "Register Variables for MoL"
 
 schedule group ApplyBCs as Burgers_ApplyBCs in MoL_PostStep after Burgers_SelectBoundConds
 {

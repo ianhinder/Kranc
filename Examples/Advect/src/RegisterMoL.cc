@@ -13,5 +13,7 @@ extern "C" void Advect_RegisterVars(CCTK_ARGUMENTS)
   
   /* Register all the evolved grid functions with MoL */
   ierr += MoLRegisterEvolved(CCTK_VarIndex("Advect::rho"),  CCTK_VarIndex("Advect::rhorhs"));
+  
+  /* Register all the evolved Array functions with MoL */
   return;
 }

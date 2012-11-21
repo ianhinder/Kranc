@@ -17,10 +17,10 @@
 
 /* Define macros used in calculations */
 #define INITVALUE (42)
-#define QAD(x) (SQR(SQR(x)))
-#define INV(x) ((1.0) / (x))
+#define INV(x) ((CCTK_REAL)1.0 / (x))
 #define SQR(x) ((x) * (x))
-#define CUB(x) ((x) * (x) * (x))
+#define CUB(x) ((x) * SQR(x))
+#define QAD(x) (SQR(SQR(x)))
 
 extern "C" void eulersr_cons_calc_reconstruct_2_SelectBCs(CCTK_ARGUMENTS)
 {
@@ -51,8 +51,6 @@ static void eulersr_cons_calc_reconstruct_2_Body(cGH const * restrict const cctk
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  
-  /* Declare finite differencing variables */
   
   /* Include user-supplied include files */
   
@@ -96,9 +94,9 @@ static void eulersr_cons_calc_reconstruct_2_Body(cGH const * restrict const cctk
   
   /* Loop over the grid points */
   #pragma omp parallel
-  CCTK_LOOP3 (eulersr_cons_calc_reconstruct_2,
+  CCTK_LOOP3(eulersr_cons_calc_reconstruct_2,
     i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-    cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+    cctk_ash[0],cctk_ash[1],cctk_ash[2])
   {
     ptrdiff_t const index = di*i + dj*j + dk*k;
     
@@ -188,7 +186,7 @@ static void eulersr_cons_calc_reconstruct_2_Body(cGH const * restrict const cctk
     v3Left[index] = v3LeftL;
     v3Right[index] = v3RightL;
   }
-  CCTK_ENDLOOP3 (eulersr_cons_calc_reconstruct_2);
+  CCTK_ENDLOOP3(eulersr_cons_calc_reconstruct_2);
 }
 
 extern "C" void eulersr_cons_calc_reconstruct_2(CCTK_ARGUMENTS)
@@ -207,12 +205,20 @@ extern "C" void eulersr_cons_calc_reconstruct_2(CCTK_ARGUMENTS)
     return;
   }
   
-  const char *groups[] = {"EulerSR::epsi_group","EulerSR::epsi_lr_group","EulerSR::rho_group","EulerSR::rho_lr_group","EulerSR::v1_lr_group","EulerSR::v2_lr_group","EulerSR::v3_lr_group","EulerSR::v_group"};
+  const char *const groups[] = {
+    "EulerSR::epsi_group",
+    "EulerSR::epsi_lr_group",
+    "EulerSR::rho_group",
+    "EulerSR::rho_lr_group",
+    "EulerSR::v1_lr_group",
+    "EulerSR::v2_lr_group",
+    "EulerSR::v3_lr_group",
+    "EulerSR::v_group"};
   GenericFD_AssertGroupStorage(cctkGH, "eulersr_cons_calc_reconstruct_2", 8, groups);
   
   GenericFD_EnsureStencilFits(cctkGH, "eulersr_cons_calc_reconstruct_2", 1, 1, 1);
   
-  GenericFD_LoopOverInterior(cctkGH, &eulersr_cons_calc_reconstruct_2_Body);
+  GenericFD_LoopOverInterior(cctkGH, eulersr_cons_calc_reconstruct_2_Body);
   
   if (verbose > 1)
   {

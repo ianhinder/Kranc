@@ -97,19 +97,19 @@ DefFn[
 DefFn[
   DeclareVariable[name:(_String|_Symbol), type_String] :=
   If[SOURCELANGUAGE == "C",
-     {type, " ",    name, " = INITVALUE" <> EOL[]},
+     {type, " ",    name, " CCTK_ATTRIBUTE_UNUSED ", " = INITVALUE" <> EOL[]},
      {type, " :: ", name, EOL[]} (* no value init here to avoid implicit SAVE attribute *)]];
 
 DefFn[
   DeclareVariableNoInit[name:(_String|_Symbol), type_String] :=
   If[SOURCELANGUAGE == "C",
-     {type, " ",    name, EOL[]},
+     {type, " ",    name, " CCTK_ATTRIBUTE_UNUSED ",EOL[]},
      {type, " :: ", name, EOL[]} (* no value init here to avoid implicit SAVE attribute *)]];
 
 DefFn[
   DeclareVariables[names_?ListQ, type_String] := 
   If[SOURCELANGUAGE == "C",
-     {type, " ",    CommaSeparated@names, EOL[]},
+     {type, " ",    CommaSeparated@names, " CCTK_ATTRIBUTE_UNUSED ", EOL[]},
      {type, " :: ", CommaSeparated@names,     EOL[]} (* no value init avoids implicit SAVE attribute *)]];
 
 DefFn[
@@ -140,7 +140,7 @@ DefFn[
 
 DefFn[
   DefineVariable[name:(_String|_Symbol), type_String, value:CodeGenBlock] :=
-  {type, " ", name, " = ", value, EOL[]}];
+  {type, " ", name, " CCTK_ATTRIBUTE_UNUSED ", " = ", value, EOL[]}];
 
 DefFn[
   AssignVariable[dest:(_String|_Symbol), src:CodeGenBlock] :=
@@ -148,7 +148,7 @@ DefFn[
 
 DefFn[
   DeclareAssignVariable[type_String, dest:(_String|_Symbol), src:CodeGenBlock] :=
-  {type, " const ", dest, " = ", src, EOL[]}];
+  {type, " const ", dest, " CCTK_ATTRIBUTE_UNUSED ", " = ", src, EOL[]}];
 
 (* comments are always done C-style because they are killed by cpp anyway *) 
 DefFn[

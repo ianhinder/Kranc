@@ -2,13 +2,14 @@
 
 implements: AdvectCaKernel
 
-inherits:   Grid GenericFD Boundary
+inherits:   Grid GenericFD Boundary Accelerator
 
 
 
 USES INCLUDE: GenericFD.h
 USES INCLUDE: Symmetry.h
 USES INCLUDE: sbp_calc_coeffs.h
+USES INCLUDE: CaCUDALib_driver_support.h
 USES INCLUDE: Boundary.h
 USES INCLUDE: loopcontrol.h
 
@@ -32,3 +33,14 @@ CCTK_REAL phi_g type=GF timelevels=1 tags=''
 {
   phi
 } "phi_g"
+
+# These functions are provided by the CaKernel thorn
+
+CCTK_INT FUNCTION Device_RegisterMem(CCTK_POINTER IN cctkGH, CCTK_INT IN vi, CCTK_INT IN num_tls)
+REQUIRES FUNCTION Device_RegisterMem
+
+CCTK_INT FUNCTION Device_UnRegisterMem(CCTK_POINTER IN cctkGH, CCTK_INT IN vi)
+REQUIRES FUNCTION Device_UnRegisterMem
+
+CCTK_POINTER FUNCTION Device_GetVarI (CCTK_POINTER IN cctkGH, CCTK_INT IN vi, CCTK_INT IN num_tls)
+REQUIRES FUNCTION Device_GetVarI

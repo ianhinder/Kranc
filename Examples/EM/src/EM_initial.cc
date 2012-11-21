@@ -17,18 +17,16 @@
 
 /* Define macros used in calculations */
 #define INITVALUE (42)
-#define QAD(x) (SQR(SQR(x)))
-#define INV(x) ((1.0) / (x))
+#define INV(x) ((CCTK_REAL)1.0 / (x))
 #define SQR(x) ((x) * (x))
-#define CUB(x) ((x) * (x) * (x))
+#define CUB(x) ((x) * SQR(x))
+#define QAD(x) (SQR(SQR(x)))
 
 static void EM_initial_Body(cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const imin[3], int const imax[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[])
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  
-  /* Declare finite differencing variables */
   
   /* Include user-supplied include files */
   
@@ -57,24 +55,20 @@ static void EM_initial_Body(cGH const * restrict const cctkGH, int const dir, in
   CCTK_REAL const hdzi = 0.5 * dzi;
   
   /* Initialize predefined quantities */
-  CCTK_REAL const p1o1 = 1;
   CCTK_REAL const p1o12dx = 0.0833333333333333333333333333333*INV(dx);
   CCTK_REAL const p1o12dy = 0.0833333333333333333333333333333*INV(dy);
   CCTK_REAL const p1o12dz = 0.0833333333333333333333333333333*INV(dz);
-  CCTK_REAL const p1o144dxdy = 0.00694444444444444444444444444444*INV(dx)*INV(dy);
-  CCTK_REAL const p1o144dxdz = 0.00694444444444444444444444444444*INV(dx)*INV(dz);
-  CCTK_REAL const p1o144dydz = 0.00694444444444444444444444444444*INV(dy)*INV(dz);
+  CCTK_REAL const p1o144dxdy = 0.00694444444444444444444444444444*INV(dx*dy);
+  CCTK_REAL const p1o144dxdz = 0.00694444444444444444444444444444*INV(dx*dz);
+  CCTK_REAL const p1o144dydz = 0.00694444444444444444444444444444*INV(dy*dz);
   CCTK_REAL const p1o2dx = 0.5*INV(dx);
   CCTK_REAL const p1o2dy = 0.5*INV(dy);
   CCTK_REAL const p1o2dz = 0.5*INV(dz);
-  CCTK_REAL const p1o4dxdy = 0.25*INV(dx)*INV(dy);
-  CCTK_REAL const p1o4dxdz = 0.25*INV(dx)*INV(dz);
-  CCTK_REAL const p1o4dydz = 0.25*INV(dy)*INV(dz);
-  CCTK_REAL const p1odx = INV(dx);
+  CCTK_REAL const p1o4dxdy = 0.25*INV(dx*dy);
+  CCTK_REAL const p1o4dxdz = 0.25*INV(dx*dz);
+  CCTK_REAL const p1o4dydz = 0.25*INV(dy*dz);
   CCTK_REAL const p1odx2 = INV(SQR(dx));
-  CCTK_REAL const p1ody = INV(dy);
   CCTK_REAL const p1ody2 = INV(SQR(dy));
-  CCTK_REAL const p1odz = INV(dz);
   CCTK_REAL const p1odz2 = INV(SQR(dz));
   CCTK_REAL const pm1o12dx2 = -0.0833333333333333333333333333333*INV(SQR(dx));
   CCTK_REAL const pm1o12dy2 = -0.0833333333333333333333333333333*INV(SQR(dy));
@@ -90,9 +84,9 @@ static void EM_initial_Body(cGH const * restrict const cctkGH, int const dir, in
   
   /* Loop over the grid points */
   #pragma omp parallel
-  CCTK_LOOP3 (EM_initial,
+  CCTK_LOOP3(EM_initial,
     i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-    cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+    cctk_ash[0],cctk_ash[1],cctk_ash[2])
   {
     ptrdiff_t const index = di*i + dj*j + dk*k;
     
@@ -107,9 +101,9 @@ static void EM_initial_Body(cGH const * restrict const cctkGH, int const dir, in
     /* Precompute derivatives */
     
     /* Calculate temporaries and grid functions */
-    CCTK_REAL El1L = Cos(2*(xL + yL)*Pi)*ToReal(sigma);
+    CCTK_REAL El1L = cos(2*(xL + yL)*Pi)*ToReal(sigma);
     
-    CCTK_REAL El2L = Cos(2*xL*Pi)*(-1 + ToReal(sigma)) - Cos(2*(xL + 
+    CCTK_REAL El2L = cos(2*xL*Pi)*(-1 + ToReal(sigma)) - cos(2*(xL + 
       yL)*Pi)*ToReal(sigma);
     
     CCTK_REAL El3L = 0;
@@ -118,7 +112,7 @@ static void EM_initial_Body(cGH const * restrict const cctkGH, int const dir, in
     
     CCTK_REAL B2L = 0;
     
-    CCTK_REAL B3L = -(Cos(2*xL*Pi)*(-1 + ToReal(sigma))) + Cos(2*(xL + 
+    CCTK_REAL B3L = -(cos(2*xL*Pi)*(-1 + ToReal(sigma))) + cos(2*(xL + 
       yL)*Pi)*ToReal(sigma);
     
     /* Copy local copies back to grid functions */
@@ -129,7 +123,7 @@ static void EM_initial_Body(cGH const * restrict const cctkGH, int const dir, in
     El2[index] = El2L;
     El3[index] = El3L;
   }
-  CCTK_ENDLOOP3 (EM_initial);
+  CCTK_ENDLOOP3(EM_initial);
 }
 
 extern "C" void EM_initial(CCTK_ARGUMENTS)
@@ -148,11 +142,14 @@ extern "C" void EM_initial(CCTK_ARGUMENTS)
     return;
   }
   
-  const char *groups[] = {"EM::B_group","EM::El_group","grid::coordinates"};
+  const char *const groups[] = {
+    "EM::B_group",
+    "EM::El_group",
+    "grid::coordinates"};
   GenericFD_AssertGroupStorage(cctkGH, "EM_initial", 3, groups);
   
   
-  GenericFD_LoopOverEverything(cctkGH, &EM_initial_Body);
+  GenericFD_LoopOverEverything(cctkGH, EM_initial_Body);
   
   if (verbose > 1)
   {

@@ -77,12 +77,6 @@ CCTK_REAL diss "diss"
 } 0
 
 restricted:
-CCTK_REAL hlleAlpha "hlleAlpha"
-{
-  "*:*" :: ""
-} 0
-
-restricted:
 CCTK_INT fdOrder "fdOrder"
 {
   *:* :: ""

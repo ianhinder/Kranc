@@ -17,10 +17,10 @@
 
 /* Define macros used in calculations */
 #define INITVALUE (42)
-#define QAD(x) (SQR(SQR(x)))
-#define INV(x) ((1.0) / (x))
+#define INV(x) ((CCTK_REAL)1.0 / (x))
 #define SQR(x) ((x) * (x))
-#define CUB(x) ((x) * (x) * (x))
+#define CUB(x) ((x) * SQR(x))
+#define QAD(x) (SQR(SQR(x)))
 
 extern "C" void calc_rhs_SelectBCs(CCTK_ARGUMENTS)
 {
@@ -39,8 +39,6 @@ static void calc_rhs_Body(cGH const * restrict const cctkGH, int const dir, int 
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  
-  /* Declare finite differencing variables */
   
   /* Include user-supplied include files */
   
@@ -86,9 +84,9 @@ static void calc_rhs_Body(cGH const * restrict const cctkGH, int const dir, int 
   
   /* Loop over the grid points */
   #pragma omp parallel
-  CCTK_LOOP3 (calc_rhs,
+  CCTK_LOOP3(calc_rhs,
     i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-    cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+    cctk_ash[0],cctk_ash[1],cctk_ash[2])
   {
     ptrdiff_t const index = di*i + dj*j + dk*k;
     
@@ -115,7 +113,7 @@ static void calc_rhs_Body(cGH const * restrict const cctkGH, int const dir, int 
     phirhs[index] = phirhsL;
     pirhs[index] = pirhsL;
   }
-  CCTK_ENDLOOP3 (calc_rhs);
+  CCTK_ENDLOOP3(calc_rhs);
 }
 
 extern "C" void calc_rhs(CCTK_ARGUMENTS)
@@ -134,12 +132,14 @@ extern "C" void calc_rhs(CCTK_ARGUMENTS)
     return;
   }
   
-  const char *groups[] = {"SimpleWave::evolved_group","SimpleWave::evolved_grouprhs"};
+  const char *const groups[] = {
+    "SimpleWave::evolved_group",
+    "SimpleWave::evolved_grouprhs"};
   GenericFD_AssertGroupStorage(cctkGH, "calc_rhs", 2, groups);
   
   GenericFD_EnsureStencilFits(cctkGH, "calc_rhs", 1, 1, 1);
   
-  GenericFD_LoopOverInterior(cctkGH, &calc_rhs_Body);
+  GenericFD_LoopOverInterior(cctkGH, calc_rhs_Body);
   
   if (verbose > 1)
   {

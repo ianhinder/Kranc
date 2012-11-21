@@ -32,7 +32,7 @@ storageStructure[groupName_, timelevels_, param_String] :=
 {
   Group -> groupName, 
   Timelevels -> timelevels,
-  MaxTimelevels -> param
+  TimelevelsParameter -> param
 };
 
 groupsSetInCalc[calc_, groups_] :=

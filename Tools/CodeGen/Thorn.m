@@ -364,8 +364,8 @@ CreateInterface[implementation_, inheritedImplementations_, includeFiles_,
    structure for inclusion in the schedule.ccl file to allocate
    storage for this group. *)
 groupStorage[spec_] :=
-  If[mapContains[spec, MaxTimelevels],
-     Flatten[Table[{"if (", lookup[spec, MaxTimelevels], " == ", i, ")\n",
+  If[mapContains[spec, TimelevelsParameter],
+     Flatten[Table[{"if (", lookup[spec, TimelevelsParameter], " == ", i, ")\n",
                     "{\n",
                     "  STORAGE: ", lookup[spec, Group], "[", i, "]\n",
                     "}\n"}, {i, 1, lookup[spec, Timelevels]}], 1],

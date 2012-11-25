@@ -822,8 +822,8 @@ DefFn[
            replacement via the preprocessor for C, so we do it
            here *)
         (* Note: Mathematica simplifies Max[xx_] -> xx automatically *)
-        rhs = rhs //. Max[xx_, yy__] -> fmax[xx, Max[yy]];
-        rhs = rhs //. Min[xx_, yy__] -> fmin[xx, Min[yy]];
+        rhs = rhs //. Max[xx_, yy__] :> fmax[xx, Max[yy]];
+        rhs = rhs //. Min[xx_, yy__] :> fmin[xx, Min[yy]];
         rhs = rhs //. Abs[x_] -> fabs[x];
         rhs = rhs //. Sign[x_] -> isgn[x];
         rhs = rhs //. IntAbs[x_] -> abs[x];

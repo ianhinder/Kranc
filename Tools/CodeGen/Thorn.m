@@ -363,13 +363,27 @@ CreateInterface[implementation_, inheritedImplementations_, includeFiles_,
 (* Given a storage group structure defined above, return a CodeGen
    structure for inclusion in the schedule.ccl file to allocate
    storage for this group. *)
-groupStorage[spec_, params_] :=
-  If[mapContains[spec, MaxTimelevels],
-     Flatten[Table[{"if (", lookup[spec, MaxTimelevels], " == ", i, ")\n",
-                    "{\n",
-                    "  STORAGE: ", lookup[spec, Group], "[", i, "]\n",
-                    "}\n"}, {i, 1, lookup[spec, Timelevels]}], 1],
-     {"STORAGE: ", lookup[spec, Group], "[", lookup[spec, Timelevels], "]\n"}]
+groupStorage[spec_] :=
+  Module[
+    {tls = lookup[spec,Timelevels],
+     group = lookup[spec, Group]},
+    Which[
+      IntegerQ[tls],
+      {"STORAGE: ", group, "[", tls, "]\n"},
+
+      ListQ[tls],
+      If[!MatchQ[tls, {_String, _Integer}],
+         Error["Unrecognized Timelevels value "<>ToString[tls]]];
+      Module[
+        {param,max},
+        {param,max} = tls;
+        Flatten[
+          Table[{"if (", param, " == ", i, ")\n",
+                 "{\n",
+                 "  STORAGE: ", group, "[", i, "]\n",
+                 "}\n"}, {i, 1, max}], 1]],
+
+      True, Error["Unrecognized Timelevels value "<>ToString[tls]]]];
 
 
 (* Given a function scheduling specification as defined above, return
@@ -501,7 +515,7 @@ scheduleGroup[spec_,params_] :=
    return a CodeGen block representing a schedule.ccl file. *)
 CreateSchedule[globalStorageGroups_, scheduledGroups_, scheduledFunctions_, params_] :=
   {whoWhen["CCL"],
-   Map[SeparatedBlock[groupStorage[#,params]]     &, globalStorageGroups],
+   Map[SeparatedBlock[groupStorage[#]]            &, globalStorageGroups],
    Map[SeparatedBlock[scheduleFunction[#,params]] &, scheduledFunctions],
    Map[SeparatedBlock[scheduleGroup[#,params]]    &, scheduledGroups]};
 
@@ -665,13 +679,15 @@ CreateSymmetriesRegistrationSource[thornName_, implementationName_, GFs_, reflec
         {"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h", "Symmetry.h"}],
 
    DefineCCTKFunction[ thornName <> "_RegisterSymmetries", "void", 
+     If[Length[spec] > 0,
      {CommentedBlock["array holding symmetry definitions",
 
       "CCTK_INT sym[3];\n\n"],
 
       CommentedBlock["Register symmetries of grid functions",
 
-      Map[SymmetriesBlock, spec]]}
+      Map[SymmetriesBlock, spec]]},
+     {}]
 ]
   };
 

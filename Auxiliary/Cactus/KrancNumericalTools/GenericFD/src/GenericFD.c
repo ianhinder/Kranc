@@ -447,53 +447,6 @@ void GenericFD_LoopOverInterior(cGH const * restrict const cctkGH, Kranc_Calcula
   return;
 }
 
-
-static
-void GenericFD_PenaltyPrim2Char(cGH const * restrict const cctkGH, int const dir,
-                                int const face,
-                                CCTK_REAL const * restrict const base,
-                                int const * restrict const lbnd,
-                                int const * restrict const lsh,
-                                int const * restrict const from,
-                                int const * restrict const to,
-                                int const rhs_flag,
-                                int const num_modes,
-                                CCTK_POINTER const * restrict const modes,
-                                CCTK_POINTER const * restrict const speeds,
-                                Kranc_Calculation calc)
-{
-  DECLARE_CCTK_ARGUMENTS
-
-  CCTK_REAL  normal[] = {0,0,0};
-  CCTK_REAL  tangentA[] = {0,0,0};
-  CCTK_REAL  tangentB[] = {0,0,0};
-  int   bmin[] = {0,0,0};
-  int   bmax[] = {cctk_lsh[0],cctk_lsh[1],cctk_lsh[2]};
-  CCTK_REAL  **all_vars;
-  int        i = 0;
-
-  all_vars = malloc(num_modes*2*sizeof(CCTK_REAL *));
-  assert(all_vars != NULL);
-
-  for (i = 0; i < num_modes; i++)
-  {
-    all_vars[i] = (CCTK_REAL *) modes[i];
-    all_vars[num_modes + i] = (CCTK_REAL *) speeds[i];
-  }
-
-  for (int d=0; d<3; ++d) {
-    normal[d] = base[d];        /* A covector, index down */
-    tangentA[d] = base[d+3];    /* A vector, index up */
-    tangentB[d] = base[d+6];    /* A vector, index up */
-  }
-
-  calc(cctkGH, dir, face, normal, tangentA, tangentB, bmin, bmax, num_modes * 2, all_vars);
-
-  free(all_vars);
-  
-  return;
-}
-
 void GenericFD_AssertGroupStorage(cGH const * restrict const cctkGH, const char *calc,
                                   int ngroups, const char *const group_names[ngroups])
 {

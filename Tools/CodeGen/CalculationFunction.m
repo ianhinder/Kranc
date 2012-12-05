@@ -661,9 +661,9 @@ DefFn[
            "#undef PDstandardNth1",
            "#undef PDstandardNth2",
            "#undef PDstandardNth3",
-           "#define PDstandardNth1(u) (solver->diff<hrscc::policy::x>(&(u)[-index], i,j,k))",
-           "#define PDstandardNth2(u) (solver->diff<hrscc::policy::y>(&(u)[-index], i,j,k))",
-           "#define PDstandardNth3(u) (solver->diff<hrscc::policy::z>(&(u)[-index], i,j,k))",
+           "#define PDstandardNth1(u) (solver->wdiff<hrscc::policy::x>(&(u)[-index], i,j,k))",
+           "#define PDstandardNth2(u) (solver->wdiff<hrscc::policy::y>(&(u)[-index], i,j,k))",
+           "#define PDstandardNth3(u) (solver->wdiff<hrscc::policy::z>(&(u)[-index], i,j,k))",
            "",
            "",
            ""

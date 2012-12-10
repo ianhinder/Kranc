@@ -978,6 +978,9 @@ DefFn[
     {
       (* DeclareDerivatives[defsWithoutShorts, eqsOrdered], *)
 
+      (* TODO: Only make local copies for variables that are actually
+         used later on; see e.g. variablesReadInCalc for how to make the
+         distinction *)
       CommentedBlock["Assign local copies of grid functions",
         assignLocalGridFunctions[gfsInRHS, OptionValue[UseVectors], useJacobian]],
 

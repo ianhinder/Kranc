@@ -35,24 +35,16 @@ storageStructure[groupName_, timelevels_] :=
 };
 
 groupsSetInCalc[calc_, groups_] :=
-  Module[{gfs, eqs, lhss, gfsInLHS, lhsGroupNames},
-    gfs = allGroupVariables[groups];
-    eqs = lookup[calc, Equations];
-    lhss = Map[First, eqs];
-    gfsInLHS = Union[Cases[lhss, _ ? (MemberQ[gfs,#] &), Infinity]];
+  Module[{gfsInLHS, lhsGroupNames},
+    gfsInLHS = variablesSetInCalc[calc, groups];
     lhsGroupNames = containingGroups[gfsInLHS, groups];
     Return[lhsGroupNames]
   ];
 
 groupsReadInCalc[calc_, groups_] :=
-  Module[{gfs, eqs, lhss, gfsInLHS, rhsGroupNames},
-    gfs = allGroupVariables[groups];
-    eqs = lookup[calc, Equations];
-    rhss = Map[Last, eqs];
-    gfsInRHS = Union[Cases[rhss, _ ? (MemberQ[gfs,#] &), Infinity]];
+  Module[{gfsInRHS, rhsGroupNames},
+    gfsInRHS = variablesReadInCalc[calc, groups];
     rhsGroupNames = containingGroups[gfsInRHS, groups];
-    (* TODO: eliminate variables from this list that have been set in
-       this calculation before they were used *)
     Return[rhsGroupNames]
   ];
 
@@ -66,13 +58,17 @@ variablesSetInCalc[calc_, groups_] :=
   ];
 
 variablesReadInCalc[calc_, groups_] :=
-  Module[{gfs, eqs, lhss, gfsInLHS},
+  Module[{eqsHaveVar, firstEqWithVar, eqHasVarInRHS,
+          gfs, eqs, gfsInEqs, gfsInRHS},
+    (* Look for the first equation in which the variable occurs in the
+       calculation. If it is a RHS, then the variable is read. *)
+    eqsHaveVar[eqs_, gf_] := MemberQ[eqs, gf, Infinity];
+    firstEqWithVar[eqs_, gf_] := First[Select[eqs, MemberQ[#, gf, Infinity]&]];
+    eqHasVarInRHS[eq_, gf_] := MemberQ[{Last[eq]}, gf, Infinity];
     gfs = allGroupVariables[groups];
     eqs = lookup[calc, Equations];
-    rhss = Map[Last, eqs];
-    gfsInRHS = Union[Cases[rhss, _ ? (MemberQ[gfs,#] &), Infinity]];
-    (* TODO: eliminate variables from this list that have been set in
-       this calculation before they were used *)
+    gfsInEqs = Select[gfs, eqsHaveVar[eqs, #]&];
+    gfsInRHS = Select[gfsInEqs, eqHasVarInRHS[firstEqWithVar[eqs, #], #]&];
     Return[gfsInRHS]
   ];
 

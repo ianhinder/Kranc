@@ -671,6 +671,8 @@ DefFn[
       x_Integer /; Abs[x]>10^10 :> 1.0*x,
       (* generate sufficient precision *)
       x_Rational :> N[x,30],
+      Pi -> N[Pi,30],
+      E  -> N[E,30],
       
       kneg[x_] -> -x,
       

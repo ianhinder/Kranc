@@ -153,7 +153,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     CheckGroups[groupsOrig];
 
-    groups = Union[Join[groupsOrig, {coordGroup}]];
+    groups = Union[groupsOrig, {coordGroup},
+                   SameTest->(ToLowerCase[#1]==ToLowerCase[#2]&)];
 
     calcs = SeparateDerivatives[calcs];
 

@@ -579,17 +579,40 @@ makeSum[x_] :=
     " is not recognized, and tensor indices will not be expanded"];
 
 sumComponentsOfDummyIndex[x_, i_] := 
-  Apply[Plus,listComponents[x, i, toggleIndex[i]]];
+  Module[{contains, indexName, hasIndex, termsWithoutIndex, termsWithIndex},
+         (* We can't use MatchQ because we want to look into all
+            subexpressions as well *)
+         contains[expr_, form_] := Count[expr, form, Infinity] != 0;
+         indexName[TensorIndex[n_,_]] := n;
+         hasIndex[j_, y_] := contains[y, TensorIndex[indexName[j],_]];
+         termsWithoutIndex = 1;
+         termsWithIndex = x;
+         (* Do not try to split a term if it has only a single factor *)
+         If[Head[x]==Times || Head[x]==TensorProduct,
+            termsWithoutIndex = Select[x, !hasIndex[i,#]&];
+            termsWithIndex = Select[x, hasIndex[i,#]&]];
+         (termsWithoutIndex *
+          Apply[Plus, listComponents[termsWithIndex, i, toggleIndex[i]]])];
 
 (* Given an expression and a list of lower indices which are dummies
    in that expression, expand the dummy indices in the expression into
-   components. *)
-makeSumOverDummies[x_] := 
-  Module[{is},
-    is = dummiesIn[x];
-    If[is == {}, 
-      x, 
-      makeSumOverDummies[sumComponentsOfDummyIndex[x, First[is]]]]];
+   components.
+   Expand less-often occurring dummies first to try to reduce code
+   size. *)
+makeSumOverDummies[x_] :=
+  Module[{count, indexName, countIndex, is},
+         count[expr_, form_] := Count[expr, form, Infinity];
+         indexName[TensorIndex[n_,_]] := n;
+         countIndex[j_, y_] := count[y, TensorIndex[indexName[j],_]];
+         (* find all dummies *)
+         is = dummiesIn[x];
+         (* count how often they occur *)
+         is = Map[{#, countIndex[#, x]}&, is];
+         (* sort by this count *)
+         is = SortBy[is, Last];
+         (* drop counts *)
+         is = Map[First, is];
+         Fold[sumComponentsOfDummyIndex, x, is]];
 
 (* -------------------------------------------------------------------------- 
    Rules for converting expressions into different forms

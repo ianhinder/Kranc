@@ -47,7 +47,7 @@ DefFn[
 
 DefFn[checkCondition[{cond_, error_String}] :=
   Module[
-    {render, renderbool, paramPattern},
+    {rendervalue, renderbool, paramPattern},
 
     paramPattern = Except[True | False, _Symbol | _Parameter];
 

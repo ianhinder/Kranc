@@ -66,14 +66,8 @@ DefFn[checkCondition[{cond_, error_String}] :=
     rendervalue[Parameter[a_String]] := a;
     renderbool[x_] := ThrowError["Unexpected value in run-time conditional expression (boolean):", x, "in", cond];
 
-    unparen[s_] := 
-    Module[
-      {s2 = FlattenBlock[s],result},
-      result = StringReplace[FlattenBlock[s2],StartOfString ~~ "(" ~~ any__ ~~ ")" ~~ EndOfString :> any];
-      If[result === s2, result, unparen[result]]];
-
     ConditionalOnParameterTextual[
-      unparen@renderbool[cond],
+      renderbool[cond],
       {"CCTK_WARN(0, ", StringDrop[Stringify[error],-1], ");\n"}]]];
 
 End[];

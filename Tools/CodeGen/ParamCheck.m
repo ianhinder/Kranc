@@ -56,8 +56,8 @@ DefFn[checkCondition[{cond_, error_String}] :=
     renderbool[Equal[a:paramPattern,b_?NumberQ]] := {rendervalue[a], " == ", rendervalue[b]};
     renderbool[Unequal[a:paramPattern,b_?NumberQ]] := {rendervalue[a], " != ", rendervalue[b]};
 
-    renderbool[Or[a_,b_]] := {"(",renderbool[a]," || ", renderbool[b],")"};
-    renderbool[And[a_,b_]] := {"(",renderbool[a]," && ", renderbool[b],")"};
+    renderbool[HoldPattern[Or[a__]]] := {"(", Sequence@@Riffle[renderbool /@ {a}, " || "], ")"};
+    renderbool[HoldPattern[And[a__]]] := {"(", Sequence@@Riffle[renderbool /@ {a}, " && "], ")"};
     renderbool[Not[a_]] := {"(!", renderbool[a],")"};
     renderbool[a:paramPattern] := ToString[a/.(Parameter[x_]->x)]; (* Boolean parameter *)
 

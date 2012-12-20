@@ -32,7 +32,7 @@ DefFn[
        {"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h"}],
 
    DefineCCTKFunction[
-     thornName, "void", 
+     thornName<>"_ParamCheck", "void", 
      ConditionalOnParameterTextual[
        "CCTK_MyProc(cctkGH) == 0",
        Map[checkCondition, conditions]]]}];

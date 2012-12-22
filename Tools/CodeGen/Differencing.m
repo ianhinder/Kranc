@@ -461,7 +461,7 @@ DefFn[
       If[StringMatchQ[rhs, RegularExpression[".*\\bdir\\d\\b.*"]],
          { "{ assert(0); return ToReal(1e30); /* ERROR */ }\n" },
          { "{\n",
-           "  ptrdiff_t const cdi=sizeof(CCTK_REAL);\n",
+           "  ptrdiff_t const cdi CCTK_ATTRIBUTE_UNUSED = sizeof(CCTK_REAL);\n",
            "  return ", rhs, ";\n",
            "}\n" }],
       "#endif\n"
@@ -480,7 +480,7 @@ DefFn[
         "static CCTK_REAL ", macroName, "_impl(CCTK_REAL const* restrict const u, CCTK_REAL const ", liName, ", ptrdiff_t const cdj, ptrdiff_t const cdk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;\n",
         "static CCTK_REAL ", macroName, "_impl(CCTK_REAL const* restrict const u, CCTK_REAL const ", liName, ", ptrdiff_t const cdj, ptrdiff_t const cdk)\n",
         "{\n",
-        "  ptrdiff_t const cdi=sizeof(CCTK_REAL);\n",
+        "  ptrdiff_t const cdi CCTK_ATTRIBUTE_UNUSED = sizeof(CCTK_REAL);\n",
         "  return ", rhs, ";\n",
         "}\n"
       },
@@ -490,7 +490,7 @@ DefFn[
         "static CCTK_REAL ", macroName, "_impl(CCTK_REAL const* restrict const u, CCTK_REAL const ", liName, ", ptrdiff_t const cdj, ptrdiff_t const cdk, ptrdiff_t const dir1, ptrdiff_t const dir2, ptrdiff_t const dir3) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;\n",
         "static CCTK_REAL ", macroName, "_impl(CCTK_REAL const* restrict const u, CCTK_REAL const ", liName, ", ptrdiff_t const cdj, ptrdiff_t const cdk, ptrdiff_t const dir1, ptrdiff_t const dir2, ptrdiff_t const dir3)\n",
         "{\n",
-        "  ptrdiff_t const cdi=sizeof(CCTK_REAL);\n",
+        "  ptrdiff_t const cdi CCTK_ATTRIBUTE_UNUSED = sizeof(CCTK_REAL);\n",
         "  return ", rhs, ";\n",
         "}\n"
       }],

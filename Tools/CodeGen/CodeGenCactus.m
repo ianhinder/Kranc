@@ -112,7 +112,7 @@ DefFn[
 
 DefFn[
   DeclareAssignVariableInLoop[type_String, dest:(_String|_Symbol), src:(_String|_Symbol)] :=
-  {type, " const ", dest, " CCTK_ATTRIBUTE_UNUSED = vec_load(", src, ")", EOL[]}];
+  {type, " /*const*/ ", dest, " CCTK_ATTRIBUTE_UNUSED = vec_load(", src, ")", EOL[]}];
 
 DefFn[
   MaybeAssignVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol), cond:Boolean] :=

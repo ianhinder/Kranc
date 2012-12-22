@@ -148,7 +148,7 @@ DefFn[
 
 DefFn[
   DeclareAssignVariable[type_String, dest:(_String|_Symbol), src:CodeGenBlock] :=
-  {type, " const ", dest, " CCTK_ATTRIBUTE_UNUSED ", " = ", src, EOL[]}];
+  {type, " /*const*/ ", dest, " CCTK_ATTRIBUTE_UNUSED ", " = ", src, EOL[]}];
 
 (* comments are always done C-style because they are killed by cpp anyway *) 
 DefFn[

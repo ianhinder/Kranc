@@ -454,8 +454,8 @@ DefFn[
       "#else\n",
        (* new, differencing operators are static functions *)
       "#  define ", macroName, "(u) ", "(", macroName, "_impl(u,", liName, ",cdj,cdk))\n",
-      "static CCTK_REAL_VEC ", macroName, "_impl(CCTK_REAL const* restrict const u, CCTK_REAL_VEC const ", liName, ", ptrdiff_t const cdj, ptrdiff_t const cdk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;\n",
-      "static CCTK_REAL_VEC ", macroName, "_impl(CCTK_REAL const* restrict const u, CCTK_REAL_VEC const ", liName, ", ptrdiff_t const cdj, ptrdiff_t const cdk)\n",
+      "static CCTK_REAL_VEC ", macroName, "_impl(CCTK_REAL const* restrict const u, CCTK_REAL_VEC /*const*/ ", liName, ", ptrdiff_t const cdj, ptrdiff_t const cdk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;\n",
+      "static CCTK_REAL_VEC ", macroName, "_impl(CCTK_REAL const* restrict const u, CCTK_REAL_VEC /*const*/ ", liName, ", ptrdiff_t const cdj, ptrdiff_t const cdk)\n",
       (* We cannot handle dirN,
          so we punt on all expressions that contain dirN *)
       If[StringMatchQ[rhs, RegularExpression[".*\\bdir\\d\\b.*"]],

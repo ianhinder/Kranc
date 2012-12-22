@@ -117,7 +117,7 @@ InsertJacobian[calc_List, opts:OptionsPattern[]] :=
    derivatives groups *)
 CreateJacobianVariables[] :=
 CommentedBlock["Jacobian variable pointers",
-  {"bool const use_jacobian = (!CCTK_IsFunctionAliased(\"MultiPatch_GetMap\") || MultiPatch_GetMap(cctkGH) != jacobian_identity_map)\n                     && strlen(jacobian_group) > 0;\n",
+  {"bool const use_jacobian CCTK_ATTRIBUTE_UNUSED = (!CCTK_IsFunctionAliased(\"MultiPatch_GetMap\") || MultiPatch_GetMap(cctkGH) != jacobian_identity_map)\n                     && strlen(jacobian_group) > 0;\n",
    "if (use_jacobian && strlen(jacobian_derivative_group) == 0)\n",
    "{\n",
    "  CCTK_WARN (1, \"GenericFD::jacobian_group and GenericFD::jacobian_derivative_group must both be set to valid group names\");\n",

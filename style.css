@@ -98,7 +98,15 @@ a { color: #c87137; }
 .description { font-size: 1.2em; margin-bottom: 30px; margin-top: 30px; font-style: italic;}
 
 /* This is used for the download command */
-pre {padding: 6pt; padding-left:12pt; background-color: #FFF5E6}
+pre {padding: 6pt; padding-left:12pt; background-color: #FFF5E6;
+
+ white-space: pre-wrap;       /* css-3 */
+ white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+ white-space: -pre-wrap;      /* Opera 4-6 */
+ white-space: -o-pre-wrap;    /* Opera 7 */
+ word-wrap: break-word;       /* Internet Explorer 5.5+ */
+
+}
 
 .footer { text-align:center; padding-top:30px; font-style: italic; }
 

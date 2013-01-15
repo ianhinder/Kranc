@@ -35,7 +35,7 @@ Getting up and running with the examples
 
 For the following instructions, we assume that you are working
 on a Unix-type system, and that you have Mathematica and a C compiler
-installed.  We have tested with Mathematica versions 4.1 and 5.
+installed.  We have tested with Mathematica version 8.
 The example for the Einstein equations requires a Fortran 90 compiler, as it
 relies on existing Fortran code for initial data.
 

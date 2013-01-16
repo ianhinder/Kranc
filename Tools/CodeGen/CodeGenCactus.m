@@ -385,11 +385,11 @@ DefFn[
      CommentedBlock[
        "Loop over the grid points",
        {"#pragma omp parallel\n",
-        If[vectorise, "LC_LOOP3VEC", "CCTK_LOOP3"],
+        If[vectorise, "CCTK_LOOP3STR", "CCTK_LOOP3"],
         "(", functionName, ",\n",
         "  i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],\n",
         "  cctk_ash[0],cctk_ash[1],cctk_ash[2]",
-        If[vectorise, {",\n", "  CCTK_REAL_VEC_SIZE"}, ""],
+        If[vectorise, {",\n", "  imin,imax, CCTK_REAL_VEC_SIZE"}, ""],
         ")\n",
         "{\n",
         IndentBlock[
@@ -397,7 +397,7 @@ DefFn[
            (* DeclareAssignVariable["int", "index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"], *)
            DeclareAssignVariable["ptrdiff_t", "index", "di*i + dj*j + dk*k"],
            block}], "}\n",
-        If[vectorise, "LC_ENDLOOP3VEC", "CCTK_ENDLOOP3"] <> "(", functionName, ");\n"}],
+        If[vectorise, "CCTK_ENDLOOP3STR", "CCTK_ENDLOOP3"] <> "(", functionName, ");\n"}],
      (* else *)
      ""]];
 

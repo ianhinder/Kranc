@@ -763,6 +763,8 @@ DefFn[
 
         (* Avoid rational numbers *)
         rhs = rhs /. xx_Rational :> N[xx, 30];
+        (* Avoid integers *)
+        rhs = rhs /. xx_Integer :> 1.0*xx;
 
         (* Simple optimisations *)
         rhs = rhs /. IfThen[_, aa_, aa_] -> aa;

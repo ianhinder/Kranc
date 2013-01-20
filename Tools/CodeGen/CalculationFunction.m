@@ -759,7 +759,7 @@ DefFn[
          "char const *const sources[] = {differencing, source, NULL};\n",
          "OpenCLRunTime_CallKernel(cctkGH, CCTK_THORNSTRING, \"" <> functionName <> "\",\n",
          "                         sources, groups, NULL, NULL, NULL, -1,\n",
-         "                         imin, imax, &kernel);\n\n"
+         "                         kimin, kimax, &kernel);\n\n"
        },
        {
        }]
@@ -1001,7 +1001,7 @@ DefFn[
 
       If[OptionValue[UseVectors] || OptionValue[UseOpenCL],
          CommentedBlock["Copy local copies back to grid functions",
-           { PrepareStorePartialVariableInLoop["i", "lc_imin", "lc_imax"],
+           { PrepareStorePartialVariableInLoop["i", "kimin", "kimax"],
              Map[StorePartialVariableInLoop[gridName[#], localName[#]] &,
                  gfsInLHS] }],
          CommentedBlock["Copy local copies back to grid functions",
@@ -1028,7 +1028,7 @@ DefFn[
           "Calculate temporaries and grid functions", 
           If[OptionValue[UseVectors],
              {
-               PrepareStorePartialVariableInLoop["i", "lc_imin", "lc_imax"],
+               PrepareStorePartialVariableInLoop["i", "kimin", "kimax"],
                Map[StorePartialVariableInLoop[FlattenBlock@gridName[#[[1]]], #[[2]]] &, eqs2]
              },
              Map[

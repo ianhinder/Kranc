@@ -389,7 +389,7 @@ DefFn[
         "(", functionName, ",\n",
         "  i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],\n",
         "  cctk_ash[0],cctk_ash[1],cctk_ash[2]",
-        If[vectorise, {",\n", "  imin,imax, CCTK_REAL_VEC_SIZE"}, ""],
+        If[vectorise, {",\n", "  kimin,kimax, CCTK_REAL_VEC_SIZE"}, ""],
         ")\n",
         "{\n",
         IndentBlock[

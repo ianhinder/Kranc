@@ -759,7 +759,7 @@ DefFn[
          "char const *const sources[] = {differencing, source, NULL};\n",
          "OpenCLRunTime_CallKernel(cctkGH, CCTK_THORNSTRING, \"" <> functionName <> "\",\n",
          "                         sources, groups, NULL, NULL, NULL, -1,\n",
-         "                         kimin, kimax, &kernel);\n\n"
+         "                         imin, imax, &kernel);\n\n"
        },
        {
        }]
@@ -999,13 +999,19 @@ DefFn[
         Map[InfoVariable[#[[1]]] &, (eqs2 /. localMap)],
         ""],
 
-      If[OptionValue[UseVectors] || OptionValue[UseOpenCL],
-         CommentedBlock["Copy local copies back to grid functions",
-           { PrepareStorePartialVariableInLoop["i", "kimin", "kimax"],
-             Map[StorePartialVariableInLoop[gridName[#], localName[#]] &,
-                 gfsInLHS] }],
-         CommentedBlock["Copy local copies back to grid functions",
-           Map[AssignVariableInLoop[gridName[#], localName[#]] &, gfsInLHS]]],
+      Which[OptionValue[UseOpenCL],
+            CommentedBlock["Copy local copies back to grid functions",
+              { PrepareStorePartialVariableInLoop["i", "lc_imin", "lc_imax"],
+                Map[StorePartialVariableInLoop[gridName[#], localName[#]] &,
+                    gfsInLHS] }],
+            OptionValue[UseVectors],
+            CommentedBlock["Copy local copies back to grid functions",
+              { PrepareStorePartialVariableInLoop["i", "kimin", "kimax"],
+                Map[StorePartialVariableInLoop[gridName[#], localName[#]] &,
+                    gfsInLHS] }],
+            True,
+            CommentedBlock["Copy local copies back to grid functions",
+              Map[AssignVariableInLoop[gridName[#], localName[#]] &, gfsInLHS]]],
 
       If[debugInLoop, Map[InfoVariable[gridName[#]] &, gfsInLHS], ""]}, opts]}]];
 

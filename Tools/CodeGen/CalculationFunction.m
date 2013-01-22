@@ -1006,7 +1006,7 @@ DefFn[
                     gfsInLHS] }],
             OptionValue[UseVectors],
             CommentedBlock["Copy local copies back to grid functions",
-              { PrepareStorePartialVariableInLoop["i", "kimin", "kimax"],
+              { PrepareStorePartialVariableInLoop["i", "vecimin", "vecimax"],
                 Map[StorePartialVariableInLoop[gridName[#], localName[#]] &,
                     gfsInLHS] }],
             True,
@@ -1034,7 +1034,7 @@ DefFn[
           "Calculate temporaries and grid functions", 
           If[OptionValue[UseVectors],
              {
-               PrepareStorePartialVariableInLoop["i", "kimin", "kimax"],
+               PrepareStorePartialVariableInLoop["i", "vecimin", "vecimax"],
                Map[StorePartialVariableInLoop[FlattenBlock@gridName[#[[1]]], #[[2]]] &, eqs2]
              },
              Map[

@@ -5,45 +5,71 @@
 
 # Cactus Flesh
 !TARGET   = $ROOT
-!TYPE     = svn
-!AUTH_URL = https://svn.cactuscode.org/flesh/trunk
-!URL      = http://svn.cactuscode.org/flesh/trunk
-!CHECKOUT = Cactus
-!NAME     = .
+!TYPE     = git
+!URL      = https://bitbucket.org/cactuscode/cactus.git
+!NAME     = flesh
+!CHECKOUT = CONTRIBUTORS COPYRIGHT doc lib Makefile src
 
-# Cactus utilities, including the GetComponents script
+# Various Cactus utilities
 !TARGET   = $ROOT
-!TYPE     = svn
-!AUTH_URL = https://svn.cactuscode.org/Utilities/trunk
-!URL      = http://svn.cactuscode.org/Utilities/trunk
-!CHECKOUT = .
+!TYPE     = git
+!URL      = https://bitbucket.org/cactuscode/utilities.git
+!REPO_PATH= $1
 !NAME     = utils
+!CHECKOUT = ./utils
 
-# Basic Cactus thorns
+# The GetComponents script
+!TARGET   = $ROOT/bin
+!TYPE     = git
+!URL      = https://github.com/gridaphobe/CRL.git
+!CHECKOUT = GetComponents
+
+# CactusBase thorns
 !TARGET   = $ARR
-!TYPE     = svn
-!AUTH_URL = https://svn.cactuscode.org/arrangements/$1/$2/trunk
-!URL      = http://svn.cactuscode.org/arrangements/$1/$2/trunk
+!TYPE     = git
+!URL      = https://bitbucket.org/cactuscode/cactusbase.git
+!REPO_PATH= $2
 !CHECKOUT =
-CactusBase/Boundary                
-CactusBase/CartGrid3D              
+CactusBase/Boundary
+CactusBase/CartGrid3D
 CactusBase/CoordBase
+#CactusBase/Fortran
+CactusBase/InitBase
 CactusBase/IOASCII
-CactusBase/IOBasic                 
-CactusBase/IOUtil  
-CactusBase/LocalInterp  
-CactusBase/LocalReduce              
+CactusBase/IOBasic
+CactusBase/IOUtil
 CactusBase/SymBase
-CactusBase/Time 
-       
+CactusBase/Time
+
+# CactusNumerical thorns
+!TARGET   = $ARR
+!TYPE     = git
+!URL      = https://bitbucket.org/cactuscode/cactusnumerical.git
+!REPO_PATH= $2
+!CHECKOUT =
+
 CactusNumerical/MoL
 CactusNumerical/Periodic
 CactusNumerical/Slab
+
+# CactusPUGH thorns
+!TARGET   = $ARR
+!TYPE     = git
+!URL      = https://bitbucket.org/cactuscode/cactuspugh.git
+!REPO_PATH= $2
+!CHECKOUT =
 
 CactusPUGH/PUGH                    
 CactusPUGH/PUGHInterp                  
 CactusPUGH/PUGHReduce
 CactusPUGH/PUGHSlab
+
+# CactusUtils thorns
+!TARGET   = $ARR
+!TYPE     = git
+!URL      = https://bitbucket.org/cactuscode/cactusutils.git
+!REPO_PATH= $2
+!CHECKOUT =
 
 CactusUtils/NaNChecker
 CactusUtils/TimerReport

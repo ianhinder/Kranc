@@ -37,7 +37,7 @@ nonevolvedGroupInterfaceStructure[group_] :=
   GridType -> "GF",
   Comment -> groupName[group], 
   Visibility -> "public",
-  Tags -> Join[GroupTags[group]],
+  Tags -> GroupTags[group],
   Variables -> groupVariables[group]
 }
 
@@ -49,7 +49,7 @@ nonevolvedODEGroupInterfaceStructure[group_] :=
   GridType -> "array",
   Comment -> groupName[group], 
   Visibility -> "public",
-  Tags -> Join[GroupTags[group]],
+  Tags -> GroupTags[group],
   Dim -> 1,
   Size -> 1,
   Variables -> groupVariables[group]

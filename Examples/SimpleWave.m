@@ -1,40 +1,35 @@
 << "KrancThorn.m";
 
-groups = {{"evolved_group", {phi, pi}}};
-
-derivatives =
-{
-  PDstandard2nd[i_] -> StandardCenteredDifferenceOperator[1,1,i],
-  PDstandard2nd[i_, i_] -> StandardCenteredDifferenceOperator[2,1,i]
-};
+derivatives = {
+  PDstandard2nd[i_]     -> StandardCenteredDifferenceOperator[1,1,i],
+  PDstandard2nd[i_, i_] -> StandardCenteredDifferenceOperator[2,1,i]};
 
 PD = PDstandard2nd;
 
-initialSineCalc = 
-{
-  Name -> "initial_sine",
-  Schedule -> {"AT INITIAL"},
-  Equations -> 
+groups = {{"evolved_group", {phi, pi}}};
+
+initialSineCalc = {
+  Name      -> "initial_sine",
+  Schedule  -> {"AT initial"},
+  Equations ->
   {
     phi -> Sin[2 Pi (x - t)],
-    pi -> -2 Pi Cos[2 Pi (x - t)]
-  }
-};
+    pi  -> -2 Pi Cos[2 Pi (x - t)]
+  }};
 
-evolveCalc = 
-{
-  Name -> "calc_rhs",
-  Schedule -> {"in MoL_CalcRHS"},
-  Where -> Interior,
+evolveCalc = {
+  Name      -> "calc_rhs",
+  Schedule  -> {"IN MoL_CalcRHS"},
+  Where     -> Interior,
   Equations ->
   {
     dot[phi] -> pi,
     dot[pi]  -> Euc[ui,uj] PD[phi,li,lj]
-  }
-};
+  }};
 
-CreateKrancThornTT[groups, ".", 
+CreateKrancThornTT[
+  groups, ".", 
   "SimpleWave", 
-  Calculations -> {initialSineCalc, evolveCalc},
   PartialDerivatives -> derivatives,
-  DeclaredGroups -> {"evolved_group"}];
+  DeclaredGroups     -> {"evolved_group"},
+  Calculations       -> {initialSineCalc, evolveCalc}];

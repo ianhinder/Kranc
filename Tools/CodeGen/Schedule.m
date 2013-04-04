@@ -149,7 +149,9 @@ scheduleCalc[calc_, groups_, thornName_, OptionsPattern[]] :=
         Language           -> CodeGenC`SOURCELANGUAGE, 
         Tags               -> tags,
         RequiredGroups     -> variablesToRead,
+        RequiredRegion     -> Everywhere,   (* TODO: be more accurate *)
         ProvidedGroups     -> variablesToWrite,
+        ProvidedRegion     -> lookupDefault[calc, Where, Everywhere],
         Comment            -> lookup[calc, Name]
       },
        If[triggered, {TriggerGroups -> lookup[calc, TriggerGroups]},
@@ -195,7 +197,9 @@ scheduleCalc[calc_, groups_, thornName_, OptionsPattern[]] :=
         Language           -> CodeGenC`SOURCELANGUAGE,
         Tags               -> tags,
         RequiredGroups     -> variablesToRead,
+        RequiredRegion     -> Everywhere,   (* TODO: be more accurate *)
         ProvidedGroups     -> variablesToWrite,
+        ProvidedRegion     -> Interior, (* since we apply boundary conditions *)
         Comment            -> lookup[calc, Name]
       };
 

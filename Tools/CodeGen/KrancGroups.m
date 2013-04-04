@@ -48,6 +48,7 @@ SetGroupVariables;
 VerifyGroup;
 VerifyGroupName;
 SetGroupName;
+AddGroupTag;
 AddGroupExtra;
 GroupTimelevels;
 allGroupVariables;
@@ -121,12 +122,18 @@ GroupTags[g_] :=
     extras = Drop[g, 2];
     lookupDefault[extras, Tags, {}]];
 
+AddGroupTag[g_, t_] :=
+  Module[{extras, tags},
+    extras = Drop[g, 2];
+    tags = lookupDefault[extras, Tags, {}];
+    tags = Join[tags, {t}];
+    Join[DeleteCases[g, Tags->_], {Tags -> tags}]];
+
 SetGroupName[g_, n_] :=
   Join[{n}, Drop[g, 1]];
 
 SetGroupVariables[g_, vars_] :=
-  Module[{},
-    Join[{groupName[g], vars}, Drop[g, 2]]];
+  Join[{groupName[g], vars}, Drop[g, 2]];
 
 (*********************************************************************)
 (* The following functions DO NOT KNOW about the internal form of a Group
@@ -167,6 +174,7 @@ evolvedGroupToRHSGroup[name_, groups_] :=
 
     group = SetGroupName[group, addrhs[name]];
     group = SetGroupVariables[group, newVars];
+    group = AddGroupTag[group, "Prolongation" -> "None"];
     Return[group]];
 
 variablesFromGroups[groupNames_, groups_] := 

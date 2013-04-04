@@ -391,8 +391,9 @@ groupStorage[spec_] :=
 scheduleUnconditionalFunction[spec_] :=
   {"schedule ", lookup[spec, Name], " ", lookup[spec,SchedulePoint], "\n",
    SuffixedCBlock[
-     {If[lookup[spec, Language] == "None", "# no language specified\n",
-                                   "LANG: " <> lookup[spec, Language] <> "\n"],
+     {If[lookup[spec, Language] != "None",
+         "LANG: " <> lookup[spec, Language] <> "\n",
+         ""],
 
       If[lookupDefault[spec, Options, ""] != "",
          "OPTIONS: " <> lookup[spec, Options] <> "\n",
@@ -408,8 +409,19 @@ scheduleUnconditionalFunction[spec_] :=
          "TAGS: " <> lookup[spec, Tags] <> "\n",
          ""],
 
-      Map[{"READS:    ", #, "\n"} &, lookupDefault[spec, RequiredGroups, {}]],
-      Map[{"WRITES:   ", #, "\n"} &, lookupDefault[spec, ProvidedGroups, {}]],
+      translateRegion[r_] := Switch[r,
+                                    Everywhere, "Everywhere",
+                                    Interior, "Interior",
+                                    Boundary, "Boundary",
+                                    _, "ERROR(" <> ToString[r] <> ")"];
+      Map[{"READS:    ", #, "(",
+           translateRegion[lookupDefault[spec, RequiredRegion, "ERROR"]],
+           ")\n"} &,
+          lookupDefault[spec, RequiredGroups, {}]],
+      Map[{"WRITES:   ", #, "(",
+           translateRegion[lookupDefault[spec, ProvidedRegion, "ERROR"]],
+           ")\n"} &,
+          lookupDefault[spec, ProvidedGroups, {}]],
 
       (* Insert a storage block for each group we want to allocate
          storage for *)

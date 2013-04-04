@@ -107,7 +107,7 @@ LocalGroups;
 
 {AccumulatorBase, ThornImplementation, Name, Type, Extend, Default,
 Comment, Range, Implementation, Group, SchedulePoint, Language,
-RequiredGroups, ProvidedGroups, 
+RequiredGroups, RequiredRegion, ProvidedGroups, ProvidedRegion,
 SynchronizedGroups, StorageGroups, Timelevels, TimelevelsParameter,
 VariableType, GridType, Dim, Size,
 Visibility, Variables, Implementations, Value, AllowedValues,

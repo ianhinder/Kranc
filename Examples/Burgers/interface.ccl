@@ -52,7 +52,7 @@ CCTK_REAL u_group type=GF timelevels=3 tags='tensortypealias="Scalar" tensorweig
 } "u_group"
 
 public:
-CCTK_REAL u_grouprhs type=GF timelevels=3 tags='tensortypealias="Scalar" tensorweight=0'
+CCTK_REAL u_grouprhs type=GF timelevels=3 tags='tensortypealias="Scalar" tensorweight=0 Prolongation="None"'
 {
   urhs
 } "u_grouprhs"

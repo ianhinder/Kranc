@@ -27,7 +27,7 @@ extern "C" void euler_reconstruct_1_SelectBCs(CCTK_ARGUMENTS)
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  CCTK_INT ierr = 0;
+  CCTK_INT ierr CCTK_ATTRIBUTE_UNUSED  = 0;
   ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, GenericFD_GetBoundaryWidth(cctkGH), -1 /* no table */, "Euler::pLeft_group","flat");
   if (ierr < 0)
     CCTK_WARN(1, "Failed to register flat BC for Euler::pLeft_group.");
@@ -58,55 +58,55 @@ static void euler_reconstruct_1_Body(cGH const * restrict const cctkGH, int cons
   /* Include user-supplied include files */
   
   /* Initialise finite differencing variables */
-  ptrdiff_t const di = 1;
-  ptrdiff_t const dj = CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0);
-  ptrdiff_t const dk = CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0);
-  ptrdiff_t const cdi = sizeof(CCTK_REAL) * di;
-  ptrdiff_t const cdj = sizeof(CCTK_REAL) * dj;
-  ptrdiff_t const cdk = sizeof(CCTK_REAL) * dk;
-  CCTK_REAL const dx = ToReal(CCTK_DELTA_SPACE(0));
-  CCTK_REAL const dy = ToReal(CCTK_DELTA_SPACE(1));
-  CCTK_REAL const dz = ToReal(CCTK_DELTA_SPACE(2));
-  CCTK_REAL const dt = ToReal(CCTK_DELTA_TIME);
-  CCTK_REAL const t = ToReal(cctk_time);
-  CCTK_REAL const dxi = INV(dx);
-  CCTK_REAL const dyi = INV(dy);
-  CCTK_REAL const dzi = INV(dz);
-  CCTK_REAL const khalf = 0.5;
-  CCTK_REAL const kthird = 1/3.0;
-  CCTK_REAL const ktwothird = 2.0/3.0;
-  CCTK_REAL const kfourthird = 4.0/3.0;
-  CCTK_REAL const keightthird = 8.0/3.0;
-  CCTK_REAL const hdxi = 0.5 * dxi;
-  CCTK_REAL const hdyi = 0.5 * dyi;
-  CCTK_REAL const hdzi = 0.5 * dzi;
+  ptrdiff_t /*const*/ di CCTK_ATTRIBUTE_UNUSED  = 1;
+  ptrdiff_t /*const*/ dj CCTK_ATTRIBUTE_UNUSED  = CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0);
+  ptrdiff_t /*const*/ dk CCTK_ATTRIBUTE_UNUSED  = CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0);
+  ptrdiff_t /*const*/ cdi CCTK_ATTRIBUTE_UNUSED  = sizeof(CCTK_REAL) * di;
+  ptrdiff_t /*const*/ cdj CCTK_ATTRIBUTE_UNUSED  = sizeof(CCTK_REAL) * dj;
+  ptrdiff_t /*const*/ cdk CCTK_ATTRIBUTE_UNUSED  = sizeof(CCTK_REAL) * dk;
+  CCTK_REAL /*const*/ dx CCTK_ATTRIBUTE_UNUSED  = ToReal(CCTK_DELTA_SPACE(0));
+  CCTK_REAL /*const*/ dy CCTK_ATTRIBUTE_UNUSED  = ToReal(CCTK_DELTA_SPACE(1));
+  CCTK_REAL /*const*/ dz CCTK_ATTRIBUTE_UNUSED  = ToReal(CCTK_DELTA_SPACE(2));
+  CCTK_REAL /*const*/ dt CCTK_ATTRIBUTE_UNUSED  = ToReal(CCTK_DELTA_TIME);
+  CCTK_REAL /*const*/ t CCTK_ATTRIBUTE_UNUSED  = ToReal(cctk_time);
+  CCTK_REAL /*const*/ dxi CCTK_ATTRIBUTE_UNUSED  = INV(dx);
+  CCTK_REAL /*const*/ dyi CCTK_ATTRIBUTE_UNUSED  = INV(dy);
+  CCTK_REAL /*const*/ dzi CCTK_ATTRIBUTE_UNUSED  = INV(dz);
+  CCTK_REAL /*const*/ khalf CCTK_ATTRIBUTE_UNUSED  = 0.5;
+  CCTK_REAL /*const*/ kthird CCTK_ATTRIBUTE_UNUSED  = 1/3.0;
+  CCTK_REAL /*const*/ ktwothird CCTK_ATTRIBUTE_UNUSED  = 2.0/3.0;
+  CCTK_REAL /*const*/ kfourthird CCTK_ATTRIBUTE_UNUSED  = 4.0/3.0;
+  CCTK_REAL /*const*/ keightthird CCTK_ATTRIBUTE_UNUSED  = 8.0/3.0;
+  CCTK_REAL /*const*/ hdxi CCTK_ATTRIBUTE_UNUSED  = 0.5 * dxi;
+  CCTK_REAL /*const*/ hdyi CCTK_ATTRIBUTE_UNUSED  = 0.5 * dyi;
+  CCTK_REAL /*const*/ hdzi CCTK_ATTRIBUTE_UNUSED  = 0.5 * dzi;
   
   /* Initialize predefined quantities */
-  CCTK_REAL const p1o1 = 1;
-  CCTK_REAL const p1o12dx = 0.0833333333333333333333333333333*INV(dx);
-  CCTK_REAL const p1o12dy = 0.0833333333333333333333333333333*INV(dy);
-  CCTK_REAL const p1o12dz = 0.0833333333333333333333333333333*INV(dz);
-  CCTK_REAL const p1o144dxdy = 0.00694444444444444444444444444444*INV(dx*dy);
-  CCTK_REAL const p1o144dxdz = 0.00694444444444444444444444444444*INV(dx*dz);
-  CCTK_REAL const p1o144dydz = 0.00694444444444444444444444444444*INV(dy*dz);
-  CCTK_REAL const p1o2dx = 0.5*INV(dx);
-  CCTK_REAL const p1o2dy = 0.5*INV(dy);
-  CCTK_REAL const p1o2dz = 0.5*INV(dz);
-  CCTK_REAL const p1o4dxdy = 0.25*INV(dx*dy);
-  CCTK_REAL const p1o4dxdz = 0.25*INV(dx*dz);
-  CCTK_REAL const p1o4dydz = 0.25*INV(dy*dz);
-  CCTK_REAL const p1odx = INV(dx);
-  CCTK_REAL const p1odx2 = INV(SQR(dx));
-  CCTK_REAL const p1ody = INV(dy);
-  CCTK_REAL const p1ody2 = INV(SQR(dy));
-  CCTK_REAL const p1odz = INV(dz);
-  CCTK_REAL const p1odz2 = INV(SQR(dz));
-  CCTK_REAL const pm1o12dx2 = -0.0833333333333333333333333333333*INV(SQR(dx));
-  CCTK_REAL const pm1o12dy2 = -0.0833333333333333333333333333333*INV(SQR(dy));
-  CCTK_REAL const pm1o12dz2 = -0.0833333333333333333333333333333*INV(SQR(dz));
-  CCTK_REAL const pm1o2dx = -0.5*INV(dx);
-  CCTK_REAL const pm1o2dy = -0.5*INV(dy);
-  CCTK_REAL const pm1o2dz = -0.5*INV(dz);
+  CCTK_REAL /*const*/ p1o1 CCTK_ATTRIBUTE_UNUSED  = 1.;
+  CCTK_REAL /*const*/ p1o12dx CCTK_ATTRIBUTE_UNUSED  = 0.0833333333333333333333333333333*INV(dx);
+  CCTK_REAL /*const*/ p1o12dy CCTK_ATTRIBUTE_UNUSED  = 0.0833333333333333333333333333333*INV(dy);
+  CCTK_REAL /*const*/ p1o12dz CCTK_ATTRIBUTE_UNUSED  = 0.0833333333333333333333333333333*INV(dz);
+  CCTK_REAL /*const*/ p1o144dxdy CCTK_ATTRIBUTE_UNUSED  = 0.00694444444444444444444444444444*INV(dx*dy);
+  CCTK_REAL /*const*/ p1o144dxdz CCTK_ATTRIBUTE_UNUSED  = 0.00694444444444444444444444444444*INV(dx*dz);
+  CCTK_REAL /*const*/ p1o144dydz CCTK_ATTRIBUTE_UNUSED  = 0.00694444444444444444444444444444*INV(dy*dz);
+  CCTK_REAL /*const*/ p1o2dx CCTK_ATTRIBUTE_UNUSED  = 0.5*INV(dx);
+  CCTK_REAL /*const*/ p1o2dy CCTK_ATTRIBUTE_UNUSED  = 0.5*INV(dy);
+  CCTK_REAL /*const*/ p1o2dz CCTK_ATTRIBUTE_UNUSED  = 0.5*INV(dz);
+  CCTK_REAL /*const*/ p1o4dxdy CCTK_ATTRIBUTE_UNUSED  = 0.25*INV(dx*dy);
+  CCTK_REAL /*const*/ p1o4dxdz CCTK_ATTRIBUTE_UNUSED  = 0.25*INV(dx*dz);
+  CCTK_REAL /*const*/ p1o4dydz CCTK_ATTRIBUTE_UNUSED  = 0.25*INV(dy*dz);
+  CCTK_REAL /*const*/ p1odx CCTK_ATTRIBUTE_UNUSED  = INV(dx);
+  CCTK_REAL /*const*/ p1odx2 CCTK_ATTRIBUTE_UNUSED  = INV(SQR(dx));
+  CCTK_REAL /*const*/ p1ody CCTK_ATTRIBUTE_UNUSED  = INV(dy);
+  CCTK_REAL /*const*/ p1ody2 CCTK_ATTRIBUTE_UNUSED  = INV(SQR(dy));
+  CCTK_REAL /*const*/ p1odz CCTK_ATTRIBUTE_UNUSED  = INV(dz);
+  CCTK_REAL /*const*/ p1odz2 CCTK_ATTRIBUTE_UNUSED  = INV(SQR(dz));
+  CCTK_REAL /*const*/ pm1o12dx2 CCTK_ATTRIBUTE_UNUSED  = -0.0833333333333333333333333333333*INV(SQR(dx));
+  CCTK_REAL /*const*/ pm1o12dy2 CCTK_ATTRIBUTE_UNUSED  = -0.0833333333333333333333333333333*INV(SQR(dy));
+  CCTK_REAL /*const*/ pm1o12dz2 CCTK_ATTRIBUTE_UNUSED  = -0.0833333333333333333333333333333*INV(SQR(dz));
+  CCTK_REAL /*const*/ pm1o2dx CCTK_ATTRIBUTE_UNUSED  = -0.5*INV(dx);
+  CCTK_REAL /*const*/ pm1o2dy CCTK_ATTRIBUTE_UNUSED  = -0.5*INV(dy);
+  CCTK_REAL /*const*/ pm1o2dz CCTK_ATTRIBUTE_UNUSED  = -0.5*INV(dz);
   
   /* Assign local copies of arrays functions */
   
@@ -122,41 +122,41 @@ static void euler_reconstruct_1_Body(cGH const * restrict const cctkGH, int cons
     i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
     cctk_ash[0],cctk_ash[1],cctk_ash[2])
   {
-    ptrdiff_t const index = di*i + dj*j + dk*k;
+    ptrdiff_t /*const*/ index CCTK_ATTRIBUTE_UNUSED  = di*i + dj*j + dk*k;
     
     /* Assign local copies of grid functions */
     
-    CCTK_REAL pL = p[index];
-    CCTK_REAL rhoL = rho[index];
-    CCTK_REAL v1L = v1[index];
-    CCTK_REAL v2L = v2[index];
-    CCTK_REAL v3L = v3[index];
+    CCTK_REAL pL CCTK_ATTRIBUTE_UNUSED = p[index];
+    CCTK_REAL rhoL CCTK_ATTRIBUTE_UNUSED = rho[index];
+    CCTK_REAL v1L CCTK_ATTRIBUTE_UNUSED = v1[index];
+    CCTK_REAL v2L CCTK_ATTRIBUTE_UNUSED = v2[index];
+    CCTK_REAL v3L CCTK_ATTRIBUTE_UNUSED = v3[index];
     
     
     /* Include user supplied include files */
     
     /* Precompute derivatives */
-    CCTK_REAL const DiffPlus1p = DiffPlus1(&p[index]);
-    CCTK_REAL const DiffMinus1p = DiffMinus1(&p[index]);
-    CCTK_REAL const DiffPlus1rho = DiffPlus1(&rho[index]);
-    CCTK_REAL const DiffMinus1rho = DiffMinus1(&rho[index]);
-    CCTK_REAL const DiffPlus1v1 = DiffPlus1(&v1[index]);
-    CCTK_REAL const DiffMinus1v1 = DiffMinus1(&v1[index]);
-    CCTK_REAL const DiffPlus1v2 = DiffPlus1(&v2[index]);
-    CCTK_REAL const DiffMinus1v2 = DiffMinus1(&v2[index]);
-    CCTK_REAL const DiffPlus1v3 = DiffPlus1(&v3[index]);
-    CCTK_REAL const DiffMinus1v3 = DiffMinus1(&v3[index]);
+    CCTK_REAL /*const*/ DiffPlus1p CCTK_ATTRIBUTE_UNUSED  = DiffPlus1(&p[index]);
+    CCTK_REAL /*const*/ DiffMinus1p CCTK_ATTRIBUTE_UNUSED  = DiffMinus1(&p[index]);
+    CCTK_REAL /*const*/ DiffPlus1rho CCTK_ATTRIBUTE_UNUSED  = DiffPlus1(&rho[index]);
+    CCTK_REAL /*const*/ DiffMinus1rho CCTK_ATTRIBUTE_UNUSED  = DiffMinus1(&rho[index]);
+    CCTK_REAL /*const*/ DiffPlus1v1 CCTK_ATTRIBUTE_UNUSED  = DiffPlus1(&v1[index]);
+    CCTK_REAL /*const*/ DiffMinus1v1 CCTK_ATTRIBUTE_UNUSED  = DiffMinus1(&v1[index]);
+    CCTK_REAL /*const*/ DiffPlus1v2 CCTK_ATTRIBUTE_UNUSED  = DiffPlus1(&v2[index]);
+    CCTK_REAL /*const*/ DiffMinus1v2 CCTK_ATTRIBUTE_UNUSED  = DiffMinus1(&v2[index]);
+    CCTK_REAL /*const*/ DiffPlus1v3 CCTK_ATTRIBUTE_UNUSED  = DiffPlus1(&v3[index]);
+    CCTK_REAL /*const*/ DiffMinus1v3 CCTK_ATTRIBUTE_UNUSED  = DiffMinus1(&v3[index]);
     
     /* Calculate temporaries and grid functions */
-    CCTK_REAL slopeL = DiffMinus1rho;
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED slopeL = DiffMinus1rho;
     
-    CCTK_REAL slopeR = DiffPlus1rho;
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED slopeR = DiffPlus1rho;
     
-    CCTK_REAL slope = VanLeer(slopeL,slopeR);
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED slope = VanLeer(slopeL,slopeR);
     
-    CCTK_REAL rhoLeftL = rhoL - 0.5*slope;
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED rhoLeftL = rhoL - 0.5*slope;
     
-    CCTK_REAL rhoRightL = rhoL + 0.5*slope;
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED rhoRightL = rhoL + 0.5*slope;
     
     slopeL = DiffMinus1v1;
     
@@ -164,9 +164,9 @@ static void euler_reconstruct_1_Body(cGH const * restrict const cctkGH, int cons
     
     slope = VanLeer(slopeL,slopeR);
     
-    CCTK_REAL vLeft1L = v1L - 0.5*slope;
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED vLeft1L = v1L - 0.5*slope;
     
-    CCTK_REAL vRight1L = v1L + 0.5*slope;
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED vRight1L = v1L + 0.5*slope;
     
     slopeL = DiffMinus1v2;
     
@@ -174,9 +174,9 @@ static void euler_reconstruct_1_Body(cGH const * restrict const cctkGH, int cons
     
     slope = VanLeer(slopeL,slopeR);
     
-    CCTK_REAL vLeft2L = v2L - 0.5*slope;
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED vLeft2L = v2L - 0.5*slope;
     
-    CCTK_REAL vRight2L = v2L + 0.5*slope;
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED vRight2L = v2L + 0.5*slope;
     
     slopeL = DiffMinus1v3;
     
@@ -184,9 +184,9 @@ static void euler_reconstruct_1_Body(cGH const * restrict const cctkGH, int cons
     
     slope = VanLeer(slopeL,slopeR);
     
-    CCTK_REAL vLeft3L = v3L - 0.5*slope;
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED vLeft3L = v3L - 0.5*slope;
     
-    CCTK_REAL vRight3L = v3L + 0.5*slope;
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED vRight3L = v3L + 0.5*slope;
     
     slopeL = DiffMinus1p;
     
@@ -194,9 +194,9 @@ static void euler_reconstruct_1_Body(cGH const * restrict const cctkGH, int cons
     
     slope = VanLeer(slopeL,slopeR);
     
-    CCTK_REAL pLeftL = pL - 0.5*slope;
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED pLeftL = pL - 0.5*slope;
     
-    CCTK_REAL pRightL = pL + 0.5*slope;
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED pRightL = pL + 0.5*slope;
     
     /* Copy local copies back to grid functions */
     pLeft[index] = pLeftL;

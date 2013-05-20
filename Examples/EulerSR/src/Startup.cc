@@ -4,7 +4,7 @@
 
 extern "C" int EulerSR_Startup(void)
 {
-  const char * banner = "EulerSR";
+  const char * banner CCTK_ATTRIBUTE_UNUSED  = "EulerSR";
   CCTK_RegisterBanner(banner);
   return 0;
 }

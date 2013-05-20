@@ -35,7 +35,7 @@ CCTK_REAL evolved_group type=GF timelevels=3 tags=''
 } "evolved_group"
 
 public:
-CCTK_REAL evolved_grouprhs type=GF timelevels=3 tags=''
+CCTK_REAL evolved_grouprhs type=GF timelevels=3 tags='Prolongation="None"'
 {
   phirhs,
   pirhs

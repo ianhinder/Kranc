@@ -43,45 +43,45 @@ schedule Laplace_initial AT INITIAL
 {
   LANG: C
   SYNC: phi_group
-  READS:    grid::x
-  READS:    grid::y
-  WRITES:   Laplace::phi
+  READS:    grid::x(Everywhere)
+  READS:    grid::y(Everywhere)
+  WRITES:   Laplace::phi(Interior)
 } "Laplace_initial"
 
 schedule Laplace_initial_boundary AT INITIAL after Laplace_initial
 {
   LANG: C
   SYNC: phi_group
-  READS:    grid::y
-  WRITES:   Laplace::phi
+  READS:    grid::y(Everywhere)
+  WRITES:   Laplace::phi(Boundary)
 } "Laplace_initial_boundary"
 
 schedule Laplace_relax in MoL_CalcRHS
 {
   LANG: C
-  READS:    Laplace::phi
-  WRITES:   Laplace::phirhs
+  READS:    Laplace::phi(Everywhere)
+  WRITES:   Laplace::phirhs(Interior)
 } "Laplace_relax"
 
 schedule Laplace_relax AT ANALYSIS
 {
   LANG: C
   SYNC: phi_grouprhs
-  READS:    Laplace::phi
-  WRITES:   Laplace::phirhs
+  READS:    Laplace::phi(Everywhere)
+  WRITES:   Laplace::phirhs(Interior)
 } "Laplace_relax"
 
 schedule Laplace_boundary in MoL_RHSBoundaries
 {
   LANG: C
-  WRITES:   Laplace::phirhs
+  WRITES:   Laplace::phirhs(Boundary)
 } "Laplace_boundary"
 
 schedule Laplace_boundary AT ANALYSIS
 {
   LANG: C
   SYNC: phi_grouprhs
-  WRITES:   Laplace::phirhs
+  WRITES:   Laplace::phirhs(Boundary)
 } "Laplace_boundary"
 
 schedule Laplace_SelectBoundConds in MoL_PostStep
@@ -105,5 +105,4 @@ schedule Laplace_RegisterVars in MoL_Register
 
 schedule group ApplyBCs as Laplace_ApplyBCs in MoL_PostStep after Laplace_SelectBoundConds
 {
-  # no language specified
 } "Apply boundary conditions controlled by thorn Boundary"

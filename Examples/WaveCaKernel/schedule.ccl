@@ -57,10 +57,10 @@ schedule WaveCaKernel_RegisterSymmetries in SymmetryRegister
 schedule initial_gaussian AT INITIAL
 {
   LANG: C
-  READS:    grid::x
-  WRITES:   WaveCaKernel::phi
-  WRITES:   WaveCaKernel::pi
-  WRITES:   WaveCaKernel::xCopy
+  READS:    grid::x(Everywhere)
+  WRITES:   WaveCaKernel::phi(Everywhere)
+  WRITES:   WaveCaKernel::pi(Everywhere)
+  WRITES:   WaveCaKernel::xCopy(Everywhere)
 } "initial_gaussian"
 
 
@@ -70,10 +70,10 @@ if (fdOrder == 2)
   {
     LANG: C
     TAGS: Device=1
-    READS:    WaveCaKernel::phi
-    READS:    WaveCaKernel::pi
-    WRITES:   WaveCaKernel::phirhs
-    WRITES:   WaveCaKernel::pirhs
+    READS:    WaveCaKernel::phi(Everywhere)
+    READS:    WaveCaKernel::pi(Everywhere)
+    WRITES:   WaveCaKernel::phirhs(Interior)
+    WRITES:   WaveCaKernel::pirhs(Interior)
   } "calc_rhs_2"
 }
 
@@ -86,10 +86,10 @@ if (fdOrder == 2)
     SYNC: phi_grhs
     SYNC: pi_grhs
     TAGS: Device=1
-    READS:    WaveCaKernel::phi
-    READS:    WaveCaKernel::pi
-    WRITES:   WaveCaKernel::phirhs
-    WRITES:   WaveCaKernel::pirhs
+    READS:    WaveCaKernel::phi(Everywhere)
+    READS:    WaveCaKernel::pi(Everywhere)
+    WRITES:   WaveCaKernel::phirhs(Interior)
+    WRITES:   WaveCaKernel::pirhs(Interior)
   } "calc_rhs_2"
 }
 
@@ -100,10 +100,10 @@ if (fdOrder == 4)
   {
     LANG: C
     TAGS: Device=1
-    READS:    WaveCaKernel::phi
-    READS:    WaveCaKernel::pi
-    WRITES:   WaveCaKernel::phirhs
-    WRITES:   WaveCaKernel::pirhs
+    READS:    WaveCaKernel::phi(Everywhere)
+    READS:    WaveCaKernel::pi(Everywhere)
+    WRITES:   WaveCaKernel::phirhs(Interior)
+    WRITES:   WaveCaKernel::pirhs(Interior)
   } "calc_rhs_4"
 }
 
@@ -116,10 +116,10 @@ if (fdOrder == 4)
     SYNC: phi_grhs
     SYNC: pi_grhs
     TAGS: Device=1
-    READS:    WaveCaKernel::phi
-    READS:    WaveCaKernel::pi
-    WRITES:   WaveCaKernel::phirhs
-    WRITES:   WaveCaKernel::pirhs
+    READS:    WaveCaKernel::phi(Everywhere)
+    READS:    WaveCaKernel::pi(Everywhere)
+    WRITES:   WaveCaKernel::phirhs(Interior)
+    WRITES:   WaveCaKernel::pirhs(Interior)
   } "calc_rhs_4"
 }
 
@@ -127,9 +127,9 @@ schedule CAKERNEL_Launch_calc_bound_rhs as calc_bound_rhs in MoL_RHSBoundaries
 {
   LANG: C
   TAGS: Device=1
-  READS:    WaveCaKernel::xCopy
-  WRITES:   WaveCaKernel::phirhs
-  WRITES:   WaveCaKernel::pirhs
+  READS:    WaveCaKernel::xCopy(Everywhere)
+  WRITES:   WaveCaKernel::phirhs(Boundary)
+  WRITES:   WaveCaKernel::pirhs(Boundary)
 } "calc_bound_rhs"
 
 schedule CAKERNEL_Launch_calc_bound_rhs as calc_bound_rhs at ANALYSIS
@@ -138,19 +138,19 @@ schedule CAKERNEL_Launch_calc_bound_rhs as calc_bound_rhs at ANALYSIS
   SYNC: phi_grhs
   SYNC: pi_grhs
   TAGS: Device=1
-  READS:    WaveCaKernel::xCopy
-  WRITES:   WaveCaKernel::phirhs
-  WRITES:   WaveCaKernel::pirhs
+  READS:    WaveCaKernel::xCopy(Everywhere)
+  WRITES:   WaveCaKernel::phirhs(Boundary)
+  WRITES:   WaveCaKernel::pirhs(Boundary)
 } "calc_bound_rhs"
 
 schedule CAKERNEL_Launch_copy_to_device as copy_to_device at INITIAL after initial_gaussian
 {
   LANG: C
   TAGS: Device=1
-  READS:    WaveCaKernel::phi
-  READS:    WaveCaKernel::pi
-  WRITES:   WaveCaKernel::phi
-  WRITES:   WaveCaKernel::pi
+  READS:    WaveCaKernel::phi(Everywhere)
+  READS:    WaveCaKernel::pi(Everywhere)
+  WRITES:   WaveCaKernel::phi(Everywhere)
+  WRITES:   WaveCaKernel::pi(Everywhere)
 } "copy_to_device"
 
 schedule WaveCaKernel_SelectBoundConds in MoL_PostStep
@@ -181,5 +181,4 @@ schedule WaveCaKernel_Init in CCTK_BASEGRID after Accelerator_SetDevice
 
 schedule group ApplyBCs as WaveCaKernel_ApplyBCs in MoL_PostStep after WaveCaKernel_SelectBoundConds
 {
-  # no language specified
 } "Apply boundary conditions controlled by thorn Boundary"

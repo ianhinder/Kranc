@@ -39,21 +39,21 @@ schedule SimpleWave_RegisterSymmetries in SymmetryRegister
   OPTIONS: meta
 } "register symmetries"
 
-schedule initial_sine AT INITIAL
+schedule initial_sine AT initial
 {
   LANG: C
-  READS:    grid::x
-  WRITES:   SimpleWave::phi
-  WRITES:   SimpleWave::pi
+  READS:    grid::x(Everywhere)
+  WRITES:   SimpleWave::phi(Everywhere)
+  WRITES:   SimpleWave::pi(Everywhere)
 } "initial_sine"
 
-schedule calc_rhs in MoL_CalcRHS
+schedule calc_rhs IN MoL_CalcRHS
 {
   LANG: C
-  READS:    SimpleWave::phi
-  READS:    SimpleWave::pi
-  WRITES:   SimpleWave::phirhs
-  WRITES:   SimpleWave::pirhs
+  READS:    SimpleWave::phi(Everywhere)
+  READS:    SimpleWave::pi(Everywhere)
+  WRITES:   SimpleWave::phirhs(Interior)
+  WRITES:   SimpleWave::pirhs(Interior)
 } "calc_rhs"
 
 schedule SimpleWave_SelectBoundConds in MoL_PostStep
@@ -77,5 +77,4 @@ schedule SimpleWave_RegisterVars in MoL_Register
 
 schedule group ApplyBCs as SimpleWave_ApplyBCs in MoL_PostStep after SimpleWave_SelectBoundConds
 {
-  # no language specified
 } "Apply boundary conditions controlled by thorn Boundary"

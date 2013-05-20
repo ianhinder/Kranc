@@ -43,19 +43,19 @@ schedule initial_sine AT INITIAL
 {
   LANG: C
   TAGS: Device=1
-  READS:    grid::x
-  WRITES:   SimpleWaveOpenCL::phi
-  WRITES:   SimpleWaveOpenCL::pi
+  READS:    grid::x(Everywhere)
+  WRITES:   SimpleWaveOpenCL::phi(Everywhere)
+  WRITES:   SimpleWaveOpenCL::pi(Everywhere)
 } "initial_sine"
 
 schedule calc_rhs in MoL_CalcRHS
 {
   LANG: C
   TAGS: Device=1
-  READS:    SimpleWaveOpenCL::phi
-  READS:    SimpleWaveOpenCL::pi
-  WRITES:   SimpleWaveOpenCL::phirhs
-  WRITES:   SimpleWaveOpenCL::pirhs
+  READS:    SimpleWaveOpenCL::phi(Everywhere)
+  READS:    SimpleWaveOpenCL::pi(Everywhere)
+  WRITES:   SimpleWaveOpenCL::phirhs(Interior)
+  WRITES:   SimpleWaveOpenCL::pirhs(Interior)
 } "calc_rhs"
 
 schedule SimpleWaveOpenCL_SelectBoundConds in MoL_PostStep
@@ -79,5 +79,4 @@ schedule SimpleWaveOpenCL_RegisterVars in MoL_Register
 
 schedule group ApplyBCs as SimpleWaveOpenCL_ApplyBCs in MoL_PostStep after SimpleWaveOpenCL_SelectBoundConds
 {
-  # no language specified
 } "Apply boundary conditions controlled by thorn Boundary"

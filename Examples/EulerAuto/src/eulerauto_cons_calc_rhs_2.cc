@@ -27,7 +27,7 @@ extern "C" void eulerauto_cons_calc_rhs_2_SelectBCs(CCTK_ARGUMENTS)
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  CCTK_INT ierr = 0;
+  CCTK_INT ierr CCTK_ATTRIBUTE_UNUSED  = 0;
   ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, GenericFD_GetBoundaryWidth(cctkGH), -1 /* no table */, "EulerAuto::Den_grouprhs","flat");
   if (ierr < 0)
     CCTK_WARN(1, "Failed to register flat BC for EulerAuto::Den_grouprhs.");
@@ -49,34 +49,34 @@ static void eulerauto_cons_calc_rhs_2_Body(cGH const * restrict const cctkGH, in
   /* Include user-supplied include files */
   
   /* Initialise finite differencing variables */
-  ptrdiff_t const di = 1;
-  ptrdiff_t const dj = CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0);
-  ptrdiff_t const dk = CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0);
-  ptrdiff_t const cdi = sizeof(CCTK_REAL) * di;
-  ptrdiff_t const cdj = sizeof(CCTK_REAL) * dj;
-  ptrdiff_t const cdk = sizeof(CCTK_REAL) * dk;
-  CCTK_REAL const dx = ToReal(CCTK_DELTA_SPACE(0));
-  CCTK_REAL const dy = ToReal(CCTK_DELTA_SPACE(1));
-  CCTK_REAL const dz = ToReal(CCTK_DELTA_SPACE(2));
-  CCTK_REAL const dt = ToReal(CCTK_DELTA_TIME);
-  CCTK_REAL const t = ToReal(cctk_time);
-  CCTK_REAL const dxi = INV(dx);
-  CCTK_REAL const dyi = INV(dy);
-  CCTK_REAL const dzi = INV(dz);
-  CCTK_REAL const khalf = 0.5;
-  CCTK_REAL const kthird = 1/3.0;
-  CCTK_REAL const ktwothird = 2.0/3.0;
-  CCTK_REAL const kfourthird = 4.0/3.0;
-  CCTK_REAL const keightthird = 8.0/3.0;
-  CCTK_REAL const hdxi = 0.5 * dxi;
-  CCTK_REAL const hdyi = 0.5 * dyi;
-  CCTK_REAL const hdzi = 0.5 * dzi;
+  ptrdiff_t /*const*/ di CCTK_ATTRIBUTE_UNUSED  = 1;
+  ptrdiff_t /*const*/ dj CCTK_ATTRIBUTE_UNUSED  = CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0);
+  ptrdiff_t /*const*/ dk CCTK_ATTRIBUTE_UNUSED  = CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0);
+  ptrdiff_t /*const*/ cdi CCTK_ATTRIBUTE_UNUSED  = sizeof(CCTK_REAL) * di;
+  ptrdiff_t /*const*/ cdj CCTK_ATTRIBUTE_UNUSED  = sizeof(CCTK_REAL) * dj;
+  ptrdiff_t /*const*/ cdk CCTK_ATTRIBUTE_UNUSED  = sizeof(CCTK_REAL) * dk;
+  CCTK_REAL /*const*/ dx CCTK_ATTRIBUTE_UNUSED  = ToReal(CCTK_DELTA_SPACE(0));
+  CCTK_REAL /*const*/ dy CCTK_ATTRIBUTE_UNUSED  = ToReal(CCTK_DELTA_SPACE(1));
+  CCTK_REAL /*const*/ dz CCTK_ATTRIBUTE_UNUSED  = ToReal(CCTK_DELTA_SPACE(2));
+  CCTK_REAL /*const*/ dt CCTK_ATTRIBUTE_UNUSED  = ToReal(CCTK_DELTA_TIME);
+  CCTK_REAL /*const*/ t CCTK_ATTRIBUTE_UNUSED  = ToReal(cctk_time);
+  CCTK_REAL /*const*/ dxi CCTK_ATTRIBUTE_UNUSED  = INV(dx);
+  CCTK_REAL /*const*/ dyi CCTK_ATTRIBUTE_UNUSED  = INV(dy);
+  CCTK_REAL /*const*/ dzi CCTK_ATTRIBUTE_UNUSED  = INV(dz);
+  CCTK_REAL /*const*/ khalf CCTK_ATTRIBUTE_UNUSED  = 0.5;
+  CCTK_REAL /*const*/ kthird CCTK_ATTRIBUTE_UNUSED  = 1/3.0;
+  CCTK_REAL /*const*/ ktwothird CCTK_ATTRIBUTE_UNUSED  = 2.0/3.0;
+  CCTK_REAL /*const*/ kfourthird CCTK_ATTRIBUTE_UNUSED  = 4.0/3.0;
+  CCTK_REAL /*const*/ keightthird CCTK_ATTRIBUTE_UNUSED  = 8.0/3.0;
+  CCTK_REAL /*const*/ hdxi CCTK_ATTRIBUTE_UNUSED  = 0.5 * dxi;
+  CCTK_REAL /*const*/ hdyi CCTK_ATTRIBUTE_UNUSED  = 0.5 * dyi;
+  CCTK_REAL /*const*/ hdzi CCTK_ATTRIBUTE_UNUSED  = 0.5 * dzi;
   
   /* Initialize predefined quantities */
-  CCTK_REAL const p1o1 = 1;
-  CCTK_REAL const p1odx = INV(dx);
-  CCTK_REAL const p1ody = INV(dy);
-  CCTK_REAL const p1odz = INV(dz);
+  CCTK_REAL /*const*/ p1o1 CCTK_ATTRIBUTE_UNUSED  = 1.;
+  CCTK_REAL /*const*/ p1odx CCTK_ATTRIBUTE_UNUSED  = INV(dx);
+  CCTK_REAL /*const*/ p1ody CCTK_ATTRIBUTE_UNUSED  = INV(dy);
+  CCTK_REAL /*const*/ p1odz CCTK_ATTRIBUTE_UNUSED  = INV(dz);
   
   /* Assign local copies of arrays functions */
   
@@ -92,41 +92,41 @@ static void eulerauto_cons_calc_rhs_2_Body(cGH const * restrict const cctkGH, in
     i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
     cctk_ash[0],cctk_ash[1],cctk_ash[2])
   {
-    ptrdiff_t const index = di*i + dj*j + dk*k;
+    ptrdiff_t /*const*/ index CCTK_ATTRIBUTE_UNUSED  = di*i + dj*j + dk*k;
     
     /* Assign local copies of grid functions */
     
-    CCTK_REAL DenFluxL = DenFlux[index];
-    CCTK_REAL DenrhsL = Denrhs[index];
-    CCTK_REAL EnFluxL = EnFlux[index];
-    CCTK_REAL EnrhsL = Enrhs[index];
-    CCTK_REAL S1FluxL = S1Flux[index];
-    CCTK_REAL S1rhsL = S1rhs[index];
-    CCTK_REAL S2FluxL = S2Flux[index];
-    CCTK_REAL S2rhsL = S2rhs[index];
-    CCTK_REAL S3FluxL = S3Flux[index];
-    CCTK_REAL S3rhsL = S3rhs[index];
+    CCTK_REAL DenFluxL CCTK_ATTRIBUTE_UNUSED = DenFlux[index];
+    CCTK_REAL DenrhsL CCTK_ATTRIBUTE_UNUSED = Denrhs[index];
+    CCTK_REAL EnFluxL CCTK_ATTRIBUTE_UNUSED = EnFlux[index];
+    CCTK_REAL EnrhsL CCTK_ATTRIBUTE_UNUSED = Enrhs[index];
+    CCTK_REAL S1FluxL CCTK_ATTRIBUTE_UNUSED = S1Flux[index];
+    CCTK_REAL S1rhsL CCTK_ATTRIBUTE_UNUSED = S1rhs[index];
+    CCTK_REAL S2FluxL CCTK_ATTRIBUTE_UNUSED = S2Flux[index];
+    CCTK_REAL S2rhsL CCTK_ATTRIBUTE_UNUSED = S2rhs[index];
+    CCTK_REAL S3FluxL CCTK_ATTRIBUTE_UNUSED = S3Flux[index];
+    CCTK_REAL S3rhsL CCTK_ATTRIBUTE_UNUSED = S3rhs[index];
     
     
     /* Include user supplied include files */
     
     /* Precompute derivatives */
-    CCTK_REAL const PDplus2DenFlux = PDplus2(&DenFlux[index]);
-    CCTK_REAL const PDplus2EnFlux = PDplus2(&EnFlux[index]);
-    CCTK_REAL const PDplus2S1Flux = PDplus2(&S1Flux[index]);
-    CCTK_REAL const PDplus2S2Flux = PDplus2(&S2Flux[index]);
-    CCTK_REAL const PDplus2S3Flux = PDplus2(&S3Flux[index]);
+    CCTK_REAL /*const*/ PDplus2DenFlux CCTK_ATTRIBUTE_UNUSED  = PDplus2(&DenFlux[index]);
+    CCTK_REAL /*const*/ PDplus2EnFlux CCTK_ATTRIBUTE_UNUSED  = PDplus2(&EnFlux[index]);
+    CCTK_REAL /*const*/ PDplus2S1Flux CCTK_ATTRIBUTE_UNUSED  = PDplus2(&S1Flux[index]);
+    CCTK_REAL /*const*/ PDplus2S2Flux CCTK_ATTRIBUTE_UNUSED  = PDplus2(&S2Flux[index]);
+    CCTK_REAL /*const*/ PDplus2S3Flux CCTK_ATTRIBUTE_UNUSED  = PDplus2(&S3Flux[index]);
     
     /* Calculate temporaries and grid functions */
-    DenrhsL = DenrhsL - PDplus2DenFlux;
+    DenrhsL = DenrhsL - 1.*PDplus2DenFlux;
     
-    EnrhsL = EnrhsL - PDplus2EnFlux;
+    EnrhsL = EnrhsL - 1.*PDplus2EnFlux;
     
-    S1rhsL = S1rhsL - PDplus2S1Flux;
+    S1rhsL = S1rhsL - 1.*PDplus2S1Flux;
     
-    S2rhsL = S2rhsL - PDplus2S2Flux;
+    S2rhsL = S2rhsL - 1.*PDplus2S2Flux;
     
-    S3rhsL = S3rhsL - PDplus2S3Flux;
+    S3rhsL = S3rhsL - 1.*PDplus2S3Flux;
     
     /* Copy local copies back to grid functions */
     Denrhs[index] = DenrhsL;

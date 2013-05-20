@@ -31,34 +31,34 @@ static void eulerauto_cons_calc_intercell_conserved_3_Body(cGH const * restrict 
   /* Include user-supplied include files */
   
   /* Initialise finite differencing variables */
-  ptrdiff_t const di = 1;
-  ptrdiff_t const dj = CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0);
-  ptrdiff_t const dk = CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0);
-  ptrdiff_t const cdi = sizeof(CCTK_REAL) * di;
-  ptrdiff_t const cdj = sizeof(CCTK_REAL) * dj;
-  ptrdiff_t const cdk = sizeof(CCTK_REAL) * dk;
-  CCTK_REAL const dx = ToReal(CCTK_DELTA_SPACE(0));
-  CCTK_REAL const dy = ToReal(CCTK_DELTA_SPACE(1));
-  CCTK_REAL const dz = ToReal(CCTK_DELTA_SPACE(2));
-  CCTK_REAL const dt = ToReal(CCTK_DELTA_TIME);
-  CCTK_REAL const t = ToReal(cctk_time);
-  CCTK_REAL const dxi = INV(dx);
-  CCTK_REAL const dyi = INV(dy);
-  CCTK_REAL const dzi = INV(dz);
-  CCTK_REAL const khalf = 0.5;
-  CCTK_REAL const kthird = 1/3.0;
-  CCTK_REAL const ktwothird = 2.0/3.0;
-  CCTK_REAL const kfourthird = 4.0/3.0;
-  CCTK_REAL const keightthird = 8.0/3.0;
-  CCTK_REAL const hdxi = 0.5 * dxi;
-  CCTK_REAL const hdyi = 0.5 * dyi;
-  CCTK_REAL const hdzi = 0.5 * dzi;
+  ptrdiff_t /*const*/ di CCTK_ATTRIBUTE_UNUSED  = 1;
+  ptrdiff_t /*const*/ dj CCTK_ATTRIBUTE_UNUSED  = CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0);
+  ptrdiff_t /*const*/ dk CCTK_ATTRIBUTE_UNUSED  = CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0);
+  ptrdiff_t /*const*/ cdi CCTK_ATTRIBUTE_UNUSED  = sizeof(CCTK_REAL) * di;
+  ptrdiff_t /*const*/ cdj CCTK_ATTRIBUTE_UNUSED  = sizeof(CCTK_REAL) * dj;
+  ptrdiff_t /*const*/ cdk CCTK_ATTRIBUTE_UNUSED  = sizeof(CCTK_REAL) * dk;
+  CCTK_REAL /*const*/ dx CCTK_ATTRIBUTE_UNUSED  = ToReal(CCTK_DELTA_SPACE(0));
+  CCTK_REAL /*const*/ dy CCTK_ATTRIBUTE_UNUSED  = ToReal(CCTK_DELTA_SPACE(1));
+  CCTK_REAL /*const*/ dz CCTK_ATTRIBUTE_UNUSED  = ToReal(CCTK_DELTA_SPACE(2));
+  CCTK_REAL /*const*/ dt CCTK_ATTRIBUTE_UNUSED  = ToReal(CCTK_DELTA_TIME);
+  CCTK_REAL /*const*/ t CCTK_ATTRIBUTE_UNUSED  = ToReal(cctk_time);
+  CCTK_REAL /*const*/ dxi CCTK_ATTRIBUTE_UNUSED  = INV(dx);
+  CCTK_REAL /*const*/ dyi CCTK_ATTRIBUTE_UNUSED  = INV(dy);
+  CCTK_REAL /*const*/ dzi CCTK_ATTRIBUTE_UNUSED  = INV(dz);
+  CCTK_REAL /*const*/ khalf CCTK_ATTRIBUTE_UNUSED  = 0.5;
+  CCTK_REAL /*const*/ kthird CCTK_ATTRIBUTE_UNUSED  = 1/3.0;
+  CCTK_REAL /*const*/ ktwothird CCTK_ATTRIBUTE_UNUSED  = 2.0/3.0;
+  CCTK_REAL /*const*/ kfourthird CCTK_ATTRIBUTE_UNUSED  = 4.0/3.0;
+  CCTK_REAL /*const*/ keightthird CCTK_ATTRIBUTE_UNUSED  = 8.0/3.0;
+  CCTK_REAL /*const*/ hdxi CCTK_ATTRIBUTE_UNUSED  = 0.5 * dxi;
+  CCTK_REAL /*const*/ hdyi CCTK_ATTRIBUTE_UNUSED  = 0.5 * dyi;
+  CCTK_REAL /*const*/ hdzi CCTK_ATTRIBUTE_UNUSED  = 0.5 * dzi;
   
   /* Initialize predefined quantities */
-  CCTK_REAL const p1o1 = 1;
-  CCTK_REAL const p1odx = INV(dx);
-  CCTK_REAL const p1ody = INV(dy);
-  CCTK_REAL const p1odz = INV(dz);
+  CCTK_REAL /*const*/ p1o1 CCTK_ATTRIBUTE_UNUSED  = 1.;
+  CCTK_REAL /*const*/ p1odx CCTK_ATTRIBUTE_UNUSED  = INV(dx);
+  CCTK_REAL /*const*/ p1ody CCTK_ATTRIBUTE_UNUSED  = INV(dy);
+  CCTK_REAL /*const*/ p1odz CCTK_ATTRIBUTE_UNUSED  = INV(dz);
   
   /* Assign local copies of arrays functions */
   
@@ -74,20 +74,20 @@ static void eulerauto_cons_calc_intercell_conserved_3_Body(cGH const * restrict 
     i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
     cctk_ash[0],cctk_ash[1],cctk_ash[2])
   {
-    ptrdiff_t const index = di*i + dj*j + dk*k;
+    ptrdiff_t /*const*/ index CCTK_ATTRIBUTE_UNUSED  = di*i + dj*j + dk*k;
     
     /* Assign local copies of grid functions */
     
-    CCTK_REAL pLeftL = pLeft[index];
-    CCTK_REAL pRightL = pRight[index];
-    CCTK_REAL rhoLeftL = rhoLeft[index];
-    CCTK_REAL rhoRightL = rhoRight[index];
-    CCTK_REAL v1LeftL = v1Left[index];
-    CCTK_REAL v1RightL = v1Right[index];
-    CCTK_REAL v2LeftL = v2Left[index];
-    CCTK_REAL v2RightL = v2Right[index];
-    CCTK_REAL v3LeftL = v3Left[index];
-    CCTK_REAL v3RightL = v3Right[index];
+    CCTK_REAL pLeftL CCTK_ATTRIBUTE_UNUSED = pLeft[index];
+    CCTK_REAL pRightL CCTK_ATTRIBUTE_UNUSED = pRight[index];
+    CCTK_REAL rhoLeftL CCTK_ATTRIBUTE_UNUSED = rhoLeft[index];
+    CCTK_REAL rhoRightL CCTK_ATTRIBUTE_UNUSED = rhoRight[index];
+    CCTK_REAL v1LeftL CCTK_ATTRIBUTE_UNUSED = v1Left[index];
+    CCTK_REAL v1RightL CCTK_ATTRIBUTE_UNUSED = v1Right[index];
+    CCTK_REAL v2LeftL CCTK_ATTRIBUTE_UNUSED = v2Left[index];
+    CCTK_REAL v2RightL CCTK_ATTRIBUTE_UNUSED = v2Right[index];
+    CCTK_REAL v3LeftL CCTK_ATTRIBUTE_UNUSED = v3Left[index];
+    CCTK_REAL v3RightL CCTK_ATTRIBUTE_UNUSED = v3Right[index];
     
     
     /* Include user supplied include files */
@@ -95,29 +95,29 @@ static void eulerauto_cons_calc_intercell_conserved_3_Body(cGH const * restrict 
     /* Precompute derivatives */
     
     /* Calculate temporaries and grid functions */
-    CCTK_REAL DenLeftL = rhoLeftL;
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED DenLeftL = rhoLeftL;
     
-    CCTK_REAL S1LeftL = rhoLeftL*v1LeftL;
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED S1LeftL = rhoLeftL*v1LeftL;
     
-    CCTK_REAL S2LeftL = rhoLeftL*v2LeftL;
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED S2LeftL = rhoLeftL*v2LeftL;
     
-    CCTK_REAL S3LeftL = rhoLeftL*v3LeftL;
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED S3LeftL = rhoLeftL*v3LeftL;
     
-    CCTK_REAL EnLeftL = 0.5*INV(-1 + ToReal(gamma))*(2*pLeftL + 
-      rhoLeftL*(SQR(v1LeftL) + SQR(v2LeftL) + SQR(v3LeftL))*(-1 + 
-      ToReal(gamma)));
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED EnLeftL = pLeftL*INV(-1. + 
+      ToReal(gamma)) + 0.5*rhoLeftL*(SQR(v1LeftL) + SQR(v2LeftL) + 
+      SQR(v3LeftL));
     
-    CCTK_REAL DenRightL = rhoRightL;
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED DenRightL = rhoRightL;
     
-    CCTK_REAL S1RightL = rhoRightL*v1RightL;
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED S1RightL = rhoRightL*v1RightL;
     
-    CCTK_REAL S2RightL = rhoRightL*v2RightL;
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED S2RightL = rhoRightL*v2RightL;
     
-    CCTK_REAL S3RightL = rhoRightL*v3RightL;
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED S3RightL = rhoRightL*v3RightL;
     
-    CCTK_REAL EnRightL = 0.5*INV(-1 + ToReal(gamma))*(2*pRightL + 
-      rhoRightL*(SQR(v1RightL) + SQR(v2RightL) + SQR(v3RightL))*(-1 + 
-      ToReal(gamma)));
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED EnRightL = pRightL*INV(-1. + 
+      ToReal(gamma)) + 0.5*rhoRightL*(SQR(v1RightL) + SQR(v2RightL) + 
+      SQR(v3RightL));
     
     /* Copy local copies back to grid functions */
     DenLeft[index] = DenLeftL;

@@ -186,13 +186,13 @@ CCTK_REAL tau_group type=GF timelevels=3 tags='tensortypealias="Scalar" tensorwe
 } "tau_group"
 
 public:
-CCTK_REAL Den_grouprhs type=GF timelevels=3 tags='tensortypealias="Scalar" tensorweight=0'
+CCTK_REAL Den_grouprhs type=GF timelevels=3 tags='tensortypealias="Scalar" tensorweight=0 Prolongation="None"'
 {
   Denrhs
 } "Den_grouprhs"
 
 public:
-CCTK_REAL S_grouprhs type=GF timelevels=3 tags='tensortypealias="D" tensorweight=0'
+CCTK_REAL S_grouprhs type=GF timelevels=3 tags='tensortypealias="D" tensorweight=0 Prolongation="None"'
 {
   S1rhs,
   S2rhs,
@@ -200,7 +200,7 @@ CCTK_REAL S_grouprhs type=GF timelevels=3 tags='tensortypealias="D" tensorweight
 } "S_grouprhs"
 
 public:
-CCTK_REAL tau_grouprhs type=GF timelevels=3 tags='tensortypealias="Scalar" tensorweight=0'
+CCTK_REAL tau_grouprhs type=GF timelevels=3 tags='tensortypealias="Scalar" tensorweight=0 Prolongation="None"'
 {
   taurhs
 } "tau_grouprhs"

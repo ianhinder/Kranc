@@ -109,7 +109,6 @@ MethodOfLines::MoL_NaN_Check          = "yes"
 # Boundary conditions
 #############################################################
 
-LoopControl::printstats = no
 
 #############################################################
 # Output

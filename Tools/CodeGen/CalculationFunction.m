@@ -873,6 +873,15 @@ DefFn[
     (* Replace grid functions with their local forms *)
     eqsReplaced = eqs2 /. localMap;
 
+    gridFunctionsFreeQ[x_] :=
+    Module[
+      {r},
+      (* Print["groups = ", groups]; *)
+      (* Print["gridFunctionsFreeQ[", x, "] ="]; *)
+      r = GridFunctionsInExpression[x, groups/.localMap] === {};
+      (* Print["  ", r]; *)
+      r];
+
     (* Construct a list, corresponding to the list of equations,
        marking those which need their LHS variables declared.  We
        declare variables at the same time as assigning to them as it
@@ -886,7 +895,7 @@ DefFn[
     (* Replace consecutive IfThen statements with the same condition by a single IfThenGroup *)
     groupedIfs = Thread[{declare, eqsReplaced}] //.
       {{x___, {deca_, a_->IfThen[cond_, at_, af_]}, {decb_, b_->IfThen[cond_, bt_, bf_]}, y___} :>
-         {x, {{deca, decb}, IfThenGroup[cond, {a->at, b->bt}, {a->af, b->bf}]}, y},
+         {x, {{deca, decb}, IfThenGroup[cond, {a->at, b->bt}, {a->af, b->bf}]}, y} /; gridFunctionsFreeQ[cond],
        {x___, {deca_, IfThenGroup[cond_, at_, af_]}, {decb_, b_->IfThen[cond_, bt_, bf_]}, y___} :>
          {x, {Join[deca, {decb}], IfThenGroup[cond, Join[at, {b->bt}], Join[af, {b->bf}]]}, y},
        {x___, {deca_, IfThenGroup[cond_, at_, af_]}, {decb_, IfThenGroup[cond_, bt_, bf_]}, y___} :>

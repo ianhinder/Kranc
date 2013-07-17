@@ -67,8 +67,10 @@ if $MATH -run "DeleteDirectory[\"$flagdir\"]; Get[\"$KRANCDIR/Tools/MathematicaM
         exit 1
     fi
 else
+    code=$?
     if [ -d "$flagdir" ]; then
          rmdir "$flagdir"
-         exit 1
+         exit $code
     fi
+    exit $code
 fi

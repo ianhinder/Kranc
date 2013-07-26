@@ -60,6 +60,7 @@ Carpet/CarpetIOScalar
 Carpet/CarpetLib
 Carpet/CarpetReduce
 Carpet/CarpetSlab
+Carpet/CycleClock
 Carpet/LoopControl
 LSUThorns/Vectors
 

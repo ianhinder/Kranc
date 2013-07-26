@@ -22,8 +22,8 @@ schedule CAKERNEL_Launch_initial_gaussian as initial_gaussian AT INITIAL
 {
   LANG: C
   TAGS: Device=1
-  READS:    grid::x
-  WRITES:   AdvectCaKernel::phi
+  READS:    grid::x(Everywhere)
+  WRITES:   AdvectCaKernel::phi(Everywhere)
 } "initial_gaussian"
 
 schedule AdvectCaKernel_SelectBoundConds in MoL_PostStep
@@ -52,5 +52,4 @@ schedule AdvectCaKernel_Init in CCTK_BASEGRID after Accelerator_SetDevice
 
 schedule group ApplyBCs as AdvectCaKernel_ApplyBCs in MoL_PostStep after AdvectCaKernel_SelectBoundConds
 {
-  # no language specified
 } "Apply boundary conditions controlled by thorn Boundary"

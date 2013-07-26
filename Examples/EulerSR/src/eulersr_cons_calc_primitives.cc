@@ -31,34 +31,34 @@ static void eulersr_cons_calc_primitives_Body(cGH const * restrict const cctkGH,
   /* Include user-supplied include files */
   
   /* Initialise finite differencing variables */
-  ptrdiff_t const di = 1;
-  ptrdiff_t const dj = CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0);
-  ptrdiff_t const dk = CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0);
-  ptrdiff_t const cdi = sizeof(CCTK_REAL) * di;
-  ptrdiff_t const cdj = sizeof(CCTK_REAL) * dj;
-  ptrdiff_t const cdk = sizeof(CCTK_REAL) * dk;
-  CCTK_REAL const dx = ToReal(CCTK_DELTA_SPACE(0));
-  CCTK_REAL const dy = ToReal(CCTK_DELTA_SPACE(1));
-  CCTK_REAL const dz = ToReal(CCTK_DELTA_SPACE(2));
-  CCTK_REAL const dt = ToReal(CCTK_DELTA_TIME);
-  CCTK_REAL const t = ToReal(cctk_time);
-  CCTK_REAL const dxi = INV(dx);
-  CCTK_REAL const dyi = INV(dy);
-  CCTK_REAL const dzi = INV(dz);
-  CCTK_REAL const khalf = 0.5;
-  CCTK_REAL const kthird = 1/3.0;
-  CCTK_REAL const ktwothird = 2.0/3.0;
-  CCTK_REAL const kfourthird = 4.0/3.0;
-  CCTK_REAL const keightthird = 8.0/3.0;
-  CCTK_REAL const hdxi = 0.5 * dxi;
-  CCTK_REAL const hdyi = 0.5 * dyi;
-  CCTK_REAL const hdzi = 0.5 * dzi;
+  ptrdiff_t /*const*/ di CCTK_ATTRIBUTE_UNUSED  = 1;
+  ptrdiff_t /*const*/ dj CCTK_ATTRIBUTE_UNUSED  = CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0);
+  ptrdiff_t /*const*/ dk CCTK_ATTRIBUTE_UNUSED  = CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0);
+  ptrdiff_t /*const*/ cdi CCTK_ATTRIBUTE_UNUSED  = sizeof(CCTK_REAL) * di;
+  ptrdiff_t /*const*/ cdj CCTK_ATTRIBUTE_UNUSED  = sizeof(CCTK_REAL) * dj;
+  ptrdiff_t /*const*/ cdk CCTK_ATTRIBUTE_UNUSED  = sizeof(CCTK_REAL) * dk;
+  CCTK_REAL /*const*/ dx CCTK_ATTRIBUTE_UNUSED  = ToReal(CCTK_DELTA_SPACE(0));
+  CCTK_REAL /*const*/ dy CCTK_ATTRIBUTE_UNUSED  = ToReal(CCTK_DELTA_SPACE(1));
+  CCTK_REAL /*const*/ dz CCTK_ATTRIBUTE_UNUSED  = ToReal(CCTK_DELTA_SPACE(2));
+  CCTK_REAL /*const*/ dt CCTK_ATTRIBUTE_UNUSED  = ToReal(CCTK_DELTA_TIME);
+  CCTK_REAL /*const*/ t CCTK_ATTRIBUTE_UNUSED  = ToReal(cctk_time);
+  CCTK_REAL /*const*/ dxi CCTK_ATTRIBUTE_UNUSED  = INV(dx);
+  CCTK_REAL /*const*/ dyi CCTK_ATTRIBUTE_UNUSED  = INV(dy);
+  CCTK_REAL /*const*/ dzi CCTK_ATTRIBUTE_UNUSED  = INV(dz);
+  CCTK_REAL /*const*/ khalf CCTK_ATTRIBUTE_UNUSED  = 0.5;
+  CCTK_REAL /*const*/ kthird CCTK_ATTRIBUTE_UNUSED  = 1/3.0;
+  CCTK_REAL /*const*/ ktwothird CCTK_ATTRIBUTE_UNUSED  = 2.0/3.0;
+  CCTK_REAL /*const*/ kfourthird CCTK_ATTRIBUTE_UNUSED  = 4.0/3.0;
+  CCTK_REAL /*const*/ keightthird CCTK_ATTRIBUTE_UNUSED  = 8.0/3.0;
+  CCTK_REAL /*const*/ hdxi CCTK_ATTRIBUTE_UNUSED  = 0.5 * dxi;
+  CCTK_REAL /*const*/ hdyi CCTK_ATTRIBUTE_UNUSED  = 0.5 * dyi;
+  CCTK_REAL /*const*/ hdzi CCTK_ATTRIBUTE_UNUSED  = 0.5 * dzi;
   
   /* Initialize predefined quantities */
-  CCTK_REAL const p1o1 = 1;
-  CCTK_REAL const p1odx = INV(dx);
-  CCTK_REAL const p1ody = INV(dy);
-  CCTK_REAL const p1odz = INV(dz);
+  CCTK_REAL /*const*/ p1o1 CCTK_ATTRIBUTE_UNUSED  = 1.;
+  CCTK_REAL /*const*/ p1odx CCTK_ATTRIBUTE_UNUSED  = INV(dx);
+  CCTK_REAL /*const*/ p1ody CCTK_ATTRIBUTE_UNUSED  = INV(dy);
+  CCTK_REAL /*const*/ p1odz CCTK_ATTRIBUTE_UNUSED  = INV(dz);
   
   /* Assign local copies of arrays functions */
   
@@ -74,20 +74,20 @@ static void eulersr_cons_calc_primitives_Body(cGH const * restrict const cctkGH,
     i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
     cctk_ash[0],cctk_ash[1],cctk_ash[2])
   {
-    ptrdiff_t const index = di*i + dj*j + dk*k;
+    ptrdiff_t /*const*/ index CCTK_ATTRIBUTE_UNUSED  = di*i + dj*j + dk*k;
     
     /* Assign local copies of grid functions */
     
-    CCTK_REAL DenL = Den[index];
-    CCTK_REAL epsiL = epsi[index];
-    CCTK_REAL hL = h[index];
-    CCTK_REAL pL = p[index];
-    CCTK_REAL rhoL = rho[index];
-    CCTK_REAL S1L = S1[index];
-    CCTK_REAL S2L = S2[index];
-    CCTK_REAL S3L = S3[index];
-    CCTK_REAL tauL = tau[index];
-    CCTK_REAL WL = W[index];
+    CCTK_REAL DenL CCTK_ATTRIBUTE_UNUSED = Den[index];
+    CCTK_REAL epsiL CCTK_ATTRIBUTE_UNUSED = epsi[index];
+    CCTK_REAL hL CCTK_ATTRIBUTE_UNUSED = h[index];
+    CCTK_REAL pL CCTK_ATTRIBUTE_UNUSED = p[index];
+    CCTK_REAL rhoL CCTK_ATTRIBUTE_UNUSED = rho[index];
+    CCTK_REAL S1L CCTK_ATTRIBUTE_UNUSED = S1[index];
+    CCTK_REAL S2L CCTK_ATTRIBUTE_UNUSED = S2[index];
+    CCTK_REAL S3L CCTK_ATTRIBUTE_UNUSED = S3[index];
+    CCTK_REAL tauL CCTK_ATTRIBUTE_UNUSED = tau[index];
+    CCTK_REAL WL CCTK_ATTRIBUTE_UNUSED = W[index];
     
     
     /* Include user supplied include files */
@@ -95,58 +95,36 @@ static void eulersr_cons_calc_primitives_Body(cGH const * restrict const cctkGH,
     /* Precompute derivatives */
     
     /* Calculate temporaries and grid functions */
-    CCTK_REAL pBar = pL;
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED pBar = pL;
     
-    CCTK_REAL f = 10;
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED f = 10.;
     
-    CCTK_REAL Z = DenL + tauL + pBar;
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED Z = DenL + tauL + pBar;
     
-    CCTK_REAL Ssq = SQR(S1L) + SQR(S2L) + SQR(S3L);
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED Ssq = SQR(S1L) + SQR(S2L) + 
+      SQR(S3L);
     
-    CCTK_REAL vsq = Ssq*INV(SQR(Z));
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED vsq = Ssq*INV(SQR(Z));
     
-    WL = INV(sqrt(1 - vsq));
+    WL = INV(sqrt(1. - 1.*vsq));
     
     rhoL = DenL*INV(WL);
     
     hL = Z*INV(rhoL*SQR(WL));
     
-    epsiL = hL - (rhoL + pBar)*INV(rhoL);
+    epsiL = hL - 1.*(rhoL + pBar)*INV(rhoL);
     
-    CCTK_REAL pEOS = epsiL*rhoL*(-1 + ToReal(gamma));
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED pEOS = epsiL*rhoL*(-1. + 
+      ToReal(gamma));
     
-    f = -pBar + pEOS;
+    f = -1.*pBar + pEOS;
     
-    CCTK_REAL cs = sqrt(epsiL*INV(hL)*(-1 + 
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED cs = sqrt(epsiL*INV(hL)*(-1. + 
       ToReal(gamma))*ToReal(gamma));
     
-    CCTK_REAL df = -1 + vsq*SQR(cs);
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED df = -1. + vsq*SQR(cs);
     
-    pBar = pBar - f*INV(df);
-    
-    Z = DenL + tauL + pBar;
-    
-    Ssq = SQR(S1L) + SQR(S2L) + SQR(S3L);
-    
-    vsq = Ssq*INV(SQR(Z));
-    
-    WL = INV(sqrt(1 - vsq));
-    
-    rhoL = DenL*INV(WL);
-    
-    hL = Z*INV(rhoL*SQR(WL));
-    
-    epsiL = hL - (rhoL + pBar)*INV(rhoL);
-    
-    pEOS = epsiL*rhoL*(-1 + ToReal(gamma));
-    
-    f = -pBar + pEOS;
-    
-    cs = sqrt(epsiL*INV(hL)*(-1 + ToReal(gamma))*ToReal(gamma));
-    
-    df = -1 + vsq*SQR(cs);
-    
-    pBar = pBar - f*INV(df);
+    pBar = pBar - 1.*f*INV(df);
     
     Z = DenL + tauL + pBar;
     
@@ -154,23 +132,23 @@ static void eulersr_cons_calc_primitives_Body(cGH const * restrict const cctkGH,
     
     vsq = Ssq*INV(SQR(Z));
     
-    WL = INV(sqrt(1 - vsq));
+    WL = INV(sqrt(1. - 1.*vsq));
     
     rhoL = DenL*INV(WL);
     
     hL = Z*INV(rhoL*SQR(WL));
     
-    epsiL = hL - (rhoL + pBar)*INV(rhoL);
+    epsiL = hL - 1.*(rhoL + pBar)*INV(rhoL);
     
-    pEOS = epsiL*rhoL*(-1 + ToReal(gamma));
+    pEOS = epsiL*rhoL*(-1. + ToReal(gamma));
     
-    f = -pBar + pEOS;
+    f = -1.*pBar + pEOS;
     
-    cs = sqrt(epsiL*INV(hL)*(-1 + ToReal(gamma))*ToReal(gamma));
+    cs = sqrt(epsiL*INV(hL)*(-1. + ToReal(gamma))*ToReal(gamma));
     
-    df = -1 + vsq*SQR(cs);
+    df = -1. + vsq*SQR(cs);
     
-    pBar = pBar - f*INV(df);
+    pBar = pBar - 1.*f*INV(df);
     
     Z = DenL + tauL + pBar;
     
@@ -178,23 +156,23 @@ static void eulersr_cons_calc_primitives_Body(cGH const * restrict const cctkGH,
     
     vsq = Ssq*INV(SQR(Z));
     
-    WL = INV(sqrt(1 - vsq));
+    WL = INV(sqrt(1. - 1.*vsq));
     
     rhoL = DenL*INV(WL);
     
     hL = Z*INV(rhoL*SQR(WL));
     
-    epsiL = hL - (rhoL + pBar)*INV(rhoL);
+    epsiL = hL - 1.*(rhoL + pBar)*INV(rhoL);
     
-    pEOS = epsiL*rhoL*(-1 + ToReal(gamma));
+    pEOS = epsiL*rhoL*(-1. + ToReal(gamma));
     
-    f = -pBar + pEOS;
+    f = -1.*pBar + pEOS;
     
-    cs = sqrt(epsiL*INV(hL)*(-1 + ToReal(gamma))*ToReal(gamma));
+    cs = sqrt(epsiL*INV(hL)*(-1. + ToReal(gamma))*ToReal(gamma));
     
-    df = -1 + vsq*SQR(cs);
+    df = -1. + vsq*SQR(cs);
     
-    pBar = pBar - f*INV(df);
+    pBar = pBar - 1.*f*INV(df);
     
     Z = DenL + tauL + pBar;
     
@@ -202,31 +180,58 @@ static void eulersr_cons_calc_primitives_Body(cGH const * restrict const cctkGH,
     
     vsq = Ssq*INV(SQR(Z));
     
-    WL = INV(sqrt(1 - vsq));
+    WL = INV(sqrt(1. - 1.*vsq));
     
     rhoL = DenL*INV(WL);
     
     hL = Z*INV(rhoL*SQR(WL));
     
-    epsiL = hL - (rhoL + pBar)*INV(rhoL);
+    epsiL = hL - 1.*(rhoL + pBar)*INV(rhoL);
     
-    pEOS = epsiL*rhoL*(-1 + ToReal(gamma));
+    pEOS = epsiL*rhoL*(-1. + ToReal(gamma));
     
-    f = -pBar + pEOS;
+    f = -1.*pBar + pEOS;
     
-    cs = sqrt(epsiL*INV(hL)*(-1 + ToReal(gamma))*ToReal(gamma));
+    cs = sqrt(epsiL*INV(hL)*(-1. + ToReal(gamma))*ToReal(gamma));
     
-    df = -1 + vsq*SQR(cs);
+    df = -1. + vsq*SQR(cs);
     
-    pBar = pBar - f*INV(df);
+    pBar = pBar - 1.*f*INV(df);
+    
+    Z = DenL + tauL + pBar;
+    
+    Ssq = SQR(S1L) + SQR(S2L) + SQR(S3L);
+    
+    vsq = Ssq*INV(SQR(Z));
+    
+    WL = INV(sqrt(1. - 1.*vsq));
+    
+    rhoL = DenL*INV(WL);
+    
+    hL = Z*INV(rhoL*SQR(WL));
+    
+    epsiL = hL - 1.*(rhoL + pBar)*INV(rhoL);
+    
+    pEOS = epsiL*rhoL*(-1. + ToReal(gamma));
+    
+    f = -1.*pBar + pEOS;
+    
+    cs = sqrt(epsiL*INV(hL)*(-1. + ToReal(gamma))*ToReal(gamma));
+    
+    df = -1. + vsq*SQR(cs);
+    
+    pBar = pBar - 1.*f*INV(df);
     
     pL = pBar;
     
-    CCTK_REAL v1L = S1L*INV(hL*rhoL*SQR(WL));
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED v1L = 
+      S1L*INV(hL*rhoL*SQR(WL));
     
-    CCTK_REAL v2L = S2L*INV(hL*rhoL*SQR(WL));
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED v2L = 
+      S2L*INV(hL*rhoL*SQR(WL));
     
-    CCTK_REAL v3L = S3L*INV(hL*rhoL*SQR(WL));
+    CCTK_REAL CCTK_ATTRIBUTE_UNUSED v3L = 
+      S3L*INV(hL*rhoL*SQR(WL));
     
     /* Copy local copies back to grid functions */
     epsi[index] = epsiL;

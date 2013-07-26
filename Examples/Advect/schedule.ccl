@@ -60,11 +60,11 @@ if (CCTK_EQUALS(initial_data, "sine"))
   schedule advect_initial_sine at CCTK_INITIAL as advect_initial
   {
     LANG: C
-    READS:    grid::x
-    WRITES:   Advect::rho
-    WRITES:   Advect::v1
-    WRITES:   Advect::v2
-    WRITES:   Advect::v3
+    READS:    grid::x(Everywhere)
+    WRITES:   Advect::rho(Everywhere)
+    WRITES:   Advect::v1(Everywhere)
+    WRITES:   Advect::v2(Everywhere)
+    WRITES:   Advect::v3(Everywhere)
   } "advect_initial_sine"
 }
 
@@ -74,33 +74,33 @@ if (CCTK_EQUALS(initial_data, "shock"))
   schedule advect_initial_shock at CCTK_INITIAL as advect_initial
   {
     LANG: C
-    READS:    grid::x
-    WRITES:   Advect::rho
-    WRITES:   Advect::v1
-    WRITES:   Advect::v2
-    WRITES:   Advect::v3
+    READS:    grid::x(Everywhere)
+    WRITES:   Advect::rho(Everywhere)
+    WRITES:   Advect::v1(Everywhere)
+    WRITES:   Advect::v2(Everywhere)
+    WRITES:   Advect::v3(Everywhere)
   } "advect_initial_shock"
 }
 
 schedule advect_evol in MoL_CalcRHS
 {
   LANG: C
-  READS:    Advect::Frho1
-  READS:    Advect::Frho2
-  READS:    Advect::Frho3
-  WRITES:   Advect::rhorhs
+  READS:    Advect::Frho1(Everywhere)
+  READS:    Advect::Frho2(Everywhere)
+  READS:    Advect::Frho3(Everywhere)
+  WRITES:   Advect::rhorhs(Interior)
 } "advect_evol"
 
 schedule advect_flux in MoL_PostStep after Advect_ApplyBCs
 {
   LANG: C
-  READS:    Advect::rho
-  READS:    Advect::v1
-  READS:    Advect::v2
-  READS:    Advect::v3
-  WRITES:   Advect::Frho1
-  WRITES:   Advect::Frho2
-  WRITES:   Advect::Frho3
+  READS:    Advect::rho(Everywhere)
+  READS:    Advect::v1(Everywhere)
+  READS:    Advect::v2(Everywhere)
+  READS:    Advect::v3(Everywhere)
+  WRITES:   Advect::Frho1(Everywhere)
+  WRITES:   Advect::Frho2(Everywhere)
+  WRITES:   Advect::Frho3(Everywhere)
 } "advect_flux"
 
 schedule Advect_SelectBoundConds in MoL_PostStep
@@ -124,5 +124,4 @@ schedule Advect_RegisterVars in MoL_Register
 
 schedule group ApplyBCs as Advect_ApplyBCs in MoL_PostStep after Advect_SelectBoundConds
 {
-  # no language specified
 } "Apply boundary conditions controlled by thorn Boundary"

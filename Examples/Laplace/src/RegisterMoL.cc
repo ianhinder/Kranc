@@ -9,7 +9,7 @@ extern "C" void Laplace_RegisterVars(CCTK_ARGUMENTS)
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  CCTK_INT ierr = 0;
+  CCTK_INT ierr CCTK_ATTRIBUTE_UNUSED  = 0;
   
   /* Register all the evolved grid functions with MoL */
   ierr += MoLRegisterEvolved(CCTK_VarIndex("Laplace::phi"),  CCTK_VarIndex("Laplace::phirhs"));

@@ -4,7 +4,7 @@
 
 extern "C" int WaveHost_Startup(void)
 {
-  const char * banner = "WaveHost";
+  const char * banner CCTK_ATTRIBUTE_UNUSED  = "WaveHost";
   CCTK_RegisterBanner(banner);
   return 0;
 }

@@ -34,7 +34,7 @@ CCTK_REAL phi_group type=GF timelevels=3 tags=''
 } "phi_group"
 
 public:
-CCTK_REAL phi_grouprhs type=GF timelevels=3 tags=''
+CCTK_REAL phi_grouprhs type=GF timelevels=3 tags='Prolongation="None"'
 {
   phirhs
 } "phi_grouprhs"

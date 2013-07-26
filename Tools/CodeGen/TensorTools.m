@@ -69,7 +69,7 @@ tensor.";
 TensorIndex::usage = "TensorIndex[type, label] represents a
 TensorTools tensor index";
 
-TensorProduct::usage = "TensorProduct[x, y, ...] represents a product
+TTTensorProduct::usage = "TTTensorProduct[x, y, ...] represents a product
 of expressions which has already been checked for duplicated dummy
 indices.";
 
@@ -125,7 +125,7 @@ IndexIsUpper;
 CheckTensors::usage = "";
 
 SwapIndices::usage = "";
-Symmetrize::usage = "";
+TTSymmetrize::usage = "";
 AntiSymmetrize::usage = "";
 calcSymmetryOfComponent;
 ReflectionSymmetriesOfTensor;
@@ -167,7 +167,7 @@ SwapIndices[x_, i1_, i2_] :=
     temp3 = temp2 /. u -> i2;
     temp3];
 
-Symmetrize[x_, i1_, i2_] := 
+TTSymmetrize[x_, i1_, i2_] := 
   1/2(x + SwapIndices[x, i1, i2]);
 
 AntiSymmetrize[x_, i1_, i2_] := 
@@ -350,21 +350,21 @@ replaceDummyIndex[x_, li_, ri_] :=
 
 
 (* -------------------------------------------------------------------------- 
-   TensorProduct
+   TTTensorProduct
    -------------------------------------------------------------------------- *)
 
-(* TensorProduct is very similar to Times.  If two tensorial
+(* TTTensorProduct is very similar to Times.  If two tensorial
    expressions are multiplied together, we need to replace any
    conflicting dummy indices.  So we provide a definition for Times on
    tensorial quantities.  But it needs to return something other than
    another Times, otherwise it will be evaluated again.  So a
-   TensorProduct represents a Times that has already been checked for
+   TTTensorProduct represents a Times that has already been checked for
    conflicting dummy indices.  It can have any expressions in it. *)
 
-SetAttributes[TensorProduct, {Flat, OneIdentity, Orderless}];
+SetAttributes[TTTensorProduct, {Flat, OneIdentity, Orderless}];
 
 (* For some reason this causes infinite loops - might want to check this later *)
-(*TensorProduct[t:(Tensor[_,__])] := t;*)
+(*TTTensorProduct[t:(Tensor[_,__])] := t;*)
 
 (* Choose the definition of Times - whether or not we want it to check indices *)
 SetEnhancedTimes[q_] :=
@@ -383,7 +383,7 @@ SetEnhancedTimes[q_] :=
         S2 = replaceConflicting[Stensorial, Ttensorial];
         T2 = replaceConflicting[Ttensorial, S2];
 
-        Snontensorial * Tnontensorial * TensorProduct[S2,T2]],
+        Snontensorial * Tnontensorial * TTTensorProduct[S2,T2]],
     Times[S_ ? tensorialQ, T_ ? tensorialQ] =.];
     Protect[Times]];
 
@@ -410,17 +410,17 @@ separateTensorialFactors[x_] :=
 
 Unprotect[Times];
 
-Times[TensorProduct[], x_] = x;
+Times[TTTensorProduct[], x_] = x;
 
-Format[x_ t:TensorProduct[((Tensor[__] | CD[__] | PD[__] | FD[__]) ..)]] := 
+Format[x_ t:TTTensorProduct[((Tensor[__] | CD[__] | PD[__] | FD[__]) ..)]] := 
   SequenceForm[x," ",t];
 
 Protect[Times];
 
-Format[TensorProduct[t:((Tensor[__] | CD[__] | PD[__] | FD[__]) ..)]] := 
+Format[TTTensorProduct[t:((Tensor[__] | CD[__] | PD[__] | FD[__]) ..)]] := 
   PrecedenceForm[SequenceForm[t],1000];
 
-Format[t:TensorProduct[x__]] := Infix[t,null];
+Format[t:TTTensorProduct[x__]] := Infix[t,null];
 
 (* -------------------------------------------------------------------------- 
    More index manipulation
@@ -461,13 +461,13 @@ checkDummyIndex[i_, p1_, p2_] :=
 
 Unprotect[Equal];
 
-Equal[TensorProduct[ts__], TensorProduct[ss__]] :=
+Equal[TTTensorProduct[ts__], TTTensorProduct[ss__]] :=
   Module[{frees = freesIn[{ts}], dummies = dummiesIn[{ts}]},
     If[! Apply[And, Map[checkFreeIndex[#, {ts}, {ss}] &, frees]],
       False,
       Apply[And, Map[checkDummyIndex[#, {ts}, {ss}] &, dummies]]]];
 
-Equal[T1:(Tensor[_, __]), T2:(Tensor[_, __])] := Equal[TensorProduct[T1], TensorProduct[T2]];
+Equal[T1:(Tensor[_, __]), T2:(Tensor[_, __])] := Equal[TTTensorProduct[T1], TTTensorProduct[T2]];
 
 Protect[Equal];
 
@@ -481,7 +481,7 @@ Protect[Equal];
    form suitable for code generation *)
 MakeExplicit[x_] := 
   (((((makeSplit[makeSum[PDtoFD[LieToPD[CDtoPD[x]]]]] /. componentNameRule) /. KDrule) /. EpsilonRule)
-       /. derivativeNameRule) /. TensorProduct -> Times) //. PDReduce;
+       /. derivativeNameRule) /. TTTensorProduct -> Times) //. PDReduce;
 
 MakeExplicit[l:List[Rule[_, _] ..]] :=
   Flatten[Map[removeDuplicatesFromMap, Map[MakeExplicit, l]],1];
@@ -543,7 +543,7 @@ listComponentsOfDummyIndex[x_, i:(TensorIndex[_,lower])] :=
      b, ... first have tensor summation applied individually.
 
    * Further, when the expression is a product (H is Times or
-     TensorProduct) and there are pairs of raised and lowered indices
+     TTTensorProduct) and there are pairs of raised and lowered indices
      (lx, ux) in the different factors of the product, the product is
      summed over those indices.
 
@@ -565,7 +565,7 @@ makeSum[x : (pd_?DerivativeOperatorQ)[Tensor[_, __TensorIndex], __TensorIndex]] 
 makeSum[f_[x___]] :=
   Apply[f, Map[makeSum, {x}]];
 
-makeSum[(h:(TensorProduct|Times))[ts__]] :=
+makeSum[(h:(TTTensorProduct|Times))[ts__]] :=
   makeSumOverDummies[Apply[h, Map[makeSum, {ts}]]];
 
 makeSum[t:(Tensor[K_, is__])] :=
@@ -588,7 +588,7 @@ sumComponentsOfDummyIndex[x_, i_] :=
          termsWithoutIndex = 1;
          termsWithIndex = x;
          (* Do not try to split a term if it has only a single factor *)
-         If[Head[x]==Times || Head[x]==TensorProduct,
+         If[Head[x]==Times || Head[x]==TTTensorProduct,
             termsWithoutIndex = Select[x, !hasIndex[i,#]&];
             termsWithIndex = Select[x, hasIndex[i,#]&]];
          (termsWithoutIndex *
@@ -806,9 +806,9 @@ DefineConnection[cd_, pd_, gamma_] :=
 CDLeibnizTimes := 
   CD[x_ y_, i_] :> CD[x,i] y + x CD[y,i];
 
-CDLeibnizTensorProduct := 
-  CD[TensorProduct[s_, t__], i_] :> 
-    TensorProduct[CD[s,i],t] + TensorProduct[s,CD[TensorProduct[t],i]];
+CDLeibnizTTTensorProduct := 
+  CD[TTTensorProduct[s_, t__], i_] :> 
+    TTTensorProduct[CD[s,i],t] + TTTensorProduct[s,CD[TTTensorProduct[t],i]];
 
 CDLinearity :=
   CD[x_ + y_, i_] :> CD[x,i] + CD[y,i];
@@ -827,20 +827,20 @@ CDUnflatten :=
    derivatives *)
 CDReduce :=
   x_ :>  (((((x //. CDUnflatten) //. CDLeibnizTimes) 
-            //. CDLeibnizTensorProduct) //. CDLinearity) //. PDReduce);
+            //. CDLeibnizTTTensorProduct) //. CDLinearity) //. PDReduce);
 
 (* Evaluation rules *)
 
 (* After the CD is converted to a PD, it will contain a dummy index.
    This needs careful attention, so instead of leaving the result in
-   its TensorProduct wrapper, we remove it and use a Times instead.
+   its TTTensorProduct wrapper, we remove it and use a Times instead.
    This will force the dummy indices to be checked and relabelled
-   automatically, and the result placed into a TensorProduct when it
+   automatically, and the result placed into a TTTensorProduct when it
    is clean. *)
 
-CDtoPDRuleTensorProduct := 
-  TensorProduct[t1___, CD[x_,i_], t2___] :> 
-    TensorProduct[t1, t2] * (CD[x,i] //. CDtoPDRule)
+CDtoPDRuleTTTensorProduct := 
+  TTTensorProduct[t1___, CD[x_,i_], t2___] :> 
+    TTTensorProduct[t1, t2] * (CD[x,i] //. CDtoPDRule)
 
 (* Convert a CD into an PD plus some extra terms, one for each index
    in the expression.  We do not specify only free indices here; if
@@ -855,18 +855,18 @@ i in x.  Differentiation is with respect to "wrt". *)
 
 CDtoPDTerm[x_, i:TensorIndex[_,lower], wrt_] :=
   Module[{di = dummyNotIn[{x, wrt}], gamma = defaultConnection},
-    -TensorProduct[(x /. i -> di), Tensor[gamma, toggleIndex[di], wrt, i]]];
+    -TTTensorProduct[(x /. i -> di), Tensor[gamma, toggleIndex[di], wrt, i]]];
 
 CDtoPDTerm[x_, i:TensorIndex[_,upper], wrt_] :=
   Module[{di = toggleIndex[dummyNotIn[{x, wrt}]], gamma = defaultConnection},
-    TensorProduct[(x /. i -> di), Tensor[gamma, i, wrt, toggleIndex[di]]]];
+    TTTensorProduct[(x /. i -> di), Tensor[gamma, i, wrt, toggleIndex[di]]]];
 
-CDtoPDFullRule := x_ :> (((x //. CDReduce) //. CDtoPDRuleTensorProduct) //. CDtoPDRule);
+CDtoPDFullRule := x_ :> (((x //. CDReduce) //. CDtoPDRuleTTTensorProduct) //. CDtoPDRule);
 
-removeSingleTensorProducts := TensorProduct[x_] :> x;
+removeSingleTTTensorProducts := TTTensorProduct[x_] :> x;
 
 CDtoPDDefaultConnection[x_] :=
-  x //. CDtoPDFullRule //. removeSingleTensorProducts;
+  x //. CDtoPDFullRule //. removeSingleTTTensorProducts;
 
 CDtoPDForConnection[x_, connection_] :=
   Module[{cd,pd,gamma, y, oldGamma, result},
@@ -904,9 +904,9 @@ CDtoPD[x_] :=
 PDLeibnizTimes := 
   PD[x_ y_, i_] :> PD[x,i] y + x PD[y,i];
 
-PDLeibnizTensorProduct := 
-  PD[TensorProduct[s_, t__], i_] :> 
-    TensorProduct[PD[s,i],t] + TensorProduct[s,PD[TensorProduct[t],i]];
+PDLeibnizTTTensorProduct := 
+  PD[TTTensorProduct[s_, t__], i_] :> 
+    TTTensorProduct[PD[s,i],t] + TTTensorProduct[s,PD[TTTensorProduct[t],i]];
 
 PDSqrt :=
   PD[Sqrt[x_], i_] :> 1/(2 Sqrt[x]) PD[x,i];
@@ -920,7 +920,7 @@ PDConstInt :=
 PDLinearity :=
   PD[x_ + y_,i_] :> PD[x,i] + PD[y,i];
 
-PDRedRules = {PDIntPow,PDSqrt,PDConstInt,PDLeibnizTimes,PDLeibnizTensorProduct,PDLinearity};
+PDRedRules = {PDIntPow,PDSqrt,PDConstInt,PDLeibnizTimes,PDLeibnizTTTensorProduct,PDLinearity};
 
 (* Flattening *)
 
@@ -959,9 +959,9 @@ Format[PD[x_, is:((TensorIndex[_,_] | _Integer) ..)]] :=
 LieLeibnizTimes := 
   Lie[x_ y_, v_] :> Lie[x,v] y + x Lie[y,v];
 
-LieLeibnizTensorProduct := 
-  Lie[TensorProduct[s_, t__], v_] :> 
-    TensorProduct[Lie[s,v],t] + TensorProduct[s,Lie[TensorProduct[t],v]];
+LieLeibnizTTTensorProduct := 
+  Lie[TTTensorProduct[s_, t__], v_] :> 
+    TTTensorProduct[Lie[s,v],t] + TTTensorProduct[s,Lie[TTTensorProduct[t],v]];
 
 LieLinearity :=
   Lie[x_ + y_, v_] :> Lie[x,v] + Lie[y,v];
@@ -975,20 +975,20 @@ LieLinearity :=
 
 LieReduce :=
   x_ :>  ((((x //. LieLeibnizTimes) 
-            //. LieLeibnizTensorProduct) //. LieLinearity) //. PDReduce);
+            //. LieLeibnizTTTensorProduct) //. LieLinearity) //. PDReduce);
 
 (* Evaluation rules *)
 
 (* After the Lie derivative is converted to an PD, it will contain a
    dummy index.  This needs careful attention, so instead of leaving
-   the result in its TensorProduct wrapper, we remove it and use a
+   the result in its TTTensorProduct wrapper, we remove it and use a
    Times instead.  This will force the dummy indices to be checked and
    relabelled automatically, and the result placed into a
-   TensorProduct when it is clean. *)
+   TTTensorProduct when it is clean. *)
 
-LieToPDRuleTensorProduct := 
-  TensorProduct[t1___, Lie[x_,v_], t2___] :> 
-    TensorProduct[t1, t2] * (Lie[x,v] //. LieToPDRule)
+LieToPDRuleTTTensorProduct := 
+  TTTensorProduct[t1___, Lie[x_,v_], t2___] :> 
+    TTTensorProduct[t1, t2] * (Lie[x,v] //. LieToPDRule)
 
 (* Convert a Lie derivative into an PD plus some extra terms, one for
    each index in the expression.  We do not specify only free indices
@@ -1007,16 +1007,16 @@ LieToPDRule :=
 
 LietoPDTerm[x_, i:TensorIndex[_,lower], v_] :=
   Module[{di = dummyNotIn[{x}]},
-    TensorProduct[(x /. i -> di), PD[v[toggleIndex[di]], i]]];
+    TTTensorProduct[(x /. i -> di), PD[v[toggleIndex[di]], i]]];
 
 LietoPDTerm[x_, i:TensorIndex[_,upper], v_] :=
   Module[{di = dummyNotIn[{x}]},
-    -TensorProduct[(x /. i -> toggleIndex[di]), PD[v[i], di]]];
+    -TTTensorProduct[(x /. i -> toggleIndex[di]), PD[v[i], di]]];
 
-LieToPDFullRule := x_ :> (((x //. LieReduce) //. LieToPDRuleTensorProduct) //. LieToPDRule);
+LieToPDFullRule := x_ :> (((x //. LieReduce) //. LieToPDRuleTTTensorProduct) //. LieToPDRule);
 
 LieToPD[x_] :=
-  x //. LieToPDFullRule //. removeSingleTensorProducts;
+  x //. LieToPDFullRule //. removeSingleTTTensorProducts;
 
 (* -------------------------------------------------------------------------- 
    Local Partial Derivatives
@@ -1039,9 +1039,9 @@ ResetJacobians := Module[{}, jacobians = {}];
 FDLeibnizTimes := 
   FD[x_ y_, i_] :> FD[x,i] y + x FD[y,i];
 
-FDLeibnizTensorProduct := 
-  FD[TensorProduct[s_, t__], i_] :> 
-    TensorProduct[FD[s,i],t] + TensorProduct[s,FD[TensorProduct[t],i]];
+FDLeibnizTTTensorProduct := 
+  FD[TTTensorProduct[s_, t__], i_] :> 
+    TTTensorProduct[FD[s,i],t] + TTTensorProduct[s,FD[TTTensorProduct[t],i]];
 
 FDLinearity :=
   FD[x_ + y_,i_] :> FD[x,i] + FD[y,i];
@@ -1059,7 +1059,7 @@ FDConst :=
   FD[x:(_Real | _Integer), is__] -> 0;
 
 FDReduce :=
-  x_ :> (((((((x //. FDUnflatten) //. FDJacobi) //. FDLeibnizTimes) //. FDLeibnizTensorProduct) //. FDLinearity) //. FDFlatten) //. FDConst);
+  x_ :> (((((((x //. FDUnflatten) //. FDJacobi) //. FDLeibnizTimes) //. FDLeibnizTTTensorProduct) //. FDLinearity) //. FDFlatten) //. FDConst);
 
 Format[FD[x_ ? AtomQ, is:((TensorIndex[_,_] | _Integer) ..)]] :=
   SequenceForm[x, ",", is];
@@ -1074,14 +1074,14 @@ Format[FD[x_, is:((TensorIndex[_,_] | _Integer) ..)]] :=
 
 (* After the PD is converted to a FD, it will contain a dummy index.
    This needs careful attention, so instead of leaving the result in
-   its TensorProduct wrapper, we remove it and use a Times instead.
+   its TTTensorProduct wrapper, we remove it and use a Times instead.
    This will force the dummy indices to be checked and relabelled
-   automatically, and the result placed into a TensorProduct when it
+   automatically, and the result placed into a TTTensorProduct when it
    is clean. *)
 
-PDtoFDRuleTensorProduct := 
-  TensorProduct[t1___, PD[x_,i___], t2___] :> 
-    (TensorProduct[t1, t2] /. PDtoFDRuleTensorProduct) PD[x,i]
+PDtoFDRuleTTTensorProduct := 
+  TTTensorProduct[t1___, PD[x_,i___], t2___] :> 
+    (TTTensorProduct[t1, t2] /. PDtoFDRuleTTTensorProduct) PD[x,i]
 
 (* Convert a PD into an FD. *)
 
@@ -1121,11 +1121,11 @@ PDtoFDRule[t_] :=
 
 
 PDtoFDDefaultJacobian[x_] := Module[{y,z},
-  y = x /. PDtoFDRuleTensorProduct;
+  y = x /. PDtoFDRuleTTTensorProduct;
   setDummies[y];
   z = y /. PDtoFDRule[y];
   setDummies[0];
-  z /. removeSingleTensorProducts];
+  z /. removeSingleTTTensorProducts];
 
 PDtoFDForJacobian[x_, jacobian_] :=
   Module[{pd,fd,j,dj, y, result},
@@ -1255,7 +1255,7 @@ CheckTensors[f t:Tensor[k_,is__]] :=
 (*  Print["CheckTensors: f t:"];*)
   CheckTensor[t]];
 
-CheckTensors[a_ t:TensorProduct[x_,y_]] :=
+CheckTensors[a_ t:TTTensorProduct[x_,y_]] :=
   Module[{},
 (*  Print["CheckTensors: a tp:"];*)
   CheckTensors[t]];
@@ -1263,9 +1263,9 @@ CheckTensors[a_ t:TensorProduct[x_,y_]] :=
 CheckTensors[x_ y_] :=
   Module[{},
 (*  Print["CheckTensors: x y:"];*)
-  CheckTensors[TensorProduct[x,y]]];
+  CheckTensors[TTTensorProduct[x,y]]];
 
-CheckTensors[TensorProduct[x_,y_]] :=
+CheckTensors[TTTensorProduct[x_,y_]] :=
   Module[{xs,ys},
 (*  Print["CheckTensors: TenPr:"];*)
     CheckTensors[x];

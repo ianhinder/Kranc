@@ -35,7 +35,7 @@ CCTK_REAL evolved_group type=GF timelevels=3 tags=''
 } "evolved_group"
 
 public:
-CCTK_REAL evolved_grouprhs type=GF timelevels=3 tags=''
+CCTK_REAL evolved_grouprhs type=GF timelevels=3 tags='Prolongation="None"'
 {
   phirhs,
   pirhs
@@ -49,7 +49,7 @@ CCTK_REAL ode_group type=array timelevels=3 tags='' dim=1 size=1
 } "ode_group"
 
 public:
-CCTK_REAL ode_grouprhs type=array timelevels=3 tags='' dim=1 size=1
+CCTK_REAL ode_grouprhs type=array timelevels=3 tags='Prolongation="None"' dim=1 size=1
 {
   arhs,
   brhs

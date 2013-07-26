@@ -84,11 +84,11 @@ if (CCTK_EQUALS(initial_data, "sine"))
   schedule wave_exact_sine AT INITIAL before import_exact before import_exact
   {
     LANG: C
-    READS:    grid::x
-    READS:    grid::y
-    READS:    grid::z
-    WRITES:   Wave::phiExact
-    WRITES:   Wave::piExact
+    READS:    grid::x(Everywhere)
+    READS:    grid::y(Everywhere)
+    READS:    grid::z(Everywhere)
+    WRITES:   Wave::phiExact(Everywhere)
+    WRITES:   Wave::piExact(Everywhere)
   } "wave_exact_sine"
 }
 
@@ -98,11 +98,11 @@ if (CCTK_EQUALS(initial_data, "sine"))
   schedule wave_exact_sine AT POSTSTEP before calc_errors before import_exact
   {
     LANG: C
-    READS:    grid::x
-    READS:    grid::y
-    READS:    grid::z
-    WRITES:   Wave::phiExact
-    WRITES:   Wave::piExact
+    READS:    grid::x(Everywhere)
+    READS:    grid::y(Everywhere)
+    READS:    grid::z(Everywhere)
+    WRITES:   Wave::phiExact(Everywhere)
+    WRITES:   Wave::piExact(Everywhere)
   } "wave_exact_sine"
 }
 
@@ -112,9 +112,9 @@ if (CCTK_EQUALS(initial_data, "gaussian"))
   schedule wave_exact_gaussian AT INITIAL before import_exact before import_exact
   {
     LANG: C
-    READS:    grid::r
-    WRITES:   Wave::phiExact
-    WRITES:   Wave::piExact
+    READS:    grid::r(Everywhere)
+    WRITES:   Wave::phiExact(Everywhere)
+    WRITES:   Wave::piExact(Everywhere)
   } "wave_exact_gaussian"
 }
 
@@ -124,52 +124,52 @@ if (CCTK_EQUALS(initial_data, "gaussian"))
   schedule wave_exact_gaussian AT POSTSTEP before calc_errors before import_exact
   {
     LANG: C
-    READS:    grid::r
-    WRITES:   Wave::phiExact
-    WRITES:   Wave::piExact
+    READS:    grid::r(Everywhere)
+    WRITES:   Wave::phiExact(Everywhere)
+    WRITES:   Wave::piExact(Everywhere)
   } "wave_exact_gaussian"
 }
 
 schedule wave_import_exact at INITIAL as import_exact
 {
   LANG: C
-  READS:    Wave::phiExact
-  READS:    Wave::piExact
-  WRITES:   Wave::phi
-  WRITES:   Wave::pi
+  READS:    Wave::phiExact(Everywhere)
+  READS:    Wave::piExact(Everywhere)
+  WRITES:   Wave::phi(Everywhere)
+  WRITES:   Wave::pi(Everywhere)
 } "wave_import_exact"
 
 schedule wave_evolve in MoL_CalcRHS as evolve
 {
   LANG: C
-  READS:    Wave::phi
-  READS:    Wave::pi
-  WRITES:   Wave::phirhs
-  WRITES:   Wave::pirhs
+  READS:    Wave::phi(Everywhere)
+  READS:    Wave::pi(Everywhere)
+  WRITES:   Wave::phirhs(Interior)
+  WRITES:   Wave::pirhs(Interior)
 } "wave_evolve"
 
 schedule wave_calc_errors at ANALYSIS as calc_errors
 {
   LANG: C
-  READS:    Wave::phi
-  READS:    Wave::phiExact
-  READS:    Wave::pi
-  READS:    Wave::piExact
-  WRITES:   Wave::phiError
-  WRITES:   Wave::piError
+  READS:    Wave::phi(Everywhere)
+  READS:    Wave::pi(Everywhere)
+  READS:    Wave::phiExact(Everywhere)
+  READS:    Wave::piExact(Everywhere)
+  WRITES:   Wave::phiError(Everywhere)
+  WRITES:   Wave::piError(Everywhere)
 } "wave_calc_errors"
 
 schedule wave_calc_norm at ANALYSIS as calc_norm
 {
   LANG: C
   SYNC: norms
-  READS:    Wave::phi
-  READS:    Wave::phiError
-  READS:    Wave::pi
-  READS:    Wave::piError
-  WRITES:   Wave::EL2
-  WRITES:   Wave::VDP
-  WRITES:   Wave::VL2
+  READS:    Wave::phiError(Everywhere)
+  READS:    Wave::piError(Everywhere)
+  READS:    Wave::phi(Everywhere)
+  READS:    Wave::pi(Everywhere)
+  WRITES:   Wave::EL2(Interior)
+  WRITES:   Wave::VDP(Interior)
+  WRITES:   Wave::VL2(Interior)
 } "wave_calc_norm"
 
 
@@ -178,14 +178,14 @@ if (CCTK_EQUALS(boundary_condition, "radiative"))
   schedule wave_boundary in MoL_RHSBoundaries
   {
     LANG: C
-    READS:    Wave::phi
-    READS:    Wave::pi
-    READS:    grid::r
-    READS:    grid::x
-    READS:    grid::y
-    READS:    grid::z
-    WRITES:   Wave::phirhs
-    WRITES:   Wave::pirhs
+    READS:    grid::x(Everywhere)
+    READS:    grid::y(Everywhere)
+    READS:    grid::z(Everywhere)
+    READS:    grid::r(Everywhere)
+    READS:    Wave::phi(Everywhere)
+    READS:    Wave::pi(Everywhere)
+    WRITES:   Wave::phirhs(Boundary)
+    WRITES:   Wave::pirhs(Boundary)
   } "wave_boundary"
 }
 
@@ -210,5 +210,4 @@ schedule Wave_RegisterVars in MoL_Register
 
 schedule group ApplyBCs as Wave_ApplyBCs in MoL_PostStep after Wave_SelectBoundConds
 {
-  # no language specified
 } "Apply boundary conditions controlled by thorn Boundary"

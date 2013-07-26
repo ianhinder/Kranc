@@ -115,7 +115,6 @@ WaveCaKernel::fdOrder = 4
 # Boundary conditions
 #############################################################
 
-LoopControl::printstats = no
 
 #############################################################
 # Output

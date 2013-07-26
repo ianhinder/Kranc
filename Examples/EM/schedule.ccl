@@ -78,49 +78,48 @@ schedule EM_RegisterSymmetries in SymmetryRegister
 schedule EM_initial at CCTK_INITIAL
 {
   LANG: C
-  READS:    grid::x
-  READS:    grid::y
-  WRITES:   EM::B1
-  WRITES:   EM::B2
-  WRITES:   EM::B3
-  WRITES:   EM::El1
-  WRITES:   EM::El2
-  WRITES:   EM::El3
+  READS:    grid::x(Everywhere)
+  READS:    grid::y(Everywhere)
+  WRITES:   EM::B1(Everywhere)
+  WRITES:   EM::B2(Everywhere)
+  WRITES:   EM::B3(Everywhere)
+  WRITES:   EM::El1(Everywhere)
+  WRITES:   EM::El2(Everywhere)
+  WRITES:   EM::El3(Everywhere)
 } "EM_initial"
 
 schedule EM_evol in MoL_CalcRHS
 {
   LANG: C
-  READS:    EM::B1
-  READS:    EM::B2
-  READS:    EM::B3
-  READS:    EM::El1
-  READS:    EM::El2
-  READS:    EM::El3
-  WRITES:   EM::B1rhs
-  WRITES:   EM::B2rhs
-  WRITES:   EM::B3rhs
-  WRITES:   EM::El1rhs
-  WRITES:   EM::El2rhs
-  WRITES:   EM::El3rhs
+  READS:    EM::B1(Everywhere)
+  READS:    EM::B2(Everywhere)
+  READS:    EM::B3(Everywhere)
+  READS:    EM::El1(Everywhere)
+  READS:    EM::El2(Everywhere)
+  READS:    EM::El3(Everywhere)
+  WRITES:   EM::B1rhs(Interior)
+  WRITES:   EM::B2rhs(Interior)
+  WRITES:   EM::B3rhs(Interior)
+  WRITES:   EM::El1rhs(Interior)
+  WRITES:   EM::El2rhs(Interior)
+  WRITES:   EM::El3rhs(Interior)
 } "EM_evol"
 
 schedule group EM_constraints_group in MoL_PseudoEvolution
 {
-  # no language specified
 } "EM_constraints"
 
 schedule EM_constraints in EM_constraints_group
 {
   LANG: C
-  READS:    EM::B1
-  READS:    EM::B2
-  READS:    EM::B3
-  READS:    EM::El1
-  READS:    EM::El2
-  READS:    EM::El3
-  WRITES:   EM::CB
-  WRITES:   EM::CEl
+  READS:    EM::B1(Everywhere)
+  READS:    EM::B2(Everywhere)
+  READS:    EM::B3(Everywhere)
+  READS:    EM::El1(Everywhere)
+  READS:    EM::El2(Everywhere)
+  READS:    EM::El3(Everywhere)
+  WRITES:   EM::CB(Interior)
+  WRITES:   EM::CEl(Interior)
 } "EM_constraints"
 
 schedule EM_constraints_SelectBCs in EM_constraints_bc_group
@@ -132,34 +131,30 @@ schedule EM_constraints_SelectBCs in EM_constraints_bc_group
 
 schedule group ApplyBCs as EM_constraints_ApplyBCs in EM_constraints_bc_group after EM_constraints_SelectBCs
 {
-  # no language specified
 } "Apply BCs for groups set in EM_constraints"
 
 schedule group EM_constraints_bc_group in EM_constraints_group after EM_constraints
 {
-  # no language specified
 } "EM_constraints"
 
 schedule group EM_constraints_bc_group in MoL_PseudoEvolutionBoundaries after MoL_PostStep
 {
-  # no language specified
 } "EM_constraints"
 
 schedule group EM_energy_group in MoL_PseudoEvolution
 {
-  # no language specified
 } "EM_energy"
 
 schedule EM_energy in EM_energy_group
 {
   LANG: C
-  READS:    EM::B1
-  READS:    EM::B2
-  READS:    EM::B3
-  READS:    EM::El1
-  READS:    EM::El2
-  READS:    EM::El3
-  WRITES:   EM::rho
+  READS:    EM::B1(Everywhere)
+  READS:    EM::B2(Everywhere)
+  READS:    EM::B3(Everywhere)
+  READS:    EM::El1(Everywhere)
+  READS:    EM::El2(Everywhere)
+  READS:    EM::El3(Everywhere)
+  WRITES:   EM::rho(Interior)
 } "EM_energy"
 
 schedule EM_SelectBoundConds in MoL_PostStep
@@ -184,5 +179,4 @@ schedule EM_RegisterVars in MoL_Register
 
 schedule group ApplyBCs as EM_ApplyBCs in MoL_PostStep after EM_SelectBoundConds
 {
-  # no language specified
 } "Apply boundary conditions controlled by thorn Boundary"

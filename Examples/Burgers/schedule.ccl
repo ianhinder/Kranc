@@ -60,8 +60,8 @@ if (CCTK_EQUALS(initial_data, "sine"))
   schedule burgers_initial_sine at CCTK_INITIAL as burgers_initial
   {
     LANG: C
-    READS:    grid::x
-    WRITES:   Burgers::u
+    READS:    grid::x(Everywhere)
+    WRITES:   Burgers::u(Everywhere)
   } "burgers_initial_sine"
 }
 
@@ -71,28 +71,27 @@ if (CCTK_EQUALS(initial_data, "shock"))
   schedule burgers_initial_shock at CCTK_INITIAL as burgers_initial
   {
     LANG: C
-    READS:    grid::x
-    WRITES:   Burgers::u
+    READS:    grid::x(Everywhere)
+    WRITES:   Burgers::u(Everywhere)
   } "burgers_initial_shock"
 }
 
 schedule burgers_zero_rhs in MoL_CalcRHS
 {
   LANG: C
-  WRITES:   Burgers::urhs
+  WRITES:   Burgers::urhs(Everywhere)
 } "burgers_zero_rhs"
 
 schedule group burgers_reconstruct_1_group in MoL_CalcRHS after burgers_zero_rhs
 {
-  # no language specified
 } "burgers_reconstruct_1"
 
 schedule burgers_reconstruct_1 in burgers_reconstruct_1_group
 {
   LANG: C
-  READS:    Burgers::u
-  WRITES:   Burgers::uLeft
-  WRITES:   Burgers::uR
+  READS:    Burgers::u(Everywhere)
+  WRITES:   Burgers::uLeft(Interior)
+  WRITES:   Burgers::uR(Interior)
 } "burgers_reconstruct_1"
 
 schedule burgers_reconstruct_1_SelectBCs in burgers_reconstruct_1_bc_group
@@ -105,30 +104,26 @@ schedule burgers_reconstruct_1_SelectBCs in burgers_reconstruct_1_bc_group
 
 schedule group ApplyBCs as burgers_reconstruct_1_ApplyBCs in burgers_reconstruct_1_bc_group after burgers_reconstruct_1_SelectBCs
 {
-  # no language specified
 } "Apply BCs for groups set in burgers_reconstruct_1"
 
 schedule group burgers_reconstruct_1_bc_group in burgers_reconstruct_1_group after burgers_reconstruct_1
 {
-  # no language specified
 } "burgers_reconstruct_1"
 
 schedule group burgers_reconstruct_1_bc_group in MoL_PseudoEvolutionBoundaries after MoL_PostStep
 {
-  # no language specified
 } "burgers_reconstruct_1"
 
 schedule group burgers_flux_1_group in MoL_CalcRHS after burgers_reconstruct_1
 {
-  # no language specified
 } "burgers_flux_1"
 
 schedule burgers_flux_1 in burgers_flux_1_group
 {
   LANG: C
-  READS:    Burgers::uLeft
-  READS:    Burgers::uR
-  WRITES:   Burgers::uF
+  READS:    Burgers::uLeft(Everywhere)
+  READS:    Burgers::uR(Everywhere)
+  WRITES:   Burgers::uF(Interior)
 } "burgers_flux_1"
 
 schedule burgers_flux_1_SelectBCs in burgers_flux_1_bc_group
@@ -140,25 +135,22 @@ schedule burgers_flux_1_SelectBCs in burgers_flux_1_bc_group
 
 schedule group ApplyBCs as burgers_flux_1_ApplyBCs in burgers_flux_1_bc_group after burgers_flux_1_SelectBCs
 {
-  # no language specified
 } "Apply BCs for groups set in burgers_flux_1"
 
 schedule group burgers_flux_1_bc_group in burgers_flux_1_group after burgers_flux_1
 {
-  # no language specified
 } "burgers_flux_1"
 
 schedule group burgers_flux_1_bc_group in MoL_PseudoEvolutionBoundaries after MoL_PostStep
 {
-  # no language specified
 } "burgers_flux_1"
 
 schedule burgers_rhs_1 in MoL_CalcRHS after burgers_flux_1
 {
   LANG: C
-  READS:    Burgers::uF
-  READS:    Burgers::urhs
-  WRITES:   Burgers::urhs
+  READS:    Burgers::uF(Everywhere)
+  READS:    Burgers::urhs(Everywhere)
+  WRITES:   Burgers::urhs(Interior)
 } "burgers_rhs_1"
 
 schedule Burgers_SelectBoundConds in MoL_PostStep
@@ -182,5 +174,4 @@ schedule Burgers_RegisterVars in MoL_Register
 
 schedule group ApplyBCs as Burgers_ApplyBCs in MoL_PostStep after Burgers_SelectBoundConds
 {
-  # no language specified
 } "Apply boundary conditions controlled by thorn Boundary"

@@ -57,7 +57,7 @@ CCTK_REAL El_group type=GF timelevels=3 tags='tensortypealias="D" tensorweight=0
 } "El_group"
 
 public:
-CCTK_REAL B_grouprhs type=GF timelevels=3 tags='tensortypealias="D" tensorweight=0'
+CCTK_REAL B_grouprhs type=GF timelevels=3 tags='tensortypealias="D" tensorweight=0 Prolongation="None"'
 {
   B1rhs,
   B2rhs,
@@ -65,7 +65,7 @@ CCTK_REAL B_grouprhs type=GF timelevels=3 tags='tensortypealias="D" tensorweight
 } "B_grouprhs"
 
 public:
-CCTK_REAL El_grouprhs type=GF timelevels=3 tags='tensortypealias="D" tensorweight=0'
+CCTK_REAL El_grouprhs type=GF timelevels=3 tags='tensortypealias="D" tensorweight=0 Prolongation="None"'
 {
   El1rhs,
   El2rhs,

@@ -68,24 +68,24 @@ schedule SimpleWaveODE_RegisterSymmetries in SymmetryRegister
 schedule initial_sine AT INITIAL
 {
   LANG: C
-  READS:    grid::x
-  WRITES:   SimpleWaveODE::a
-  WRITES:   SimpleWaveODE::b
-  WRITES:   SimpleWaveODE::phi
-  WRITES:   SimpleWaveODE::pi
+  READS:    grid::x(Everywhere)
+  WRITES:   SimpleWaveODE::a(Everywhere)
+  WRITES:   SimpleWaveODE::b(Everywhere)
+  WRITES:   SimpleWaveODE::phi(Everywhere)
+  WRITES:   SimpleWaveODE::pi(Everywhere)
 } "initial_sine"
 
 schedule calc_rhs in MoL_CalcRHS
 {
   LANG: C
-  READS:    SimpleWaveODE::a
-  READS:    SimpleWaveODE::b
-  READS:    SimpleWaveODE::phi
-  READS:    SimpleWaveODE::pi
-  WRITES:   SimpleWaveODE::arhs
-  WRITES:   SimpleWaveODE::brhs
-  WRITES:   SimpleWaveODE::phirhs
-  WRITES:   SimpleWaveODE::pirhs
+  READS:    SimpleWaveODE::phi(Everywhere)
+  READS:    SimpleWaveODE::pi(Everywhere)
+  READS:    SimpleWaveODE::a(Everywhere)
+  READS:    SimpleWaveODE::b(Everywhere)
+  WRITES:   SimpleWaveODE::arhs(Interior)
+  WRITES:   SimpleWaveODE::brhs(Interior)
+  WRITES:   SimpleWaveODE::phirhs(Interior)
+  WRITES:   SimpleWaveODE::pirhs(Interior)
 } "calc_rhs"
 
 schedule SimpleWaveODE_SelectBoundConds in MoL_PostStep
@@ -110,5 +110,4 @@ schedule SimpleWaveODE_RegisterVars in MoL_Register
 
 schedule group ApplyBCs as SimpleWaveODE_ApplyBCs in MoL_PostStep after SimpleWaveODE_SelectBoundConds
 {
-  # no language specified
 } "Apply boundary conditions controlled by thorn Boundary"

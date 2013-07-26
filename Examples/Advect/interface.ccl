@@ -58,7 +58,7 @@ CCTK_REAL rho_group type=GF timelevels=3 tags='tensortypealias="Scalar" tensorwe
 } "rho_group"
 
 public:
-CCTK_REAL rho_grouprhs type=GF timelevels=3 tags='tensortypealias="Scalar" tensorweight=0'
+CCTK_REAL rho_grouprhs type=GF timelevels=3 tags='tensortypealias="Scalar" tensorweight=0 Prolongation="None"'
 {
   rhorhs
 } "rho_grouprhs"

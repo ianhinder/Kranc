@@ -30,7 +30,7 @@ extern "C" void EM_SelectBoundConds(CCTK_ARGUMENTS)
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  CCTK_INT ierr = 0;
+  CCTK_INT ierr CCTK_ATTRIBUTE_UNUSED  = 0;
   
   if (CCTK_EQUALS(B_group_bound, "none"  ) ||
       CCTK_EQUALS(B_group_bound, "static") ||
@@ -123,7 +123,7 @@ extern "C" void EM_SelectBoundConds(CCTK_ARGUMENTS)
   if (CCTK_EQUALS(B_group_bound, "radiative"))
   {
    /* select radiation boundary condition */
-    static CCTK_INT handle_B_group_bound = -1;
+    static CCTK_INT handle_B_group_bound CCTK_ATTRIBUTE_UNUSED  = -1;
     if (handle_B_group_bound < 0) handle_B_group_bound = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);
     if (handle_B_group_bound < 0) CCTK_WARN(0, "could not create table!");
     if (Util_TableSetReal(handle_B_group_bound , B_group_bound_limit, "LIMIT") < 0)
@@ -142,7 +142,7 @@ extern "C" void EM_SelectBoundConds(CCTK_ARGUMENTS)
   if (CCTK_EQUALS(El_group_bound, "radiative"))
   {
    /* select radiation boundary condition */
-    static CCTK_INT handle_El_group_bound = -1;
+    static CCTK_INT handle_El_group_bound CCTK_ATTRIBUTE_UNUSED  = -1;
     if (handle_El_group_bound < 0) handle_El_group_bound = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);
     if (handle_El_group_bound < 0) CCTK_WARN(0, "could not create table!");
     if (Util_TableSetReal(handle_El_group_bound , El_group_bound_limit, "LIMIT") < 0)
@@ -161,7 +161,7 @@ extern "C" void EM_SelectBoundConds(CCTK_ARGUMENTS)
   if (CCTK_EQUALS(B1_bound, "radiative"))
   {
    /* select radiation boundary condition */
-    static CCTK_INT handle_B1_bound = -1;
+    static CCTK_INT handle_B1_bound CCTK_ATTRIBUTE_UNUSED  = -1;
     if (handle_B1_bound < 0) handle_B1_bound = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);
     if (handle_B1_bound < 0) CCTK_WARN(0, "could not create table!");
     if (Util_TableSetReal(handle_B1_bound , B1_bound_limit, "LIMIT") < 0)
@@ -180,7 +180,7 @@ extern "C" void EM_SelectBoundConds(CCTK_ARGUMENTS)
   if (CCTK_EQUALS(B2_bound, "radiative"))
   {
    /* select radiation boundary condition */
-    static CCTK_INT handle_B2_bound = -1;
+    static CCTK_INT handle_B2_bound CCTK_ATTRIBUTE_UNUSED  = -1;
     if (handle_B2_bound < 0) handle_B2_bound = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);
     if (handle_B2_bound < 0) CCTK_WARN(0, "could not create table!");
     if (Util_TableSetReal(handle_B2_bound , B2_bound_limit, "LIMIT") < 0)
@@ -199,7 +199,7 @@ extern "C" void EM_SelectBoundConds(CCTK_ARGUMENTS)
   if (CCTK_EQUALS(B3_bound, "radiative"))
   {
    /* select radiation boundary condition */
-    static CCTK_INT handle_B3_bound = -1;
+    static CCTK_INT handle_B3_bound CCTK_ATTRIBUTE_UNUSED  = -1;
     if (handle_B3_bound < 0) handle_B3_bound = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);
     if (handle_B3_bound < 0) CCTK_WARN(0, "could not create table!");
     if (Util_TableSetReal(handle_B3_bound , B3_bound_limit, "LIMIT") < 0)
@@ -218,7 +218,7 @@ extern "C" void EM_SelectBoundConds(CCTK_ARGUMENTS)
   if (CCTK_EQUALS(El1_bound, "radiative"))
   {
    /* select radiation boundary condition */
-    static CCTK_INT handle_El1_bound = -1;
+    static CCTK_INT handle_El1_bound CCTK_ATTRIBUTE_UNUSED  = -1;
     if (handle_El1_bound < 0) handle_El1_bound = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);
     if (handle_El1_bound < 0) CCTK_WARN(0, "could not create table!");
     if (Util_TableSetReal(handle_El1_bound , El1_bound_limit, "LIMIT") < 0)
@@ -237,7 +237,7 @@ extern "C" void EM_SelectBoundConds(CCTK_ARGUMENTS)
   if (CCTK_EQUALS(El2_bound, "radiative"))
   {
    /* select radiation boundary condition */
-    static CCTK_INT handle_El2_bound = -1;
+    static CCTK_INT handle_El2_bound CCTK_ATTRIBUTE_UNUSED  = -1;
     if (handle_El2_bound < 0) handle_El2_bound = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);
     if (handle_El2_bound < 0) CCTK_WARN(0, "could not create table!");
     if (Util_TableSetReal(handle_El2_bound , El2_bound_limit, "LIMIT") < 0)
@@ -256,7 +256,7 @@ extern "C" void EM_SelectBoundConds(CCTK_ARGUMENTS)
   if (CCTK_EQUALS(El3_bound, "radiative"))
   {
    /* select radiation boundary condition */
-    static CCTK_INT handle_El3_bound = -1;
+    static CCTK_INT handle_El3_bound CCTK_ATTRIBUTE_UNUSED  = -1;
     if (handle_El3_bound < 0) handle_El3_bound = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);
     if (handle_El3_bound < 0) CCTK_WARN(0, "could not create table!");
     if (Util_TableSetReal(handle_El3_bound , El3_bound_limit, "LIMIT") < 0)
@@ -275,7 +275,7 @@ extern "C" void EM_SelectBoundConds(CCTK_ARGUMENTS)
   if (CCTK_EQUALS(B_group_bound, "scalar"))
   {
    /* select scalar boundary condition */
-    static CCTK_INT handle_B_group_bound = -1;
+    static CCTK_INT handle_B_group_bound CCTK_ATTRIBUTE_UNUSED  = -1;
     if (handle_B_group_bound < 0) handle_B_group_bound = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);
     if (handle_B_group_bound < 0) CCTK_WARN(0, "could not create table!");
     if (Util_TableSetReal(handle_B_group_bound ,B_group_bound_scalar, "SCALAR") < 0)
@@ -292,7 +292,7 @@ extern "C" void EM_SelectBoundConds(CCTK_ARGUMENTS)
   if (CCTK_EQUALS(El_group_bound, "scalar"))
   {
    /* select scalar boundary condition */
-    static CCTK_INT handle_El_group_bound = -1;
+    static CCTK_INT handle_El_group_bound CCTK_ATTRIBUTE_UNUSED  = -1;
     if (handle_El_group_bound < 0) handle_El_group_bound = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);
     if (handle_El_group_bound < 0) CCTK_WARN(0, "could not create table!");
     if (Util_TableSetReal(handle_El_group_bound ,El_group_bound_scalar, "SCALAR") < 0)
@@ -309,7 +309,7 @@ extern "C" void EM_SelectBoundConds(CCTK_ARGUMENTS)
   if (CCTK_EQUALS(B1_bound, "scalar"))
   {
    /* select scalar boundary condition */
-    static CCTK_INT handle_B1_bound = -1;
+    static CCTK_INT handle_B1_bound CCTK_ATTRIBUTE_UNUSED  = -1;
     if (handle_B1_bound < 0) handle_B1_bound = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);
     if (handle_B1_bound < 0) CCTK_WARN(0, "could not create table!");
     if (Util_TableSetReal(handle_B1_bound ,B1_bound_scalar, "SCALAR") < 0)
@@ -326,7 +326,7 @@ extern "C" void EM_SelectBoundConds(CCTK_ARGUMENTS)
   if (CCTK_EQUALS(B2_bound, "scalar"))
   {
    /* select scalar boundary condition */
-    static CCTK_INT handle_B2_bound = -1;
+    static CCTK_INT handle_B2_bound CCTK_ATTRIBUTE_UNUSED  = -1;
     if (handle_B2_bound < 0) handle_B2_bound = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);
     if (handle_B2_bound < 0) CCTK_WARN(0, "could not create table!");
     if (Util_TableSetReal(handle_B2_bound ,B2_bound_scalar, "SCALAR") < 0)
@@ -343,7 +343,7 @@ extern "C" void EM_SelectBoundConds(CCTK_ARGUMENTS)
   if (CCTK_EQUALS(B3_bound, "scalar"))
   {
    /* select scalar boundary condition */
-    static CCTK_INT handle_B3_bound = -1;
+    static CCTK_INT handle_B3_bound CCTK_ATTRIBUTE_UNUSED  = -1;
     if (handle_B3_bound < 0) handle_B3_bound = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);
     if (handle_B3_bound < 0) CCTK_WARN(0, "could not create table!");
     if (Util_TableSetReal(handle_B3_bound ,B3_bound_scalar, "SCALAR") < 0)
@@ -360,7 +360,7 @@ extern "C" void EM_SelectBoundConds(CCTK_ARGUMENTS)
   if (CCTK_EQUALS(El1_bound, "scalar"))
   {
    /* select scalar boundary condition */
-    static CCTK_INT handle_El1_bound = -1;
+    static CCTK_INT handle_El1_bound CCTK_ATTRIBUTE_UNUSED  = -1;
     if (handle_El1_bound < 0) handle_El1_bound = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);
     if (handle_El1_bound < 0) CCTK_WARN(0, "could not create table!");
     if (Util_TableSetReal(handle_El1_bound ,El1_bound_scalar, "SCALAR") < 0)
@@ -377,7 +377,7 @@ extern "C" void EM_SelectBoundConds(CCTK_ARGUMENTS)
   if (CCTK_EQUALS(El2_bound, "scalar"))
   {
    /* select scalar boundary condition */
-    static CCTK_INT handle_El2_bound = -1;
+    static CCTK_INT handle_El2_bound CCTK_ATTRIBUTE_UNUSED  = -1;
     if (handle_El2_bound < 0) handle_El2_bound = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);
     if (handle_El2_bound < 0) CCTK_WARN(0, "could not create table!");
     if (Util_TableSetReal(handle_El2_bound ,El2_bound_scalar, "SCALAR") < 0)
@@ -394,7 +394,7 @@ extern "C" void EM_SelectBoundConds(CCTK_ARGUMENTS)
   if (CCTK_EQUALS(El3_bound, "scalar"))
   {
    /* select scalar boundary condition */
-    static CCTK_INT handle_El3_bound = -1;
+    static CCTK_INT handle_El3_bound CCTK_ATTRIBUTE_UNUSED  = -1;
     if (handle_El3_bound < 0) handle_El3_bound = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);
     if (handle_El3_bound < 0) CCTK_WARN(0, "could not create table!");
     if (Util_TableSetReal(handle_El3_bound ,El3_bound_scalar, "SCALAR") < 0)

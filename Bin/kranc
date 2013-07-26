@@ -48,4 +48,29 @@ else
     exit 1
 fi
 
-$MATH -run "Get[\"$KRANCDIR/Tools/MathematicaMisc/RunKranc.m\"]" $MMASCRIPT </dev/null
+# If there is no licence server, Mathematica still exits with a 0 exit
+# code. In order to catch this error and exit with a nonzero code, we
+# first create a temporary directory, then remove it from within
+# Mathematica, then check to see that this happened.  If it didn't, we
+# assume there was some problem with launching Mathematica.
+
+flagdir="kranc.tmp.$$" # mktemp is not the same on Linux and Mac OS; here we assume we can write to the current directory
+mkdir $flagdir
+
+if $MATH -run "DeleteDirectory[\"$flagdir\"]; Get[\"$KRANCDIR/Tools/MathematicaMisc/RunKranc.m\"]" $MMASCRIPT </dev/null; then
+    if [ ! -d "$flagdir" ]; then
+        # Mathematica kernel started and executed DeleteDirectory
+        exit 0
+    else
+        echo "Mathematica did not start successfully"
+        rmdir "$flagdir"
+        exit 1
+    fi
+else
+    code=$?
+    if [ -d "$flagdir" ]; then
+         rmdir "$flagdir"
+         exit $code
+    fi
+    exit $code
+fi

@@ -47,13 +47,13 @@ CCTK_REAL pi_g type=GF timelevels=2 tags=''
 } "pi_g"
 
 public:
-CCTK_REAL phi_grhs type=GF timelevels=2 tags=''
+CCTK_REAL phi_grhs type=GF timelevels=2 tags='Prolongation="None"'
 {
   phirhs
 } "phi_grhs"
 
 public:
-CCTK_REAL pi_grhs type=GF timelevels=2 tags=''
+CCTK_REAL pi_grhs type=GF timelevels=2 tags='Prolongation="None"'
 {
   pirhs
 } "pi_grhs"

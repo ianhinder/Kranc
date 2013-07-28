@@ -937,7 +937,7 @@ DefFn[
     assignLocalFunctions[gs_, useVectors_, useJacobian_, NameFunc_] :=
       Module[{conds, varPatterns, varsInConds, simpleVars, code},
         conds =
-          {{"eT" ~~ _ ~~ _, "*stress_energy_state", "ToReal(0.0)"}}; (* This should be passed as an option *)
+          {{"eT" ~~ _ ~~ _, "assume_stress_energy_state>=0 ? assume_stress_energy_state : *stress_energy_state", "ToReal(0.0)"}}; (* This should be passed as an option *)
         If[useJacobian,
           conds = Append[conds, JacobianConditionalGridFunctions[]]];
 

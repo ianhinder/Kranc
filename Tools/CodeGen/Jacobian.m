@@ -117,9 +117,10 @@ InsertJacobian[calc_List, opts:OptionsPattern[]] :=
    derivatives groups *)
 CreateJacobianVariables[] :=
 CommentedBlock["Jacobian variable pointers",
-  {"bool const use_jacobian = (!CCTK_IsFunctionAliased(\"MultiPatch_GetMap\") || MultiPatch_GetMap(cctkGH) != jacobian_identity_map)\n",
-   "                     && strlen(jacobian_group) > 0;\n",
-   "bool const usejacobian CCTK_ATTRIBUTE_UNUSED = use_jacobian;\n",
+  {"const bool use_jacobian1 = (!CCTK_IsFunctionAliased(\"MultiPatch_GetMap\") || MultiPatch_GetMap(cctkGH) != jacobian_identity_map)\n",
+   "                      && strlen(jacobian_group) > 0;\n",
+   "const bool use_jacobian = assume_use_jacobian>=0 ? assume_use_jacobian : use_jacobian1;\n",
+   "const bool usejacobian CCTK_ATTRIBUTE_UNUSED = use_jacobian;\n",
    "if (use_jacobian && (strlen(jacobian_determinant_group) == 0 || strlen(jacobian_inverse_group) == 0 || strlen(jacobian_derivative_group) == 0))\n",
    "{\n",
    "  CCTK_WARN (1, \"GenericFD::jacobian_group, GenericFD::jacobian_determinant_group, GenericFD::jacobian_inverse_group, and GenericFD::jacobian_derivative_group must all be set to valid group names\");\n",
@@ -159,7 +160,8 @@ JacobianSymbols[] :=
 
 (* Parameters to inherit from GenericFD *)
 JacobianGenericFDParameters[] :=
-  {{Name -> "jacobian_group",             Type -> "CCTK_STRING"},
+  {{Name -> "assume_use_jacobian",        Type -> "CCTK_INT"},
+   {Name -> "jacobian_group",             Type -> "CCTK_STRING"},
    {Name -> "jacobian_determinant_group", Type -> "CCTK_STRING"},
    {Name -> "jacobian_inverse_group",     Type -> "CCTK_STRING"},
    {Name -> "jacobian_derivative_group",  Type -> "CCTK_STRING"},

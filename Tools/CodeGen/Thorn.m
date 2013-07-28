@@ -410,11 +410,11 @@ scheduleUnconditionalFunction[spec_] :=
                                     Interior, "Interior",
                                     Boundary, "Boundary",
                                     _, "ERROR(" <> ToString[r] <> ")"];
-      Map[{"READS:    ", #, "(",
+      Map[{"READS: ", #, "(",
            translateRegion[lookupDefault[spec, RequiredRegion, "ERROR"]],
            ")\n"} &,
           lookupDefault[spec, RequiredGroups, {}]],
-      Map[{"WRITES:   ", #, "(",
+      Map[{"WRITES: ", #, "(",
            translateRegion[lookupDefault[spec, ProvidedRegion, "ERROR"]],
            ")\n"} &,
           lookupDefault[spec, ProvidedGroups, {}]],

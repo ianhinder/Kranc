@@ -408,7 +408,9 @@ scheduleUnconditionalFunction[spec_] :=
       translateRegion[r_] := Switch[r,
                                     Everywhere, "Everywhere",
                                     Interior, "Interior",
+                                    InteriorNoSync, "Interior",
                                     Boundary, "Boundary",
+                                    BoundaryNoSync, "Boundary",
                                     _, "ERROR(" <> ToString[r] <> ")"];
       Map[{"READS: ", #, "(",
            translateRegion[lookupDefault[spec, RequiredRegion, "ERROR"]],

@@ -795,8 +795,6 @@ DefFn[
            *)
 
         (* Handle Piecewise function *)
-        (* TODO: This does not work with vectorisation, since IfThen
-           there expects a constant condition *)
         rhs = rhs /. Piecewise -> piecewise1
                   //. piecewise1[pairs_List, val_:0] :>
                          If[pairs==={}, val,

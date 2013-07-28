@@ -377,11 +377,7 @@ groupStorage[spec_] :=
       Module[
         {param,max},
         {param,max} = tls;
-        Flatten[
-          Table[{"if (", param, " == ", i, ")\n",
-                 "{\n",
-                 "  STORAGE: ", group, "[", i, "]\n",
-                 "}\n"}, {i, 1, max}], 1]],
+        {"STORAGE: ", group, "[", param, "]\n"}],
 
       True, Error["Unrecognized Timelevels value "<>ToString[tls]]]];
 

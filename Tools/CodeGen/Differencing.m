@@ -120,7 +120,15 @@ StandardCenteredDifferenceOperator[p_, m_, i_]
 
 Return a difference operator approximating a derivative of order p
 using m grid points before and m grid points after the centre
-point. Should be checked by someone competent!
+point. TODO: Should be checked by someone competent!
+
+
+StandardUpwindDifferenceOperator[p_, m1_, m2_, i_]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Return an upwind operator approximating a derivative of order p
+using m1 grid points before and m2 grid points after the centre
+point. TODO: Should be checked by someone competent!
 
 
 *)
@@ -133,6 +141,7 @@ PrecomputeDerivatives::usage = "";
 DeclareDerivatives::usage = "";
 ReplaceDerivatives::usage = "";
 StandardCenteredDifferenceOperator::usage = "";
+StandardUpwindDifferenceOperator::usage = "";
 GridFunctionDerivativesInExpression::usage = "";
 DPlus::usage = "";
 DMinus::usage = "";

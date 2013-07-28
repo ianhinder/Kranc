@@ -215,7 +215,7 @@ DefFn[
 
 DefFn[
   switchOption[{value:(_String|_Symbol|_?NumberQ), block:CodeGenBlock}] :=
-  {"case ", value, ":\n", IndentBlock[{block,"break;\n"}]}];
+  {"case ", value, ":\n", CBlock[{block,"break;\n"}]}];
 (* Outer list unnecessary? *)
 
 DefFn[

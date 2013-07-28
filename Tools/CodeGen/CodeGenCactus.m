@@ -606,15 +606,21 @@ DefFn[
 
     (* Optimise *)
     expr = expr //. {
-      kneg[ToReal[a_]]    -> ToReal[-a],
-      kmul[ToReal[-1],x_] -> kneg[x],
-      kmul[x_,ToReal[-1]] -> kneg[x],
-      kneg[kneg[x_]]      -> x,
+      kneg[ToReal[a_]]      -> ToReal[-a],
+      kmul[ToReal[-1],x_]   -> kneg[x],
+      kmul[ToReal[-1.0],x_] -> kneg[x],
+      kmul[x_,ToReal[-1]]   -> kneg[x],
+      kmul[x_,ToReal[-1.0]] -> kneg[x],
+      kneg[kneg[x_]]        -> x,
       
       kadd[ToReal[0],x_]             -> x,
+      kadd[ToReal[0.0],x_]           -> x,
       kadd[x_,ToReal[0]]             -> x,
+      kadd[x_,ToReal[0.0]]           -> x,
       ksub[ToReal[0],x_]             -> kneg[x],
+      ksub[ToReal[0.0],x_]           -> kneg[x],
       ksub[x_,ToReal[0]]             -> x,
+      ksub[x_,ToReal[0.0]]           -> x,
       kadd[kneg[x_],y_]              -> ksub[y,x],
       ksub[kneg[x_],y_]              -> kneg[kadd[x,y]],
       kadd[x_,kneg[y_]]              -> ksub[x,y],
@@ -632,11 +638,21 @@ DefFn[
            kadd[ToReal[a_],y_]]      -> kadd[ToReal[a],kadd[x,y]],
       
       kmul[ToReal[0],x_]             -> ToReal[0],
+      kmul[ToReal[0.0],x_]           -> ToReal[0],
       kmul[x_,ToReal[0]]             -> ToReal[0],
+      kmul[x_,ToReal[0.0]]           -> ToReal[0],
       kmul[ToReal[+1],x_]            -> x,
+      kmul[ToReal[+1.0],x_]          -> x,
       kmul[x_,ToReal[+1]]            -> x,
+      kmul[x_,ToReal[+1.0]]          -> x,
+      kmul[ToReal[-1],x_]            -> kneg[x],
+      kmul[ToReal[-1.0],x_]          -> kneg[x],
+      kmul[x_,ToReal[-1]]            -> kneg[x],
+      kmul[x_,ToReal[-1.0]]          -> kneg[x],
       kdiv[ToReal[0],x_]             -> ToReal[0],
+      kdiv[ToReal[0.0],x_]           -> ToReal[0],
       (* kdiv[x_,ToReal[0]]           -> ToReal[nan], *)
+      (* kdiv[x_,ToReal[0.0]]         -> ToReal[nan], *)
       kdiv[x_,ToReal[y_]]            -> kmul[x,ToReal[1/y]],
       kdiv[x_,kdiv[y_,z_]]           -> kdiv[kmul[x,z],y],
       kdiv[kdiv[x_,y_],z_]           -> kdiv[x,kmul[y,z]],

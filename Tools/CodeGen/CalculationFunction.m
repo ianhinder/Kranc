@@ -193,7 +193,7 @@ CheckGroupStorage[groupNames_, calcName_] :=
     ignoreGroups = {"TmunuBase::stress_energy_scalar", "TmunuBase::stress_energy_vector",
       "TmunuBase::stress_energy_tensor"};
     groupNames2 = Select[groupNames, !MemberQ[ignoreGroups, #] &];
-    {"\nconst char *const groups[] = {\n  ",
+    {"\nconst char* const groups[] = {\n  ",
     Riffle[Map[Quote,groupNames2], ",\n  "],
     "};\n",
     "GenericFD_AssertGroupStorage(cctkGH, ", Quote[calcName],", ", Length[groupNames2], ", groups);\n"}];
@@ -563,7 +563,7 @@ DefFn[
            "    enum {nequations = nvars};",
            "    enum {nexternal = 3*nvars};",
            "    enum {nbitmasks = 0};",
-           "    static bool const pure = false;",
+           "    static const bool pure = false;",
            "  };",
            "} // namespace",
            "",
@@ -574,7 +574,7 @@ DefFn[
            "  typedef hrscc::CLaw<DGFE_"<>name<>"> claw;",
            "  typedef hrscc::traits<DGFE_"<>name<>">::state_t state_t;",
            "  typedef hrscc::traits<DGFE_"<>name<>"> variables_t;",
-           "  static int const nvars = variables_t::nvars;",
+           "  static const int nvars = variables_t::nvars;",
            "  ",
            "  DGFE_"<>name<>"();",
            "  ",
@@ -707,7 +707,7 @@ DefFn[
     (* We could (or probably should) write this into a source file of its own *)
     If[OptionValue[UseOpenCL],
        {
-         "char const *const source =\n"
+         "const char* const source =\n"
        },
        {
        }],
@@ -750,13 +750,13 @@ DefFn[
            groupNames = groupsInCalculation[cleancalc, imp];
            groupNames = Select[groupNames, !MemberQ[ignoreGroups, #] &];
            {
-             "char const *const groups[] = {\n  ",
+             "const char* const groups[] = {\n  ",
                Riffle[Join[Map[Quote, groupNames], {"NULL"}], ",\n  "],
                "};\n\n"
            }
          ],
          "static struct OpenCLKernel *kernel = NULL;\n",
-         "char const *const sources[] = {differencing, source, NULL};\n",
+         "const char* const sources[] = {differencing, source, NULL};\n",
          "OpenCLRunTime_CallKernel(cctkGH, CCTK_THORNSTRING, \"" <> functionName <> "\",\n",
          "                         sources, groups, NULL, NULL, NULL, -1,\n",
          "                         imin, imax, &kernel);\n\n"

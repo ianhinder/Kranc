@@ -454,15 +454,15 @@ DefFn[
       "#else\n",
        (* new, differencing operators are static functions *)
       "#  define ", macroName, "(u) ", "(", macroName, "_impl(u,", liName, ",cdj,cdk))\n",
-      "static CCTK_REAL_VEC ", macroName, "_impl(CCTK_REAL const* restrict const u, CCTK_REAL_VEC /*const*/ ", liName, ", ptrdiff_t const cdj, ptrdiff_t const cdk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;\n",
-      "static CCTK_REAL_VEC ", macroName, "_impl(CCTK_REAL const* restrict const u, CCTK_REAL_VEC /*const*/ ", liName, ", ptrdiff_t const cdj, ptrdiff_t const cdk)\n",
+      "static CCTK_REAL_VEC ", macroName, "_impl(const CCTK_REAL* restrict const u, const CCTK_REAL_VEC ", liName, ", const ptrdiff_t cdj, const ptrdiff_t cdk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;\n",
+      "static CCTK_REAL_VEC ", macroName, "_impl(const CCTK_REAL* restrict const u, const CCTK_REAL_VEC ", liName, ", const ptrdiff_t cdj, const ptrdiff_t cdk)\n",
       (* We cannot handle dirN,
          so we punt on all expressions that contain dirN *)
       If[StringMatchQ[rhs, RegularExpression[".*\\bdir\\d\\b.*"]],
          { "{ assert(0); return ToReal(1e30); /* ERROR */ }\n" },
          { "{\n",
-           "  ptrdiff_t const cdi CCTK_ATTRIBUTE_UNUSED = sizeof(CCTK_REAL);\n",
-           "  return ", rhs, ";\n",
+           "  const ptrdiff_t cdi CCTK_ATTRIBUTE_UNUSED = sizeof(CCTK_REAL);\n",
+           "  return ", fnrhs, ";\n",
            "}\n" }],
       "#endif\n"
     }]},
@@ -477,21 +477,21 @@ DefFn[
       {
         (* simple case, dirN is not used *)
         "#  define ", macroName, "(u) ", "(", macroName, "_impl(u,", liName, ",cdj,cdk))\n",
-        "static CCTK_REAL ", macroName, "_impl(CCTK_REAL const* restrict const u, CCTK_REAL const ", liName, ", ptrdiff_t const cdj, ptrdiff_t const cdk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;\n",
-        "static CCTK_REAL ", macroName, "_impl(CCTK_REAL const* restrict const u, CCTK_REAL const ", liName, ", ptrdiff_t const cdj, ptrdiff_t const cdk)\n",
+        "static CCTK_REAL ", macroName, "_impl(const CCTK_REAL* restrict const u, const CCTK_REAL ", liName, ", const ptrdiff_t cdj, const ptrdiff_t cdk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;\n",
+        "static CCTK_REAL ", macroName, "_impl(const CCTK_REAL* restrict const u, const CCTK_REAL ", liName, ", const ptrdiff_t cdj, const ptrdiff_t cdk)\n",
         "{\n",
-        "  ptrdiff_t const cdi CCTK_ATTRIBUTE_UNUSED = sizeof(CCTK_REAL);\n",
-        "  return ", rhs, ";\n",
+        "  const ptrdiff_t cdi CCTK_ATTRIBUTE_UNUSED = sizeof(CCTK_REAL);\n",
+        "  return ", fnrhs, ";\n",
         "}\n"
       },
       {
         (* dirN is used *)
         "#  define ", macroName, "(u) ", "(", macroName, "_impl(u,", liName, ",cdj,cdk,dir1,dir2,dir3))\n",
-        "static CCTK_REAL ", macroName, "_impl(CCTK_REAL const* restrict const u, CCTK_REAL const ", liName, ", ptrdiff_t const cdj, ptrdiff_t const cdk, ptrdiff_t const dir1, ptrdiff_t const dir2, ptrdiff_t const dir3) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;\n",
-        "static CCTK_REAL ", macroName, "_impl(CCTK_REAL const* restrict const u, CCTK_REAL const ", liName, ", ptrdiff_t const cdj, ptrdiff_t const cdk, ptrdiff_t const dir1, ptrdiff_t const dir2, ptrdiff_t const dir3)\n",
+        "static CCTK_REAL ", macroName, "_impl(const CCTK_REAL* restrict const u, const CCTK_REAL ", liName, ", const ptrdiff_t cdj, const ptrdiff_t cdk, const ptrdiff_t dir1, const ptrdiff_t dir2, const ptrdiff_t dir3) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;\n",
+        "static CCTK_REAL ", macroName, "_impl(const CCTK_REAL* restrict const u, const CCTK_REAL ", liName, ", const ptrdiff_t cdj, const ptrdiff_t cdk, const ptrdiff_t dir1, const ptrdiff_t dir2, const ptrdiff_t dir3)\n",
         "{\n",
-        "  ptrdiff_t const cdi CCTK_ATTRIBUTE_UNUSED = sizeof(CCTK_REAL);\n",
-        "  return ", rhs, ";\n",
+        "  const ptrdiff_t cdi CCTK_ATTRIBUTE_UNUSED = sizeof(CCTK_REAL);\n",
+        "  return ", fnrhs, ";\n",
         "}\n"
       }],
       "#endif\n"

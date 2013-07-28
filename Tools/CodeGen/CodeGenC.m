@@ -103,7 +103,7 @@ DefFn[
 DefFn[
   DeclareVariableNoInit[name:(_String|_Symbol), type_String] :=
   If[SOURCELANGUAGE == "C",
-     {type, " ",    name, " CCTK_ATTRIBUTE_UNUSED ",EOL[]},
+     {type, " ",    name, " CCTK_ATTRIBUTE_UNUSED",EOL[]},
      {type, " :: ", name, EOL[]} (* no value init here to avoid implicit SAVE attribute *)]];
 
 DefFn[
@@ -140,7 +140,7 @@ DefFn[
 
 DefFn[
   DefineVariable[name:(_String|_Symbol), type_String, value:CodeGenBlock] :=
-  {type, " ", name, " CCTK_ATTRIBUTE_UNUSED ", " = ", value, EOL[]}];
+  {type, " ", name, " CCTK_ATTRIBUTE_UNUSED", " = ", value, EOL[]}];
 
 DefFn[
   AssignVariable[dest:(_String|_Symbol), src:CodeGenBlock] :=

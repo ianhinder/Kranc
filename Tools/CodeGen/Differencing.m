@@ -379,7 +379,7 @@ DefFn[
 
 DefFn[
   ComponentDerivativeOperatorMacroDefinition[componentDerivOp:(name_[inds___] -> expr_), vectorise_] :=
-  Module[{macroName, rhs, i = "i", j = "j", k = "k", spacings, spacings2, pat, ss, num, den, newnum, signModifier, quotient, liName, finalDef},
+  Module[{macroName, rhs, fnrhs, i = "i", j = "j", k = "k", spacings, spacings2, pat, ss, num, den, newnum, signModifier, quotient, liName, finalDef},
   
     macroName = ComponentDerivativeOperatorMacroName[componentDerivOp];
 
@@ -454,6 +454,49 @@ DefFn[
 
     rhs = CFormHideStrings[ReplacePowers[rhs /. spacings, vectorise]];
     (* Print["rhs=",FullForm[rhs]]; *)
+
+    (* Call another FD operator if we can swap or exchange array indices;
+       this will reduce code size.
+       We perform two kinds of changes here:
+       (1) op[j,i] -> op[i,j]  if j>i
+           Commute partial derivatives
+       (2) op[j]   -> op[i]    if j>2
+           Transpose array indices, but not the first which has unit stride *)
+    fnrhs =
+    Switch[componentDerivOp[[1]],
+           _[3],
+           Module[{otherOp, otherOpName},
+                  otherOp = componentDerivOp[[1]][[0]][2] -> componentDerivOp[[2]];
+                  otherOpName = ComponentDerivativeOperatorMacroName[otherOp];
+                  otherOpName<>"_impl(u, "<>liName<>", cdk, cdj)"],
+           _[1,3],
+           Module[{otherOp, otherOpName},
+                  otherOp = componentDerivOp[[1]][[0]][1,2] -> componentDerivOp[[2]];
+                  otherOpName = ComponentDerivativeOperatorMacroName[otherOp];
+                  otherOpName<>"_impl(u, "<>liName<>", cdk, cdj)"],
+           _[2,1],
+           Module[{otherOp, otherOpName},
+                  otherOp = componentDerivOp[[1]][[0]][1,2] -> componentDerivOp[[2]];
+                  otherOpName = ComponentDerivativeOperatorMacroName[otherOp];
+                  otherOpName<>"_impl(u, "<>liName<>", cdj, cdk)"],
+           _[3,1],
+           Module[{otherOp, otherOpName},
+                  otherOp = componentDerivOp[[1]][[0]][1,2] -> componentDerivOp[[2]];
+                  otherOpName = ComponentDerivativeOperatorMacroName[otherOp];
+                  otherOpName<>"_impl(u, "<>liName<>", cdk, cdj)"],
+           _[3,2],
+           Module[{otherOp, otherOpName},
+                  otherOp = componentDerivOp[[1]][[0]][2,3] -> componentDerivOp[[2]];
+                  otherOpName = ComponentDerivativeOperatorMacroName[otherOp];
+                  otherOpName<>"_impl(u, "<>liName<>", cdj, cdk)"],
+           _[3,3],
+           Module[{otherOp, otherOpName},
+                  otherOp = componentDerivOp[[1]][[0]][2,2] -> componentDerivOp[[2]];
+                  otherOpName = ComponentDerivativeOperatorMacroName[otherOp];
+                  otherOpName<>"_impl(u, "<>liName<>", cdk, cdj)"],
+           _,
+           rhs];
+    
     finalDef =
       If[vectorise,
     {pDefs, FlattenBlock[{

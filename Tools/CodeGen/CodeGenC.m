@@ -220,8 +220,9 @@ DefFn[
 
 DefFn[
   SwitchStatement[var:(_String|_Symbol), pairs__] :=
-  {"switch(", var, ")\n",
-   CBlock[{Riffle[Map[switchOption, {pairs}],"\n"]}]}];
+  {"switch (", var, ")\n",
+   CBlock[{Riffle[Map[switchOption, {pairs}],"\n"],
+           "default:\n", IndentBlock[{"CCTK_BUILTIN_UNREACHABLE();\n"}]}]}];
 
 DefFn[
   Conditional[condition:CodeGenBlock, block:CodeGenBlock] :=

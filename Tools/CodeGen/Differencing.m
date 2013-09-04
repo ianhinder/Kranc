@@ -120,7 +120,15 @@ StandardCenteredDifferenceOperator[p_, m_, i_]
 
 Return a difference operator approximating a derivative of order p
 using m grid points before and m grid points after the centre
-point. Should be checked by someone competent!
+point. TODO: Should be checked by someone competent!
+
+
+StandardUpwindDifferenceOperator[p_, m1_, m2_, i_]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Return an upwind operator approximating a derivative of order p
+using m1 grid points before and m2 grid points after the centre
+point. TODO: Should be checked by someone competent!
 
 
 *)
@@ -133,6 +141,7 @@ PrecomputeDerivatives::usage = "";
 DeclareDerivatives::usage = "";
 ReplaceDerivatives::usage = "";
 StandardCenteredDifferenceOperator::usage = "";
+StandardUpwindDifferenceOperator::usage = "";
 GridFunctionDerivativesInExpression::usage = "";
 DPlus::usage = "";
 DMinus::usage = "";
@@ -370,7 +379,7 @@ DefFn[
 
 DefFn[
   ComponentDerivativeOperatorMacroDefinition[componentDerivOp:(name_[inds___] -> expr_), vectorise_] :=
-  Module[{macroName, rhs, i = "i", j = "j", k = "k", spacings, spacings2, pat, ss, num, den, newnum, signModifier, quotient, liName, finalDef},
+  Module[{macroName, rhs, fnrhs, i = "i", j = "j", k = "k", spacings, spacings2, pat, ss, num, den, newnum, signModifier, quotient, liName, finalDef},
   
     macroName = ComponentDerivativeOperatorMacroName[componentDerivOp];
 
@@ -445,6 +454,49 @@ DefFn[
 
     rhs = CFormHideStrings[ReplacePowers[rhs /. spacings, vectorise]];
     (* Print["rhs=",FullForm[rhs]]; *)
+
+    (* Call another FD operator if we can swap or exchange array indices;
+       this will reduce code size.
+       We perform two kinds of changes here:
+       (1) op[j,i] -> op[i,j]  if j>i
+           Commute partial derivatives
+       (2) op[j]   -> op[i]    if j>2
+           Transpose array indices, but not the first which has unit stride *)
+    fnrhs =
+    Switch[componentDerivOp[[1]],
+           _[3],
+           Module[{otherOp, otherOpName},
+                  otherOp = componentDerivOp[[1]][[0]][2] -> componentDerivOp[[2]];
+                  otherOpName = ComponentDerivativeOperatorMacroName[otherOp];
+                  otherOpName<>"_impl(u, "<>liName<>", cdk, cdj)"],
+           _[1,3],
+           Module[{otherOp, otherOpName},
+                  otherOp = componentDerivOp[[1]][[0]][1,2] -> componentDerivOp[[2]];
+                  otherOpName = ComponentDerivativeOperatorMacroName[otherOp];
+                  otherOpName<>"_impl(u, "<>liName<>", cdk, cdj)"],
+           _[2,1],
+           Module[{otherOp, otherOpName},
+                  otherOp = componentDerivOp[[1]][[0]][1,2] -> componentDerivOp[[2]];
+                  otherOpName = ComponentDerivativeOperatorMacroName[otherOp];
+                  otherOpName<>"_impl(u, "<>liName<>", cdj, cdk)"],
+           _[3,1],
+           Module[{otherOp, otherOpName},
+                  otherOp = componentDerivOp[[1]][[0]][1,2] -> componentDerivOp[[2]];
+                  otherOpName = ComponentDerivativeOperatorMacroName[otherOp];
+                  otherOpName<>"_impl(u, "<>liName<>", cdk, cdj)"],
+           _[3,2],
+           Module[{otherOp, otherOpName},
+                  otherOp = componentDerivOp[[1]][[0]][2,3] -> componentDerivOp[[2]];
+                  otherOpName = ComponentDerivativeOperatorMacroName[otherOp];
+                  otherOpName<>"_impl(u, "<>liName<>", cdj, cdk)"],
+           _[3,3],
+           Module[{otherOp, otherOpName},
+                  otherOp = componentDerivOp[[1]][[0]][2,2] -> componentDerivOp[[2]];
+                  otherOpName = ComponentDerivativeOperatorMacroName[otherOp];
+                  otherOpName<>"_impl(u, "<>liName<>", cdk, cdj)"],
+           _,
+           rhs];
+    
     finalDef =
       If[vectorise,
     {pDefs, FlattenBlock[{
@@ -454,15 +506,15 @@ DefFn[
       "#else\n",
        (* new, differencing operators are static functions *)
       "#  define ", macroName, "(u) ", "(", macroName, "_impl(u,", liName, ",cdj,cdk))\n",
-      "static CCTK_REAL_VEC ", macroName, "_impl(CCTK_REAL const* restrict const u, CCTK_REAL_VEC /*const*/ ", liName, ", ptrdiff_t const cdj, ptrdiff_t const cdk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;\n",
-      "static CCTK_REAL_VEC ", macroName, "_impl(CCTK_REAL const* restrict const u, CCTK_REAL_VEC /*const*/ ", liName, ", ptrdiff_t const cdj, ptrdiff_t const cdk)\n",
+      "static CCTK_REAL_VEC ", macroName, "_impl(const CCTK_REAL* restrict const u, const CCTK_REAL_VEC ", liName, ", const ptrdiff_t cdj, const ptrdiff_t cdk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;\n",
+      "static CCTK_REAL_VEC ", macroName, "_impl(const CCTK_REAL* restrict const u, const CCTK_REAL_VEC ", liName, ", const ptrdiff_t cdj, const ptrdiff_t cdk)\n",
       (* We cannot handle dirN,
          so we punt on all expressions that contain dirN *)
       If[StringMatchQ[rhs, RegularExpression[".*\\bdir\\d\\b.*"]],
          { "{ assert(0); return ToReal(1e30); /* ERROR */ }\n" },
          { "{\n",
-           "  ptrdiff_t const cdi CCTK_ATTRIBUTE_UNUSED = sizeof(CCTK_REAL);\n",
-           "  return ", rhs, ";\n",
+           "  const ptrdiff_t cdi CCTK_ATTRIBUTE_UNUSED = sizeof(CCTK_REAL);\n",
+           "  return ", fnrhs, ";\n",
            "}\n" }],
       "#endif\n"
     }]},
@@ -477,21 +529,21 @@ DefFn[
       {
         (* simple case, dirN is not used *)
         "#  define ", macroName, "(u) ", "(", macroName, "_impl(u,", liName, ",cdj,cdk))\n",
-        "static CCTK_REAL ", macroName, "_impl(CCTK_REAL const* restrict const u, CCTK_REAL const ", liName, ", ptrdiff_t const cdj, ptrdiff_t const cdk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;\n",
-        "static CCTK_REAL ", macroName, "_impl(CCTK_REAL const* restrict const u, CCTK_REAL const ", liName, ", ptrdiff_t const cdj, ptrdiff_t const cdk)\n",
+        "static CCTK_REAL ", macroName, "_impl(const CCTK_REAL* restrict const u, const CCTK_REAL ", liName, ", const ptrdiff_t cdj, const ptrdiff_t cdk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;\n",
+        "static CCTK_REAL ", macroName, "_impl(const CCTK_REAL* restrict const u, const CCTK_REAL ", liName, ", const ptrdiff_t cdj, const ptrdiff_t cdk)\n",
         "{\n",
-        "  ptrdiff_t const cdi CCTK_ATTRIBUTE_UNUSED = sizeof(CCTK_REAL);\n",
-        "  return ", rhs, ";\n",
+        "  const ptrdiff_t cdi CCTK_ATTRIBUTE_UNUSED = sizeof(CCTK_REAL);\n",
+        "  return ", fnrhs, ";\n",
         "}\n"
       },
       {
         (* dirN is used *)
         "#  define ", macroName, "(u) ", "(", macroName, "_impl(u,", liName, ",cdj,cdk,dir1,dir2,dir3))\n",
-        "static CCTK_REAL ", macroName, "_impl(CCTK_REAL const* restrict const u, CCTK_REAL const ", liName, ", ptrdiff_t const cdj, ptrdiff_t const cdk, ptrdiff_t const dir1, ptrdiff_t const dir2, ptrdiff_t const dir3) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;\n",
-        "static CCTK_REAL ", macroName, "_impl(CCTK_REAL const* restrict const u, CCTK_REAL const ", liName, ", ptrdiff_t const cdj, ptrdiff_t const cdk, ptrdiff_t const dir1, ptrdiff_t const dir2, ptrdiff_t const dir3)\n",
+        "static CCTK_REAL ", macroName, "_impl(const CCTK_REAL* restrict const u, const CCTK_REAL ", liName, ", const ptrdiff_t cdj, const ptrdiff_t cdk, const ptrdiff_t dir1, const ptrdiff_t dir2, const ptrdiff_t dir3) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;\n",
+        "static CCTK_REAL ", macroName, "_impl(const CCTK_REAL* restrict const u, const CCTK_REAL ", liName, ", const ptrdiff_t cdj, const ptrdiff_t cdk, const ptrdiff_t dir1, const ptrdiff_t dir2, const ptrdiff_t dir3)\n",
         "{\n",
-        "  ptrdiff_t const cdi CCTK_ATTRIBUTE_UNUSED = sizeof(CCTK_REAL);\n",
-        "  return ", rhs, ";\n",
+        "  const ptrdiff_t cdi CCTK_ATTRIBUTE_UNUSED = sizeof(CCTK_REAL);\n",
+        "  return ", fnrhs, ";\n",
         "}\n"
       }],
       "#endif\n"

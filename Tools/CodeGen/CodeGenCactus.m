@@ -112,7 +112,7 @@ DefFn[
 
 DefFn[
   DeclareAssignVariableInLoop[type_String, dest:(_String|_Symbol), src:(_String|_Symbol)] :=
-  {type, " /*const*/ ", dest, " CCTK_ATTRIBUTE_UNUSED = vec_load(", src, ")", EOL[]}];
+  {"const ", type, dest, " CCTK_ATTRIBUTE_UNUSED = vec_load(", src, ")", EOL[]}];
 
 DefFn[
   MaybeAssignVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol), cond:Boolean] :=
@@ -384,20 +384,50 @@ DefFn[
   If[SOURCELANGUAGE == "C",  
      CommentedBlock[
        "Loop over the grid points",
-       {"#pragma omp parallel\n",
-        If[vectorise, "CCTK_LOOP3STR", "CCTK_LOOP3"],
-        "(", functionName, ",\n",
-        "  i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],\n",
-        "  cctk_ash[0],cctk_ash[1],cctk_ash[2]",
-        If[vectorise, {",\n", "  kimin,kimax, CCTK_REAL_VEC_SIZE"}, ""],
-        ")\n",
-        "{\n",
-        IndentBlock[
-          {(* DeclareVariable["index", "// int"], *)
-           (* DeclareAssignVariable["int", "index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"], *)
-           DeclareAssignVariable["ptrdiff_t", "index", "di*i + dj*j + dk*k"],
-           block}], "}\n",
-        If[vectorise, "CCTK_ENDLOOP3STR", "CCTK_ENDLOOP3"] <> "(", functionName, ");\n"}],
+       { "/* Circumvent a compiler bug on Blue Gene/Q */\n",
+         "const int imin0=imin[0];\n",
+         "const int imin1=imin[1];\n",
+         "const int imin2=imin[2];\n",
+         "const int imax0=imax[0];\n",
+         "const int imax1=imax[1];\n",
+         "const int imax2=imax[2];\n",
+         "// #undef VEC_COUNT\n",
+         "// #define VEC_COUNT(x) x\n",
+         "// double vec_iter_timer;\n",
+         "// {\n",
+         "//   timeval tv;\n",
+         "//   gettimeofday(&tv, NULL);\n",
+         "//   vec_iter_timer = -(tv.tv_sec + 1.0e-6 * tv.tv_usec);\n",
+         "// }\n",
+         "// ptrdiff_t vec_iter_counter = 0;\n",
+         "// ptrdiff_t vec_op_counter = 0;\n",
+         "// ptrdiff_t vec_mem_counter = 0;\n",
+         "#pragma omp parallel // reduction(+: vec_iter_counter, vec_op_counter, vec_mem_counter)\n",
+         If[vectorise, "CCTK_LOOP3STR", "CCTK_LOOP3"],
+         "(", functionName, ",\n",
+         "  i,j,k, imin0,imin1,imin2, imax0,imax1,imax2,\n",
+         "  cctk_ash[0],cctk_ash[1],cctk_ash[2]",
+         If[vectorise, {",\n", "  vecimin,vecimax, CCTK_REAL_VEC_SIZE"}, ""],
+         ")\n",
+         "{\n",
+         IndentBlock[
+           {(* DeclareVariable["index", "// int"], *)
+            (* DeclareAssignVariable["int", "index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"], *)
+            DeclareAssignVariable["ptrdiff_t", "index", "di*i + dj*j + dk*k"],
+            If[vectorise,
+               "// vec_iter_counter+=CCTK_REAL_VEC_SIZE;\n",
+               "// ++vec_iter_counter;\n"],
+            block}],
+         "}\n",
+         If[vectorise, "CCTK_ENDLOOP3STR", "CCTK_ENDLOOP3"] <> "(", functionName, ");\n",
+         "// {\n",
+         "//   timeval tv;\n",
+         "//   gettimeofday(&tv, NULL);\n",
+         "//   vec_iter_timer += tv.tv_sec + 1.0e-6 * tv.tv_usec;\n",
+         "// }\n",
+         "// CCTK_VInfo(CCTK_THORNSTRING, \"function="<>functionName<>" time=%g points=%td fp_ops=%td mem_ops=%td\", vec_iter_timer, vec_iter_counter, vec_op_counter, vec_mem_counter);\n",
+         "// #undef VEC_COUNT\n",
+         "// #define VEC_COUNT(x)\n"}],
      (* else *)
      ""]];
 
@@ -576,15 +606,21 @@ DefFn[
 
     (* Optimise *)
     expr = expr //. {
-      kneg[ToReal[a_]]    -> ToReal[-a],
-      kmul[ToReal[-1],x_] -> kneg[x],
-      kmul[x_,ToReal[-1]] -> kneg[x],
-      kneg[kneg[x_]]      -> x,
+      kneg[ToReal[a_]]      -> ToReal[-a],
+      kmul[ToReal[-1],x_]   -> kneg[x],
+      kmul[ToReal[-1.0],x_] -> kneg[x],
+      kmul[x_,ToReal[-1]]   -> kneg[x],
+      kmul[x_,ToReal[-1.0]] -> kneg[x],
+      kneg[kneg[x_]]        -> x,
       
       kadd[ToReal[0],x_]             -> x,
+      kadd[ToReal[0.0],x_]           -> x,
       kadd[x_,ToReal[0]]             -> x,
+      kadd[x_,ToReal[0.0]]           -> x,
       ksub[ToReal[0],x_]             -> kneg[x],
+      ksub[ToReal[0.0],x_]           -> kneg[x],
       ksub[x_,ToReal[0]]             -> x,
+      ksub[x_,ToReal[0.0]]           -> x,
       kadd[kneg[x_],y_]              -> ksub[y,x],
       ksub[kneg[x_],y_]              -> kneg[kadd[x,y]],
       kadd[x_,kneg[y_]]              -> ksub[x,y],
@@ -602,11 +638,21 @@ DefFn[
            kadd[ToReal[a_],y_]]      -> kadd[ToReal[a],kadd[x,y]],
       
       kmul[ToReal[0],x_]             -> ToReal[0],
+      kmul[ToReal[0.0],x_]           -> ToReal[0],
       kmul[x_,ToReal[0]]             -> ToReal[0],
+      kmul[x_,ToReal[0.0]]           -> ToReal[0],
       kmul[ToReal[+1],x_]            -> x,
+      kmul[ToReal[+1.0],x_]          -> x,
       kmul[x_,ToReal[+1]]            -> x,
+      kmul[x_,ToReal[+1.0]]          -> x,
+      kmul[ToReal[-1],x_]            -> kneg[x],
+      kmul[ToReal[-1.0],x_]          -> kneg[x],
+      kmul[x_,ToReal[-1]]            -> kneg[x],
+      kmul[x_,ToReal[-1.0]]          -> kneg[x],
       kdiv[ToReal[0],x_]             -> ToReal[0],
+      kdiv[ToReal[0.0],x_]           -> ToReal[0],
       (* kdiv[x_,ToReal[0]]           -> ToReal[nan], *)
+      (* kdiv[x_,ToReal[0.0]]         -> ToReal[nan], *)
       kdiv[x_,ToReal[y_]]            -> kmul[x,ToReal[1/y]],
       kdiv[x_,kdiv[y_,z_]]           -> kdiv[kmul[x,z],y],
       kdiv[kdiv[x_,y_],z_]           -> kdiv[x,kmul[y,z]],
@@ -749,8 +795,6 @@ DefFn[
            *)
 
         (* Handle Piecewise function *)
-        (* TODO: This does not work with vectorisation, since IfThen
-           there expects a constant condition *)
         rhs = rhs /. Piecewise -> piecewise1
                   //. piecewise1[pairs_List, val_:0] :>
                          If[pairs==={}, val,
@@ -764,7 +808,7 @@ DefFn[
         (* Avoid rational numbers *)
         rhs = rhs /. xx_Rational :> N[xx, 30];
         (* Avoid integers *)
-        rhs = rhs /. xx_Integer :> 1.0*xx;
+        (* rhs = rhs /. xx_Integer :> 1.0*xx; *)
 
         (* Simple optimisations *)
         rhs = rhs /. IfThen[_, aa_, aa_] -> aa;

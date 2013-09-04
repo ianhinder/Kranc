@@ -310,7 +310,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
            {}],
         diffHeader];
     diffHeader = If[OptionValue[UseOpenCL],
-                    "static char const *const differencing =\n" <>
+                    "static const char* const differencing =\n" <>
                     Stringify[diffHeader] <>
                     ";\n",
                     diffHeader];

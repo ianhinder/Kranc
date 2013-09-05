@@ -8,7 +8,9 @@ SetSourceLanguage["C"];
 (* Options *)
 (******************************************************************************)
 
-createCode[derivOrder_, useJacobian_, splitUpwindDerivs_, evolutionTimelevels_, addMatter_, formulation_, vectorise_, opencl_] :=
+Options[createCode] = {"DGFE" -> False};
+
+createCode[derivOrder_, useJacobian_, splitUpwindDerivs_, evolutionTimelevels_, addMatter_, formulation_, vectorise_, opencl_, OptionsPattern[]] :=
 Module[{prefix, suffix, thorn},
 
 prefix = "ML_";
@@ -17,6 +19,7 @@ suffix =
   <> If [useJacobian, "_MP", ""]
   <> If [!vectorise, "_NoVec", ""]
   <> If [opencl, "_OpenCL", ""]
+  <> If [OptionValue[DGFE], "_DGFE", ""]
   <> If [derivOrder!=4, "_O" <> ToString[derivOrder], ""]
   <> If [splitUpwindDerivs, "", "_UPW"]
   (* <> If [evolutionTimelevels!=3, "_TL" <> ToString[evolutionTimelevels], ""] *)
@@ -1407,6 +1410,7 @@ CreateKrancThornTT [groups, "TestThorns", thorn,
   UseLoopControl -> True,
   UseVectors -> vectorise,
   UseOpenCL -> opencl,
+  UseDGFE -> OptionValue[DGFE],
   InheritedImplementations -> inheritedImplementations,
   InheritedKeywordParameters -> inheritedKeywordParameters,
   ExtendedKeywordParameters -> extendedKeywordParameters,
@@ -1461,3 +1465,12 @@ Test[
   ,
   TestID->"McLachlanOpenCL"
 ]
+
+Test[
+  createCode[4, False, True , 3, 1, "BSSN", True, False, DGFE -> True];
+  ,
+  Null
+  ,
+  TestID->"McLachlanDGFE"
+]
+

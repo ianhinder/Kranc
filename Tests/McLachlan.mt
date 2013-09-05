@@ -8,7 +8,7 @@ SetSourceLanguage["C"];
 (* Options *)
 (******************************************************************************)
 
-Options[createCode] = {"DGFE" -> False};
+Options[createCode] = {"DGFE" -> False, "CaKernel" -> False};
 
 createCode[derivOrder_, useJacobian_, splitUpwindDerivs_, evolutionTimelevels_, addMatter_, formulation_, vectorise_, opencl_, OptionsPattern[]] :=
 Module[{prefix, suffix, thorn},
@@ -20,6 +20,7 @@ suffix =
   <> If [!vectorise, "_NoVec", ""]
   <> If [opencl, "_OpenCL", ""]
   <> If [OptionValue[DGFE], "_DGFE", ""]
+  <> If [OptionValue[CaKernel], "_CaKernel", ""]
   <> If [derivOrder!=4, "_O" <> ToString[derivOrder], ""]
   <> If [splitUpwindDerivs, "", "_UPW"]
   (* <> If [evolutionTimelevels!=3, "_TL" <> ToString[evolutionTimelevels], ""] *)
@@ -1411,6 +1412,7 @@ CreateKrancThornTT [groups, "TestThorns", thorn,
   UseVectors -> vectorise,
   UseOpenCL -> opencl,
   UseDGFE -> OptionValue[DGFE],
+  UseCaKernel -> OptionValue[CaKernel],
   InheritedImplementations -> inheritedImplementations,
   InheritedKeywordParameters -> inheritedKeywordParameters,
   ExtendedKeywordParameters -> extendedKeywordParameters,
@@ -1474,3 +1476,10 @@ Test[
   TestID->"McLachlanDGFE"
 ]
 
+Test[
+  createCode[4, False, True , 3, 1, "BSSN", True, False, CaKernel -> True];
+  ,
+  Null
+  ,
+  TestID->"McLachlanCaKernel"
+]

@@ -21,7 +21,8 @@ Needs["KrancThorn`"];
 SetDebugLevel[DebugQuiet];
 
 tests = {
-		"Kranc"
+  "Kranc",
+  "McLachlan"
 };
 
 (Print["\n"]; TestRun[#<>".mt", Loggers -> {VerbosePrintLogger[]}, TestRunTitle -> #]) & /@ tests;

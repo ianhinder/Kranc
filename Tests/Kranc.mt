@@ -89,9 +89,9 @@ Test[
       Calculations       -> {initialSineCalc, evolveCalc}]];
 
   {StringMatchQ[Import["TestThorns/IfThen/src/calc_rhs.cc","Text"],
-                 __~~"if (alpha > 0.)"~~__],
+                 __~~"if (alpha > 0)"~~__],
    StringMatchQ[Import["TestThorns/IfThen/src/initial_sine.cc","Text"],
-                __~~"IfThen(xL"~~Whitespace~~">"~~Whitespace~~"0."~~__]}
+                __~~"IfThen(xL"~~Whitespace~~">"~~Whitespace~~"0"~~__]}
   ,
   {True, True}
   ,

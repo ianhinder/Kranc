@@ -97,3 +97,19 @@ Test[
   ,
   TestID -> "IfThen"
     ]
+
+(****************************************************************)
+(* SimpleWave *)
+(****************************************************************)
+
+Test[
+  CreateKrancThornTT[
+    $groups, "TestThorns", "SimpleWave",
+    PartialDerivatives -> $derivatives,
+    DeclaredGroups     -> {"evolved_group"},
+    Calculations       -> {$initialSineCalc, $evolveCalc}]
+  ,
+  Null
+  ,
+  TestID->"SimpleWave"
+]

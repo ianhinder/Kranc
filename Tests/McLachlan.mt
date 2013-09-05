@@ -8,13 +8,14 @@ SetSourceLanguage["C"];
 (* Options *)
 (******************************************************************************)
 
-createCode[derivOrder_, useJacobian_, splitUpwindDerivs_, evolutionTimelevels_, addMatter_, formulation_] :=
+createCode[derivOrder_, useJacobian_, splitUpwindDerivs_, evolutionTimelevels_, addMatter_, formulation_, vectorise_] :=
 Module[{prefix, suffix, thorn},
 
 prefix = "ML_";
 suffix =
   ""
   <> If [useJacobian, "_MP", ""]
+  <> If [!vectorise, "_NoVec", ""]
   <> If [derivOrder!=4, "_O" <> ToString[derivOrder], ""]
   <> If [splitUpwindDerivs, "", "_UPW"]
   (* <> If [evolutionTimelevels!=3, "_TL" <> ToString[evolutionTimelevels], ""] *)
@@ -1403,7 +1404,7 @@ CreateKrancThornTT [groups, "TestThorns", thorn,
   DefaultEvolutionTimelevels -> 3,
   UseJacobian -> True,
   UseLoopControl -> True,
-  UseVectors -> True,
+  UseVectors -> vectorise,
   InheritedImplementations -> inheritedImplementations,
   InheritedKeywordParameters -> inheritedKeywordParameters,
   ExtendedKeywordParameters -> extendedKeywordParameters,
@@ -1418,8 +1419,6 @@ CreateKrancThornTT [groups, "TestThorns", thorn,
 (* McLachlan *)
 (****************************************************************)
 
-Test[
-
 (******************************************************************************)
 (* Options *)
 (******************************************************************************)
@@ -1433,12 +1432,21 @@ Test[
    - matter: 0 or 1
      (matter seems cheap; it should be always enabled)
    - thorn base name
+   - vectorise
 *)
 
-createCode[4, False, True , 3, 1, "BSSN"];
-(* createCode[4, False, True , 3, 1, "CCZ4"]; *)
-	,
-	Null
-	,
-	TestID->"McLachlan"
+Test[
+  createCode[4, False, True , 3, 1, "BSSN", True];
+  ,
+  Null
+  ,
+  TestID->"McLachlanVec"
+]
+
+Test[
+  createCode[4, False, True , 3, 1, "BSSN", False];
+  ,
+  Null
+  ,
+  TestID->"McLachlanNoVec"
 ]

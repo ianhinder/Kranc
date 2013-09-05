@@ -52,32 +52,17 @@ derivatives =
    {PDupwindNth[i] -> Switch[fdOrder,
       2, (dir[i]*(-3 + 4*shift[i]^dir[i] - shift[i]^(2*dir[i])))/(2*spacing[i]),
       4, (dir[i]*(-10 - 3/shift[i]^dir[i] + 18*shift[i]^dir[i] -
-          6*shift[i]^(2*dir[i]) + shift[i]^(3*dir[i])))/(12*spacing[i]),
-      6, (dir[i]*(-35 + 2/shift[i]^(2*dir[i]) - 24/shift[i]^dir[i] + 80*shift[i]^dir[i] -
-          30*shift[i]^(2*dir[i]) + 8*shift[i]^(3*dir[i]) - shift[i]^(4*dir[i])))/(60*spacing[i]),
-      8, (dir[i]*(-378 - 5/shift[i]^(3*dir[i]) + 60/shift[i]^(2*dir[i]) - 420/shift[i]^dir[i] +
-          1050*shift[i]^dir[i] - 420*shift[i]^(2*dir[i]) + 140*shift[i]^(3*dir[i]) - 30*shift[i]^(4*dir[i]) +
-          3*shift[i]^(5*dir[i])))/(840*spacing[i])],
+          6*shift[i]^(2*dir[i]) + shift[i]^(3*dir[i])))/(12*spacing[i])],
 
     PDupwindNthAnti[i] -> Switch[fdOrder,
       2, (+1 shift[i]^(-2) -4 shift[i]^(-1) +0 shift[i]^( 0) +4 shift[i]^(+1) -1 shift[i]^(+2)) / (4 spacing[i]),
       4, (-1 shift[i]^(-3) +6 shift[i]^(-2) -21 shift[i]^(-1 )+0 shift[i]^( 0) +21 shift[i]^(+1)
-          -6 shift[i]^(+2) +1 shift[i]^(+3)) / (24 spacing[i]),
-      6, (+1 shift[i]^(-4) -8 shift[i]^(-3) +32 shift[i]^(-2) -104 shift[i]^(-1) +0 shift[i]^( 0)
-          +104 shift[i]^(+1) -32 shift[i]^(+2) +8 shift[i]^(+3) -1 shift[i]^(+4)) / (120 spacing[i]),
-      8, (-3 shift[i]^(-5) +30 shift[i]^(-4) -145 shift[i]^(-3) +480 shift[i]^(-2) -1470 shift[i]^(-1)
-          +0 shift[i]^( 0) +1470 shift[i]^(+1) -480 shift[i]^(+2) +145 shift[i]^(+3) -30 shift[i]^(+4)
-          +3 shift[i]^(+5)) / (1680 spacing[i])],
+          -6 shift[i]^(+2) +1 shift[i]^(+3)) / (24 spacing[i])],
 
     PDupwindNthSymm[i] -> Switch[fdOrder,
      2, (-1 shift[i]^(-2) +4 shift[i]^(-1) -6 shift[i]^( 0) +4 shift[i]^(+1) -1 shift[i]^(+2)) / (4 spacing[i]),
      4, (+1 shift[i]^(-3) -6 shift[i]^(-2) +15 shift[i]^(-1) -20 shift[i]^( 0) +15 shift[i]^(+1)
-         -6 shift[i]^(+2) +1 shift[i]^(+3)) / (24 spacing[i]),
-     6, (-1 shift[i]^(-4) +8 shift[i]^(-3) - 28 shift[i]^(-2)+56 shift[i]^(-1)-70 shift[i]^( 0)
-         +56 shift[i]^(+1) -28 shift[i]^(+2) +8 shift[i]^(+3) -1 shift[i]^(+4)) / (120 spacing[i]),
-     8, (+3 shift[i]^(-5) -30 shift[i]^(-4) +135 shift[i]^(-3) -360 shift[i]^(-2) +630 shift[i]^(-1)
-         -756 shift[i]^( 0) +630 shift[i]^(+1) -360 shift[i]^(+2) +135 shift[i]^(+3) -30 shift[i]^(+4)
-         +3 shift[i]^(+5)) / (1680 spacing[i])],
+         -6 shift[i]^(+2) +1 shift[i]^(+3)) / (24 spacing[i])],
 
     (* TODO: make these higher order stencils *)
     PDonesided[i] -> dir[i] (-1 + shift[i]^dir[i]) / spacing[i]} /. i->j, {j,1,3}],1]
@@ -1287,7 +1272,7 @@ intParameters =
   {
     Name -> fdOrder,
     Default -> derivOrder,
-    AllowedValues -> {2,4,6,8}
+    AllowedValues -> {2,4}
   },
   {
     Name -> harmonicShift,

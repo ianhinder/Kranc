@@ -1,6 +1,36 @@
 
 (* Mathematica Test File *)
 
+$derivatives = {
+  PDstandard2nd[i_]     -> StandardCenteredDifferenceOperator[1,1,i],
+  PDstandard2nd[i_, i_] -> StandardCenteredDifferenceOperator[2,1,i]};
+
+PD = PDstandard2nd;
+
+$groups = {{"evolved_group", {phi, pi}}};
+
+$initialSineCalc = {
+  Name      -> "initial_sine",
+  Schedule  -> {"AT initial"},
+  Equations ->
+  {
+    phi -> Sin[2 Pi (x - t)],
+    pi  -> -2 Pi Cos[2 Pi (x - t)]
+  }};
+
+$evolveCalc = {
+  Name      -> "calc_rhs",
+  Schedule  -> {"IN MoL_CalcRHS"},
+  Where     -> Interior,
+  Equations ->
+  {
+    dot[phi] -> pi,
+    dot[pi]  -> Euc[ui,uj] PD[phi,li,lj]
+  }};
+
+
+
+
 (****************************************************************)
 (* CreateThorn *)
 (****************************************************************)
@@ -21,12 +51,14 @@ Test[
    statements if they don't contain grid functions, as this doesn't
    work with vectorisation. *)
 
+(* The PD symbol is treated in a nonoptimal way by Kranc, and this
+   causes problems for the tests.  This should be cleaned up. *)
+
 Test[
   Module[
     {derivatives = {
       PDstandard2nd[i_]     -> StandardCenteredDifferenceOperator[1,1,i],
       PDstandard2nd[i_, i_] -> StandardCenteredDifferenceOperator[2,1,i]},
-     PD = PDstandard2nd,
      groups = {{"evolved_group", {phi, pi}}},
      initialSineCalc = {
        Name      -> "initial_sine",
@@ -45,6 +77,8 @@ Test[
          dot[phi] -> IfThen[alpha>0, pi, 2 pi],
          dot[pi]  -> IfThen[alpha>0, Euc[ui,uj] PD[phi,li,lj], 2 Euc[ui,uj] PD[phi,li,lj]]
        }}},
+
+    (* PD = PDstandard2nd *)
     
     CreateKrancThornTT[
       groups, "TestThorns", 

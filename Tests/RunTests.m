@@ -1,4 +1,4 @@
-#!/usr/bin/env math -script
+#!/usr/bin/env MathematicaScript -script
 
 SetOptions[ $Output, FormatType -> OutputForm ];
 
@@ -18,12 +18,19 @@ Needs["Errors`"];
 Needs["KrancThorn`"];
 (* (\* Needs["Profile`"]; *\) *)
 
-SetDebugLevel[DebugQuiet];
+(* SetDebugLevel[DebugQuiet]; *)
 
-tests = {
+alltests = {
   "Kranc",
   "McLachlan"
 };
+
+args = Drop[$ScriptCommandLine, 1];
+
+If[Length[args] > 0,
+   If[StringMatchQ[args[[1]], "*.mt"],
+      tests = {StringReplace[args[[1]], ".mt" -> ""]}],
+   tests = alltests];
 
 (Print["\n"]; TestRun[#<>".mt", Loggers -> {VerbosePrintLogger[]}, TestRunTitle -> #]) & /@ tests;
 Print[];

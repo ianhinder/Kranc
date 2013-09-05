@@ -18,6 +18,8 @@ Needs["Errors`"];
 Needs["KrancThorn`"];
 (* (\* Needs["Profile`"]; *\) *)
 
+SetDebugLevel[DebugQuiet];
+
 tests = {
 		"Kranc"
 };

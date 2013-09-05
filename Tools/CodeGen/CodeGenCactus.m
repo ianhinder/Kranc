@@ -384,24 +384,24 @@ DefFn[
   If[SOURCELANGUAGE == "C",  
      CommentedBlock[
        "Loop over the grid points",
-       { "/* Circumvent a compiler bug on Blue Gene/Q */\n",
+       { (* Circumvent a compiler bug on Blue Gene/Q *)
          "const int imin0=imin[0];\n",
          "const int imin1=imin[1];\n",
          "const int imin2=imin[2];\n",
          "const int imax0=imax[0];\n",
          "const int imax1=imax[1];\n",
          "const int imax2=imax[2];\n",
-         "// #undef VEC_COUNT\n",
-         "// #define VEC_COUNT(x) x\n",
-         "// double vec_iter_timer;\n",
-         "// {\n",
-         "//   timeval tv;\n",
-         "//   gettimeofday(&tv, NULL);\n",
-         "//   vec_iter_timer = -(tv.tv_sec + 1.0e-6 * tv.tv_usec);\n",
-         "// }\n",
-         "// ptrdiff_t vec_iter_counter = 0;\n",
-         "// ptrdiff_t vec_op_counter = 0;\n",
-         "// ptrdiff_t vec_mem_counter = 0;\n",
+         (* "// #undef VEC_COUNT\n", *)
+         (* "// #define VEC_COUNT(x) x\n", *)
+         (* "// double vec_iter_timer;\n", *)
+         (* "// {\n", *)
+         (* "//   timeval tv;\n", *)
+         (* "//   gettimeofday(&tv, NULL);\n", *)
+         (* "//   vec_iter_timer = -(tv.tv_sec + 1.0e-6 * tv.tv_usec);\n", *)
+         (* "// }\n", *)
+         (* "// ptrdiff_t vec_iter_counter = 0;\n", *)
+         (* "// ptrdiff_t vec_op_counter = 0;\n", *)
+         (* "// ptrdiff_t vec_mem_counter = 0;\n", *)
          "#pragma omp parallel // reduction(+: vec_iter_counter, vec_op_counter, vec_mem_counter)\n",
          If[vectorise, "CCTK_LOOP3STR", "CCTK_LOOP3"],
          "(", functionName, ",\n",
@@ -419,7 +419,7 @@ DefFn[
                "// ++vec_iter_counter;\n"],
             block}],
          "}\n",
-         If[vectorise, "CCTK_ENDLOOP3STR", "CCTK_ENDLOOP3"] <> "(", functionName, ");\n",
+         If[vectorise, "CCTK_ENDLOOP3STR", "CCTK_ENDLOOP3"] <> "(", functionName, ");\n" (* ,
          "// {\n",
          "//   timeval tv;\n",
          "//   gettimeofday(&tv, NULL);\n",
@@ -427,7 +427,7 @@ DefFn[
          "// }\n",
          "// CCTK_VInfo(CCTK_THORNSTRING, \"function="<>functionName<>" time=%g points=%td fp_ops=%td mem_ops=%td\", vec_iter_timer, vec_iter_counter, vec_op_counter, vec_mem_counter);\n",
          "// #undef VEC_COUNT\n",
-         "// #define VEC_COUNT(x)\n"}],
+         "// #define VEC_COUNT(x)\n" *) }],
      (* else *)
      ""]];
 

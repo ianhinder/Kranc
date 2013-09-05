@@ -46,8 +46,9 @@ groupsSetInCalc[calc_, groups_] :=
    implemented. *)
 
 CalculationBoundariesFunction[calc_List] :=
-  Module[{selectGroup, groups, groupNamesSet, imp},
+  Module[{funcName, selectGroup, groups, groupNamesSet, imp},
 
+  funcName = lookup[calc, Name];
   imp = lookup[calc,Implementation];
 
   (* If the calculation sets every grid point, we don't need to apply
@@ -69,8 +70,10 @@ CalculationBoundariesFunction[calc_List] :=
     groups = lookup[calc, Groups];
     groupNamesSet = qualifyGroupName[#, imp] & /@ groupsSetInCalc[calc, groups];
 
-    DefineCCTKFunction[lookup[calc, Name] <> "_SelectBCs", "void",
+    DefineCCTKFunction[funcName <> "_SelectBCs", "void",
     {
+      "if (cctk_iteration % " <> funcName <> "_calc_every != " <> funcName <> "_calc_offset)\n",
+      "  return;\n",
       DefineVariable["ierr",   "CCTK_INT", "0"],
 (*      DefineVariable["table",  "CCTK_INT", "-1"],*)
       Map[selectGroup, groupNamesSet],

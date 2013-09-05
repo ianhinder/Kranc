@@ -193,7 +193,7 @@ CheckGroupStorage[groupNames_, calcName_] :=
     ignoreGroups = {"TmunuBase::stress_energy_scalar", "TmunuBase::stress_energy_vector",
       "TmunuBase::stress_energy_tensor"};
     groupNames2 = Select[groupNames, !MemberQ[ignoreGroups, #] &];
-    {"\nconst char *const groups[] = {\n  ",
+    {"\nconst char* const groups[] = {\n  ",
     Riffle[Map[Quote,groupNames2], ",\n  "],
     "};\n",
     "GenericFD_AssertGroupStorage(cctkGH, ", Quote[calcName],", ", Length[groupNames2], ", groups);\n"}];
@@ -487,7 +487,7 @@ DefFn[
   (* Check that there are no unknown symbols in the calculation *)
   allSymbols = calculationSymbols[cleancalc];
   knownSymbols = Join[lookupDefault[cleancalc, AllowedSymbols, {}], gfs, shorts, parameters,
-    {dx,dy,dz,dt,idx,idy,idz,t, Pi, E, Symbol["i"], Symbol["j"], Symbol["k"], normal1, normal2,
+    {dx,dy,dz,dt,idx,idy,idz,t, usejacobian, Pi, E, Symbol["i"], Symbol["j"], Symbol["k"], normal1, normal2,
     normal3, tangentA1, tangentA2, tangentA3, tangentB1, tangentB2, tangentB3},
     If[useJacobian, JacobianSymbols[], {}]];
 
@@ -563,7 +563,7 @@ DefFn[
            "    enum {nequations = nvars};",
            "    enum {nexternal = 3*nvars};",
            "    enum {nbitmasks = 0};",
-           "    static bool const pure = false;",
+           "    static const bool pure = false;",
            "  };",
            "} // namespace",
            "",
@@ -574,7 +574,7 @@ DefFn[
            "  typedef hrscc::CLaw<DGFE_"<>name<>"> claw;",
            "  typedef hrscc::traits<DGFE_"<>name<>">::state_t state_t;",
            "  typedef hrscc::traits<DGFE_"<>name<>"> variables_t;",
-           "  static int const nvars = variables_t::nvars;",
+           "  static const int nvars = variables_t::nvars;",
            "  ",
            "  DGFE_"<>name<>"();",
            "  ",
@@ -596,7 +596,7 @@ DefFn[
              "    }"},
                  {dir, 1, 3}],
            "    default:",
-           "      assert(0);",
+           "      CCTK_BUILTIN_UNREACHABLE();",
            "    }",
            "    ",
            Map["    observer.flux[dir][variables_t::i"<>ToString[#]<>"] = flux"<>ToString[#]<>"L;" &, vars],
@@ -628,10 +628,10 @@ DefFn[
            "",
            "",
            "namespace {",
-           "  int varindex(char const* const varname)",
+           "  int varindex(const char* const varname)",
            "  {",
-           "    int const vi = CCTK_VarIndex(varname);",
-           "    if (vi<0) CCTK_WARN(CCTK_WARN_ABORT, \"Internal error\");",
+           "    const int vi = CCTK_VarIndex(varname);",
+           "    if (vi<0) CCTK_ERROR(\"Internal error\");",
            "    return vi;",
            "  }",
            "}",
@@ -661,9 +661,9 @@ DefFn[
            "#undef PDstandardNth1",
            "#undef PDstandardNth2",
            "#undef PDstandardNth3",
-           "#define PDstandardNth1(u) (solver->diff<hrscc::policy::x>(&(u)[-index], i,j,k))",
-           "#define PDstandardNth2(u) (solver->diff<hrscc::policy::y>(&(u)[-index], i,j,k))",
-           "#define PDstandardNth3(u) (solver->diff<hrscc::policy::z>(&(u)[-index], i,j,k))",
+           "#define PDstandardNth1(u) (solver->wdiff<hrscc::policy::x>(&(u)[-index], i,j,k))",
+           "#define PDstandardNth2(u) (solver->wdiff<hrscc::policy::y>(&(u)[-index], i,j,k))",
+           "#define PDstandardNth3(u) (solver->wdiff<hrscc::policy::z>(&(u)[-index], i,j,k))",
            "",
            "",
            ""
@@ -707,7 +707,7 @@ DefFn[
     (* We could (or probably should) write this into a source file of its own *)
     If[OptionValue[UseOpenCL],
        {
-         "char const *const source =\n"
+         "const char* const source =\n"
        },
        {
        }],
@@ -750,13 +750,13 @@ DefFn[
            groupNames = groupsInCalculation[cleancalc, imp];
            groupNames = Select[groupNames, !MemberQ[ignoreGroups, #] &];
            {
-             "char const *const groups[] = {\n  ",
+             "const char* const groups[] = {\n  ",
                Riffle[Join[Map[Quote, groupNames], {"NULL"}], ",\n  "],
                "};\n\n"
            }
          ],
          "static struct OpenCLKernel *kernel = NULL;\n",
-         "char const *const sources[] = {differencing, source, NULL};\n",
+         "const char* const sources[] = {differencing, source, NULL};\n",
          "OpenCLRunTime_CallKernel(cctkGH, CCTK_THORNSTRING, \"" <> functionName <> "\",\n",
          "                         sources, groups, NULL, NULL, NULL, -1,\n",
          "                         imin, imax, &kernel);\n\n"
@@ -937,7 +937,7 @@ DefFn[
     assignLocalFunctions[gs_, useVectors_, useJacobian_, NameFunc_] :=
       Module[{conds, varPatterns, varsInConds, simpleVars, code},
         conds =
-          {{"eT" ~~ _ ~~ _, "*stress_energy_state", "ToReal(0.0)"}}; (* This should be passed as an option *)
+          {{"eT" ~~ _ ~~ _, "assume_stress_energy_state>=0 ? assume_stress_energy_state : *stress_energy_state", "ToReal(0.0)"}}; (* This should be passed as an option *)
         If[useJacobian,
           conds = Append[conds, JacobianConditionalGridFunctions[]]];
 
@@ -1015,7 +1015,7 @@ DefFn[
                     gfsInLHS] }],
             OptionValue[UseVectors],
             CommentedBlock["Copy local copies back to grid functions",
-              { PrepareStorePartialVariableInLoop["i", "kimin", "kimax"],
+              { PrepareStorePartialVariableInLoop["i", "vecimin", "vecimax"],
                 Map[StorePartialVariableInLoop[gridName[#], localName[#]] &,
                     gfsInLHS] }],
             True,
@@ -1043,7 +1043,7 @@ DefFn[
           "Calculate temporaries and grid functions", 
           If[OptionValue[UseVectors],
              {
-               PrepareStorePartialVariableInLoop["i", "kimin", "kimax"],
+               PrepareStorePartialVariableInLoop["i", "vecimin", "vecimax"],
                Map[StorePartialVariableInLoop[FlattenBlock@gridName[#[[1]]], #[[2]]] &, eqs2]
              },
              Map[

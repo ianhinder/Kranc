@@ -93,10 +93,10 @@ connection with TensorTools.  The covariant derivative operator will be cd,
 the partial derivative operator will be pd, and the Christoffel symbol will
 be ch.";
 
-DefineJacobian::usage = "DefineJacobian[pd, fd, J, dJ] registers a
+DefineJacobian::usage = "DefineJacobian[pd, fd, J, iJ, dJ] registers a
 Jacobian with TensorTools.  The partial derivative operator will be pd,
-the local partial derivative operator will be fd, and the Jacobian and its
-derivative will be J and dJ.";
+the local partial derivative operator will be fd, and the Jacobian, its
+inverse, and its derivative will be J, iJ, and dJ, respectively.";
 
 ResetJacobians::usage = "ResetJacobians unregisters all Jacobians.";
 
@@ -1024,9 +1024,9 @@ LieToPD[x_] :=
 
 jacobians = {};
 
-DefineJacobian[pd_, fd_, J_, dJ_] :=
+DefineJacobian[pd_, fd_, J_, iJ_, dJ_] :=
   Module[{},
-    jacobians = Join[jacobians, {{pd, fd, J, dJ}}]];
+    jacobians = Join[jacobians, {{pd, fd, J, iJ, dJ}}]];
 
 ResetJacobians := Module[{}, jacobians = {}];
 

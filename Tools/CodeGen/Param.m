@@ -224,7 +224,8 @@ CreateKrancParam[evolvedGroups_, nonevolvedGroups_,
     {
       Name -> "GenericFD",
       UsedParameters -> 
-        If[OptionValue[UseJacobian], JacobianGenericFDParameters[], {}]
+        Join[{{Name -> "assume_stress_energy_state", Type -> "CCTK_INT"}},
+             If[OptionValue[UseJacobian], JacobianGenericFDParameters[], {}]]
     };
 
     realStructs = Map[krancParamStruct[#, "CCTK_REAL", False] &, reals];

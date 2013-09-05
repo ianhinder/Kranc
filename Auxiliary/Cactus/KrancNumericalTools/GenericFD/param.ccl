@@ -32,12 +32,33 @@ CCTK_INT  boundary_width "width of boundary (fix later to use Cactus boundary ca
 } 1
 
 restricted:
+CCTK_INT assume_stress_energy_state "Assume stress_energy_state has a particular value" STEERABLE=RECOVER
+{
+  -1  :: "do not assume anything"
+  0:1 :: "assume off or on"
+} -1
+
+CCTK_INT assume_use_jacobian "Assume use_jacobian has a particular value" STEERABLE=RECOVER
+{
+  -1  :: "do not assume anything"
+  0:1 :: "assume off or on"
+} -1
+
 CCTK_STRING jacobian_group "Name of group containing Jacobian" STEERABLE=RECOVER
 {
   "" :: "String of the form <implementation>::<groupname>"
 } ""
 
-restricted:
+CCTK_STRING jacobian_determinant_group "Name of group containing Jacobian determinant" STEERABLE=RECOVER
+{
+  "" :: "String of the form <implementation>::<groupname>"
+} ""
+
+CCTK_STRING jacobian_inverse_group "Name of group containing Jacobian inverse" STEERABLE=RECOVER
+{
+  "" :: "String of the form <implementation>::<groupname>"
+} ""
+
 CCTK_STRING jacobian_derivative_group "Name of group containing Jacobian derivative" STEERABLE=RECOVER
 {
   "" :: "String of the form <implementation>::<groupname>"

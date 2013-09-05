@@ -377,11 +377,7 @@ groupStorage[spec_] :=
       Module[
         {param,max},
         {param,max} = tls;
-        Flatten[
-          Table[{"if (", param, " == ", i, ")\n",
-                 "{\n",
-                 "  STORAGE: ", group, "[", i, "]\n",
-                 "}\n"}, {i, 1, max}], 1]],
+        {"STORAGE: ", group, "[", param, "]\n"}],
 
       True, Error["Unrecognized Timelevels value "<>ToString[tls]]]];
 
@@ -412,13 +408,15 @@ scheduleUnconditionalFunction[spec_] :=
       translateRegion[r_] := Switch[r,
                                     Everywhere, "Everywhere",
                                     Interior, "Interior",
+                                    InteriorNoSync, "Interior",
                                     Boundary, "Boundary",
+                                    BoundaryNoSync, "Boundary",
                                     _, "ERROR(" <> ToString[r] <> ")"];
-      Map[{"READS:    ", #, "(",
+      Map[{"READS: ", #, "(",
            translateRegion[lookupDefault[spec, RequiredRegion, "ERROR"]],
            ")\n"} &,
           lookupDefault[spec, RequiredGroups, {}]],
-      Map[{"WRITES:   ", #, "(",
+      Map[{"WRITES: ", #, "(",
            translateRegion[lookupDefault[spec, ProvidedRegion, "ERROR"]],
            ")\n"} &,
           lookupDefault[spec, ProvidedGroups, {}]],
@@ -588,7 +586,7 @@ CreateSetterSource[calcs_, debug_, include_,
 
    CalculationBoundariesFunction[First[calcs]],
 
-   bodyFunction = DefineFunction[lookup[calc,Name]<>"_Body", "static void", "cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const imin[3], int const imax[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[]",
+   bodyFunction = DefineFunction[lookup[calc,Name]<>"_Body", "static void", "const cGH* restrict const cctkGH, const int dir, const int face, const CCTK_REAL normal[3], const CCTK_REAL tangentA[3], const CCTK_REAL tangentB[3], const int imin[3], const int imax[3], const int n_subblock_gfs, CCTK_REAL* restrict const subblock_gfs[]",
   {
     "DECLARE_CCTK_ARGUMENTS;\n",
     "DECLARE_CCTK_PARAMETERS;\n\n", 
@@ -1180,16 +1178,16 @@ charInfoFunction[type_, spec_, debug_]:= Module[{funcName, argString, headerComm
 If[type == "P2C", 
 
    funcName = lookup[spec,Name] <> "_MultiPatch_Prim2Char";
-   argString =  "CCTK_POINTER_TO_CONST const cctkGH_,\n"       <>
-        tab <>  "CCTK_INT const dir,\n"                        <>
-        tab <>  "CCTK_INT const face,\n"                       <>
-        tab <>  "CCTK_REAL const * restrict const base,\n"     <>
-        tab <>  "CCTK_INT const * restrict const off,\n"       <>
-        tab <>  "CCTK_INT const * restrict const len,\n"       <>
-        tab <>  "CCTK_INT const rhs_flag,\n"                   <>
-        tab <>  "CCTK_INT const num_modes,\n"                  <>
-        tab <>  "CCTK_POINTER const * restrict const modes,\n" <>
-        tab <>  "CCTK_POINTER const * restrict const speeds";
+   argString =  "const CCTK_POINTER_TO_CONST cctkGH_,\n"      <>
+        tab <>  "const CCTK_INT dir,\n"                       <>
+        tab <>  "const CCTK_INT face,\n"                      <>
+        tab <>  "const CCTK_REAL* restrict const base,\n"     <>
+        tab <>  "const CCTK_INT* restrict const off,\n"       <>
+        tab <>  "const CCTK_INT* restrict const len,\n"       <>
+        tab <>  "const CCTK_INT rhs_flag,\n"                  <>
+        tab <>  "const CCTK_INT num_modes,\n"                 <>
+        tab <>  "const CCTK_POINTER* restrict const modes,\n" <>
+        tab <>  "const CCTK_POINTER* restrict const speeds";
 
    headerComment1 = "/* translate from primary to characteristic variables           */\n";
    headerComment2 = "/* Output:                                                      */\n" <>
@@ -1201,15 +1199,15 @@ If[type == "P2C",
 If[type == "C2P", 
 
    funcName = lookup[spec,Name] <> "_MultiPatch_Char2Prim";
-   argString =  "CCTK_POINTER_TO_CONST const cctkGH_,\n"       <>
-        tab <>  "CCTK_INT const dir,\n"                        <>
-        tab <>  "CCTK_INT const face,\n"                       <>
-        tab <>  "CCTK_REAL const * restrict const base,\n"     <>
-        tab <>  "CCTK_INT const * restrict const off,\n"       <>
-        tab <>  "CCTK_INT const * restrict const len,\n"       <>
-        tab <>  "CCTK_INT const rhs_flag,\n"                   <>
-        tab <>  "CCTK_INT const num_modes,\n"                  <>
-        tab <>  "CCTK_POINTER_TO_CONST const * restrict const modes";
+   argString =  "const CCTK_POINTER_TO_CONST cctkGH_,\n"      <>
+        tab <>  "const CCTK_INT dir,\n"                       <>
+        tab <>  "const CCTK_INT face,\n"                      <>
+        tab <>  "const CCTK_REAL* restrict const base,\n"     <>
+        tab <>  "const CCTK_INT* restrict const off,\n"       <>
+        tab <>  "const CCTK_INT* restrict const len,\n"       <>
+        tab <>  "const CCTK_INT rhs_flag,\n"                  <>
+        tab <>  "const CCTK_INT num_modes,\n"                 <>
+        tab <>  "const CCTK_POINTER_TO_CONST* restrict const modes";
 
    headerComment1 = "/* translate from characteristic to primary variables          */\n";
    headerComment2 = "/* Output:                                                     */\n" <>  
@@ -1237,13 +1235,13 @@ DefineFunction[funcName, "CCTK_INT", argString,
 "/*       CCTK_INT              num_modes...              */\n",
 headerComment2,
 "{\n",
-"  cGH const * restrict const cctkGH = cctkGH_;\n",
+"  const cGH* restrict const cctkGH = cctkGH_;\n",
 "  DECLARE_CCTK_ARGUMENTS;\n",
 "  DECLARE_CCTK_PARAMETERS;\n\n",
 
-"  CCTK_REAL const * restrict prims["   <> ToString@numvars <> "];\n",
-"  CCTK_REAL       * restrict chars["   <> ToString@numvars <> "];\n",
-"  CCTK_REAL       * restrict cspeeds[" <> ToString@numvars <> "];\n",
+"  const CCTK_REAL* restrict prims["   <> ToString@numvars <> "];\n",
+"  CCTK_REAL      * restrict chars["   <> ToString@numvars <> "];\n",
+"  CCTK_REAL      * restrict cspeeds[" <> ToString@numvars <> "];\n",
 
 "  CCTK_REAL normal[3], normal_base[3];\n",
 "  CCTK_REAL tangent[2][3];\n",
@@ -1349,24 +1347,24 @@ CreateMPCharSource[spec_, debug_] :=
 (* declare lapack function DGESV: compute solution to system of linear equations  E * X = B *)
 {"\n/* declare lapack function DGESV for solving linear systems */\n",
 "void CCTK_FCALL\n",
-"CCTK_FNAME(dgesv) (int    const * n,\n",
-"                   int    const * nrhs,\n",
-"                   double       * a,\n",
-"                   int    const * lda,\n",
-"                   int          * ipiv,\n",
-"                   double       * b,\n",
-"                   int    const * ldb,\n",
-"                   int          * info);\n\n\n"},
+"CCTK_FNAME(dgesv) (const int* n,\n",
+"                   const int* nrhs,\n",
+"                   double   * a,\n",
+"                   const int* lda,\n",
+"                   int      * ipiv,\n",
+"                   double   * b,\n",
+"                   const int* ldb,\n",
+"                   int      * info);\n\n\n"},
 
 DefineFunction[lookup[spec,Name] <> "_MultiPatch_SystemDescription", "CCTK_INT", 
-   "CCTK_POINTER_TO_CONST const cctkGH_, CCTK_INT const nvars,\n"     <>
-   "    CCTK_INT * restrict const prim, CCTK_INT * restrict const rhs,\n" <>
-   "    CCTK_REAL * restrict const sigma", 
+   "const CCTK_POINTER_TO_CONST cctkGH_, const CCTK_INT nvars,\n"     <>
+   "    CCTK_INT* restrict const prim, CCTK_INT* restrict const rhs,\n" <>
+   "    CCTK_REAL* restrict const sigma", 
 
 {
 "/* this function is called twice:                                            */\n",
 "/* first to set the number of modes, then to set the rest of the information */\n",
-"  cGH const * restrict const cctkGH = cctkGH_;\n",
+"  const cGH* restrict const cctkGH = cctkGH_;\n",
 "  DECLARE_CCTK_PARAMETERS;\n\n",
 "  int n;\n\n",
 "  /* Check arguments */\n",
@@ -1432,7 +1430,7 @@ CreateStartupFile[thornName_, bannerText_] :=
 
    IncludeFile["cctk.h"],
    DefineFunction[thornName <> "_Startup", "extern \"C\" int", "void",
-     {DefineVariable["banner", "const char *", Quote[bannerText]],
+     {DefineVariable["banner", "const char*", Quote[bannerText]],
       "CCTK_RegisterBanner(banner);\n",
       "return 0;\n"}]};
 

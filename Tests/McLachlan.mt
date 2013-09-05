@@ -1384,26 +1384,26 @@ realParameters =
 calculations =
 Join[
 {
-  initialCalc,
+  (* initialCalc, *)
   convertFromADMBaseCalc,
-  initGammaCalc,
-  convertFromADMBaseGammaCalc,
+  (* initGammaCalc, *)
+  (* convertFromADMBaseGammaCalc, *)
   (* evolCalc, *)
   evolCalc1, evolCalc2,
-  dissCalc,
-  advectCalc,
-  initRHSCalc,
+  (* dissCalc, *)
+  (* advectCalc, *)
+  (* initRHSCalc, *)
   (* evol1Calc, evol2Calc, *)
   RHSStaticBoundaryCalc,
   (* RHSRadiativeBoundaryCalc, *)
   enforceCalc,
   boundaryCalc,
-  convertToADMBaseCalc,
-  convertToADMBaseDtLapseShiftCalc,
-  convertToADMBaseDtLapseShiftBoundaryCalc,
-  convertToADMBaseFakeDtLapseShiftCalc,
+  (* convertToADMBaseCalc, *)
+  (* convertToADMBaseDtLapseShiftCalc, *)
+  (* convertToADMBaseDtLapseShiftBoundaryCalc, *)
+  (* convertToADMBaseFakeDtLapseShiftCalc, *)
   (* constraintsCalc, *)
-  constraintsCalc1, constraintsCalc2
+  constraintsCalc1 (* , constraintsCalc2 *)
 },
   {} (*dissCalcs*)
 ];

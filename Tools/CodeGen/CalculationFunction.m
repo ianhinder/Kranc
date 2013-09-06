@@ -328,21 +328,9 @@ DefFn[
 
   DGFEInit = If[OptionValue[UseDGFE], DGFEInitialise[cleancalc], {}];
 
-  DGFECall =
-    If[OptionValue[UseDGFE] && lookupDefault[cleancalc, UseDGFE, False],
-       Module[
-         {name},
-         name = lookup[cleancalc, Name];
-         {
-           "",
-           "/* Add the flux terms to the RHS */",
-           "solver->compute_rhs();",
-           "",
-           "delete solver;",
-           "solver = NULL;"
-         } // Flatten // Map[# <> "\n" &, #] &],
-       {}
-      ];
+  DGFECallCode = If[OptionValue[UseDGFE] && lookupDefault[cleancalc, UseDGFE, False],
+       DGFECall[cleancalc_],
+       {}];
 
   InfoMessage[InfoFull,"Generating function"];
   {
@@ -435,7 +423,7 @@ DefFn[
 
         kernelCall,
 
-        DGFECall,
+        DGFECallCode,
 
         ConditionalOnParameterTextual["verbose > 1",
           "CCTK_VInfo(CCTK_THORNSTRING,\"Leaving " <> bodyFunctionName <> "\");\n"]

@@ -22,6 +22,7 @@ BeginPackage["DGFE`", {"Errors`", "Helpers`", "Kranc`", "MapLookup`"}];
 
 DGFEDefinitions;
 DGFEInitialise;
+DGFECall;
 
 Begin["`Private`"];
 
@@ -191,6 +192,20 @@ DefFn[
     {
       "",
       "if (not solver) solver = new "<>name<>"_method(cctkGH);"
+    } // Flatten // Map[# <> "\n" &, #] &]];
+
+DefFn[
+  DGFECall[cleancalc_] :=
+  Module[
+    {name},
+    name = lookup[cleancalc, Name];
+    {
+      "",
+      "/* Add the flux terms to the RHS */",
+      "solver->compute_rhs();",
+      "",
+      "delete solver;",
+      "solver = NULL;"
     } // Flatten // Map[# <> "\n" &, #] &]];
 
 End[];

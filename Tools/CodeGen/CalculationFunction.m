@@ -1008,19 +1008,10 @@ DefFn[
         Map[InfoVariable[#[[1]]] &, (eqs2 /. localMap)],
         ""],
 
-      Which[OptionValue[UseOpenCL],
-            CommentedBlock["Copy local copies back to grid functions",
-              { PrepareStorePartialVariableInLoop["i", "lc_imin", "lc_imax"],
-                Map[StorePartialVariableInLoop[gridName[#], localName[#]] &,
-                    gfsInLHS] }],
-            OptionValue[UseVectors],
-            CommentedBlock["Copy local copies back to grid functions",
-              { PrepareStorePartialVariableInLoop["i", "vecimin", "vecimax"],
-                Map[StorePartialVariableInLoop[gridName[#], localName[#]] &,
-                    gfsInLHS] }],
-            True,
-            CommentedBlock["Copy local copies back to grid functions",
-              Map[AssignVariableInLoop[gridName[#], localName[#]] &, gfsInLHS]]],
+      localsToGridFunctions[gfsInLHS, gridName,
+                            Which[OptionValue[UseOpenCL], "OpenCL",
+                                  OptionValue[UseVectors], "Vectors",
+                                  True, "Default"]],
 
       If[debugInLoop, Map[InfoVariable[gridName[#]] &, gfsInLHS], ""]}, opts]}]];
 
@@ -1055,6 +1046,30 @@ DefFn[
 
 GridFunctionsInExpression[x_, groups_] :=
   Union[Cases[x, _ ? (MemberQ[allGroupVariables[groups],#] &), Infinity]];
+
+DefFn[localsToGridFunctions[gfsInLHS_List, gridName_, method_String] :=
+  Switch[
+    method,
+         
+    "OpenCL",
+    CommentedBlock[
+      "Copy local copies back to grid functions",
+      {PrepareStorePartialVariableInLoop["i", "lc_imin", "lc_imax"],
+       Map[StorePartialVariableInLoop[gridName[#], localName[#]] &, gfsInLHS]}],
+    
+    "Vectors",
+    CommentedBlock[
+      "Copy local copies back to grid functions",
+      {PrepareStorePartialVariableInLoop["i", "vecimin", "vecimax"],
+       Map[StorePartialVariableInLoop[gridName[#], localName[#]] &, gfsInLHS]}],
+
+    "Default",
+    CommentedBlock[
+      "Copy local copies back to grid functions",
+      Map[AssignVariableInLoop[gridName[#], localName[#]] &, gfsInLHS]],
+    
+    _,
+    Error["Unrecognised method in localsToGridFunctions"]]];
 
 End[];
 

@@ -208,7 +208,6 @@ DefFn[
   Module[
     {rhs},
     rhs = expr /. Power[xx_, -1] -> INV[xx];
-    If[SOURCELANGUAGE == "C",
        {rhs = rhs //. Power[xx_,  2  ] -> SQR[xx];
         rhs = rhs //. Power[xx_,  3  ] -> CUB[xx];
         rhs = rhs //. Power[xx_,  4  ] -> QAD[xx];
@@ -329,9 +328,7 @@ DefFn[
            rhs = VectoriseExpression[rhs]];
 
         (* Remove Scalar[] after vectorising *)
-        rhs = rhs /. Scalar[xx_] -> xx},
-       (* else *)
-       rhs = rhs /. Power[xx_, power_] -> xx^power];
+        rhs = rhs /. Scalar[xx_] -> xx};
     (*       Print[rhs//FullForm];*)
     rhs]];
 

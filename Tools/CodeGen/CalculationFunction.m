@@ -997,10 +997,8 @@ DefFn[
         CommentedBlock[
           "Calculate temporaries and grid functions", 
           If[OptionValue[UseVectors],
-             {
-               PrepareStorePartialVariableInLoop["i", "vecimin", "vecimax"],
-               Map[StorePartialVariableInLoop[FlattenBlock@gridName[#[[1]]], #[[2]]] &, eqs2]
-             },
+             VectorisationSimpleAssign[FlattenBlock[gridName[#]] & /@ Map[First, eqs2],
+                                       Map[Last, eqs2]],
              Map[
                assignVariableFromExpression[FlattenBlock@gridName[#[[1]]], #[[2]], False, False, True] &, eqs2]]]
       }, opts]]];

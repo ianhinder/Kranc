@@ -22,6 +22,7 @@ BeginPackage["Vectorisation`", {"Errors`", "Helpers`", "Kranc`", "CodeGenC`"}];
 
 VectoriseExpression;
 VectorisationLocalsToGridFunctions;
+VectorisationSimpleAssignEquationList;
 StoreVariableInLoop::usage = "StoreVariableInLoop[dest_, src_] returns a block of code " <>
   "that assigns 'src' to 'dest'.";
 PrepareStorePartialVariableInLoop::usage = "PrepareStorePartialVariableInLoop[i_, imin_, imax_] returns a block of code " <>
@@ -266,6 +267,11 @@ DefFn[
   VectorisationLocalsToGridFunctions[gridNames_List, localNames_List] :=
   {PrepareStorePartialVariableInLoop["i", "vecimin", "vecimax"],
    MapThread[StorePartialVariableInLoop, {gridNames, localNames}]}];
+
+DefFn[
+  VectorisationSimpleAssignEquationList[lhss_List, rhss_List] :=
+  {PrepareStorePartialVariableInLoop["i", "vecimin", "vecimax"],
+   MapThread[StorePartialVariableInLoop, {lhss, rhss}]}];
 
 End[];
 

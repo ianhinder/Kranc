@@ -24,8 +24,6 @@ BeginPackage["CodeGenCactus`", {"Errors`", "Kranc`", "CodeGenC`", "CodeGen`", "V
 
 AssignVariableInLoop::usage = "AssignVariableInLoop[dest_, src_] returns a block of code " <>
   "that assigns 'src' to 'dest'.";
-MaybeAssignVariableInLoop::usage = "MaybeAssignVariableInLoop[dest_, src_, cond_] returns a block of code " <>
-  "that assigns 'src' to 'dest'.";
 DeclareMaybeAssignVariableInLoop::usage = "DeclareMaybeAssignVariableInLoop[type_, dest_, src_, cond_] returns a block of code " <>
   "that assigns 'src' to 'dest'.";
 TestForNaN::usage = "TestForNaN[expr_] returns a block of code " <>
@@ -91,12 +89,6 @@ DefFn[
   AssignVariableInLoop[dest:(_String|_Symbol), src:CodeGenBlock,
                        True] :=
   VectorisationAssignVariableInLoop[dest, src]];
-
-DefFn[
-  MaybeAssignVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol), cond:Boolean] :=
-  If[cond,
-     {dest, " = useMatter ? vec_load(", src, ") : ToReal(0.0)", EOL[]},
-     {dest, " = vec_load(", src, ")", EOL[]}]];
 
 DefFn[
   DeclareMaybeAssignVariableInLoop[type_String, dest:(_String|_Symbol), src:(_String|_Symbol),

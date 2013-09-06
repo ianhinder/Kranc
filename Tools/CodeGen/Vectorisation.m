@@ -23,7 +23,6 @@ BeginPackage["Vectorisation`", {"Errors`", "Helpers`", "Kranc`", "CodeGenC`",
 
 VectoriseExpression;
 VectorisationLocalsToGridFunctions;
-OpenCLLocalsToGridFunctions;
 VectorisationSimpleAssignEquationList;
 VectorisationAssignVariableInLoop;
 VectorisationLoadVariable;

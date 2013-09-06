@@ -27,6 +27,7 @@ OpenCLProcessKernel;
 OpenCLIncludeFiles;
 OpenCLConfigurationCCL;
 OpenCLProcessDifferencingHeader;
+OpenCLLocalsToGridFunctions;
 
 Begin["`Private`"];
 

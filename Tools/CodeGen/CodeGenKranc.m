@@ -87,9 +87,7 @@ DefFn[
 
 DefFn[
   ArrayName[x:(_Symbol|_String)] :=
-  If[SOURCELANGUAGE == "C",
-     ToString[x] <> "[0]",
-     ToString[x] <> "(1)"]];
+  ToString[x] <> "[0]"];
 
 DefFn[
   InitialiseFDVariables[vectorise:Boolean] :=

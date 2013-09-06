@@ -246,37 +246,37 @@ DefFn[
 
 (* Return a block of code that assigns 'src' to 'dest' *)
 DefFn[
-  StoreVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol)] :=
+  storeVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol)] :=
   {"vec_store_nta(", dest, ",", src, ")", EOL[]}];
 
 (* Return a block of code that defines some variables for a series of
    calls to StorePartialVariableInLoop *)
 DefFn[
-  PrepareStorePartialVariableInLoop[i:(_String|_Symbol),
+  prepareStorePartialVariableInLoop[i:(_String|_Symbol),
                                     ilo:(_String|_Symbol),
                                     ihi:(_String|_Symbol)] :=
   {"vec_store_partial_prepare(", i, ",", ilo, ",", ihi, ")", EOL[]}];
 
 (* Return a block of code that assigns 'src' to 'dest' *)
 DefFn[
-  StorePartialVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol)] :=
+  storePartialVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol)] :=
   {"vec_store_nta_partial(", dest, ",", src, ")", EOL[]}];
 
 DefFn[
   VectorisationLocalsToGridFunctions[gridNames_List, localNames_List] :=
-  {PrepareStorePartialVariableInLoop["i", "vecimin", "vecimax"],
-   MapThread[StorePartialVariableInLoop, {gridNames, localNames}]}];
+  {prepareStorePartialVariableInLoop["i", "vecimin", "vecimax"],
+   MapThread[storePartialVariableInLoop, {gridNames, localNames}]}];
 
 (* TODO: This should be in OpenCL.m *)
 DefFn[
   OpenCLLocalsToGridFunctions[gridNames_List, localNames_List] :=
-  {PrepareStorePartialVariableInLoop["i", "lc_imin", "lc_imax"],
-   MapThread[StorePartialVariableInLoop, {gridNames, localNames}]}];
+  {prepareStorePartialVariableInLoop["i", "lc_imin", "lc_imax"],
+   MapThread[storePartialVariableInLoop, {gridNames, localNames}]}];
 
 DefFn[
   VectorisationSimpleAssignEquationList[lhss_List, rhss_List] :=
-  {PrepareStorePartialVariableInLoop["i", "vecimin", "vecimax"],
-   MapThread[StorePartialVariableInLoop, {lhss, rhss}]}];
+  {prepareStorePartialVariableInLoop["i", "vecimin", "vecimax"],
+   MapThread[storePartialVariableInLoop, {lhss, rhss}]}];
 
 End[];
 

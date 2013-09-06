@@ -35,8 +35,6 @@ GridName::usage = "GridName[variable] returns the name needed to access variable
 ArrayName::usage = "ArrayName[variable] returns the name needed to access variable " <>
   "assuming it is an array variable when inside a grid function.";
 InitialiseFDVariables::usage = "";
-InitialiseGridLoopVariables::usage = "InitialiseGridLoopVariables[] returns a block " <>
-  "that initialises variables needed by a grid loop.";
 GenericGridLoop::usage = "";
 ReplacePowers::usage = "";
 CalculationMacros;
@@ -136,32 +134,6 @@ DefFn[
       AssignVariableFromExpression["hdxi", 0.5 "dxi", True, vectorise, Const -> True],
       AssignVariableFromExpression["hdyi", 0.5 "dyi", True, vectorise, Const -> True],
       AssignVariableFromExpression["hdzi", 0.5 "dzi", True, vectorise, Const -> True]}]];
-
-DefFn[
-  InitialiseGridLoopVariables[derivativesUsedSwitch:Boolean, addToStencilWidth_Integer] :=
-  CommentedBlock[
-    "Set up variables used in the grid loop for the physical grid points",
-
-    If[derivativesUsedSwitch,
-       {AssignVariable["index_offset_x", max[] <>"(stencil_width, stencil_width_x) + " <> ToString[addToStencilWidth]],
-        AssignVariable["index_offset_y", max[] <>"(stencil_width, stencil_width_y) + " <> ToString[addToStencilWidth]],
-        AssignVariable["index_offset_z", max[] <>"(stencil_width, stencil_width_z) + " <> ToString[addToStencilWidth]],
-        "\n",
-        AssignVariable["istart", arrayIndex["index_offset_x"]],
-        AssignVariable["jstart", arrayIndex["index_offset_y"]],
-        AssignVariable["kstart", arrayIndex["index_offset_z"]],
-        "\n",
-        AssignVariable["iend", {"cctk_lsh[0] - index_offset_x"}],
-        AssignVariable["jend", {"cctk_lsh[1] - index_offset_y"}],
-        AssignVariable["kend", {"cctk_lsh[2] - index_offset_z"}]},
-       (* else *)
-       {AssignVariable["istart", arrayIndex[0]],
-        AssignVariable["jstart", arrayIndex[0]],
-        AssignVariable["kstart", arrayIndex[0]],
-        "\n",
-        AssignVariable["iend", "cctk_lsh[0]"],
-        AssignVariable["jend", "cctk_lsh[1]"],
-        AssignVariable["kend", "cctk_lsh[2]"]}]]];
 
 Options[GenericGridLoop] = ThornOptions;
 

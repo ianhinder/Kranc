@@ -289,18 +289,7 @@ generateCodeFromExpression[expr_, vectorise_, noSimplify:Boolean : False] :=
   Module[{type, cleanExpr, code},
     cleanExpr = ReplacePowers[expr, vectorise, noSimplify];
 
-    If[SOURCELANGUAGE == "C",
-      code =
-        ToString[cleanExpr, CForm,         PageWidth -> Infinity],
-      code = ToString[cleanExpr, FortranForm, PageWidth -> 120]];
-
-    If[SOURCELANGUAGE != "C",
-      code = StringReplace[code, "\n  "      -> " &\n"];
-      code = StringReplace[code, "   -  "    -> " &  "];
-      code = StringReplace[code, ".eq."      -> " = "];
-      code = StringReplace[code, "=        " -> "="];
-      code = StringReplace[code, "\\"        -> ""];
-      code = StringReplace[code, "(index)"   -> "(i,j,k)"]];
+    code = ToString[cleanExpr, CForm, PageWidth -> Infinity];
 
     code = StringReplace[code, "normal1"     -> "normal[0]"];
     code = StringReplace[code, "normal2"     -> "normal[1]"];

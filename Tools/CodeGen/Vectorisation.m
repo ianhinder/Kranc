@@ -22,6 +22,7 @@ BeginPackage["Vectorisation`", {"Errors`", "Helpers`", "Kranc`", "CodeGenC`"}];
 
 VectoriseExpression;
 VectorisationLocalsToGridFunctions;
+OpenCLLocalsToGridFunctions;
 VectorisationSimpleAssignEquationList;
 StoreVariableInLoop::usage = "StoreVariableInLoop[dest_, src_] returns a block of code " <>
   "that assigns 'src' to 'dest'.";
@@ -266,6 +267,12 @@ DefFn[
 DefFn[
   VectorisationLocalsToGridFunctions[gridNames_List, localNames_List] :=
   {PrepareStorePartialVariableInLoop["i", "vecimin", "vecimax"],
+   MapThread[StorePartialVariableInLoop, {gridNames, localNames}]}];
+
+(* TODO: This should be in OpenCL.m *)
+DefFn[
+  OpenCLLocalsToGridFunctions[gridNames_List, localNames_List] :=
+  {PrepareStorePartialVariableInLoop["i", "lc_imin", "lc_imax"],
    MapThread[StorePartialVariableInLoop, {gridNames, localNames}]}];
 
 DefFn[

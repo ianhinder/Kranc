@@ -1019,8 +1019,7 @@ DefFn[
 
 DefFn[
   localsToGridFunctions2[gridNames_List, localNames_List, "OpenCL"] :=
-  {PrepareStorePartialVariableInLoop["i", "lc_imin", "lc_imax"],
-   MapThread[StorePartialVariableInLoop, {gridNames, localNames}]}];
+  OpenCLLocalsToGridFunctions[gridNames, localNames]];
 
 DefFn[
   localsToGridFunctions2[gridNames_List, localNames_List, "Vectors"] :=

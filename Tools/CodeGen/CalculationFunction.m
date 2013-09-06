@@ -23,7 +23,7 @@ BeginPackage["CalculationFunction`", {"CodeGenCactus`", "CodeGenC`", "CodeGen`",
   "CodeGenKranc`",
   "MapLookup`", "KrancGroups`", "Differencing`", "Errors`",
   "Helpers`", "Kranc`", "Optimize`", "Jacobian`", "Profile`", "Vectorisation`",
-  "Calculation`", "DGFE`"}];
+  "Calculation`", "DGFE`", "OpenCL`"}];
 
 CreateCalculationFunction::usage = "";
 GridFunctionsInExpression;
@@ -338,12 +338,7 @@ DefFn[
     lookup[calcp,BodyFunction][{
     (* OpenCL kernel prologue *)
     (* We could (or probably should) write this into a source file of its own *)
-    If[OptionValue[UseOpenCL],
-       {
-         "const char* const source =\n"
-       },
-       {
-       }],
+    If[OptionValue[UseOpenCL], {OpenCLPrologue[]}, {}],
 
     If[OptionValue[UseOpenCL], Stringify, Identity][{
 

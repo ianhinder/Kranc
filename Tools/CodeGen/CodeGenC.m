@@ -146,9 +146,12 @@ DefFn[
   AssignVariable[dest:(_String|_Symbol), src:CodeGenBlock] :=
   {dest, " = ", src, EOL[]}];
 
+Options[DeclareAssignVariable] = {"Const" -> True};
 DefFn[
-  DeclareAssignVariable[type_String, dest:(_String|_Symbol), src:CodeGenBlock] :=
-  {"const ", type, " ", dest, " CCTK_ATTRIBUTE_UNUSED", " = ", src, EOL[]}];
+  DeclareAssignVariable[type_String, dest:(_String|_Symbol), src:CodeGenBlock,
+                        OptionsPattern[]] :=
+  {If[OptionValue[Const], "const ", ""],
+   type, " ", dest, " CCTK_ATTRIBUTE_UNUSED", " = ", src, EOL[]}];
 
 (* comments are always done C-style because they are killed by cpp anyway *) 
 DefFn[

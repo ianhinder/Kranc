@@ -57,7 +57,6 @@ GridLoop::usage = "GridLoop[block] returns a block that is looped over for every
 ConditionalOnParameterTextual::usage = "";
 InitialiseFDVariables::usage = "";
 ReplacePowers::usage = "";
-BoundaryWithGhostsLoop::usage = "";
 GenericGridLoop::usage = "";
 NameRoot::usage = "";
 PartitionVarList::usage = "";
@@ -401,46 +400,6 @@ DefFn[
          "// #define VEC_COUNT(x)\n" *) }],
      (* else *)
      ""]];
-
-DefFn[
-  BoundaryWithGhostsLoop[block:CodeGenBlock] :=
-  {
-  "\nGenericFD_GetBoundaryInfo(cctkGH, cctk_ash, cctk_lsh, cctk_bbox, cctk_nghostzones, imin, imax, is_symbnd, is_physbnd, is_ipbnd);\n",
-
-  CommentedBlock[
-    "Start by looping over the whole grid, including the NON-PHYSICAL boundary points.  ", {
-  AssignVariable[arrayElement["bmin", 0], "0"],
-  AssignVariable[arrayElement["bmin", 1], "0"],
-  AssignVariable[arrayElement["bmin", 2], "0"],
-  AssignVariable[arrayElement["bmax", 0], "cctk_lsh[0]"],
-  AssignVariable[arrayElement["bmax", 1], "cctk_lsh[1]"],
-  AssignVariable[arrayElement["bmax", 2], "cctk_lsh[2]"]}], 
-
-  CommentedBlock[
-    "Loop over all faces",
-   loopOverInteger[
-     "dir", "0", "3",
-     loopOverInteger[
-       "face", "0", "2",
-     {
-      CommentedBlock[
-        "Now restrict to only the boundary points on the current face",
-       SwitchStatement[
-         "face", 
-        {0,  {AssignVariable[arrayElement["bmax", "dir"], {arrayElement["imin", "dir"], ""}], 
-              AssignVariable[arrayElement["bmin", "dir"], {0, ""}]}},
-        {1,  {AssignVariable[arrayElement["bmin", "dir"], {arrayElement["imax", "dir"], "" }],
-              AssignVariable[arrayElement["bmax", "dir"], {"cctk_lsh[dir]", ""}]}}]],
-       conditional[arrayElement["is_physbnd", "dir * 2 + face"],
-         loopOverInteger[
-           "k", arrayElement["bmin",2], arrayElement["bmax",2],
-           loopOverInteger[
-             "j", arrayElement["bmin",1], arrayElement["bmax",1],
-             loopOverInteger[
-               "i", arrayElement["bmin",0], arrayElement["bmax",0],
-
-         {If[SOURCELANGUAGE == "C", AssignVariable["index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"], ""],
-	   block}]]]]}]]]}];
 
 DefFn[
   onceInGridLoop[block:CodeGenBlock] :=

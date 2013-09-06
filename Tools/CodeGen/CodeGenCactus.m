@@ -24,12 +24,6 @@ BeginPackage["CodeGenCactus`", {"Errors`", "Kranc`", "CodeGenC`", "CodeGen`", "V
 
 AssignVariableInLoop::usage = "AssignVariableInLoop[dest_, src_] returns a block of code " <>
   "that assigns 'src' to 'dest'.";
-StoreVariableInLoop::usage = "StoreVariableInLoop[dest_, src_] returns a block of code " <>
-  "that assigns 'src' to 'dest'.";
-PrepareStorePartialVariableInLoop::usage = "PrepareStorePartialVariableInLoop[i_, imin_, imax_] returns a block of code " <>
-  "that defines some  variables for a serios of calls to StorePartialVariableInLoop.";
-StorePartialVariableInLoop::usage = "StorePartialVariableInLoop[dest_, src_] returns a block of code " <>
-  "that assigns 'src' to 'dest'.";
 DeclareAssignVariableInLoop::usage = "DeclareAssignVariableInLoop[type_, dest_, src_] returns a block of code " <>
   "that assigns 'src' to 'dest'.";
 MaybeAssignVariableInLoop::usage = "MaybeAssignVariableInLoop[dest_, src_, cond_] returns a block of code " <>
@@ -96,19 +90,6 @@ DefFn[
     {loader},
     loader[x_] := If[vectorise, {"vec_load(", x, ")"}, x];
     {dest, " = ", loader[src], EOL[]}]];
-
-DefFn[
-  StoreVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol)] :=
-  {"vec_store_nta(", dest, ",", src, ")", EOL[]}];
-DefFn[
-  PrepareStorePartialVariableInLoop[i:(_String|_Symbol),
-                                    ilo:(_String|_Symbol),
-                                    ihi:(_String|_Symbol)] :=
-  {"vec_store_partial_prepare(", i, ",", ilo, ",", ihi, ")", EOL[]}];
-
-DefFn[
-  StorePartialVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol)] :=
-  {"vec_store_nta_partial(", dest, ",", src, ")", EOL[]}];
 
 DefFn[
   DeclareAssignVariableInLoop[type_String, dest:(_String|_Symbol), src:(_String|_Symbol)] :=

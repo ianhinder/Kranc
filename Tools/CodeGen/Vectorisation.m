@@ -18,9 +18,15 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-BeginPackage["Vectorisation`", {"Errors`", "Helpers`", "Kranc`"}];
+BeginPackage["Vectorisation`", {"Errors`", "Helpers`", "Kranc`", "CodeGenC`"}];
 
 VectoriseExpression;
+StoreVariableInLoop::usage = "StoreVariableInLoop[dest_, src_] returns a block of code " <>
+  "that assigns 'src' to 'dest'.";
+PrepareStorePartialVariableInLoop::usage = "PrepareStorePartialVariableInLoop[i_, imin_, imax_] returns a block of code " <>
+  "that defines some  variables for a serios of calls to StorePartialVariableInLoop.";
+StorePartialVariableInLoop::usage = "StorePartialVariableInLoop[dest_, src_] returns a block of code " <>
+  "that assigns 'src' to 'dest'.";
 
 Begin["`Private`"];
 
@@ -238,6 +244,21 @@ DefFn[
     expr = undoSomeVect[expr];
     
     Return[expr]]];
+
+(* Code generation: The following functions are called when vectorising. *)
+
+DefFn[
+  StoreVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol)] :=
+  {"vec_store_nta(", dest, ",", src, ")", EOL[]}];
+DefFn[
+  PrepareStorePartialVariableInLoop[i:(_String|_Symbol),
+                                    ilo:(_String|_Symbol),
+                                    ihi:(_String|_Symbol)] :=
+  {"vec_store_partial_prepare(", i, ",", ilo, ",", ihi, ")", EOL[]}];
+
+DefFn[
+  StorePartialVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol)] :=
+  {"vec_store_nta_partial(", dest, ",", src, ")", EOL[]}];
 
 End[];
 

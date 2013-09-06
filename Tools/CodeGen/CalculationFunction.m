@@ -21,7 +21,7 @@
 
 BeginPackage["CalculationFunction`", {"CodeGenCactus`", "CodeGenC`", "CodeGen`",
   "MapLookup`", "KrancGroups`", "Differencing`", "Errors`",
-  "Helpers`", "Kranc`", "Optimize`", "Jacobian`", "Profile`"}];
+  "Helpers`", "Kranc`", "Optimize`", "Jacobian`", "Profile`", "Vectorisation`"}];
 
 CreateCalculationFunction::usage = "";
 VerifyCalculation::usage = "";

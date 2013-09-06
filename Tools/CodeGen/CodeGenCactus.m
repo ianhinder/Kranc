@@ -292,56 +292,6 @@ DefFn[
      IndentBlock[block],
      "}\n"}]];
 
-(*
-GridLoop[block_] :=
-  CommentedBlock["Loop over the grid points",
-   loopOverInteger["k", "kstart", "kend",
-     loopOverInteger["j", "jstart", "jend",
-       loopOverInteger["i", "istart", "iend",
-
-       { If[SOURCELANGUAGE == "C",  
-            AssignVariable["index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"],
-            ""],
-	 block
-       }
-        ]]]];
-
-*)
-
-(*
-GridLoop[block_] :=
-  If[SOURCELANGUAGE == "C",  
-    CommentedBlock["Loop over the grid points",
-      {
-        "#pragma omp parallel\n",
-        "LC_LOOP3 (unnamed,\n",
-        "          i,j,k, istart,jstart,kstart, iend,jend,kend,\n",
-        "          cctk_ash[0],cctk_ash[1],cctk_ash[2])\n",
-        "{\n",
-        IndentBlock[
-          {
-             DeclareVariable["index", "int"],
-             AssignVariable["index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"],
-             block
-          }
-        ],
-        "}\n",
-        "LC_ENDLOOP3 (unnamed);\n"
-      }
-    ],
-    CommentedBlock["Loop over the grid points",
-      {
-        "#pragma omp parallel\n",
-        "LC_LOOP3 (unnamed,\n",
-        "          i,j,k, istart,jstart,kstart, iend,jend,kend,\n",
-        "          cctk_ash(1),cctk_ash(2),cctk_ash(3))\n",
-        IndentBlock[block],
-        "LC_ENDLOOP3 (unnamed)\n"
-      }
-    ]
-  ];
-*)
-
 Options[GenericGridLoop] = ThornOptions;
 
 DefFn[

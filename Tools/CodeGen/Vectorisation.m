@@ -26,6 +26,7 @@ VectorisationLocalsToGridFunctions;
 OpenCLLocalsToGridFunctions;
 VectorisationSimpleAssignEquationList;
 VectorisationAssignVariableInLoop;
+VectorisationLoadVariable;
 
 Begin["`Private`"];
 
@@ -279,6 +280,10 @@ DefFn[
   VectorisationSimpleAssignEquationList[lhss_List, rhss_List] :=
   {prepareStorePartialVariableInLoop["i", "vecimin", "vecimax"],
    MapThread[storePartialVariableInLoop, {lhss, rhss}]}];
+
+DefFn[
+  VectorisationLoadVariable[x_] := 
+  {"vec_load(", x, ")"}];
 
 DefFn[
   VectorisationAssignVariableInLoop[dest:(_String|_Symbol), src:CodeGenBlock] :=

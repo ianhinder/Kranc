@@ -21,6 +21,7 @@
 BeginPackage["DGFE`", {"Errors`", "Helpers`", "Kranc`", "MapLookup`"}];
 
 DGFEDefinitions;
+DGFEInitialise;
 
 Begin["`Private`"];
 
@@ -181,6 +182,16 @@ DefFn[
       ""
     } // Flatten // Map[# <> "\n" &, #] &]
      ];
+
+DefFn[
+  DGFEInitialise[cleancalc_] :=
+  Module[
+    {name},
+    name = lookup[cleancalc, Name];
+    {
+      "",
+      "if (not solver) solver = new "<>name<>"_method(cctkGH);"
+    } // Flatten // Map[# <> "\n" &, #] &]];
 
 End[];
 

@@ -326,17 +326,7 @@ DefFn[
 
   DGFEDefs = If[OptionValue[UseDGFE], DGFEDefinitions[cleancalc, eqs, gfs], {}];
 
-  DGFEInit =
-    If[OptionValue[UseDGFE],
-       Module[
-         {name},
-         name = lookup[cleancalc, Name];
-         {
-           "",
-           "if (not solver) solver = new "<>name<>"_method(cctkGH);"
-         } // Flatten // Map[# <> "\n" &, #] &],
-       {}
-      ];
+  DGFEInit = If[OptionValue[UseDGFE], DGFEInitialise[cleancalc], {}];
 
   DGFECall =
     If[OptionValue[UseDGFE] && lookupDefault[cleancalc, UseDGFE, False],

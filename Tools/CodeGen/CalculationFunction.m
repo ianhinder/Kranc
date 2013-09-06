@@ -132,25 +132,6 @@ simpCollect[collectList_, eqrhs_, localvar_, debug_] :=
 
     all];
 
-(* Return a CodeGen block which assigns dest by evaluating expr *)
-assignVariableFromExpression[dest_, expr_, declare_, vectorise_, noSimplify:Boolean : False] :=
-  Module[{type, cleanExpr, code},
-    type = If[StringMatchQ[ToString[dest], "dir*"], "ptrdiff_t", DataType[]];
-    code = If[declare, type <> " CCTK_ATTRIBUTE_UNUSED ", ""] <> ToString[dest] <> " = " <>
-         generateCodeFromExpression[expr, vectorise, noSimplify] <> ";\n";
-    code = LineBreak[code, 70] <> "\n";
-    {code}];
-
-generateCodeFromExpression[expr_, vectorise_, noSimplify:Boolean : False] :=
-  Module[{cleanExpr, code},
-    cleanExpr = ReplacePowers[expr, vectorise, noSimplify];
-    code = ToString[cleanExpr, CForm, PageWidth -> Infinity];
-    code = StringReplace[code, "normal1"     -> "normal[0]"];
-    code = StringReplace[code, "normal2"     -> "normal[1]"];
-    code = StringReplace[code, "normal3"     -> "normal[2]"];
-    code = StringReplace[code, "BesselJ"-> "gsl_sf_bessel_Jn"];
-    code = StringReplace[code, "\"" -> ""];
-    {code}];
 
 (* --------------------------------------------------------------------------
    Shorthands
@@ -741,18 +722,18 @@ DefFn[
         InfoMessage[InfoFull, "Generating code for " <> ToString[eq2[[1]], InputForm]];
         Which[
         SameQ[Head[eq2[[2]]], IfThen],
-          ret = assignVariableFromExpression[eq2[[1]],
+          ret = AssignVariableFromExpression[eq2[[1]],
             eq2[[2]] /. IfThen[cond_, x__]:> IfThen[Scalar[cond], x], declare2, OptionValue[UseVectors], noSimplify];,
         SameQ[Head[eq2], IfThenGroup],
           vars = eq2[[2,All,1]];
           cond = eq2[[1]];
           preDeclare = Pick[vars, declare2];
           ret = {Map[DeclareVariableNoInit[#, DataType[]] &, Complement[Union[preDeclare], localName/@gfsInRHS]], {"\n"},
-                 Conditional[generateCodeFromExpression[Scalar[cond], False],
-                  Riffle[assignVariableFromExpression[#[[1]], #[[2]], False, OptionValue[UseVectors], noSimplify]& /@ eq2[[2]], "\n"],
-                  Riffle[assignVariableFromExpression[#[[1]], #[[2]], False, OptionValue[UseVectors], noSimplify]& /@ eq2[[3]], "\n"]]};,
+                 Conditional[GenerateCodeFromExpression[Scalar[cond], False],
+                  Riffle[AssignVariableFromExpression[#[[1]], #[[2]], False, OptionValue[UseVectors], noSimplify]& /@ eq2[[2]], "\n"],
+                  Riffle[AssignVariableFromExpression[#[[1]], #[[2]], False, OptionValue[UseVectors], noSimplify]& /@ eq2[[3]], "\n"]]};,
         True,
-          ret = assignVariableFromExpression[eq2[[1]], eq2[[2]], declare2, OptionValue[UseVectors], noSimplify];
+          ret = AssignVariableFromExpression[eq2[[1]], eq2[[2]], declare2, OptionValue[UseVectors], noSimplify];
         ];
         ret
     ];
@@ -866,7 +847,7 @@ DefFn[
              VectorisationSimpleAssign[FlattenBlock[gridName[#]] & /@ Map[First, eqs2],
                                        Map[Last, eqs2]],
              Map[
-               assignVariableFromExpression[FlattenBlock@gridName[#[[1]]], #[[2]], False, False, True] &, eqs2]]]
+               AssignVariableFromExpression[FlattenBlock@gridName[#[[1]]], #[[2]], False, False, True] &, eqs2]]]
       }, opts]]];
 
 

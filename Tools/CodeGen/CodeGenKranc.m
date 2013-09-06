@@ -40,6 +40,8 @@ InitialiseGridLoopVariables::usage = "InitialiseGridLoopVariables[] returns a bl
 GenericGridLoop::usage = "";
 ReplacePowers::usage = "";
 CalculationMacros;
+AssignVariableFromExpression;
+GenerateCodeFromExpression;
 
 Begin["`Private`"];
 
@@ -405,6 +407,26 @@ CalculationMacros[vectorise_:False] :=
             "CUB(x) ((x) * SQR(x))",
             "QAD(x) (SQR(SQR(x)))"}]
          ]];
+
+(* Return a CodeGen block which assigns dest by evaluating expr *)
+AssignVariableFromExpression[dest_, expr_, declare_, vectorise_, noSimplify:Boolean : False] :=
+  Module[{type, cleanExpr, code},
+    type = If[StringMatchQ[ToString[dest], "dir*"], "ptrdiff_t", DataType[]];
+    code = If[declare, type <> " CCTK_ATTRIBUTE_UNUSED ", ""] <> ToString[dest] <> " = " <>
+         GenerateCodeFromExpression[expr, vectorise, noSimplify] <> ";\n";
+    code = LineBreak[code, 70] <> "\n";
+    {code}];
+
+GenerateCodeFromExpression[expr_, vectorise_, noSimplify:Boolean : False] :=
+  Module[{cleanExpr, code},
+    cleanExpr = ReplacePowers[expr, vectorise, noSimplify];
+    code = ToString[cleanExpr, CForm, PageWidth -> Infinity];
+    code = StringReplace[code, "normal1"     -> "normal[0]"];
+    code = StringReplace[code, "normal2"     -> "normal[1]"];
+    code = StringReplace[code, "normal3"     -> "normal[2]"];
+    code = StringReplace[code, "BesselJ"-> "gsl_sf_bessel_Jn"];
+    code = StringReplace[code, "\"" -> ""];
+    {code}];
 
 End[];
 

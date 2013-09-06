@@ -409,12 +409,16 @@ CalculationMacros[vectorise_:False] :=
          ]];
 
 (* Return a CodeGen block which assigns dest by evaluating expr *)
-AssignVariableFromExpression[dest_, expr_, declare_, vectorise_, noSimplify:Boolean : False] :=
-  Module[{type, cleanExpr, code},
+Options[AssignVariableFromExpression] = {"Const" -> False};
+AssignVariableFromExpression[dest_, expr_, declare_, vectorise_, noSimplify:Boolean : False,
+                             OptionsPattern[]] :=
+  Module[{type, exprCode, code},
     type = If[StringMatchQ[ToString[dest], "dir*"], "ptrdiff_t", DataType[]];
-    code = If[declare, type <> " CCTK_ATTRIBUTE_UNUSED ", ""] <> ToString[dest] <> " = " <>
-         GenerateCodeFromExpression[expr, vectorise, noSimplify] <> ";\n";
-    code = LineBreak[code, 70] <> "\n";
+    exprCode = GenerateCodeFromExpression[expr, vectorise, noSimplify];
+    code = If[declare,
+              DeclareAssignVariable[type, dest, exprCode, Const -> OptionValue[Const]],
+              AssignVariable[dest, exprCode]];
+    code = LineBreak[FlattenBlock[code], 70] <> "\n";
     {code}];
 
 GenerateCodeFromExpression[expr_, vectorise_, noSimplify:Boolean : False] :=

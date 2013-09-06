@@ -434,7 +434,7 @@ DefFn[
        Print["Sequenced: ", Apply[SequenceForm,Simplify[1/(ss /. spacings2)],{0,Infinity}]];*)
 
        liName = "p" <> signModifier <> quotient <> ToString[Apply[SequenceForm,Simplify[1/(ss /. spacings2)],{0,Infinity}]];
-       pDefs = {{liName -> CFormHideStrings[ReplacePowers[num / den ss /. spacings2, vectorise]]}};
+       pDefs = {{liName -> CFormHideStrings[ProcessExpression[num / den ss /. spacings2, vectorise]]}};
 
        rhs = rhs /. pat -> Times[liName, rest],
 (*       Print["!!!!!!!!DOES NOT MATCH!!!!!!!!!"];*)
@@ -453,7 +453,7 @@ DefFn[
     Print[FullForm[rhs]];
     Print[""];*)
 
-    rhs = CFormHideStrings[ReplacePowers[rhs /. spacings, vectorise]];
+    rhs = CFormHideStrings[ProcessExpression[rhs /. spacings, vectorise]];
     (* Print["rhs=",FullForm[rhs]]; *)
 
     (* Call another FD operator if we can swap or exchange array indices;

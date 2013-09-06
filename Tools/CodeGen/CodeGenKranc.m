@@ -36,7 +36,7 @@ ArrayName::usage = "ArrayName[variable] returns the name needed to access variab
   "assuming it is an array variable when inside a grid function.";
 InitialiseFDVariables::usage = "";
 GenericGridLoop::usage = "";
-ReplacePowers::usage = "";
+ProcessExpression::usage = "";
 CalculationMacros;
 AssignVariableFromExpression;
 GenerateCodeFromExpression;
@@ -204,7 +204,7 @@ DefFn[
 (* Take an expression x and replace occurrences of Powers with the C
   macros SQR, CUB, QAD *)
 DefFn[
-  ReplacePowers[expr_, vectorise:Boolean, noSimplify:Boolean : False] :=
+  ProcessExpression[expr_, vectorise:Boolean, noSimplify:Boolean : False] :=
   Module[
     {rhs},
     rhs = expr /. Power[xx_, -1] -> INV[xx];
@@ -366,7 +366,7 @@ AssignVariableFromExpression[dest_, expr_, declare_, vectorise_, noSimplify:Bool
 
 GenerateCodeFromExpression[expr_, vectorise_, noSimplify:Boolean : False] :=
   Module[{cleanExpr, code},
-    cleanExpr = ReplacePowers[expr, vectorise, noSimplify];
+    cleanExpr = ProcessExpression[expr, vectorise, noSimplify];
     code = ToString[cleanExpr, CForm, PageWidth -> Infinity];
     code = StringReplace[code, "normal1"     -> "normal[0]"];
     code = StringReplace[code, "normal2"     -> "normal[1]"];

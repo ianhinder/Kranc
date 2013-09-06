@@ -112,20 +112,6 @@ DefFn[
    "  CCTK_VInfo(CCTK_THORNSTRING, \"", expr, ": %.17g\", (double)", expr, ");\n",
    "}\n"}];
 
-DefFn[
-  loopOverInteger[name_String, start_String, endplusone_String, block:CodeGenBlock] :=
-  If[SOURCELANGUAGE == "C" || SOURCELANGUAGE == "C++",
-     {"for (", name, " = ", start, "; ", name, " < ", endplusone, "; ", name, "++)\n",
-      "{\n",
-      IndentBlock[block],
-      "}\n"},
-     
-     {"Do ", name, " = ", start, ", ", endplusone, "\n",
-      "\n",
-      IndentBlock[block],
-      "End Do\n"}
-    ]];
-
 (* This is a Cactus-callable function *)
 DefFn[
   DefineCCTKFunction[name_String, type_String, contents:CodeGenBlock] :=

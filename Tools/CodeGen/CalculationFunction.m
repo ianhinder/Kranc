@@ -1047,29 +1047,27 @@ DefFn[
 GridFunctionsInExpression[x_, groups_] :=
   Union[Cases[x, _ ? (MemberQ[allGroupVariables[groups],#] &), Infinity]];
 
-DefFn[localsToGridFunctions[gfsInLHS_List, gridName_, method_String] :=
-  Switch[
-    method,
-         
-    "OpenCL",
-    CommentedBlock[
-      "Copy local copies back to grid functions",
-      {PrepareStorePartialVariableInLoop["i", "lc_imin", "lc_imax"],
-       Map[StorePartialVariableInLoop[gridName[#], localName[#]] &, gfsInLHS]}],
-    
-    "Vectors",
-    CommentedBlock[
-      "Copy local copies back to grid functions",
-      {PrepareStorePartialVariableInLoop["i", "vecimin", "vecimax"],
-       Map[StorePartialVariableInLoop[gridName[#], localName[#]] &, gfsInLHS]}],
+(* Copy local variables back to their grid functions *)
 
-    "Default",
-    CommentedBlock[
-      "Copy local copies back to grid functions",
-      Map[AssignVariableInLoop[gridName[#], localName[#]] &, gfsInLHS]],
-    
-    _,
-    Error["Unrecognised method in localsToGridFunctions"]]];
+DefFn[
+  localsToGridFunctions[gfsInLHS_List, gridName_, method_String] :=
+  CommentedBlock[
+    "Copy local copies back to grid functions",
+    localsToGridFunctions2[gridName /@ gfsInLHS, localName /@ gfsInLHS, method]]];
+
+DefFn[
+  localsToGridFunctions2[gridNames_List, localNames_List, "OpenCL"] :=
+  {PrepareStorePartialVariableInLoop["i", "lc_imin", "lc_imax"],
+   MapThread[StorePartialVariableInLoop, {gridNames, localNames}]}];
+
+DefFn[
+  localsToGridFunctions2[gridNames_List, localNames_List, "Vectors"] :=
+  {PrepareStorePartialVariableInLoop["i", "vecimin", "vecimax"],
+   MapThread[StorePartialVariableInLoop, {gridNames, localNames}]}];
+
+DefFn[
+  localsToGridFunctions2[gridNames_List, localNames_List, "Default"] :=
+  MapThread[AssignVariableInLoop, {gridNames, localNames}]];
 
 End[];
 

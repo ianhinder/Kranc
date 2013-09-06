@@ -30,8 +30,6 @@ DeclareMaybeAssignVariableInLoop::usage = "DeclareMaybeAssignVariableInLoop[type
   "that assigns 'src' to 'dest'.";
 TestForNaN::usage = "TestForNaN[expr_] returns a block of code " <>
   "that tests 'expr' for nan.";
-GridName::usage = "GridName[variable] returns the name needed to access variable " <>
-  "assuming it is a grid variable when inside a grid loop.";
 ArrayName::usage = "ArrayName[variable] returns the name needed to access variable " <>
   "assuming it is an array variable when inside a grid function.";
 InitialiseFDVariables::usage = "";
@@ -86,12 +84,6 @@ DefFn[
    "  CCTK_VInfo(CCTK_THORNSTRING, \"ash: %d %d %d\", cctk_ash[0], cctk_ash[1], cctk_ash[2]);\n",
    "  CCTK_VInfo(CCTK_THORNSTRING, \"", expr, ": %.17g\", (double)", expr, ");\n",
    "}\n"}];
-
-DefFn[
-  GridName[x:(_Symbol|_String)] :=
-  If[SOURCELANGUAGE == "C",
-     ToString[x] <> "[index]",
-     ToString[x] <> "(i,j,k)"]];
 
 DefFn[
   ArrayName[x:(_Symbol|_String)] :=

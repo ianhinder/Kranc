@@ -25,6 +25,7 @@ OpenCLPrologue;
 OpenCLEpilogue;
 OpenCLProcessKernel;
 OpenCLIncludeFiles;
+OpenCLConfigurationCCL;
 
 Begin["`Private`"];
 
@@ -67,6 +68,10 @@ DefFn[
 DefFn[
   OpenCLIncludeFiles[] :=
   {"OpenCLRunTime.h"}];
+
+DefFn[
+  OpenCLConfigurationCCL[] :=
+  "REQUIRES OpenCL OpenCLRunTime\n"];
 
 End[];
 

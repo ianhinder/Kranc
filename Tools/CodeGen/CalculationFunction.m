@@ -1062,8 +1062,7 @@ DefFn[
 
 DefFn[
   localsToGridFunctions2[gridNames_List, localNames_List, "Vectors"] :=
-  {PrepareStorePartialVariableInLoop["i", "vecimin", "vecimax"],
-   MapThread[StorePartialVariableInLoop, {gridNames, localNames}]}];
+  VectorisationLocalsToGridFunctions[gridNames, localNames]];
 
 DefFn[
   localsToGridFunctions2[gridNames_List, localNames_List, "Default"] :=

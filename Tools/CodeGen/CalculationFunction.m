@@ -884,21 +884,20 @@ DefFn[
     (* Generate actual code strings. Try to declare variables as they are assigned, but
        it is only possible to do this outside all if(){} statements. *)
     generateEquationCode[{declare2_, eq2_}] :=
-      Module[{ret, vars, preDeclare, cond, vectorize},
-        vectorize = OptionValue[UseVectors];
+      Module[{ret, vars, preDeclare, cond},
         InfoMessage[InfoFull, "Generating code for " <> ToString[eq2[[1]], InputForm]];
         Which[
         SameQ[Head[eq2[[2]]], IfThen],
           ret = assignVariableFromExpression[eq2[[1]],
-            eq2[[2]] /. IfThen[cond_, x__]:> IfThen[Scalar[cond], x], declare2, vectorize, noSimplify];,
+            eq2[[2]] /. IfThen[cond_, x__]:> IfThen[Scalar[cond], x], declare2, OptionValue[UseVectors], noSimplify];,
         SameQ[Head[eq2], IfThenGroup],
           vars = eq2[[2,All,1]];
           cond = eq2[[1]];
           preDeclare = Pick[vars, declare2];
           ret = {Map[DeclareVariableNoInit[#, DataType[]] &, Complement[Union[preDeclare], localName/@gfsInRHS]], {"\n"},
                  Conditional[generateCodeFromExpression[Scalar[cond], False],
-                  Riffle[assignVariableFromExpression[#[[1]], #[[2]], False, vectorize, noSimplify]& /@ eq2[[2]], "\n"],
-                  Riffle[assignVariableFromExpression[#[[1]], #[[2]], False, vectorize, noSimplify]& /@ eq2[[3]], "\n"]]};,
+                  Riffle[assignVariableFromExpression[#[[1]], #[[2]], False, OptionValue[UseVectors], noSimplify]& /@ eq2[[2]], "\n"],
+                  Riffle[assignVariableFromExpression[#[[1]], #[[2]], False, OptionValue[UseVectors], noSimplify]& /@ eq2[[3]], "\n"]]};,
         True,
           ret = assignVariableFromExpression[eq2[[1]], eq2[[2]], declare2, OptionValue[UseVectors], noSimplify];
         ];

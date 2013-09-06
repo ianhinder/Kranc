@@ -18,15 +18,40 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-BeginPackage["OpenCL`", {"Errors`", "Helpers`", "Kranc`"}];
+BeginPackage["OpenCL`", {"Errors`", "Helpers`", "Kranc`", "Calculation`", "CodeGen`"}];
 
 OpenCLPrologue;
+OpenCLEpilogue;
 
 Begin["`Private`"];
 
 DefFn[
   OpenCLPrologue[] :=
   "const char* const source =\n"];
+
+DefFn[
+  OpenCLEpilogue[cleancalc_List, imp_String, functionName_String] :=
+  {
+    ";\n\n",
+    Module[
+      {ignoreGroups, groupsNames, groupNameList},
+      ignoreGroups = {"TmunuBase::stress_energy_scalar",
+                      "TmunuBase::stress_energy_vector",
+                      "TmunuBase::stress_energy_tensor"};
+      groupNames = GroupsInCalculation[cleancalc, imp];
+      groupNames = Select[groupNames, !MemberQ[ignoreGroups, #] &];
+      {
+        "const char* const groups[] = {\n  ",
+        Riffle[Join[Map[Quote, groupNames], {"NULL"}], ",\n  "],
+        "};\n\n"
+      }
+          ],
+    "static struct OpenCLKernel *kernel = NULL;\n",
+    "const char* const sources[] = {differencing, source, NULL};\n",
+    "OpenCLRunTime_CallKernel(cctkGH, CCTK_THORNSTRING, \"" <> functionName <> "\",\n",
+    "                         sources, groups, NULL, NULL, NULL, -1,\n",
+    "                         imin, imax, &kernel);\n\n"
+  }];
 
 End[];
 

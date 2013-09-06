@@ -367,31 +367,8 @@ DefFn[
     }],
 
     (* OpenCL kernel epilogue *)
-    If[OptionValue[UseOpenCL],
-       {
-         ";\n\n",
-         Module[
-           {ignoreGroups, groupsNames, groupNameList},
-           ignoreGroups = {"TmunuBase::stress_energy_scalar",
-                           "TmunuBase::stress_energy_vector",
-                           "TmunuBase::stress_energy_tensor"};
-           groupNames = GroupsInCalculation[cleancalc, imp];
-           groupNames = Select[groupNames, !MemberQ[ignoreGroups, #] &];
-           {
-             "const char* const groups[] = {\n  ",
-               Riffle[Join[Map[Quote, groupNames], {"NULL"}], ",\n  "],
-               "};\n\n"
-           }
-         ],
-         "static struct OpenCLKernel *kernel = NULL;\n",
-         "const char* const sources[] = {differencing, source, NULL};\n",
-         "OpenCLRunTime_CallKernel(cctkGH, CCTK_THORNSTRING, \"" <> functionName <> "\",\n",
-         "                         sources, groups, NULL, NULL, NULL, -1,\n",
-         "                         imin, imax, &kernel);\n\n"
-       },
-       {
-       }]
-    }],
+    If[OptionValue[UseOpenCL], OpenCLEpilogue[cleancalc, imp, functionName], {}]
+    }], (* <BodyFunction *)
   
     If[lookup[calcp,CallerFunction],
       DefineCCTKSubroutine[functionName,

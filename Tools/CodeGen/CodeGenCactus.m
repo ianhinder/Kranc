@@ -152,22 +152,11 @@ DefFn[
     }];
 
 DefFn[
-  InitialiseFDSpacingVariablesFortran[] := 
-  {
-    AssignVariable["dt", "CCTK_DELTA_TIME"],
-    AssignVariable["dx", "CCTK_DELTA_SPACE(1)"],
-    AssignVariable["dy", "CCTK_DELTA_SPACE(2)"],
-    AssignVariable["dz", "CCTK_DELTA_SPACE(3)"]
-  }];
-
-DefFn[
   InitialiseFDVariables[vectorise:Boolean] :=
   CommentedBlock[
     "Initialise finite differencing variables",
     {
-      If[SOURCELANGUAGE == "Fortran",
-         InitialiseFDSpacingVariablesFortran[],
-         InitialiseFDSpacingVariablesC[]],
+      InitialiseFDSpacingVariablesC[],
       
       DeclareAssignVariable[DataType[], "dxi", "INV(dx)"],
       DeclareAssignVariable[DataType[], "dyi", "INV(dy)"],

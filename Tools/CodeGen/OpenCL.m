@@ -24,6 +24,7 @@ BeginPackage["OpenCL`", {"Errors`", "Helpers`", "Kranc`", "Calculation`", "CodeG
 OpenCLPrologue;
 OpenCLEpilogue;
 OpenCLProcessKernel;
+OpenCLIncludeFiles;
 
 Begin["`Private`"];
 
@@ -62,6 +63,10 @@ DefFn[
 DefFn[
   OpenCLLocalsToGridFunctions[gridNames_List, localNames_List] :=
   VectorisationLocalsToGridFunctions[gridNames, localNames, {"lc_imin", "lc_imax"}]];
+
+DefFn[
+  OpenCLIncludeFiles[] :=
+  {"OpenCLRunTime.h"}];
 
 End[];
 

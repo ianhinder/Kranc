@@ -19,7 +19,7 @@
 *)
 
 BeginPackage["Interface`", {"Thorn`", "KrancGroups`", "MapLookup`", "Errors`",
-                            "Helpers`", "Kranc`", "CaKernel`"}];
+                            "Helpers`", "Kranc`", "CaKernel`", "OpenCL`"}];
 
 CreateKrancInterface;
 
@@ -196,7 +196,7 @@ CreateKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_,
     interface = Join[CreateInterface[implementation, inheritedImplementations,
       Join[includeFiles, {CactusBoundary`GetIncludeFiles[]},
            {"loopcontrol.h"},
-           If[OptionValue[UseOpenCL], {"OpenCLRunTime.h"}, {}],
+           If[OptionValue[UseOpenCL], OpenCLIncludeFiles[], {}],
            If[OptionValue[UseVectors], {"vectors.h"}, {}]],
       groupStructures,
       UsesFunctions ->

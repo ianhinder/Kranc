@@ -577,7 +577,7 @@ CreateSetterSource[calcs_, debug_, include_,
                          (*"precomputations.h",*) "GenericFD.h", "Differencing.h"},
                          include,
                          {"cctk_Loop.h", "loopcontrol.h"},
-                         If[OptionValue[UseOpenCL], {"OpenCLRunTime.h"}, {}],
+                         If[OptionValue[UseOpenCL], OpenCLIncludeFiles[], {}],
                          If[OptionValue[UseVectors], VectorisationIncludeFiles[], {}]]],
    CalculationMacros[OptionValue[UseVectors]],
 

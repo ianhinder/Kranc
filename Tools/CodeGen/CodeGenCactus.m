@@ -24,8 +24,6 @@ BeginPackage["CodeGenCactus`", {"Errors`", "Kranc`", "CodeGenC`", "CodeGen`", "V
 
 AssignVariableInLoop::usage = "AssignVariableInLoop[dest_, src_] returns a block of code " <>
   "that assigns 'src' to 'dest'.";
-DeclareAssignVariableInLoop::usage = "DeclareAssignVariableInLoop[type_, dest_, src_] returns a block of code " <>
-  "that assigns 'src' to 'dest'.";
 MaybeAssignVariableInLoop::usage = "MaybeAssignVariableInLoop[dest_, src_, cond_] returns a block of code " <>
   "that assigns 'src' to 'dest'.";
 DeclareMaybeAssignVariableInLoop::usage = "DeclareMaybeAssignVariableInLoop[type_, dest_, src_, cond_] returns a block of code " <>
@@ -93,10 +91,6 @@ DefFn[
   AssignVariableInLoop[dest:(_String|_Symbol), src:CodeGenBlock,
                        True] :=
   VectorisationAssignVariableInLoop[dest, src]];
-
-DefFn[
-  DeclareAssignVariableInLoop[type_String, dest:(_String|_Symbol), src:(_String|_Symbol)] :=
-  {"const ", type, dest, " CCTK_ATTRIBUTE_UNUSED = vec_load(", src, ")", EOL[]}];
 
 DefFn[
   MaybeAssignVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol), cond:Boolean] :=

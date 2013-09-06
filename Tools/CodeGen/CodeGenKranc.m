@@ -106,6 +106,10 @@ DefFn[
   CommentedBlock[
     "Initialise finite differencing variables",
     {
+      (* TODO: Generate the following using
+         AssignVariableFromExpression.  This requires a richer
+         expression language with type information so that
+         scalars/vectors can be handled automatically. *)
       Apply[DeclareAssignVariable,
             {{"ptrdiff_t", "di", "1"},
              {"ptrdiff_t", "dj", "CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0)"},
@@ -118,7 +122,8 @@ DefFn[
              {DataType[], "dz", "ToReal(CCTK_DELTA_SPACE(2))"},
              {DataType[], "dt", "ToReal(CCTK_DELTA_TIME)"},
              {DataType[], "t", "ToReal(cctk_time)"},
-             
+
+             (* Note that dx is already a vector, so should not be wrapped in ToReal *)
              {DataType[], "dxi", "INV(dx)"},
              {DataType[], "dyi", "INV(dy)"},
              {DataType[], "dzi", "INV(dz)"}},

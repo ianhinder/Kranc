@@ -39,34 +39,6 @@ debugInLoop = False;
    General Utility Functions (could be moved outside this package)
    -------------------------------------------------------------------------- *)
 
-(* Take a string s and break it into separate lines using l as a guide
-   to the line length.  If a word (sequence of non-whitespace
-   characters) is longer than l, do not break it.  Add two spaces of
-   indentation after each line break (this will push the line length
-   over l). Algorithm essentially taken from
-   http://en.wikipedia.org/wiki/Word_wrap *)
-lineBreak[s_, l_] :=
-  Module[{spaceLeft, words, word, i, lineWidth = l, spaceWidth = 1,
-    len},
-   spaceLeft = l;
-   words = StringSplit[s];
-   Do[
-    word = words[[i]];
-    len = StringLength[word];
-    If[len > spaceLeft,
-     words[[i]] = "\n  " <> word;
-     spaceLeft = lineWidth - len,
-     spaceLeft = spaceLeft - (len + spaceWidth)], {i, 1, Length[words]}];
-   Return[StringJoin[Riffle[words, " "]]]];
-
-(* Given an input list l, return a list L such that L[[i]] is True
-   only if l[[i]] is the first occurrence of l[[i]] in l and is not in
-   the list "already" *)
-markFirst[l_List, already_List] :=
-  If[l =!= {},
-    {!MemberQ[already, First[l]]} ~Join~ markFirst[Rest[l], already ~Join~ {First[l]}],
-    {}];
-
 VerifyListContent[l_, type_, while_] :=
   Module[{types},
     If[!(Head[l] === List),
@@ -272,7 +244,7 @@ assignVariableFromExpression[dest_, expr_, declare_, vectorise_, noSimplify:Bool
     type = If[StringMatchQ[ToString[dest], "dir*"], "ptrdiff_t", DataType[]];
     code = If[declare, type <> " CCTK_ATTRIBUTE_UNUSED ", ""] <> ToString[dest] <> " = " <>
          generateCodeFromExpression[expr, vectorise, noSimplify] <> ";\n";
-    code = lineBreak[code, 70] <> "\n";
+    code = LineBreak[code, 70] <> "\n";
     {code}];
 
 generateCodeFromExpression[expr_, vectorise_, noSimplify:Boolean : False] :=
@@ -855,7 +827,7 @@ DefFn[
        functions which appear in the RHSs have been declared and set
        already (DeclareMaybeAssignVariableInLoop below), so assignments
        to these do not generate declarations here. *)
-    declare = Block[{$RecursionLimit=Infinity},markFirst[First /@ eqsReplaced, Map[localName, gfsInRHS]]];
+    declare = Block[{$RecursionLimit=Infinity},MarkFirst[First /@ eqsReplaced, Map[localName, gfsInRHS]]];
 
     (* Replace consecutive IfThen statements with the same condition by a single IfThenGroup *)
     groupedIfs = Thread[{declare, eqsReplaced}] //.

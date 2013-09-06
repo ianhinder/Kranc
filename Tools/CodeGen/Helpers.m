@@ -55,6 +55,9 @@ e.g. {\"vect3\", \"vect2\", \"vect1\"} -> {\"vect1\", \"vect2\", \"vect3\"}";
 BreakTensorComponentName::usage = "BreakTensorComponentName[x] maps \"bla11rhs\" -> {\"bla\", \"11\", \"rhs\"}\
 and \"blu321\" -> {\"blu\", \"321\", \"\"}";
 
+LineBreak;
+MarkFirst;
+
 Begin["`Private`"];
 
 TensorName[t_[i__]] := t  (* remove indices from a tensor *)
@@ -161,6 +164,36 @@ SortTensorComponentsCactusStyle[stringlist_?ListQ, type_?StringQ] :=
       "DDD_sym", Sort[stringlist, compareReordered],
       _, stringlist
       ];
+
+(* Take a string s and break it into separate lines using l as a guide
+   to the line length.  If a word (sequence of non-whitespace
+   characters) is longer than l, do not break it.  Add two spaces of
+   indentation after each line break (this will push the line length
+   over l). Algorithm essentially taken from
+   http://en.wikipedia.org/wiki/Word_wrap *)
+LineBreak[s_, l_] :=
+  Module[{spaceLeft, words, word, i, lineWidth = l, spaceWidth = 1,
+    len},
+   spaceLeft = l;
+   words = StringSplit[s];
+   Do[
+    word = words[[i]];
+    len = StringLength[word];
+    If[len > spaceLeft,
+     words[[i]] = "\n  " <> word;
+     spaceLeft = lineWidth - len,
+     spaceLeft = spaceLeft - (len + spaceWidth)], {i, 1, Length[words]}];
+   Return[StringJoin[Riffle[words, " "]]]];
+
+(* Given an input list l, return a list L such that L[[i]] is True
+   only if l[[i]] is the first occurrence of l[[i]] in l and is not in
+   the list "already" *)
+MarkFirst[l_List, already_List] :=
+  If[l =!= {},
+    {!MemberQ[already, First[l]]} ~Join~ MarkFirst[Rest[l], already ~Join~ {First[l]}],
+    {}];
+
+
 End[];
 
 

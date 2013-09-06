@@ -22,6 +22,7 @@ BeginPackage["OpenCL`", {"Errors`", "Helpers`", "Kranc`", "Calculation`", "CodeG
 
 OpenCLPrologue;
 OpenCLEpilogue;
+OpenCLProcessKernel;
 
 Begin["`Private`"];
 
@@ -52,6 +53,10 @@ DefFn[
     "                         sources, groups, NULL, NULL, NULL, -1,\n",
     "                         imin, imax, &kernel);\n\n"
   }];
+
+DefFn[
+  OpenCLProcessKernel[code:CodeGenBlock] :=
+  Stringify[code]];
 
 End[];
 

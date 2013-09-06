@@ -340,8 +340,10 @@ DefFn[
     (* We could (or probably should) write this into a source file of its own *)
     If[OptionValue[UseOpenCL], {OpenCLPrologue[]}, {}],
 
-    If[OptionValue[UseOpenCL], Stringify, Identity][{
-
+    Module[
+      {kernelCode},
+      kernelCode =
+      {
     CommentedBlock["Include user-supplied include files",
       Map[IncludeFile, lookupDefault[cleancalc, DeclarationIncludes, {}]]],
 
@@ -364,7 +366,11 @@ DefFn[
           pddefs, where, addToStencilWidth, opts]},
       {}]
 
-    }],
+    };
+
+    If[OptionValue[UseOpenCL], kernelCode = OpenCLProcessKernel[kernelCode]];
+
+    kernelCode],
 
     (* OpenCL kernel epilogue *)
     If[OptionValue[UseOpenCL], OpenCLEpilogue[cleancalc, imp, functionName], {}]

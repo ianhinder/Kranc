@@ -24,12 +24,6 @@ VectoriseExpression;
 VectorisationLocalsToGridFunctions;
 OpenCLLocalsToGridFunctions;
 VectorisationSimpleAssignEquationList;
-StoreVariableInLoop::usage = "StoreVariableInLoop[dest_, src_] returns a block of code " <>
-  "that assigns 'src' to 'dest'.";
-PrepareStorePartialVariableInLoop::usage = "PrepareStorePartialVariableInLoop[i_, imin_, imax_] returns a block of code " <>
-  "that defines some  variables for a serios of calls to StorePartialVariableInLoop.";
-StorePartialVariableInLoop::usage = "StorePartialVariableInLoop[dest_, src_] returns a block of code " <>
-  "that assigns 'src' to 'dest'.";
 
 Begin["`Private`"];
 
@@ -250,16 +244,20 @@ DefFn[
 
 (* Code generation: The following functions are called when vectorising. *)
 
+(* Return a block of code that assigns 'src' to 'dest' *)
 DefFn[
   StoreVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol)] :=
   {"vec_store_nta(", dest, ",", src, ")", EOL[]}];
 
+(* Return a block of code that defines some variables for a series of
+   calls to StorePartialVariableInLoop *)
 DefFn[
   PrepareStorePartialVariableInLoop[i:(_String|_Symbol),
                                     ilo:(_String|_Symbol),
                                     ihi:(_String|_Symbol)] :=
   {"vec_store_partial_prepare(", i, ",", ilo, ",", ihi, ")", EOL[]}];
 
+(* Return a block of code that assigns 'src' to 'dest' *)
 DefFn[
   StorePartialVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol)] :=
   {"vec_store_nta_partial(", dest, ",", src, ")", EOL[]}];

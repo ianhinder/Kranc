@@ -129,24 +129,13 @@ DefFn[
              {DataType[], "dzi", "INV(dz)"}},
             {1}],
 
-      If[vectorise,
-         {DeclareAssignVariable[DataType[], "khalf", "ToReal(0.5)"],
-          DeclareAssignVariable[DataType[], "kthird", "ToReal(1.0/3.0)"],
-          DeclareAssignVariable[DataType[], "ktwothird", "ToReal(2.0/3.0)"],
-          DeclareAssignVariable[DataType[], "kfourthird", "ToReal(4.0/3.0)"],
-          DeclareAssignVariable[DataType[], "keightthird", "ToReal(8.0/3.0)"],
-          DeclareAssignVariable[DataType[], "hdxi", "kmul(ToReal(0.5), dxi)"],
-          DeclareAssignVariable[DataType[], "hdyi", "kmul(ToReal(0.5), dyi)"],
-          DeclareAssignVariable[DataType[], "hdzi", "kmul(ToReal(0.5), dzi)"]},
-         (* else *)
-         {DeclareAssignVariable[DataType[], "khalf", "0.5"],
-          DeclareAssignVariable[DataType[], "kthird", "1/3.0"],
-          DeclareAssignVariable[DataType[], "ktwothird", "2.0/3.0"],
-          DeclareAssignVariable[DataType[], "kfourthird", "4.0/3.0"],
-          DeclareAssignVariable[DataType[], "keightthird", "8.0/3.0"],
-          DeclareAssignVariable[DataType[], "hdxi", "0.5 * dxi"],
-          DeclareAssignVariable[DataType[], "hdyi", "0.5 * dyi"],
-          DeclareAssignVariable[DataType[], "hdzi", "0.5 * dzi"]}]}]];
+      AssignVariableFromExpression["khalf", 0.5, True, vectorise, Const -> True],
+      AssignVariableFromExpression["kthird", 1/3, True, vectorise, Const -> True],
+      AssignVariableFromExpression["ktwothird", 2/3, True, vectorise, Const -> True],
+      AssignVariableFromExpression["kfourthird", 4/3, True, vectorise, Const -> True],
+      AssignVariableFromExpression["hdxi", 0.5 "dxi", True, vectorise, Const -> True],
+      AssignVariableFromExpression["hdyi", 0.5 "dyi", True, vectorise, Const -> True],
+      AssignVariableFromExpression["hdzi", 0.5 "dzi", True, vectorise, Const -> True]}]];
 
 (* TODO: This is unused *)
 DefFn[

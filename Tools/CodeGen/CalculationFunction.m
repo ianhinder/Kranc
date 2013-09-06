@@ -272,19 +272,8 @@ assignVariableFromExpression[dest_, expr_, declare_, vectorise_, noSimplify:Bool
     type = If[StringMatchQ[ToString[dest], "dir*"], "ptrdiff_t", DataType[]];
     cleanExpr = ReplacePowers[expr, vectorise, noSimplify];
 
-    If[SOURCELANGUAGE == "C",
-      code = If[declare, type <> " CCTK_ATTRIBUTE_UNUSED ", ""] <> ToString[dest] <> " = " <>
-        ToString[cleanExpr, CForm,         PageWidth -> Infinity] <> ";\n",
-      code = ToString@dest <> ".eq." <> ToString[cleanExpr, FortranForm, PageWidth -> 120]
-        <> "\n"];
-
-    If[SOURCELANGUAGE != "C",
-      code = StringReplace[code, "\n  "      -> " &\n"];
-      code = StringReplace[code, "   -  "    -> " &  "];
-      code = StringReplace[code, ".eq."      -> " = "];
-      code = StringReplace[code, "=        " -> "="];
-      code = StringReplace[code, "\\"        -> ""];
-      code = StringReplace[code, "(index)"   -> "(i,j,k)"]];
+    code = If[declare, type <> " CCTK_ATTRIBUTE_UNUSED ", ""] <> ToString[dest] <> " = " <>
+         ToString[cleanExpr, CForm, PageWidth -> Infinity] <> ";\n";
 
     code = lineBreak[code, 70] <> "\n";
     code = StringReplace[code, "normal1"     -> "normal[0]"];

@@ -137,20 +137,6 @@ DefFn[
       AssignVariableFromExpression["hdyi", 0.5 "dyi", True, vectorise, Const -> True],
       AssignVariableFromExpression["hdzi", 0.5 "dzi", True, vectorise, Const -> True]}]];
 
-(* TODO: This is unused *)
-DefFn[
-  declareGridLoopVariables[] :=
-  SeparatedBlock[
-    {InsertComment["Declare the variables used for looping over grid points"],
-     Map[DeclareVariables[#, "CCTK_INT"] &, 
-         {{"i", "j", "k"}
-          (*, {"istart", "jstart", "kstart"}, 
-            {"iend", "jend", "kend"},
-            {"index_offset_x", "index_offset_y", "index_offset_z", "dir", "face"} *)}]
-     (*, Map[DeclareArray[#, 6, "CCTK_INT"] &, {"is_symbnd", "is_physbnd", "is_ipbnd"}],
-       Map[DeclareArray[#, 3, "CCTK_INT"] &, {"imin", "imax", "bmin", "bmax"}] *), 
-     If[SOURCELANGUAGE == "C", DeclareVariable["index", "// CCTK_INT"], "\n"]}]];
-
 DefFn[
   InitialiseGridLoopVariables[derivativesUsedSwitch:Boolean, addToStencilWidth_Integer] :=
   CommentedBlock[

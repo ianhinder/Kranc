@@ -287,7 +287,7 @@ DefFn[
 
 DefFn[
   VectorisationAssignVariableInLoop[dest:(_String|_Symbol), src:CodeGenBlock] :=
-  {dest, " = ", "vec_load(", src, ")", EOL[]}];
+  {dest, " = ", VectorisationLoadVariable[src], EOL[]}];
 
 End[];
 

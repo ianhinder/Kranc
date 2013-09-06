@@ -25,7 +25,7 @@
 
 BeginPackage["Thorn`", "CodeGen`", "CodeGenC`", "CodeGenCactus`", "CodeGenKranc`", "CalculationFunction`",
   "CalculationBoundaries`", "MapLookup`", "KrancGroups`", "Helpers`",
-  "Errors`", "Kranc`", "CaKernel`"];
+  "Errors`", "Kranc`", "CaKernel`", "Vectorisation`"];
 
 (* These functions are externally visible, and comprise the public
    interface to this package. *)
@@ -224,7 +224,7 @@ CreateConfiguration[opts:OptionsPattern[]] :=
       "REQUIRES LoopControl\n", "OPTIONAL LoopControl\n{\n}\n"],
    If[OptionValue[UseDGFE], "REQUIRES Boost CPPUtils FDCore HRSCCore\n", {}],
    If[OptionValue[UseOpenCL], "REQUIRES OpenCL OpenCLRunTime\n", {}],
-   If[OptionValue[UseVectors], "REQUIRES Vectors\n", {}],
+   If[OptionValue[UseVectors], VectorisationConfigurationCCL[], {}],
    If[OptionValue[UseCaKernel], CaKernelConfigurationCLL[], {}]
   };
 
@@ -558,7 +558,7 @@ CreateSetterSource[calcs_, debug_, include_,
   If[!MatchQ[include, _List],
     ThrowError["CreateSetterSource: Include should be a list but is in fact " <> ToString[include]]];
 
-  SetDataType[If[OptionValue[UseVectors],"CCTK_REAL_VEC", "CCTK_REAL"]];
+  SetDataType[If[OptionValue[UseVectors],VectorisationType[], "CCTK_REAL"]];
 
   {whoWhen[CodeGenC`SOURCELANGUAGE],
 
@@ -578,7 +578,7 @@ CreateSetterSource[calcs_, debug_, include_,
                          include,
                          {"cctk_Loop.h", "loopcontrol.h"},
                          If[OptionValue[UseOpenCL], {"OpenCLRunTime.h"}, {}],
-                         If[OptionValue[UseVectors], {"vectors.h"}, {}]]],
+                         If[OptionValue[UseVectors], VectorisationIncludeFiles[], {}]]],
    CalculationMacros[OptionValue[UseVectors]],
 
    (* For each function structure passed, create the function and

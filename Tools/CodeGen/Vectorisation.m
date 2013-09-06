@@ -27,6 +27,9 @@ OpenCLLocalsToGridFunctions;
 VectorisationSimpleAssignEquationList;
 VectorisationAssignVariableInLoop;
 VectorisationLoadVariable;
+VectorisationConfigurationCCL;
+VectorisationType;
+VectorisationIncludeFiles;
 
 Begin["`Private`"];
 
@@ -288,6 +291,18 @@ DefFn[
 DefFn[
   VectorisationAssignVariableInLoop[dest:(_String|_Symbol), src:CodeGenBlock] :=
   {dest, " = ", VectorisationLoadVariable[src], EOL[]}];
+
+DefFn[
+  VectorisationConfigurationCCL[] :=
+  "REQUIRES Vectors\n"];
+
+DefFn[
+  VectorisationType[] :=
+  "CCTK_REAL_VEC"];
+
+DefFn[
+  VectorisationIncludeFiles[] :=
+  {"vectors.h"}];
 
 End[];
 

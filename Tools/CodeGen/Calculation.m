@@ -38,6 +38,11 @@ AddConditionSuffix;
 InNewScheduleGroup;
 BoundaryCalculationQ;
 GetSchedule;
+FunctionsInCalculation;
+GroupsInCalculation;
+RemoveUnusedShorthands;
+VerifyCalculation;
+CalculationSymbols;
 
 Begin["`Private`"];
 
@@ -338,6 +343,112 @@ DefFn[
        ThrowError["Calculation "<>lookup[calc,Name]<>" has an invalid Schedule entry: ",
                   s]];
     s]];
+
+calculationSymbolsRHS[calc_] :=
+  Module[{allAtoms},
+    allAtoms = Union[Map[Last, Flatten@{lookup[calc, Equations],
+      lookup[calc,PartialDerivatives]} ]];
+    allAtoms = Union[Level[allAtoms, {-1}]];
+    Cases[allAtoms, x_Symbol]];
+
+calculationSymbolsLHS[calc_] :=
+  Module[{allAtoms},
+    allAtoms = Union[Map[First, Flatten@lookup[calc, Equations] ]];
+    Cases[allAtoms, x_Symbol]];
+
+(* Return the names of any shorthands used in the RHSs of calculation *)
+calculationRHSUsedShorthands[calc_] :=
+  Module[{calcSymbols, allShorthands},
+    calcSymbols = calculationSymbolsRHS[calc];
+    allShorthands = lookupDefault[calc, Shorthands, {}];
+    Intersection[calcSymbols, allShorthands]];
+
+(* Return the names of any shorthands used in the LHSs of calculation *)
+calculationLHSUsedShorthands[calc_] :=
+  Module[{calcSymbols, allShorthands},
+    calcSymbols = calculationSymbolsLHS[calc];
+    allShorthands = lookupDefault[calc, Shorthands, {}];
+    Intersection[calcSymbols, allShorthands]];
+
+CalculationSymbols[calc_] :=
+  Module[{allAtoms},
+    allAtoms = Union[Level[lookup[calc, Equations], {-1}]];
+    Cases[allAtoms, x_Symbol]];
+
+(* Return all the functions used in a calculation *)
+(* Not currently used *)
+FunctionsInCalculation[calc_] :=
+  Module[{eqs, x},
+    eqs = lookup[calc, Equations];
+    x = Cases[eqs, f_[x___] -> f, Infinity];
+    y = Union[Select[x, Context[#] === "Global`" &]];
+    y];
+
+VerifyCalculation[calc_] :=
+  Module[{calcName},
+    calcName = lookupDefault[calc, Name, "<unknown>"];
+    If[Head[calc] != List,
+      ThrowError["Invalid Calculation structure: " <> ToString[calc]]];
+    VerifyListContent[calc, Rule,
+      " while checking the calculation with name " <> ToString[calcName]];
+    If[mapContains[calc, Shorthands],
+      VerifyListContent[lookup[calc, Shorthands], Symbol,
+        " while checking the Shorthands member of the calculation called " <> ToString[calcName]]];
+    If[mapContains[calc, Equations],
+      VerifyListContent[lookup[calc, Equations], Rule,
+        " while checking the equation" <> ToString[calcName]],
+      ThrowError["Invalid Calculation structure. Must contain Equations element: ",
+        ToString[calc], " while checking the calculation called ", ToString[calcName]]];
+
+    allowedKeys = {BodyFunction, CallerFunction, ExecuteOn,
+         GFAccessFunction, Groups, Implementation, InitFDVariables,
+         LoopFunction, MacroPointer, Name, ODEGroups, Parameters,
+         PartialDerivatives, PreDefinitions, Schedule,Equations,
+         Shorthands, ConditionalOnKeyword, Before, After,
+         ConditionalOnTextuals, Where, ConditionalOnKeywords,
+         CollectList, AllowedSymbols, ApplyBCs, Conditional, CachedVariables, SplitBy,
+         SeparatedDerivatives, SeparatedDerivatives2,
+         LocalGroups, NoSimplify, UseDGFE, SimpleCode, UseCaKernel,
+         UseJacobian,
+         ScheduleGroups, TriggerGroups};
+
+    usedKeys = Map[First, calc];
+    unknownKeys = Complement[usedKeys, allowedKeys];
+    If[unknownKeys =!= {},
+      ThrowError["Unrecognised key(s) in calculation: ", unknownKeys]]];
+
+(* Remove equations in the calculation which assign to shorthands
+   which are never used. Do not modify the Shorthands entry. An unused
+   shorthand might be missed if the order of assignments is
+   pathalogical enough (e.g. {s1 -> s2, s2 -> s1} would not be
+   removed). *)
+RemoveUnusedShorthands[calc_] :=
+  Module[{rhsShorthands, lhsShorthands, unusedButAssignedShorthands, removeShorts,
+    eqs, neweqs, newCalc},
+
+    removeShorts[eqlist_] :=
+      Select[eqlist, (!MemberQ[unusedButAssignedShorthands, First[#]]) &];
+
+    rhsShorthands = calculationRHSUsedShorthands[calc];
+    lhsShorthands = calculationLHSUsedShorthands[calc];
+    unusedButAssignedShorthands = Complement[lhsShorthands, rhsShorthands];
+    InfoMessage[InfoFull, "Removing definitions for shorthands: "<>ToString[unusedButAssignedShorthands,InputForm]];
+    eqs = lookup[calc, Equations];
+    neweqs = removeShorts[eqs];
+    newCalc = mapReplace[calc, Equations, neweqs];
+    If[!(eqs === neweqs),
+      RemoveUnusedShorthands[newCalc],
+      newCalc]];
+
+(* Return all the groups that are used in a given calculation *)
+GroupsInCalculation[calc_, imp_] :=
+  Module[{groups,gfs,eqs,gfsUsed, groupNames},
+    groups = lookup[calc, Groups];
+    gfs = allGroupVariables[groups];
+    eqs = lookup[calc, Equations];
+    gfsUsed = Union[Cases[eqs, _ ? (MemberQ[gfs,#] &), Infinity]];
+    groupNames = containingGroups[gfsUsed, groups];
+    Map[qualifyGroupName[#, imp] &, groupNames]];
 
 End[];
 

@@ -21,10 +21,10 @@
 
 BeginPackage["CalculationFunction`", {"CodeGenCactus`", "CodeGenC`", "CodeGen`",
   "MapLookup`", "KrancGroups`", "Differencing`", "Errors`",
-  "Helpers`", "Kranc`", "Optimize`", "Jacobian`", "Profile`", "Vectorisation`"}];
+  "Helpers`", "Kranc`", "Optimize`", "Jacobian`", "Profile`", "Vectorisation`",
+  "Calculation`"}];
 
 CreateCalculationFunction::usage = "";
-VerifyCalculation::usage = "";
 GridFunctionsInExpression;
 
 Begin["`Private`"];
@@ -52,112 +52,6 @@ VerifyListContent[l_, type_, while_] :=
 (* --------------------------------------------------------------------------
    Calculations
    -------------------------------------------------------------------------- *)
-
-(* Return the names of any shorthands used in the RHSs of calculation *)
-calculationRHSUsedShorthands[calc_] :=
-  Module[{calcSymbols, allShorthands},
-    calcSymbols = calculationSymbolsRHS[calc];
-    allShorthands = lookupDefault[calc, Shorthands, {}];
-    Intersection[calcSymbols, allShorthands]];
-
-(* Return the names of any shorthands used in the LHSs of calculation *)
-calculationLHSUsedShorthands[calc_] :=
-  Module[{calcSymbols, allShorthands},
-    calcSymbols = calculationSymbolsLHS[calc];
-    allShorthands = lookupDefault[calc, Shorthands, {}];
-    Intersection[calcSymbols, allShorthands]];
-
-calculationSymbols[calc_] :=
-  Module[{allAtoms},
-    allAtoms = Union[Level[lookup[calc, Equations], {-1}]];
-    Cases[allAtoms, x_Symbol]];
-
-calculationSymbolsLHS[calc_] :=
-  Module[{allAtoms},
-    allAtoms = Union[Map[First, Flatten@lookup[calc, Equations] ]];
-    Cases[allAtoms, x_Symbol]];
-
-calculationSymbolsRHS[calc_] :=
-  Module[{allAtoms},
-    allAtoms = Union[Map[Last, Flatten@{lookup[calc, Equations],
-      lookup[calc,PartialDerivatives]} ]];
-    allAtoms = Union[Level[allAtoms, {-1}]];
-    Cases[allAtoms, x_Symbol]];
-
-(* Return all the functions used in a calculation *)
-(* Not currently used *)
-functionsInCalculation[calc_] :=
-  Module[{eqs, x},
-    eqs = lookup[calc, Equations];
-    x = Cases[eqs, f_[x___] -> f, Infinity];
-    y = Union[Select[x, Context[#] === "Global`" &]];
-    y];
-
-VerifyCalculation[calc_] :=
-  Module[{calcName},
-    calcName = lookupDefault[calc, Name, "<unknown>"];
-    If[Head[calc] != List,
-      ThrowError["Invalid Calculation structure: " <> ToString[calc]]];
-    VerifyListContent[calc, Rule,
-      " while checking the calculation with name " <> ToString[calcName]];
-    If[mapContains[calc, Shorthands],
-      VerifyListContent[lookup[calc, Shorthands], Symbol,
-        " while checking the Shorthands member of the calculation called " <> ToString[calcName]]];
-    If[mapContains[calc, Equations],
-      VerifyListContent[lookup[calc, Equations], Rule,
-        " while checking the equation" <> ToString[calcName]],
-      ThrowError["Invalid Calculation structure. Must contain Equations element: ",
-        ToString[calc], " while checking the calculation called ", ToString[calcName]]];
-
-    allowedKeys = {BodyFunction, CallerFunction, ExecuteOn,
-         GFAccessFunction, Groups, Implementation, InitFDVariables,
-         LoopFunction, MacroPointer, Name, ODEGroups, Parameters,
-         PartialDerivatives, PreDefinitions, Schedule,Equations,
-         Shorthands, ConditionalOnKeyword, Before, After,
-         ConditionalOnTextuals, Where, ConditionalOnKeywords,
-         CollectList, AllowedSymbols, ApplyBCs, Conditional, CachedVariables, SplitBy,
-         SeparatedDerivatives, SeparatedDerivatives2,
-         LocalGroups, NoSimplify, UseDGFE, SimpleCode, UseCaKernel,
-         UseJacobian,
-         ScheduleGroups, TriggerGroups};
-
-    usedKeys = Map[First, calc];
-    unknownKeys = Complement[usedKeys, allowedKeys];
-    If[unknownKeys =!= {},
-      ThrowError["Unrecognised key(s) in calculation: ", unknownKeys]]];
-
-(* Remove equations in the calculation which assign to shorthands
-   which are never used. Do not modify the Shorthands entry. An unused
-   shorthand might be missed if the order of assignments is
-   pathalogical enough (e.g. {s1 -> s2, s2 -> s1} would not be
-   removed). *)
-removeUnusedShorthands[calc_] :=
-  Module[{rhsShorthands, lhsShorthands, unusedButAssignedShorthands, removeShorts,
-    eqs, neweqs, newCalc},
-
-    removeShorts[eqlist_] :=
-      Select[eqlist, (!MemberQ[unusedButAssignedShorthands, First[#]]) &];
-
-    rhsShorthands = calculationRHSUsedShorthands[calc];
-    lhsShorthands = calculationLHSUsedShorthands[calc];
-    unusedButAssignedShorthands = Complement[lhsShorthands, rhsShorthands];
-    InfoMessage[InfoFull, "Removing definitions for shorthands: "<>ToString[unusedButAssignedShorthands,InputForm]];
-    eqs = lookup[calc, Equations];
-    neweqs = removeShorts[eqs];
-    newCalc = mapReplace[calc, Equations, neweqs];
-    If[!(eqs === neweqs),
-      removeUnusedShorthands[newCalc],
-      newCalc]];
-
-(* Return all the groups that are used in a given calculation *)
-groupsInCalculation[calc_, imp_] :=
-  Module[{groups,gfs,eqs,gfsUsed, groupNames},
-    groups = lookup[calc, Groups];
-    gfs = allGroupVariables[groups];
-    eqs = lookup[calc, Equations];
-    gfsUsed = Union[Cases[eqs, _ ? (MemberQ[gfs,#] &), Infinity]];
-    groupNames = containingGroups[gfsUsed, groups];
-    Map[qualifyGroupName[#, imp] &, groupNames]];
 
 CheckGroupStorage[groupNames_, calcName_] :=
   Module[{ignoreGroups, groupsNames2},
@@ -348,7 +242,7 @@ DefFn[
 
   calc = If[useJacobian, InsertJacobian[calcp, opts], calcp];
 
-  cleancalc = removeUnusedShorthands[calc];
+  cleancalc = RemoveUnusedShorthands[calc];
   If[OptionValue[CSE],
     cleancalc = EliminateCommonSubexpressions[cleancalc, opts]];
 
@@ -406,7 +300,7 @@ DefFn[
      where = If[MatchQ[stencilSize, {0,0,0}] =!= True, Interior, Everywhere]];
 
   (* Check all the function names *)
-  functionsPresent = functionsInCalculation[cleancalc]; (* Not currently used *)
+  functionsPresent = FunctionsInCalculation[cleancalc]; (* Not currently used *)
 
   (* Check that there are no shorthands defined with the same name as a grid function *)
   If[!(Intersection[shorts, gfs] === {}),
@@ -421,7 +315,7 @@ DefFn[
     ];
 
   (* Check that there are no unknown symbols in the calculation *)
-  allSymbols = calculationSymbols[cleancalc];
+  allSymbols = CalculationSymbols[cleancalc];
   knownSymbols = Join[lookupDefault[cleancalc, AllowedSymbols, {}], gfs, shorts, parameters,
     {dx,dy,dz,dt,idx,idy,idz,t, usejacobian, Pi, E, Symbol["i"], Symbol["j"], Symbol["k"], normal1, normal2,
     normal3, tangentA1, tangentA2, tangentA3, tangentB1, tangentB2, tangentB3},
@@ -683,7 +577,7 @@ DefFn[
            ignoreGroups = {"TmunuBase::stress_energy_scalar",
                            "TmunuBase::stress_energy_vector",
                            "TmunuBase::stress_energy_tensor"};
-           groupNames = groupsInCalculation[cleancalc, imp];
+           groupNames = GroupsInCalculation[cleancalc, imp];
            groupNames = Select[groupNames, !MemberQ[ignoreGroups, #] &];
            {
              "const char* const groups[] = {\n  ",
@@ -712,7 +606,7 @@ DefFn[
         ConditionalOnParameterTextual["cctk_iteration % " <> functionName <> "_calc_every != " <>
           functionName <> "_calc_offset", "return;\n"],
   
-        CheckGroupStorage[groupsInCalculation[cleancalc, imp], functionName],
+        CheckGroupStorage[GroupsInCalculation[cleancalc, imp], functionName],
         "\n",
 
         CheckStencil[pddefs, eqs, functionName, OptionValue[ZeroDimensions],

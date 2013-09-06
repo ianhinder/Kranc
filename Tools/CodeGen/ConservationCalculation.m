@@ -93,7 +93,7 @@ primitiveVars[calc_] :=
 
   (* Module[{allGFs, calcSyms, gfsUsed, conserved, primitive}, *)
   (*   allGFs = allGroupVariables[lookup[calc, Groups]]; *)
-  (*   calcSyms = calculationSymbols[calc]; *)
+  (*   calcSyms = CalculationSymbols[calc]; *)
   (*   gfsUsed = Intersection[allGFs, calcSyms]; *)
   (*   conserved = consVars[calc]; *)
   (*   primitive = Complement[gfsUsed, conserved]; *)
@@ -105,7 +105,7 @@ lrGFs[calc_] :=
 
   (* Module[{allGFs, calcSyms, gfsUsed, conserved, primitive}, *)
   (*   allGFs = allGroupVariables[lookup[calc, Groups]]; *)
-  (*   calcSyms = calculationSymbols[calc]; *)
+  (*   calcSyms = CalculationSymbols[calc]; *)
   (*   gfsUsed = Intersection[allGFs, calcSyms]; *)
   (*   conserved = consVars[calc]; *)
   (*   primitive = Complement[gfsUsed, conserved]; *)

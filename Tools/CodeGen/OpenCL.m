@@ -26,6 +26,7 @@ OpenCLEpilogue;
 OpenCLProcessKernel;
 OpenCLIncludeFiles;
 OpenCLConfigurationCCL;
+OpenCLProcessDifferencingHeader;
 
 Begin["`Private`"];
 
@@ -72,6 +73,13 @@ DefFn[
 DefFn[
   OpenCLConfigurationCCL[] :=
   "REQUIRES OpenCL OpenCLRunTime\n"];
+
+DefFn[
+  OpenCLProcessDifferencingHeader[diffHeader_] :=
+  "static const char* const differencing =\n" <>
+  Stringify[diffHeader] <>
+  ";\n"];
+
 
 End[];
 

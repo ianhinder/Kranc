@@ -29,7 +29,8 @@ BeginPackage["KrancThorn`", {"CodeGen`", "Thorn`",
  "MapLookup`", "KrancGroups`", "Differencing`",
  "CalculationFunction`", "Errors`", "Helpers`", "CactusBoundary`",
  "KrancTensor`", "Param`", "Schedule`", "Interface`", "Kranc`", "Jacobian`",
- "ConservationCalculation`", "CaKernel`", "Calculation`", "ParamCheck`"}];
+ "ConservationCalculation`", "CaKernel`", "Calculation`", "ParamCheck`",
+ "OpenCL`"}];
 
 CreateKrancThorn::usage = "Construct a Kranc thorn";
 
@@ -309,11 +310,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
             "\n"},
            {}],
         diffHeader];
-    diffHeader = If[OptionValue[UseOpenCL],
-                    "static const char* const differencing =\n" <>
-                    Stringify[diffHeader] <>
-                    ";\n",
-                    diffHeader];
+
+    If[OptionValue[UseOpenCL], diffHeader = OpenCLProcessDifferencingHeader[diffHeader]];
 
     (* Add the predefinitions into the calcs *)
     calcs = Map[Join[#, {PreDefinitions -> pDefs}] &, calcs];

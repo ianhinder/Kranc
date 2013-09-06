@@ -25,7 +25,6 @@ BeginPackage["CalculationFunction`", {"CodeGenCactus`", "CodeGenC`", "CodeGen`",
 
 CreateCalculationFunction::usage = "";
 VerifyCalculation::usage = "";
-calculationSymbols::usage = "";
 GridFunctionsInExpression;
 
 Begin["`Private`"];

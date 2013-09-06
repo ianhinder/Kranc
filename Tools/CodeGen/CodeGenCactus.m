@@ -85,11 +85,14 @@ DefFn[
      dataType]];
 
 DefFn[
-  AssignVariableInLoop[dest:(_String|_Symbol), src:CodeGenBlock, vectorise_:False] :=
-  Module[
-    {loader},
-    loader[x_] := If[vectorise, {"vec_load(", x, ")"}, x];
-    {dest, " = ", loader[src], EOL[]}]];
+  AssignVariableInLoop[dest:(_String|_Symbol), src:CodeGenBlock,
+                       vectorise : False : False] :=
+  {dest, " = ", src, EOL[]}];
+
+DefFn[
+  AssignVariableInLoop[dest:(_String|_Symbol), src:CodeGenBlock,
+                       True] :=
+  VectorisationAssignVariableInLoop[dest, src]];
 
 DefFn[
   DeclareAssignVariableInLoop[type_String, dest:(_String|_Symbol), src:(_String|_Symbol)] :=

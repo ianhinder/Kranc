@@ -18,12 +18,14 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-BeginPackage["Vectorisation`", {"Errors`", "Helpers`", "Kranc`", "CodeGenC`"}];
+BeginPackage["Vectorisation`", {"Errors`", "Helpers`", "Kranc`", "CodeGenC`",
+                                "CodeGen`"}];
 
 VectoriseExpression;
 VectorisationLocalsToGridFunctions;
 OpenCLLocalsToGridFunctions;
 VectorisationSimpleAssignEquationList;
+VectorisationAssignVariableInLoop;
 
 Begin["`Private`"];
 
@@ -277,6 +279,10 @@ DefFn[
   VectorisationSimpleAssignEquationList[lhss_List, rhss_List] :=
   {prepareStorePartialVariableInLoop["i", "vecimin", "vecimax"],
    MapThread[storePartialVariableInLoop, {lhss, rhss}]}];
+
+DefFn[
+  VectorisationAssignVariableInLoop[dest:(_String|_Symbol), src:CodeGenBlock] :=
+  {dest, " = ", "vec_load(", src, ")", EOL[]}];
 
 End[];
 

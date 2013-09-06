@@ -270,13 +270,12 @@ DefFn[
 
 DefFn[
   VectorisationLocalsToGridFunctions[gridNames_List, localNames_List] :=
-  {prepareStorePartialVariableInLoop["i", "vecimin", "vecimax"],
-   MapThread[storePartialVariableInLoop, {gridNames, localNames}]}];
+  VectorisationLocalsToGridFunctions[gridNames, localNames, {"vecimin", "vecimax"}]];
 
-(* TODO: This should be in OpenCL.m *)
 DefFn[
-  OpenCLLocalsToGridFunctions[gridNames_List, localNames_List] :=
-  {prepareStorePartialVariableInLoop["i", "lc_imin", "lc_imax"],
+  VectorisationLocalsToGridFunctions[gridNames_List, localNames_List,
+                                     {minVar_String, maxVar_String}] :=
+  {prepareStorePartialVariableInLoop["i", minVar, maxVar],
    MapThread[storePartialVariableInLoop, {gridNames, localNames}]}];
 
 DefFn[

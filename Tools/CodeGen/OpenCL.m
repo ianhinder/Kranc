@@ -18,7 +18,8 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-BeginPackage["OpenCL`", {"Errors`", "Helpers`", "Kranc`", "Calculation`", "CodeGen`"}];
+BeginPackage["OpenCL`", {"Errors`", "Helpers`", "Kranc`", "Calculation`", "CodeGen`",
+                         "Vectorisation`"}];
 
 OpenCLPrologue;
 OpenCLEpilogue;
@@ -57,6 +58,10 @@ DefFn[
 DefFn[
   OpenCLProcessKernel[code:CodeGenBlock] :=
   Stringify[code]];
+
+DefFn[
+  OpenCLLocalsToGridFunctions[gridNames_List, localNames_List] :=
+  VectorisationLocalsToGridFunctions[gridNames, localNames, {"lc_imin", "lc_imax"}]];
 
 End[];
 

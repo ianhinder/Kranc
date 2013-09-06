@@ -25,7 +25,7 @@
 
 BeginPackage["Thorn`", "CodeGen`", "CodeGenC`", "CodeGenCactus`", "CodeGenKranc`", "CalculationFunction`",
   "CalculationBoundaries`", "MapLookup`", "KrancGroups`", "Helpers`",
-  "Errors`", "Kranc`", "CaKernel`", "Vectorisation`"];
+  "Errors`", "Kranc`", "CaKernel`", "Vectorisation`", "DGFE`"];
 
 (* These functions are externally visible, and comprise the public
    interface to this package. *)
@@ -222,7 +222,7 @@ CreateConfiguration[opts:OptionsPattern[]] :=
    "REQUIRES GenericFD\n",
    If[OptionValue[UseVectors], 
       "REQUIRES LoopControl\n", "OPTIONAL LoopControl\n{\n}\n"],
-   If[OptionValue[UseDGFE], "REQUIRES Boost CPPUtils FDCore HRSCCore\n", {}],
+   If[OptionValue[UseDGFE], DGFEConfigurationCCL[], {}],
    If[OptionValue[UseOpenCL], "REQUIRES OpenCL OpenCLRunTime\n", {}],
    If[OptionValue[UseVectors], VectorisationConfigurationCCL[], {}],
    If[OptionValue[UseCaKernel], CaKernelConfigurationCLL[], {}]

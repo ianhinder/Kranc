@@ -23,6 +23,7 @@ BeginPackage["DGFE`", {"Errors`", "Helpers`", "Kranc`", "MapLookup`"}];
 DGFEDefinitions;
 DGFEInitialise;
 DGFECall;
+DGFEConfigurationCCL;
 
 Begin["`Private`"];
 
@@ -207,6 +208,11 @@ DefFn[
       "delete solver;",
       "solver = NULL;"
     } // Flatten // Map[# <> "\n" &, #] &]];
+
+DefFn[
+  DGFEConfigurationCCL[] :=
+  "REQUIRES Boost CPPUtils FDCore HRSCCore\n"];
+
 
 End[];
 

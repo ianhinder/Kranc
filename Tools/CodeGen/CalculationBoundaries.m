@@ -19,7 +19,7 @@
 *)
 
 BeginPackage["CalculationBoundaries`", {"Errors`", "Helpers`",
-  "Kranc`", "MapLookup`", "KrancGroups`", "CodeGen`", "CodeGenCactus`", "CodeGenC`"}];
+  "CodeGenKranc`", "Kranc`", "MapLookup`", "KrancGroups`", "CodeGen`", "CodeGenCactus`", "CodeGenC`"}];
 
 CalculationBoundariesFunction;
 

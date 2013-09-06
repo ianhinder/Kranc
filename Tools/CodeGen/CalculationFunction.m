@@ -20,6 +20,7 @@
 *)
 
 BeginPackage["CalculationFunction`", {"CodeGenCactus`", "CodeGenC`", "CodeGen`",
+  "CodeGenKranc`",
   "MapLookup`", "KrancGroups`", "Differencing`", "Errors`",
   "Helpers`", "Kranc`", "Optimize`", "Jacobian`", "Profile`", "Vectorisation`",
   "Calculation`"}];

@@ -133,7 +133,8 @@ point. TODO: Should be checked by someone competent!
 
 *)
 
-BeginPackage["Differencing`", {"CodeGen`", "CodeGenC`", "CodeGenCactus`", "Kranc`", "MapLookup`", 
+BeginPackage["Differencing`", {"CodeGen`", "CodeGenC`", "CodeGenCactus`", "CodeGenKranc`",
+                               "Kranc`", "MapLookup`", 
              (* "LinearAlgebra`MatrixManipulation`", *) "Errors`"}];
 
 CreateDifferencingHeader::usage = "";

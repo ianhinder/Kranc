@@ -19,7 +19,7 @@
 *)
 
 BeginPackage["ParamCheck`", {"Errors`", "Helpers`", "Kranc`", "CodeGenCactus`",
-                             "CodeGenC`", "CodeGen`"}];
+                             "CodeGenC`", "CodeGen`", "CodeGenKranc`"}];
 
 ParameterCheckSource;
 ParameterCheckSchedule;

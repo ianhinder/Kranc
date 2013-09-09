@@ -41,16 +41,6 @@ Begin["`Private`"];
    Utility functions
    -------------------------------------------------------------------------- *)
 
-VerifyGroups[gs_] := 
-  If[!ListQ[gs],
-   ThrowError["Not a list of group definitions: ", gs],
-   Map[VerifyGroup, gs]];
-
-VerifyGroupNames[gns_] := 
-  If[!ListQ[gns],
-   ThrowError["Not a list of group names: ", gns],
-   Map[VerifyGroupName, gns]];
-
 cktCheckNamedArgs[l_] := 
 Module[{used, unrecognized},
     used = Map[First, l];

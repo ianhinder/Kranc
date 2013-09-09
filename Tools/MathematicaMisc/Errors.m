@@ -11,6 +11,7 @@ InfoMessage;
 SetDebugLevel;
 ErrorDefinition::usage = "ErrorDefinition[f] creates a default definition of a function f which throws an exception.  This can be used to catch programming errors where f is called with incorrect arguments.";
 PrintError;
+PrintStructure;
 
 DebugQuiet = 0;
 Warnings = 1

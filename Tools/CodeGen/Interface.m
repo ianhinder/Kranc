@@ -19,7 +19,8 @@
 *)
 
 BeginPackage["Interface`", {"Thorn`", "KrancGroups`", "MapLookup`", "Errors`",
-                            "Helpers`", "Kranc`", "CaKernel`", "OpenCL`"}];
+                            "Helpers`", "Kranc`", "CaKernel`", "OpenCL`",
+                            "CodeGenInterface`"}];
 
 CreateKrancInterface;
 

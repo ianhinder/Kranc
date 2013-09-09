@@ -27,7 +27,7 @@
 
 BeginPackage["KrancThorn`", {"CodeGen`", "Thorn`",
  "MapLookup`", "KrancGroups`", "Differencing`",
- "CalculationFunction`", "Errors`", "Helpers`", "CactusBoundary`",
+ "CodeGenCalculation`", "Errors`", "Helpers`", "CactusBoundary`",
  "KrancTensor`", "Param`", "Schedule`", "Interface`", "Kranc`", "Jacobian`",
  "ConservationCalculation`", "CaKernel`", "Calculation`", "ParamCheck`",
  "OpenCL`", "CodeGenConfiguration`", "CodeGenMakefile`", "CodeGenSymmetries`", "MoL`",

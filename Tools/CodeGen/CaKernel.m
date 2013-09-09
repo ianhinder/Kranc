@@ -19,7 +19,7 @@
 *)
 
 BeginPackage["CaKernel`", {"Errors`", "Helpers`", "Kranc`", "CodeGenCactus`", "CodeGenKranc`", "MapLookup`",
-                           "Calculation`", "CodeGen`", "CalculationFunction`", "CodeGenC`"}];
+                           "Calculation`", "CodeGen`", "CodeGenCalculation`", "CodeGenC`"}];
 
 CaKernelCCL;
 CaKernelCode;

@@ -19,7 +19,7 @@
 *)
 
 BeginPackage["ConservationCalculation`", {"Errors`", "Helpers`", "Kranc`",
-  "MapLookup`", "KrancGroups`", "CalculationFunction`", "Differencing`"}];
+  "MapLookup`", "KrancGroups`", "CodeGenCalculation`", "Differencing`"}];
 
 ProcessConservationCalculation;
 ConservationDifferencingOperators;

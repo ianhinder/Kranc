@@ -37,7 +37,7 @@ BeginPackage["Kranc`"];
 
 dummy;
 
-(* CalculationFunction.m *)
+(* CodeGenCalculation.m *)
 
 {GridFunctions, Shorthands, Equations, t, DeclarationIncludes,
 LoopPreIncludes, GroupImplementations, PartialDerivatives, NoSimplify,

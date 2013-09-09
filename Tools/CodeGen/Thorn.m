@@ -23,7 +23,7 @@
 (* This package provides a set of functions to create the various
    parts of a Cactus thorn and assemble them. *)
 
-BeginPackage["Thorn`", "CodeGen`", "CodeGenC`", "CodeGenCactus`", "CodeGenKranc`", "CalculationFunction`",
+BeginPackage["Thorn`", "CodeGen`", "CodeGenC`", "CodeGenCactus`", "CodeGenKranc`", "CodeGenCalculation`",
   "CalculationBoundaries`", "MapLookup`", "KrancGroups`", "Helpers`",
   "Errors`", "Kranc`", "CaKernel`", "Vectorisation`", "DGFE`", "OpenCL`"];
 

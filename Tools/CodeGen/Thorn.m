@@ -54,13 +54,6 @@ Begin["`Private`"];
    Miscellaneous definitions, could be moved elsewhere
    ------------------------------------------------------------------------ *)
 
-DefFn[lineComment["CCL"|"Makefile", s_] := {"# ", s, "\n"}];
-DefFn[lineComment["C", s_] := {"/*  ", s, " */", "\n"}];
-DefFn[lineComment["Fortran", s_] := {"! ", s, "\n"}];
-
-DefFn[
-  header[lang_] :=
-  {lineComment[lang, "File produced by Kranc"], "\n"}];
 
 (* ------------------------------------------------------------------------ 
    Makefile
@@ -69,7 +62,7 @@ DefFn[
 (* Return a CodeGen block representing a makefile which refers to the
    list of filenames sourceFiles *)
 CreateMakefile[sourceFiles_] :=
-  {header["Makefile"],
+  {FileHeader["Makefile"],
    "SRCS = ", Map[{#, " "} &, sourceFiles], "\n"};
 
 (* ------------------------------------------------------------------------ 
@@ -168,7 +161,7 @@ CreateParam[spec_] :=
 Options[CreateConfiguration] = ThornOptions;
 
 CreateConfiguration[opts:OptionsPattern[]] :=
-  {header["CCL"],
+  {FileHeader["CCL"],
    "REQUIRES GenericFD\n",
    If[OptionValue[UseVectors], 
       "REQUIRES LoopControl\n", "OPTIONAL LoopControl\n{\n}\n"],
@@ -262,7 +255,7 @@ If[lookup[f, Type] == "SUBROUTINE",
    friends}. Can also have UsesFunction -> {functions}*)
 CreateInterface[implementation_, inheritedImplementations_, includeFiles_, 
                 groups_, opts___] :=
-  {header["CCL"],
+  {FileHeader["CCL"],
    "implements: ", implementation, "\n\n",
    "inherits:   ", SpaceSeparated[inheritedImplementations], "\n\n",
    If[mapContains[{opts}, Friends],
@@ -474,7 +467,7 @@ scheduleGroup[spec_,params_] :=
    and lists of scheduled function and scheduled group structures,
    return a CodeGen block representing a schedule.ccl file. *)
 CreateSchedule[globalStorageGroups_, scheduledGroups_, scheduledFunctions_, params_] :=
-  {header["CCL"],
+  {FileHeader["CCL"],
    Map[SeparatedBlock[groupStorage[#]]            &, globalStorageGroups],
    Map[SeparatedBlock[scheduleFunction[#,params]] &, scheduledFunctions],
    Map[SeparatedBlock[scheduleGroup[#,params]]    &, scheduledGroups]};
@@ -510,7 +503,7 @@ CreateSetterSource[calcs_, debug_, include_,
 
   SetDataType[If[OptionValue[UseVectors],VectorisationType[], "CCTK_REAL"]];
 
-  {header["C"],
+  {FileHeader["C"],
 
    "#define KRANC_" <> ToUpperCase[CodeGenC`SOURCELANGUAGE] <> "\n\n",
 
@@ -633,7 +626,7 @@ CreateSymmetriesRegistrationSource[thornName_, implementationName_, GFs_, reflec
                               calcSymmetry[GFs[[j]]],
                               calcSymmetry[GFs[[j]], Union@reflectionSymmetries]]}, {j, 1, Length@GFs}];
 
-  tmp = {header["C"],
+  tmp = {FileHeader["C"],
 
    Map[IncludeFile, 
         {"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h", "Symmetry.h"}],
@@ -681,7 +674,7 @@ CreateMoLRegistrationSource[spec_, debug_] :=
     lang = CodeGenC`SOURCELANGUAGE;
     CodeGenC`SOURCELANGUAGE= "C";
 
-    tmp = {header["C"],
+    tmp = {FileHeader["C"],
 
     Map[IncludeFile, 
         {"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h"}],
@@ -951,7 +944,7 @@ CreateMoLBoundariesSource[spec_] :=
    lang = CodeGenC`SOURCELANGUAGE;
    CodeGenC`SOURCELANGUAGE = "C";
 
-  tmp = {header["C"],
+  tmp = {FileHeader["C"],
 
 
    Map[IncludeFile,
@@ -1018,7 +1011,7 @@ CreateMoLExcisionSource[spec_] :=
     <> ToString@gf <> ", " <> ToString@gf
     <> "_p, emask, exnormx, exnormy, exnormz, nx, ny, nz, "<> ToString@gf  <> "_bound_limit)\n";
 
-  body = {header["Fortran"],
+  body = {FileHeader["Fortran"],
 
    Map[IncludeFile,
         {"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h"}],
@@ -1286,7 +1279,7 @@ CreateMPCharSource[spec_, debug_] :=
   lang = CodeGenC`SOURCELANGUAGE;
   CodeGenC`SOURCELANGUAGE = "C";
 
-  tmp = {header["C"],
+  tmp = {FileHeader["C"],
 
 
    Map[IncludeFile,
@@ -1376,7 +1369,7 @@ CreateStartupFile[thornName_, bannerText_] :=
   lang = CodeGenC`SOURCELANGUAGE;
   CodeGenC`SOURCELANGUAGE = "C";
 
-  tmp = {header["C"],
+  tmp = {FileHeader["C"],
 
    IncludeFile["cctk.h"],
    DefineFunction[thornName <> "_Startup", "extern \"C\" int", "void",

@@ -38,8 +38,17 @@ ProcessExpression::usage = "";
 CalculationMacros;
 AssignVariableFromExpression;
 GenerateCodeFromExpression;
+FileHeader;
 
 Begin["`Private`"];
+
+DefFn[lineComment["CCL"|"Makefile", s_] := {"# ", s, "\n"}];
+DefFn[lineComment["C", s_] := {"/*  ", s, " */", "\n"}];
+DefFn[lineComment["Fortran", s_] := {"! ", s, "\n"}];
+
+DefFn[
+  FileHeader[lang_] :=
+  {lineComment[lang, "File produced by Kranc"], "\n"}];
 
 DefFn[
   SetDataType[type_String] :=

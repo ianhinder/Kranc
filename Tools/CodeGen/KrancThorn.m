@@ -155,9 +155,6 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     If[OptionValue[UseJacobian], JacobianCheckGroups[groups]];
 
-    InfoMessage[Terse, "Creating startup file"];
-    startup = CreateStartupFile[thornName, thornName];
-
     consCalcsIn = Append[#,Groups -> groups]& /@
                     OptionValue[ConservationCalculations];
 
@@ -215,6 +212,10 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     calcs = Map[Append[#, Parameters -> AllNumericParameters[parameters]] &, calcs];
 
     calcs = Map[If[!lookup[#,UseCaKernel,False], #, If[mapContains[#,ExecuteOn], #, Append[#,ExecuteOn->Device]]] &, calcs];
+
+    (* Construct the startup file *)
+    InfoMessage[Terse, "Creating startup file"];
+    startup = CreateStartupFile[thornName, thornName];
 
     (* Construct the configuration file *)
     InfoMessage[Terse, "Creating configuration file"];

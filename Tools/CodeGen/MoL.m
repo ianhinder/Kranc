@@ -31,6 +31,7 @@ EvolvedVariables;
 MoLEvolvedGroups;
 MoLNonevolvedGroups;
 EvolvedGroupToRHSGroup::usage = "";
+MoLRHSGroupDefinitions;
 
 Begin["`Private`"];
 
@@ -561,6 +562,13 @@ EvolvedGroupToRHSGroup[name_, groups_] :=
     group = SetGroupVariables[group, newVars];
     group = AddGroupTag[group, "Prolongation" -> "None"];
     Return[group]];
+
+DefFn[
+  MoLRHSGroupDefinitions[groups_List, evolvedGroups_List] :=
+  Module[
+    {evolvedGroupDefinitions},
+    evolvedGroupDefinitions = Map[groupFromName[#, groups] &, evolvedGroups];
+    Map[EvolvedGroupToRHSGroup[#, evolvedGroupDefinitions] &, evolvedGroups]]];
 
 End[];
 

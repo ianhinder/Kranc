@@ -33,7 +33,7 @@
     *)
 
 BeginPackage["CactusBoundary`", {"CodeGen`", "Thorn`",
- "MapLookup`", "KrancGroups`", "Errors`", "Helpers`", "Kranc`"}];
+ "MapLookup`", "KrancGroups`", "Errors`", "Helpers`", "Kranc`", "MoL`"}];
 
 GetInheritedImplementations::usage = "";
 GetIncludeFiles::usage = "";

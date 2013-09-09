@@ -32,6 +32,7 @@ MoLEvolvedGroups;
 MoLNonevolvedGroups;
 EvolvedGroupToRHSGroup::usage = "";
 MoLRHSGroupDefinitions;
+MoLRHSODEGroupDefinitions;
 
 Begin["`Private`"];
 
@@ -569,6 +570,13 @@ DefFn[
     {evolvedGroupDefinitions},
     evolvedGroupDefinitions = Map[groupFromName[#, groups] &, evolvedGroups];
     Map[EvolvedGroupToRHSGroup[#, evolvedGroupDefinitions] &, evolvedGroups]]];
+
+DefFn[
+  MoLRHSODEGroupDefinitions[groups_List, evolvedODEGroups_List] :=
+  Module[
+    {evolvedODEGroupDefinitions},
+    evolvedODEGroupDefinitions = Map[groupFromName[#, groups] &, evolvedODEGroups];
+    Map[EvolvedGroupToRHSGroup[#, evolvedODEGroupDefinitions] &, evolvedODEGroups]]];
 
 End[];
 

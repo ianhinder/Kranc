@@ -277,7 +277,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        even if it does not evolve any variables). This could be fixed
        later. *)
     InfoMessage[Terse, "Creating MoL registration file"];
-    molregister = createKrancMoLRegister[evolvedGroups, nonevolvedGroups, evolvedODEGroups, nonevolvedODEGroups, groups, implementation, thornName];
+    molregister = CreateKrancMoLRegister[evolvedGroups, nonevolvedGroups, evolvedODEGroups, nonevolvedODEGroups, groups, implementation, thornName];
 
     Module[{allGFs = Join[variablesFromGroups[evolvedGroups, groups],
                           variablesFromGroups[nonevolvedGroups, groups]]},
@@ -377,36 +377,6 @@ extractNonevolvedGroups[declaredGroups_, calcs_, groups_] :=
     nonevolvedGroups = Complement[declaredGroups, evolvedGroups];
 
     Return[nonevolvedGroups]];
-
-(* FIXME: This is still not quite right.  We only want to have those variables that
-   we set as constrained, but I don't think this can hurt.*)
-
-getConstrainedVariables[evolvedGroupNames_, groups_] :=
-  Module[{evolvedGFs, allVariables, constrainedVariables},
-    evolvedGFs = variablesFromGroups[evolvedGroupNames, groups];
-    allVariables = Flatten[Map[groupVariables, groups],1];
-    constrainedVariables = Complement[allVariables, Join[evolvedGFs, Map[Symbol[addrhs[#]] &, evolvedGFs]]];
-    constrainedVariables];
-
-createKrancMoLRegister[evolvedGroupNames_, nonevolvedGroupNames_, evolvedODEGroupNames_, nonevolvedODEGroupNames_, groups_, implementation_, thornName_] :=
-  Module[{molspec, evolvedGFs, evolvedArrays, constrainedVariables},
-    evolvedGFs = variablesFromGroups[evolvedGroupNames, groups];
-    evolvedArrays = variablesFromGroups[evolvedODEGroupNames, groups];
-    nonevolvedGFs = variablesFromGroups[nonevolvedGroupNames, groups];
-    nonevolvedArrays = variablesFromGroups[nonevolvedGroupNames, groups];
-
-    constrainedVariables = getConstrainedVariables[evolvedGroupNames, groups];
-    
-    molspec =
-    {
-      EvolvedGFs   -> Map[qualifyGFName[#, groups, implementation]& , evolvedGFs], 
-      EvolvedArrays -> Map[qualifyGFName[#, groups, implementation]& , evolvedArrays], 
-      PrimitiveGFs -> Map[qualifyGFName[#, groups, implementation]& , constrainedVariables],
-      BaseImplementation -> implementation, 
-      ThornName -> thornName
-    };
-    molregister = CreateMoLRegistrationSource[molspec, False];
-    Return[molregister]];
 
 End[];
 EndPackage[];

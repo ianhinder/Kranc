@@ -33,6 +33,7 @@ MoLNonevolvedGroups;
 EvolvedGroupToRHSGroup::usage = "";
 MoLRHSGroupDefinitions;
 MoLRHSODEGroupDefinitions;
+MoLUsedFunctions;
 
 Begin["`Private`"];
 
@@ -577,6 +578,24 @@ DefFn[
     {evolvedODEGroupDefinitions},
     evolvedODEGroupDefinitions = Map[groupFromName[#, groups] &, evolvedODEGroups];
     Map[EvolvedGroupToRHSGroup[#, evolvedODEGroupDefinitions] &, evolvedODEGroups]]];
+
+DefFn[
+  MoLUsedFunctions[] :=
+  {
+    {
+      Name      -> "MoLRegisterEvolved",
+      Type      -> "CCTK_INT",
+      ArgString -> "CCTK_INT IN EvolvedIndex, CCTK_INT IN RHSIndex"
+    }
+
+    (*
+    {
+      Name      -> "MoLRegisterConstrained",
+      Type      -> "CCTK_INT",
+      ArgString -> "CCTK_INT IN ConstrainedIndex"
+    };
+    *)
+  }];
 
 End[];
 

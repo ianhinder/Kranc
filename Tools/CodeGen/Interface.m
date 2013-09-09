@@ -20,7 +20,7 @@
 
 BeginPackage["Interface`", {"Thorn`", "KrancGroups`", "MapLookup`", "Errors`",
                             "Helpers`", "Kranc`", "CaKernel`", "OpenCL`",
-                            "CodeGenInterface`"}];
+                            "CodeGenInterface`", "MoL`"}];
 
 CreateKrancInterface;
 
@@ -130,21 +130,6 @@ CreateKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_,
     VerifyStringList[inheritedImplementations, "InheritedImplementations"];
     VerifyStringList[includeFiles, "IncludeFiles"];
     (* These are the aliased functions that are USED by this thorn from other thorns *)
-    registerEvolved = 
-    {
-      Name      -> "MoLRegisterEvolved",
-      Type      -> "CCTK_INT",
-      ArgString -> "CCTK_INT IN EvolvedIndex, CCTK_INT IN RHSIndex"
-    };
-
-    (*
-    registerConstrained = 
-    {
-      Name      -> "MoLRegisterConstrained",
-      Type      -> "CCTK_INT",
-      ArgString -> "CCTK_INT IN ConstrainedIndex"
-    };
-    *)
 
     diffCoeff = 
     {
@@ -201,8 +186,7 @@ CreateKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_,
            If[OptionValue[UseVectors], {"vectors.h"}, {}]],
       groupStructures,
       UsesFunctions ->
-        Join[{registerEvolved, (*registerConstrained,*)
-                diffCoeff, getMap}, 
+        Join[MoLUsedFunctions[], {diffCoeff, getMap}, 
              CactusBoundary`GetUsedFunctions[]]],
    {If[OptionValue[UseCaKernel], CaKernelInterfaceCLL[], {}]}];
 

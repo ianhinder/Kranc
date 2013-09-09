@@ -58,9 +58,6 @@ Module[{used, unrecognized},
     If[Length[unrecognized] > 0,
       ThrowError["Unrecognized named arguments: ", unrecognized]]];
 
-replaceDots[x_] := 
-  x /. (dot[y_] :> Symbol[ToString[y] <> "rhs"]);
-
 (* --------------------------------------------------------------------------
    Thorn generation (main entry point for non-tensorial thorns)
    -------------------------------------------------------------------------- *)
@@ -186,7 +183,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     nonevolvedODEGroups = extractNonevolvedGroups[odeGroups, calcs, groups];
 
     (* Replace the dots in the calculation *)
-    calcs = replaceDots[calcs];
+    calcs = MoLReplaceDots[calcs];
 
     (* Add the RHS groups *)
     evolvedGroupDefinitions = Map[groupFromName[#, groups] &, evolvedGroups];

@@ -26,6 +26,7 @@ BeginPackage[
 CreateKrancMoLRegister;
 CreateMoLBoundariesSource::usage = "";
 CreateMoLExcisionSource::usage = "";
+MoLReplaceDots;
 
 Begin["`Private`"];
 
@@ -503,7 +504,8 @@ CodeGenC`SOURCELANGUAGE = currentlang;
 body
 ];
 
-
+DefFn[MoLReplaceDots[x_] := 
+  x /. (dot[y_] :> Symbol[ToString[y] <> "rhs"])];
 
 End[];
 

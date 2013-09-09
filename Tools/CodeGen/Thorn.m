@@ -34,7 +34,6 @@ CreateMakefile::usage = "Create the content of the Cactus make.code.defn file.";
 CreateConfiguration::usage = "Create the content of the configuration.ccl file.";
 CreateInterface::usage = "Create the content of the interface.ccl file.";
 CreateParam::usage = "Create the content of the param.ccl file.";
-Quote::usage = ""; (* This should not be in this package *)
 CreateThorn::usage = "Create a general Cactus thorn from
 a thorn specification structure";
 CreateSymmetriesRegistrationSource::usage = "";
@@ -88,9 +87,6 @@ CreateMakefile[sourceFiles_] :=
    parameter spec = {Name -> "", Type -> "", Default -> "", 
                      Description -> "", Visibility -> "private",
                      AllowedValues -> {...}} *)
-
-(* Return a CodeGen block which represents the quoted value of x *)
-Quote[x_] := {"\"", x, "\""};
 
 (* To be used for parameters; will quote it if it is a keyword *)
 renderValue[type_, value_] :=

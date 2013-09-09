@@ -30,7 +30,6 @@ BeginPackage["Thorn`", "CodeGen`", "CodeGenC`", "CodeGenCactus`", "CodeGenKranc`
 (* These functions are externally visible, and comprise the public
    interface to this package. *)
 CreateMakefile::usage = "Create the content of the Cactus make.code.defn file.";
-CreateConfiguration::usage = "Create the content of the configuration.ccl file.";
 CreateThorn::usage = "Create a general Cactus thorn from
 a thorn specification structure";
 CreateSymmetriesRegistrationSource::usage = "";
@@ -54,23 +53,6 @@ CreateMakefile[sourceFiles_] :=
   {FileHeader["Makefile"],
    "SRCS = ", Map[{#, " "} &, sourceFiles], "\n"};
 
-(* ------------------------------------------------------------------------ 
-   Configuration file
-   ------------------------------------------------------------------------ *)
-
-Options[CreateConfiguration] = ThornOptions;
-
-CreateConfiguration[opts:OptionsPattern[]] :=
-  {FileHeader["CCL"],
-   "REQUIRES GenericFD\n",
-   If[OptionValue[UseVectors], 
-      "REQUIRES LoopControl\n", "OPTIONAL LoopControl\n{\n}\n"],
-   If[OptionValue[UseDGFE], DGFEConfigurationCCL[], {}],
-   If[OptionValue[UseOpenCL], OpenCLConfigurationCCL[], {}],
-   If[OptionValue[UseVectors], VectorisationConfigurationCCL[], {}],
-   If[OptionValue[UseCaKernel], CaKernelConfigurationCLL[], {}]
-  };
-   
 
 (* ------------------------------------------------------------------------ 
    Setter

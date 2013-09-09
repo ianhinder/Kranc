@@ -28,6 +28,8 @@ CreateMoLBoundariesSource::usage = "";
 CreateMoLExcisionSource::usage = "";
 MoLReplaceDots;
 EvolvedVariables;
+MoLEvolvedGroups;
+MoLNonevolvedGroups;
 
 Begin["`Private`"];
 
@@ -515,6 +517,32 @@ EvolvedVariables[calc_] :=
     lhss = Map[First, eqs];
     evolved = Cases[lhss, dot[v_] -> v];
     Return[evolved]];
+
+DefFn[MoLEvolvedGroups[declaredGroups_, calcs_, groups_] :=
+  Module[{evolvedVars, evolvedGroups},
+    VerifyGroupNames[declaredGroups];
+    VerifyGroups[groups];
+    VerifyList[calcs];
+    Map[VerifyNewCalculation, calcs];
+    allVars = variablesFromGroups[declaredGroups, groups];
+    evolvedVars = Apply[Join, Map[EvolvedVariables, calcs]];
+    evolvedVars = Intersection[allVars, evolvedVars];
+    evolvedGroups = containingGroups[evolvedVars, groups];
+    Return[evolvedGroups]]];
+
+DefFn[MoLNonevolvedGroups[declaredGroups_, calcs_, groups_] :=
+  Module[{allVars, evolvedVars, evolvedGroups, nonevolvedGroups},
+    VerifyGroupNames[declaredGroups];
+    VerifyGroups[groups];
+    VerifyList[calcs];
+    Map[VerifyNewCalculation, calcs];
+
+    allVars = variablesFromGroups[declaredGroups, groups];
+    evolvedVars = Apply[Join, Map[EvolvedVariables, calcs]];
+    evolvedGroups = containingGroups[evolvedVars, groups];
+    nonevolvedGroups = Complement[declaredGroups, evolvedGroups];
+
+    Return[nonevolvedGroups]]];
 
 End[];
 

@@ -166,11 +166,11 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     declaredGroups = DeleteDuplicates[Join[declaredGroups, Flatten[Map[Map[groupName,lookup[#,LocalGroups,{}]] &, calcs],1]]];
 
     (* Get the different types of group *)
-    evolvedGroups = extractEvolvedGroups[declaredGroups, calcs, groups];
-    nonevolvedGroups = extractNonevolvedGroups[declaredGroups, calcs, groups];
+    evolvedGroups = MoLEvolvedGroups[declaredGroups, calcs, groups];
+    nonevolvedGroups = MoLNonevolvedGroups[declaredGroups, calcs, groups];
 
-    evolvedODEGroups = extractEvolvedGroups[odeGroups, calcs, groups];
-    nonevolvedODEGroups = extractNonevolvedGroups[odeGroups, calcs, groups];
+    evolvedODEGroups = MoLEvolvedGroups[odeGroups, calcs, groups];
+    nonevolvedODEGroups = MoLNonevolvedGroups[odeGroups, calcs, groups];
 
     (* Replace the dots in the calculation *)
     calcs = MoLReplaceDots[calcs];
@@ -314,37 +314,6 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
                      {}]]};
     InfoMessage[Terse, "Creating thorn"];
     CreateThorn[thornspec]];
-
-(* --------------------------------------------------------------------------
-   Functions related to calculations
-   -------------------------------------------------------------------------- *)
-
-
-extractEvolvedGroups[declaredGroups_, calcs_, groups_] :=
-  Module[{evolvedVars, evolvedGroups},
-    VerifyGroupNames[declaredGroups];
-    VerifyGroups[groups];
-    VerifyList[calcs];
-    Map[VerifyNewCalculation, calcs];
-    allVars = variablesFromGroups[declaredGroups, groups];
-    evolvedVars = Apply[Join, Map[EvolvedVariables, calcs]];
-    evolvedVars = Intersection[allVars, evolvedVars];
-    evolvedGroups = containingGroups[evolvedVars, groups];
-    Return[evolvedGroups]];
-
-extractNonevolvedGroups[declaredGroups_, calcs_, groups_] :=
-  Module[{allVars, evolvedVars, evolvedGroups, nonevolvedGroups},
-    VerifyGroupNames[declaredGroups];
-    VerifyGroups[groups];
-    VerifyList[calcs];
-    Map[VerifyNewCalculation, calcs];
-
-    allVars = variablesFromGroups[declaredGroups, groups];
-    evolvedVars = Apply[Join, Map[EvolvedVariables, calcs]];
-    evolvedGroups = containingGroups[evolvedVars, groups];
-    nonevolvedGroups = Complement[declaredGroups, evolvedGroups];
-
-    Return[nonevolvedGroups]];
 
 End[];
 EndPackage[];

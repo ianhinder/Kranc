@@ -54,6 +54,7 @@ NonevolvedTimelevels;
 CheckGroups;
 VerifyGroupNames;
 VerifyGroups;
+EnsureTimelevels;
 
 Begin["`Private`"];
 
@@ -257,6 +258,15 @@ VerifyGroupNames[gns_] :=
   If[!ListQ[gns],
    ThrowError["Not a list of group names: ", gns],
    Map[VerifyGroupName, gns]];
+
+EnsureTimelevels[g_, n_] :=
+  Module[
+    {tls, g2},
+    tls = GroupTimelevels[g];
+    If[tls === False,
+       AddGroupExtra[g, Timelevels -> n],
+       (* else *)
+       g /. {(Timelevels -> x_) :> (Timelevels -> Max[tls, n])}]];
 
 End[];
 

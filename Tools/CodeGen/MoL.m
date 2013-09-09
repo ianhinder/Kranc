@@ -21,12 +21,13 @@
 BeginPackage[
   "MoL`",
   {"Errors`", "Helpers`", "Kranc`", "CodeGenKranc`", "MapLookup`", "CodeGenCactus`",
-   "CodeGen`", "CodeGenC`", "KrancGroups`"}];
+   "CodeGen`", "CodeGenC`", "KrancGroups`", "Calculation`"}];
 
 CreateKrancMoLRegister;
 CreateMoLBoundariesSource::usage = "";
 CreateMoLExcisionSource::usage = "";
 MoLReplaceDots;
+EvolvedVariables;
 
 Begin["`Private`"];
 
@@ -506,6 +507,14 @@ body
 
 DefFn[MoLReplaceDots[x_] := 
   x /. (dot[y_] :> Symbol[ToString[y] <> "rhs"])];
+
+EvolvedVariables[calc_] :=
+  Module[{eqs, evolved, lhss},
+    VerifyNewCalculation[calc];
+    eqs = GetEquations[calc];
+    lhss = Map[First, eqs];
+    evolved = Cases[lhss, dot[v_] -> v];
+    Return[evolved]];
 
 End[];
 

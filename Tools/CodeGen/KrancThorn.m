@@ -337,7 +337,7 @@ extractEvolvedGroups[declaredGroups_, calcs_, groups_] :=
     VerifyList[calcs];
     Map[VerifyNewCalculation, calcs];
     allVars = variablesFromGroups[declaredGroups, groups];
-    evolvedVars = Apply[Join, Map[CalculationEvolvedVars, calcs]];
+    evolvedVars = Apply[Join, Map[EvolvedVariables, calcs]];
     evolvedVars = Intersection[allVars, evolvedVars];
     evolvedGroups = containingGroups[evolvedVars, groups];
     Return[evolvedGroups]];
@@ -350,7 +350,7 @@ extractNonevolvedGroups[declaredGroups_, calcs_, groups_] :=
     Map[VerifyNewCalculation, calcs];
 
     allVars = variablesFromGroups[declaredGroups, groups];
-    evolvedVars = Apply[Join, Map[CalculationEvolvedVars, calcs]];
+    evolvedVars = Apply[Join, Map[EvolvedVariables, calcs]];
     evolvedGroups = containingGroups[evolvedVars, groups];
     nonevolvedGroups = Complement[declaredGroups, evolvedGroups];
 

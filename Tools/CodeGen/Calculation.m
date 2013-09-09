@@ -44,7 +44,6 @@ RemoveUnusedShorthands;
 VerifyCalculation;
 CalculationSymbols;
 VerifyNewCalculation;
-CalculationEvolvedVars;
 
 Begin["`Private`"];
 
@@ -467,14 +466,6 @@ VerifyNewCalculation[calc_] :=
     If[mapContains[calc, Equations],
       VerifyListContent[lookup[calc, Equations], Rule," while checking the calculation called " <> ToString[calcName]],
       ThrowError["Invalid Calculation structure. Must contain Equations element: " <> ToString[calc]]]];
-
-CalculationEvolvedVars[calc_] :=
-  Module[{eqs, evolved, lhss},
-    VerifyNewCalculation[calc];
-    eqs = lookup[calc, Equations];
-    lhss = Map[First, eqs];
-    evolved = Cases[lhss, dot[v_] -> v];
-    Return[evolved]];
 
 End[];
 

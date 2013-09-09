@@ -113,3 +113,53 @@ Test[
   ,
   TestID->"SimpleWave"
 ]
+
+Test[
+  Module[
+    {eulerCons, evolvedGroups, nonevolvedGroups, declaredGroups, declaredGroupNames, groups},
+
+    Map[DefineTensor, {Den, S, En, rho, v, p}];
+
+    evolvedGroups = Map[CreateGroupFromTensor, {Den, S[uj], En}];
+    nonevolvedGroups = Map[CreateGroupFromTensor, {rho, v[uj], p}];
+    
+    declaredGroups = Join[evolvedGroups, nonevolvedGroups];
+    declaredGroupNames = Map[First, declaredGroups];
+    
+    groups = declaredGroups;
+
+    eulerCons =
+    {
+      Name -> "eulerauto_cons_calc",
+      Primitives -> {rho, v[ui], p},
+      Equations ->
+      {
+        flux[Den,ui] -> rho v[ui],
+        flux[S[uj],ui] -> rho v[ui] v[uj] + p Euc[ui,uj],
+        flux[En,ui] -> v[ui](En + p)
+      },
+      ConservedEquations ->
+      {
+        Den -> rho,
+        S[ui] -> rho v[ui],
+        En -> p/(gamma-1) + 1/2 rho v[ui] v[uj] Euc[li,lj]
+      },
+      PrimitiveEquations ->
+      {
+        rho -> Den,
+        v[ui] -> S[ui] / Den,
+        p -> (gamma-1)(En - 1/2 Euc[li,lj] S[ui] S[uj]/Den)
+      }
+    };
+
+    CreateKrancThornTT[
+      groups, "TestThorns", "ConservationCalculation", 
+      Calculations -> {},
+      ConservationCalculations -> {eulerCons},
+      RealParameters -> {gamma},
+      DeclaredGroups -> declaredGroupNames]];
+  ,
+  Null
+  ,
+  TestID->"ConservationCalculation"];
+

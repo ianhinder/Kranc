@@ -145,11 +145,6 @@ CreateKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_,
       ArgString -> "CCTK_POINTER_TO_CONST IN cctkGH"
     };
 
-
-    (* For each group declared in this thorn, we need an entry in the
-        interface file.  Each evolved group needs an associated rhs
-        group, but these are constructed at a higher level and are
-        listed in the nonevolved groups. *)
     nonevolvedGroupStructures = 
       Map[nonevolvedGroupInterfaceStructure[groupFromName[#, groups]] &, 
           nonevolvedGroups];

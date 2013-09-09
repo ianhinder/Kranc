@@ -51,63 +51,17 @@ CreateStartupFile::usage = "";
 
 Begin["`Private`"];
 
-
 (* ------------------------------------------------------------------------ 
    Miscellaneous definitions, could be moved elsewhere
    ------------------------------------------------------------------------ *)
 
-(* date, user, etc. *)
-date[] := ToString[Date[][[1]]] <> "-" <>
-          ToString[Date[][[2]]] <> "-" <>
-          ToString[Date[][[3]]]
+DefFn[lineComment["CCL"|"Makefile", s_] := {"# ", s, "\n"}];
+DefFn[lineComment["C", s_] := {"/*  ", s, " */", "\n"}];
+DefFn[lineComment["Fortran", s_] := {"! ", s, "\n"}];
 
-
-dateLong[] := ToString[Date[][[1]]] <> "-" <>
-              ToString[Date[][[2]]] <> "-" <>
-              ToString[Date[][[3]]] <> " " <>
-              ToString[Date[][[4]]] <> ":" <>
-              ToString[Date[][[5]]] <> ":" <>
-              ToString[Date[][[6]]];
-
-
-(* user[] := ToString[<< "!whoami"]; *)
-user[] := Environment["USER"];
-
-
-whoWhen[lang_] := Module[{com1, com2},
-
-com1 = "UNRECOGNIZED LANGUAGE";
-com2 = "UNRECOGNIZED LANGUAGE";
-
-If[(lang == "C" || lang == "c"),
-   com1 = "/* ";  com2 = " */";
-];
-
-If[(lang == "Fortran" || lang == "FORTRAN" ||  lang == "F90"  || lang == "F95"),
-   com1 = "!";  com2 = "";
-];
-
-If[(lang == "F77"),
-   com1 = "C";  com2 = "";
-];
-
-If[(lang == "shell" || lang == "CCL"),
-   com1 = "#";  com2 = "";
-];
-
-(* Do not show the date, and do not use $Id$, since they introduce
-   spurious changes and lead to unnecessary recompilation *)
-(*
-{com1 <> " File produced by user " <> user[]                         <> com2 <> "\n"  <>
- com1 <> " Produced with Mathematica Version " <> ToString[$Version] <> com2 <> "\n\n"<>
- com1 <> " Mathematica script written by Ian Hinder and Sascha Husa" <> com2 <> "\n\n"}
-*)
-(* Do not show the user and the Mathematica version, since they also
-   introduce spurious changes and lead to unnecessary recompilation *)
-{com1 <> " File produced by Kranc" <> com2 <> "\n\n"}
-
-];
-
+DefFn[
+  header[lang_] :=
+  {lineComment[lang, "File produced by Kranc"], "\n"}];
 
 (* ------------------------------------------------------------------------ 
    Makefile
@@ -116,7 +70,7 @@ If[(lang == "shell" || lang == "CCL"),
 (* Return a CodeGen block representing a makefile which refers to the
    list of filenames sourceFiles *)
 CreateMakefile[sourceFiles_] :=
-  {whoWhen["shell"],
+  {header["Makefile"],
    "SRCS = ", Map[{#, " "} &, sourceFiles], "\n"};
 
 (* ------------------------------------------------------------------------ 
@@ -198,7 +152,7 @@ parameterImplementationSection[spec_] :=
 (* Given a parameterFileSpec structure, return a CodeGen block for the
    param.ccl file *)
 CreateParam[spec_] :=
-  {whoWhen["CCL"],
+  {header["CCL"],
 
     (* For each implementation defined in the spec, output a block
        which declares which parameters are used and extended by this
@@ -218,7 +172,7 @@ CreateParam[spec_] :=
 Options[CreateConfiguration] = ThornOptions;
 
 CreateConfiguration[opts:OptionsPattern[]] :=
-  {whoWhen["CCL"],
+  {header["CCL"],
    "REQUIRES GenericFD\n",
    If[OptionValue[UseVectors], 
       "REQUIRES LoopControl\n", "OPTIONAL LoopControl\n{\n}\n"],
@@ -312,7 +266,7 @@ If[lookup[f, Type] == "SUBROUTINE",
    friends}. Can also have UsesFunction -> {functions}*)
 CreateInterface[implementation_, inheritedImplementations_, includeFiles_, 
                 groups_, opts___] :=
-  {whoWhen["CCL"],
+  {header["CCL"],
    "implements: ", implementation, "\n\n",
    "inherits:   ", SpaceSeparated[inheritedImplementations], "\n\n",
    If[mapContains[{opts}, Friends],
@@ -524,7 +478,7 @@ scheduleGroup[spec_,params_] :=
    and lists of scheduled function and scheduled group structures,
    return a CodeGen block representing a schedule.ccl file. *)
 CreateSchedule[globalStorageGroups_, scheduledGroups_, scheduledFunctions_, params_] :=
-  {whoWhen["CCL"],
+  {header["CCL"],
    Map[SeparatedBlock[groupStorage[#]]            &, globalStorageGroups],
    Map[SeparatedBlock[scheduleFunction[#,params]] &, scheduledFunctions],
    Map[SeparatedBlock[scheduleGroup[#,params]]    &, scheduledGroups]};
@@ -560,7 +514,7 @@ CreateSetterSource[calcs_, debug_, include_,
 
   SetDataType[If[OptionValue[UseVectors],VectorisationType[], "CCTK_REAL"]];
 
-  {whoWhen[CodeGenC`SOURCELANGUAGE],
+  {header["C"],
 
    "#define KRANC_" <> ToUpperCase[CodeGenC`SOURCELANGUAGE] <> "\n\n",
 
@@ -683,7 +637,7 @@ CreateSymmetriesRegistrationSource[thornName_, implementationName_, GFs_, reflec
                               calcSymmetry[GFs[[j]]],
                               calcSymmetry[GFs[[j]], Union@reflectionSymmetries]]}, {j, 1, Length@GFs}];
 
-  tmp = {whoWhen["C"],
+  tmp = {header["C"],
 
    Map[IncludeFile, 
         {"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h", "Symmetry.h"}],
@@ -731,7 +685,7 @@ CreateMoLRegistrationSource[spec_, debug_] :=
     lang = CodeGenC`SOURCELANGUAGE;
     CodeGenC`SOURCELANGUAGE= "C";
 
-    tmp = {whoWhen["C"],
+    tmp = {header["C"],
 
     Map[IncludeFile, 
         {"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h"}],
@@ -1001,7 +955,7 @@ CreateMoLBoundariesSource[spec_] :=
    lang = CodeGenC`SOURCELANGUAGE;
    CodeGenC`SOURCELANGUAGE = "C";
 
-  tmp = {whoWhen["C"],
+  tmp = {header["C"],
 
 
    Map[IncludeFile,
@@ -1068,7 +1022,7 @@ CreateMoLExcisionSource[spec_] :=
     <> ToString@gf <> ", " <> ToString@gf
     <> "_p, emask, exnormx, exnormy, exnormz, nx, ny, nz, "<> ToString@gf  <> "_bound_limit)\n";
 
-  body = {whoWhen["Fortran"],
+  body = {header["Fortran"],
 
    Map[IncludeFile,
         {"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h"}],
@@ -1336,7 +1290,7 @@ CreateMPCharSource[spec_, debug_] :=
   lang = CodeGenC`SOURCELANGUAGE;
   CodeGenC`SOURCELANGUAGE = "C";
 
-  tmp = {whoWhen["C"],
+  tmp = {header["C"],
 
 
    Map[IncludeFile,
@@ -1426,7 +1380,7 @@ CreateStartupFile[thornName_, bannerText_] :=
   lang = CodeGenC`SOURCELANGUAGE;
   CodeGenC`SOURCELANGUAGE = "C";
 
-  tmp = {whoWhen["C"],
+  tmp = {header["C"],
 
    IncludeFile["cctk.h"],
    DefineFunction[thornName <> "_Startup", "extern \"C\" int", "void",

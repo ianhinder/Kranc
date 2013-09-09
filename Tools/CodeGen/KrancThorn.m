@@ -71,16 +71,13 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
   Module[{calcs, declaredGroups, odeGroups, implementation,
     inheritedImplementations, includeFiles,
     evolutionTimelevels, defaultEvolutionTimelevels,
-    realParams, intParams, keywordParams,
-    inheritedRealParams, inheritedIntParams, inheritedKeywordParams,
-    extendedRealParams, extendedIntParams, extendedKeywordParams,
+    parameters,
     configuration,
     partialDerivs, coordGroup, evolvedGroups, rhsGroups, nonevolvedGroups,
     interface, evolvedGroupDefinitions, rhsGroupDefinitions, thornspec,
     evolvedODEGroups, nonevolvedODEGroups,
     evolvedODEGroupDefinitions, rhsODEGroupDefinitions, rhsODEGroups,
-    allParams, boundarySources, reflectionSymmetries,
-    realParamDefs, intParamDefs,
+    boundarySources, reflectionSymmetries,
     pDefs, consCalcs, consCalcsIn, consGroups, cakernel,
     hostCals, deviceCalcs, incFilenames},
 
@@ -106,19 +103,9 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     includeFiles = OptionValue[IncludeFiles];
     evolutionTimelevels = OptionValue[EvolutionTimelevels]; (* Redundant *)
     defaultEvolutionTimelevels = lookupDefault[{opts}, DefaultEvolutionTimelevels, evolutionTimelevels];
-    realParams = OptionValue[RealParameters];
-    If[OptionValue[ConservationCalculations] =!= {},
-       realParams = Join[realParams,ConservationDifferencingRealParameters[]]];
-    intParams = OptionValue[IntParameters];
-    realParamDefs = MakeFullParamDefs[realParams];
-    intParamDefs = MakeFullParamDefs[intParams];
-    keywordParams = OptionValue[KeywordParameters];
-    inheritedRealParams = OptionValue[InheritedRealParameters];
-    inheritedIntParams = OptionValue[InheritedIntParameters];
-    inheritedKeywordParams = OptionValue[InheritedKeywordParameters];
-    extendedRealParams = OptionValue[ExtendedRealParameters];
-    extendedIntParams = OptionValue[ExtendedIntParameters];
-    extendedKeywordParams = OptionValue[ExtendedKeywordParameters];
+
+    parameters = ParameterDatabase[opts];
+
     partialDerivs = OptionValue[PartialDerivatives];
     If[OptionValue[ConservationCalculations] =!= {},
        partialDerivs = Join[partialDerivs, ConservationDifferencingOperators[]]];
@@ -224,13 +211,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     calcs = Map[Append[#, ODEGroups -> Join[odeGroups, rhsODEGroups]] &, calcs];
 
     (* Construct a source file for each calculation *)
-    allParams = Join[Map[ParamName, realParamDefs],
-                     Map[ParamName, intParamDefs],
-                     Map[unqualifiedName, inheritedRealParams], 
-                     Map[unqualifiedName, inheritedIntParams], 
-                     Map[unqualifiedName, inheritedKeywordParams]];
 
-    calcs = Map[Append[#, Parameters -> allParams] &, calcs];
+    calcs = Map[Append[#, Parameters -> AllNumericParameters[parameters]] &, calcs];
 
     calcs = Map[If[!lookup[#,UseCaKernel,False], #, If[mapContains[#,ExecuteOn], #, Append[#,ExecuteOn->Device]]] &, calcs];
 
@@ -250,9 +232,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     param = CreateKrancParam[evolvedGroups, nonevolvedGroups,
       evolvedODEGroups, nonevolvedODEGroups,
       groups, thornName,
-      realParamDefs, intParamDefs, keywordParams,
-      inheritedRealParams, inheritedIntParams, inheritedKeywordParams,
-      extendedRealParams, extendedIntParams, extendedKeywordParams,
+      parameters,
       evolutionTimelevels, defaultEvolutionTimelevels,
       calcs, opts];
 

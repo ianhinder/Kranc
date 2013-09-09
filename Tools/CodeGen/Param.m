@@ -19,13 +19,166 @@
 *)
 
 BeginPackage["Param`", {"Thorn`", "Errors`", "Helpers`", "MapLookup`", "KrancGroups`",
-                        "Kranc`", "Jacobian`", "CodeGenParam`"}];
+                        "Kranc`", "Jacobian`", "CodeGenParam`",
+                        "ConservationCalculation`"}];
 
 CreateKrancParam;
 MakeFullParamDefs;
 ParamName;
+AllNumericParameters;
+ParameterDatabase;
 
 Begin["`Private`"];
+
+(* ------------------------------------------------------------------------ 
+   Parameter Database
+   ------------------------------------------------------------------------ *)
+
+(* We want to collect all parameter definitions together into a single
+object.  This forms a "parameter database".  
+
+params = {
+  Declared -> {...},
+  Inherited -> {...},
+  Extended -> {...}
+};
+
+How similar is this to what needs to be passed to the param.ccl
+functions?  That requires a low-level representation of the parameter
+file from a Cactus point of view.  We need a representation from the
+Kranc point of view, which is similar to that of the user.
+Eventually, we might decide to merge these representations, but for
+the moment, let's keep things high-level.
+
+*)
+
+ParameterType = "Real" | "Integer" | "Keyword";
+
+Options[ParameterDatabase] = ThornOptions;
+
+(* ParameterDatabase[implementation_String, OptionsPattern[]] := *)
+(*   Module[ *)
+(*     {addType, *)
+(*      realParams, intParams, keywordParams, *)
+(*      inheritedRealParams, inheritedIntParams, inheritedKeywordParams, *)
+(*      extendedRealParams, extendedIntParams, extendedKeywordParams, *)
+(*      realParamDefs, intParamDefs}, *)
+
+(*     addType[def_List, type:ParameterType] :=  *)
+(*     Append[def, "Type" -> type]; *)
+
+(*     realParams = OptionValue[RealParameters]; *)
+(*     If[OptionValue[ConservationCalculations] =!= {}, *)
+(*        realParams = Join[realParams,ConservationDifferencingRealParameters[]]]; *)
+(*     intParams = OptionValue[IntParameters]; *)
+
+(*     realParamDefs = addType[#,"Real"] & /@ MakeFullParamDefs[realParams]; *)
+(*     intParamDefs = addType[#,"Integer"] & /@ MakeFullParamDefs[intParams]; *)
+
+(*     keywordParams = addType[#,"Keyword"] & /@ OptionValue[KeywordParameters]; *)
+
+(*     inheritedRealParams = addType[#,"Real"] & /@ OptionValue[InheritedRealParameters]; *)
+(*     inheritedIntParams = addType[#,"Integer"] & /@ OptionValue[InheritedIntParameters]; *)
+(*     inheritedKeywordParams = addType[#,"Keyword"] & /@  *)
+(*     OptionValue[InheritedKeywordParameters]; *)
+
+(*     extendedRealParams = addType[#,"Real"] & /@ OptionValue[ExtendedRealParameters]; *)
+(*     extendedIntParams = addType[#,"Integer"] & /@ OptionValue[ExtendedIntParameters]; *)
+(*     extendedKeywordParams = addType[#,"Keyword"] & /@ OptionValue[ExtendedKeywordParameters]; *)
+
+(*     declared = Join[intParamDefs, realParamDefs, keywordParams]; *)
+(*     inherited = Join[inheritedRealParams, inheritedIntParams, inheritedKeywordParams]; *)
+(*     extended = Join[extendedRealParams, extendedIntParams, extendedKeywordParams]; *)
+
+(*     {"Declared" -> declared, *)
+(*      "Inherited" -> inherited, *)
+(*      "Extended" -> extended}]; *)
+
+(* allParameters[pdb_List] := *)
+(*   Flatten[pdb, 1]; *)
+
+(* parameterType[p_List] := *)
+(*   lookup[p, "Type"]; *)
+
+(* numericParameterNames[pdb_List] := *)
+(*   unqualifiedName /@ ParamName /@  *)
+(*   Select[allParameters, MemberQ[{"Real", "Integer"}, parameterType[#]] &]; *)
+
+DefFn[ParameterDatabase[OptionsPattern[]] :=
+  Module[
+    {realParams, intParams, keywordParams,
+     inheritedRealParams, inheritedIntParams, inheritedKeywordParams,
+     extendedRealParams, extendedIntParams, extendedKeywordParams,
+     realParamDefs, intParamDefs, allParams},
+
+    realParams = OptionValue[RealParameters];
+    If[OptionValue[ConservationCalculations] =!= {},
+       realParams = Join[realParams,ConservationDifferencingRealParameters[]]];
+    intParams = OptionValue[IntParameters];
+    realParamDefs = MakeFullParamDefs[realParams];
+    intParamDefs = MakeFullParamDefs[intParams];
+    keywordParams = OptionValue[KeywordParameters];
+    inheritedRealParams = OptionValue[InheritedRealParameters];
+    inheritedIntParams = OptionValue[InheritedIntParameters];
+    inheritedKeywordParams = OptionValue[InheritedKeywordParameters];
+    extendedRealParams = OptionValue[ExtendedRealParameters];
+    extendedIntParams = OptionValue[ExtendedIntParameters];
+    extendedKeywordParams = OptionValue[ExtendedKeywordParameters];
+
+    allParams = Join[Map[ParamName, realParamDefs],
+                     Map[ParamName, intParamDefs],
+                     Map[unqualifiedName, inheritedRealParams], 
+                     Map[unqualifiedName, inheritedIntParams], 
+                     Map[unqualifiedName, inheritedKeywordParams]];
+
+    {"Reals" -> realParamDefs,
+     "Integers" -> intParamDefs,
+     "Keywords" -> keywordParams,
+
+     "InheritedReals" -> inheritedRealParams,
+     "InheritedIntegers" -> inheritedIntParams,
+     "InheritedKeywords" -> inheritedKeywordParams,
+     
+     "ExtendedReals" -> extendedRealParams,
+     "ExtendedIntegers" -> extendedIntParams,
+     "ExtendedKeywords" -> extendedKeywordParams,
+
+     "AllNumeric" -> allParams}]];
+
+DefFn[AllNumericParameters[pdb_List] :=
+  lookup[pdb, "AllNumeric"]];
+
+DefFn[realParameterDefinitions[pdb_List] :=
+  lookup[pdb, "Reals"]];
+
+DefFn[integerParameterDefinitions[pdb_List] :=
+  lookup[pdb, "Integers"]];
+
+DefFn[keywordParameterDefinitions[pdb_List] :=
+  lookup[pdb, "Keywords"]];
+
+DefFn[inheritedRealParameterNames[pdb_List] :=
+  lookup[pdb, "InheritedReals"]];
+
+DefFn[inheritedIntegerParameterNames[pdb_List] :=
+  lookup[pdb, "InheritedIntegers"]];
+
+DefFn[inheritedKeywordParameterNames[pdb_List] :=
+  lookup[pdb, "InheritedKeywords"]];
+
+DefFn[extendedRealParameterDefinitions[pdb_List] :=
+  lookup[pdb, "ExtendedReals"]];
+
+DefFn[extendedIntegerParameterDefinitions[pdb_List] :=
+  lookup[pdb, "ExtendedIntegers"]];
+
+DefFn[extendedKeywordParameterDefinitions[pdb_List] :=
+  lookup[pdb, "ExtendedKeywords"]];
+
+
+(* ------------------------------------------------------------------------ 
+   Parameter utility functions
+   ------------------------------------------------------------------------ *)
 
 VerifyQualifiedName[name_] :=
   If[! StringQ[name] || ! StringMatchQ[name, "*::*"],
@@ -42,6 +195,10 @@ unqualifiedName[name_] :=
     VerifyQualifiedName[name];
     colon = First[First[StringPosition[name, ":", 1]]];
     Return[StringDrop[name, colon + 1]]];
+
+(* ------------------------------------------------------------------------ 
+   Code generation functions
+   ------------------------------------------------------------------------ *)
 
 krancParamStruct[definition_, type_, inherited_] :=
   Module[{description, name},
@@ -122,9 +279,7 @@ extendParameters[imp_, reals_, ints_, keywords_] :=
 Options[CreateKrancParam] = ThornOptions;
 CreateKrancParam[evolvedGroups_, nonevolvedGroups_,
   evolvedODEGroups_, nonevolvedODEGroups_, groups_, thornName_, 
-  reals_, ints_, keywords_,
-  inheritedReals_, inheritedInts_, inheritedKeywords_,
-  extendedReals_, extendedInts_, extendedKeywords_,
+  parameters_,
   evolutionTimelevels_, defaultEvolutionTimelevels_,
   calcs_, opts:OptionsPattern[]] :=
   Module[{nEvolved, evolvedMoLParam, evolvedGFs,
@@ -228,17 +383,22 @@ CreateKrancParam[evolvedGroups_, nonevolvedGroups_,
         Join[{{Name -> "assume_stress_energy_state", Type -> "CCTK_INT"}},
              If[OptionValue[UseJacobian], JacobianGenericFDParameters[], {}]]
     };
-
-    realStructs = Map[krancParamStruct[#, "CCTK_REAL", False] &, reals];
+    realStructs = Map[krancParamStruct[#, "CCTK_REAL", False] &, 
+                      realParameterDefinitions[parameters]];
     verboseStruct = krancParamStruct[{Name -> "verbose", Default -> 0, Steerable -> Always}, "CCTK_INT", False];
-    intStructs = Map[krancParamStruct[#, "CCTK_INT", False] &, ints];
+    intStructs = Map[krancParamStruct[#, "CCTK_INT", False] &, 
+                     integerParameterDefinitions[parameters]];
     calcEveryStructs = Map[krancParamStruct[{Name -> lookup[#, Name] <> "_calc_every", Default -> 1, Steerable -> Always}, "CCTK_INT", False] &, calcs];
     calcOffsetStructs = Map[krancParamStruct[{Name -> lookup[#, Name] <> "_calc_offset", Default -> 0, Steerable -> Always}, "CCTK_INT", False] &, calcs];
-    keywordStructs = Map[krancKeywordParamStruct, keywords];
+    keywordStructs = Map[krancKeywordParamStruct, keywordParameterDefinitions[parameters]];
 
-    allInherited = Join[inheritedReals, inheritedInts, inheritedKeywords];
-    allExtended = Join[extendedReals, extendedInts, extendedKeywords];
-
+    allInherited = Join[inheritedRealParameterNames[parameters],
+                        inheritedIntegerParameterNames[parameters],
+                        inheritedKeywordParameterNames[parameters]];
+    allExtended = Join[extendedRealParameterDefinitions[parameters],
+                       extendedIntegerParameterDefinitions[parameters],
+                       extendedKeywordParameterDefinitions[parameters]];
+         
     implementationNames = Union[Map[implementationFromQualifiedName, allInherited],
                                 Map[implementationFromQualifiedName[lookup[#, Name]] &, allExtended]];
 
@@ -253,10 +413,18 @@ CreateKrancParam[evolvedGroups_, nonevolvedGroups_,
       }
     };
 
-    userImplementations = Map[inheritParameters[#, inheritedReals,inheritedInts,inheritedKeywords] &, 
-                              implementationNames];
-    userImplementations2 = Map[extendParameters[#, extendedReals,extendedInts,extendedKeywords] &, 
-                               implementationNames];
+    userImplementations = Map[
+      inheritParameters[
+        #,
+        inheritedRealParameterNames[parameters],
+        inheritedIntegerParameterNames[parameters],
+        inheritedKeywordParameterNames[parameters]] &, 
+      implementationNames];
+    userImplementations2 =
+         Map[extendParameters[#, extendedRealParameterDefinitions[parameters],
+                              extendedIntegerParameterDefinitions[parameters],
+                              extendedKeywordParameterDefinitions[parameters]] &, 
+             implementationNames];
 
     userImplementations = If[userImplementations=={{}},{},userImplementations];
     userImplementations2 = If[userImplementations2=={{}},{},userImplementations2];

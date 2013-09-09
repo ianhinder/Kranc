@@ -30,6 +30,7 @@ MoLReplaceDots;
 EvolvedVariables;
 MoLEvolvedGroups;
 MoLNonevolvedGroups;
+EvolvedGroupToRHSGroup::usage = "";
 
 Begin["`Private`"];
 
@@ -543,6 +544,23 @@ DefFn[MoLNonevolvedGroups[declaredGroups_, calcs_, groups_] :=
     nonevolvedGroups = Complement[declaredGroups, evolvedGroups];
 
     Return[nonevolvedGroups]]];
+
+addrhs[x_] := ToString[x] <> "rhs";
+
+EvolvedGroupToRHSGroup[name_, groups_] := 
+  Module[{names, group},
+    names = Map[groupName, groups];
+    If[!MemberQ[names, name], ThrowError["evolvedGroupToRHSGroup: Group \"" <> groupName <> "\" not found in groups structure:", groups]];
+
+    group = First[Select[groups, groupName[#] === name &]];
+
+    oldVars = groupVariables[group];
+    newVars = Map[Symbol[addrhs[ToString[#]]] &, oldVars];
+
+    group = SetGroupName[group, addrhs[name]];
+    group = SetGroupVariables[group, newVars];
+    group = AddGroupTag[group, "Prolongation" -> "None"];
+    Return[group]];
 
 End[];
 

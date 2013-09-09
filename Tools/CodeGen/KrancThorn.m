@@ -177,11 +177,11 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     (* Add the RHS groups *)
     evolvedGroupDefinitions = Map[groupFromName[#, groups] &, evolvedGroups];
-    rhsGroupDefinitions = Map[evolvedGroupToRHSGroup[#, evolvedGroupDefinitions] &, evolvedGroups];
+    rhsGroupDefinitions = Map[EvolvedGroupToRHSGroup[#, evolvedGroupDefinitions] &, evolvedGroups];
     groups = Join[groups, rhsGroupDefinitions];
 
     evolvedODEGroupDefinitions = Map[groupFromName[#, groups] &, evolvedODEGroups];
-    rhsODEGroupDefinitions = Map[evolvedGroupToRHSGroup[#, evolvedODEGroupDefinitions] &, evolvedODEGroups];
+    rhsODEGroupDefinitions = Map[EvolvedGroupToRHSGroup[#, evolvedODEGroupDefinitions] &, evolvedODEGroups];
     groups = Join[groups, rhsODEGroupDefinitions];
 
     (* Add the groups into the calcs *)

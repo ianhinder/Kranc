@@ -29,9 +29,7 @@ BeginPackage["KrancGroups`",
 
 CreateGroup;
 groupsFromGFs::usage = "";
-addrhs::usage = "";
 variablesInGroup::usage = "";
-evolvedGroupToRHSGroup::usage = "";
 variablesFromGroups::usage = "";
 groupFromName::usage = "";
 groupName::usage = "";
@@ -158,26 +156,8 @@ groupsFromGFs[groups_, GFs_] := Module[{inter, check},
 renameGroup[g_, newName_] :=
   SetGroupName[g, newName];
 
-addrhs[x_] := ToString[x] <> "rhs";
-
 variablesInGroup[name_, groups_] :=
   groupVariables[groupFromName[name, groups]];
-
-
-evolvedGroupToRHSGroup[name_, groups_] := 
-  Module[{names, group},
-    names = Map[groupName, groups];
-    If[!MemberQ[names, name], ThrowError["evolvedGroupToRHSGroup: Group \"" <> groupName <> "\" not found in groups structure:", groups]];
-
-    group = First[Select[groups, groupName[#] === name &]];
-
-    oldVars = groupVariables[group];
-    newVars = Map[Symbol[addrhs[ToString[#]]] &, oldVars];
-
-    group = SetGroupName[group, addrhs[name]];
-    group = SetGroupVariables[group, newVars];
-    group = AddGroupTag[group, "Prolongation" -> "None"];
-    Return[group]];
 
 variablesFromGroups[groupNames_, groups_] := 
   Flatten[Map[variablesInGroup[#, groups] &, groupNames], 1];

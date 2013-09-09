@@ -36,6 +36,7 @@ $evolveCalc = {
 (****************************************************************)
 
 Test[
+        ClearAllTensors[];
 	CreateKrancThornTT[{}, "TestThorns", "CreateThorn", Calculations -> {}]
 	,
 	Null
@@ -78,6 +79,7 @@ Test[
          dot[pi]  -> IfThen[alpha>0, Euc[ui,uj] PD[phi,li,lj], 2 Euc[ui,uj] PD[phi,li,lj]]
        }}},
 
+     ClearAllTensors[];
     (* PD = PDstandard2nd *)
     
     CreateKrancThornTT[
@@ -103,6 +105,7 @@ Test[
 (****************************************************************)
 
 Test[
+  ClearAllTensors[];
   CreateKrancThornTT[
     $groups, "TestThorns", "SimpleWave",
     PartialDerivatives -> $derivatives,
@@ -118,6 +121,7 @@ Test[
   Module[
     {eulerCons, evolvedGroups, nonevolvedGroups, declaredGroups, declaredGroupNames, groups},
 
+    ClearAllTensors[];
     Map[DefineTensor, {Den, S, En, rho, v, p}];
 
     evolvedGroups = Map[CreateGroupFromTensor, {Den, S[uj], En}];

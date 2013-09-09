@@ -1445,6 +1445,7 @@ CreateKrancThornTT [groups, "TestThorns", thorn,
 *)
 
 Test[
+  ClearAllTensors[];
   createCode[4, False, True , 3, 1, "BSSN", True, False];
   ,
   Null
@@ -1453,6 +1454,7 @@ Test[
 ]
 
 Test[
+  ClearAllTensors[];
   createCode[4, False, True , 3, 1, "BSSN", False, False];
   ,
   Null
@@ -1461,6 +1463,7 @@ Test[
 ]
 
 Test[
+  ClearAllTensors[];
   createCode[4, False, True , 3, 1, "BSSN", True, True];
   ,
   Null
@@ -1469,6 +1472,7 @@ Test[
 ]
 
 Test[
+  ClearAllTensors[];
   createCode[4, False, True , 3, 1, "BSSN", True, False, DGFE -> True];
   ,
   Null
@@ -1477,6 +1481,7 @@ Test[
 ]
 
 Test[
+  ClearAllTensors[];
   createCode[4, False, True , 3, 1, "BSSN", True, False, CaKernel -> True];
   ,
   Null

@@ -19,13 +19,14 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-BeginPackage["CalculationFunction`", {"CodeGenCactus`", "CodeGenC`", "CodeGen`",
+BeginPackage["CodeGenCalculation`", {"CodeGenCactus`", "CodeGenC`", "CodeGen`",
   "CodeGenKranc`",
   "MapLookup`", "KrancGroups`", "Differencing`", "Errors`",
   "Helpers`", "Kranc`", "Optimize`", "Jacobian`", "Profile`", "Vectorisation`",
-  "Calculation`", "DGFE`", "OpenCL`"}];
+  "Calculation`", "DGFE`", "OpenCL`", "CalculationBoundaries`"}];
 
 CreateCalculationFunction::usage = "";
+CreateSetterSource::usage = "";
 GridFunctionsInExpression;
 
 Begin["`Private`"];
@@ -49,6 +50,78 @@ VerifyListContent[l_, type_, while_] :=
       ThrowError["Expecting a list of ", type ,
         " objects, but found the following types of object: ",
       ToString[types], " in ", l, while]]];
+
+(* ------------------------------------------------------------------------ 
+   Setter
+   ------------------------------------------------------------------------ *)
+
+(* calculation = {Name                -> "ClassicADM_Setter", 
+                  optional Before     -> {functions},
+                  optional After      -> {functions},
+                  Shorthands          -> {gInv11, ...},
+	          GridFunctions       -> {g11rhs, K11},
+                  CollectList         -> {hInv11, hInv22, ...},
+         optional DeclarationIncludes -> {include file list},
+         optional LoopPreIncludes     -> {include file list},
+	          Equations           -> {{K11_rhs -> 2 A K11, ...}...}} *)
+
+
+(* Given a list of Calculation structures as defined above, create a
+   CodeGen representation of a source file that defines a function for
+   each Calculation. *)
+
+Options[CreateSetterSource] = ThornOptions;
+
+CreateSetterSource[calcs_, debug_, include_,
+  opts:OptionsPattern[]] :=
+  Module[{calc = First[calcs],bodyFunction},
+
+  If[!MatchQ[include, _List],
+    ThrowError["CreateSetterSource: Include should be a list but is in fact " <> ToString[include]]];
+
+  SetDataType[If[OptionValue[UseVectors],VectorisationType[], "CCTK_REAL"]];
+
+  {FileHeader["C"],
+
+   "#define KRANC_" <> ToUpperCase[CodeGenC`SOURCELANGUAGE] <> "\n\n",
+
+   If[CodeGenC`SOURCELANGUAGE == "C",
+         {IncludeSystemFile["assert.h"],
+          IncludeSystemFile["math.h"],
+          IncludeSystemFile["stdio.h"],
+          IncludeSystemFile["stdlib.h"],
+          IncludeSystemFile["string.h"]},
+         {"\n"}
+      ],
+
+   Map[IncludeFile, Join[{"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h",
+                         (*"precomputations.h",*) "GenericFD.h", "Differencing.h"},
+                         include,
+                         {"cctk_Loop.h", "loopcontrol.h"},
+                         If[OptionValue[UseOpenCL], OpenCLIncludeFiles[], {}],
+                         If[OptionValue[UseVectors], VectorisationIncludeFiles[], {}]]],
+   CalculationMacros[OptionValue[UseVectors]],
+
+   (* For each function structure passed, create the function and
+      insert it *)
+
+   CalculationBoundariesFunction[First[calcs]],
+
+   bodyFunction = DefineFunction[lookup[calc,Name]<>"_Body", "static void", "const cGH* restrict const cctkGH, const int dir, const int face, const CCTK_REAL normal[3], const CCTK_REAL tangentA[3], const CCTK_REAL tangentB[3], const int imin[3], const int imax[3], const int n_subblock_gfs, CCTK_REAL* restrict const subblock_gfs[]",
+  {
+    "DECLARE_CCTK_ARGUMENTS;\n",
+    "DECLARE_CCTK_PARAMETERS;\n\n", 
+    #
+  }] &;
+
+   calc = Join[calc, {BodyFunction -> bodyFunction, 
+                      CallerFunction -> True,
+                      LoopFunction -> (GenericGridLoop[lookup[calc,Name],#,opts] &),
+                      GFAccessFunction -> ({#,"[","index","]"} &),
+                      InitFDVariables -> InitialiseFDVariables[OptionValue[UseVectors]],
+                      MacroPointer -> True}];
+
+   CreateCalculationFunction[calc, opts]}];
 
 (* --------------------------------------------------------------------------
    Calculations

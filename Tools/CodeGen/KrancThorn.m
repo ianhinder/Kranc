@@ -51,22 +51,6 @@ VerifyGroupNames[gns_] :=
    ThrowError["Not a list of group names: ", gns],
    Map[VerifyGroupName, gns]];
 
-VerifyNewCalculation[calc_] :=
-  Module[{calcName},
-    If[Head[calc] != List,
-      ThrowError["Invalid Calculation structure: " <> ToString[calc]]];
-
-    calcName = lookupDefault[calc, Name, "<unknown>"];
-
-    VerifyListContent[calc, Rule, " while checking the calculation called " <> ToString[calcName]];
-
-    If[mapContains[calc, Shorthands],
-      VerifyListContent[lookup[calc, Shorthands], Symbol," while checking the calculation called " <> ToString[calcName] ]];
-
-    If[mapContains[calc, Equations],
-      VerifyListContent[lookup[calc, Equations], Rule," while checking the calculation called " <> ToString[calcName]],
-      ThrowError["Invalid Calculation structure. Must contain Equations element: " <> ToString[calc]]]];
-
 cktCheckNamedArgs[l_] := 
 Module[{used, unrecognized},
     used = Map[First, l];
@@ -367,13 +351,6 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
    Functions related to calculations
    -------------------------------------------------------------------------- *)
 
-CalculationEvolvedVars[calc_] :=
-  Module[{eqs, evolved, lhss},
-    VerifyNewCalculation[calc];
-    eqs = lookup[calc, Equations];
-    lhss = Map[First, eqs];
-    evolved = Cases[lhss, dot[v_] -> v];
-    Return[evolved]];
 
 extractEvolvedGroups[declaredGroups_, calcs_, groups_] :=
   Module[{evolvedVars, evolvedGroups},

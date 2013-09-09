@@ -43,6 +43,8 @@ GroupsInCalculation;
 RemoveUnusedShorthands;
 VerifyCalculation;
 CalculationSymbols;
+VerifyNewCalculation;
+CalculationEvolvedVars;
 
 Begin["`Private`"];
 
@@ -449,6 +451,30 @@ GroupsInCalculation[calc_, imp_] :=
     gfsUsed = Union[Cases[eqs, _ ? (MemberQ[gfs,#] &), Infinity]];
     groupNames = containingGroups[gfsUsed, groups];
     Map[qualifyGroupName[#, imp] &, groupNames]];
+
+VerifyNewCalculation[calc_] :=
+  Module[{calcName},
+    If[Head[calc] != List,
+      ThrowError["Invalid Calculation structure: " <> ToString[calc]]];
+
+    calcName = lookupDefault[calc, Name, "<unknown>"];
+
+    VerifyListContent[calc, Rule, " while checking the calculation called " <> ToString[calcName]];
+
+    If[mapContains[calc, Shorthands],
+      VerifyListContent[lookup[calc, Shorthands], Symbol," while checking the calculation called " <> ToString[calcName] ]];
+
+    If[mapContains[calc, Equations],
+      VerifyListContent[lookup[calc, Equations], Rule," while checking the calculation called " <> ToString[calcName]],
+      ThrowError["Invalid Calculation structure. Must contain Equations element: " <> ToString[calc]]]];
+
+CalculationEvolvedVars[calc_] :=
+  Module[{eqs, evolved, lhss},
+    VerifyNewCalculation[calc];
+    eqs = lookup[calc, Equations];
+    lhss = Map[First, eqs];
+    evolved = Cases[lhss, dot[v_] -> v];
+    Return[evolved]];
 
 End[];
 

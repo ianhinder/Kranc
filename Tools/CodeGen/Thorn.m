@@ -29,7 +29,6 @@ BeginPackage["Thorn`", "CodeGen`", "CodeGenC`", "CodeGenCactus`", "CodeGenKranc`
 
 (* These functions are externally visible, and comprise the public
    interface to this package. *)
-CreateMakefile::usage = "Create the content of the Cactus make.code.defn file.";
 CreateThorn::usage = "Create a general Cactus thorn from
 a thorn specification structure";
 CreateSymmetriesRegistrationSource::usage = "";
@@ -42,16 +41,6 @@ CreatePrecompMacros::usage = "";
 CreateStartupFile::usage = "";
 
 Begin["`Private`"];
-
-(* ------------------------------------------------------------------------ 
-   Makefile
-   ------------------------------------------------------------------------ *)
-
-(* Return a CodeGen block representing a makefile which refers to the
-   list of filenames sourceFiles *)
-CreateMakefile[sourceFiles_] :=
-  {FileHeader["Makefile"],
-   "SRCS = ", Map[{#, " "} &, sourceFiles], "\n"};
 
 
 (* ------------------------------------------------------------------------ 

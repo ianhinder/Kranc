@@ -32,7 +32,6 @@ BeginPackage["Thorn`", "CodeGen`", "CodeGenC`", "CodeGenCactus`", "CodeGenKranc`
 CreateThorn::usage = "Create a general Cactus thorn from
 a thorn specification structure";
 CreateSetterSource::usage = "";
-CreateStartupFile::usage = "";
 
 Begin["`Private`"];
 
@@ -108,29 +107,6 @@ CreateSetterSource[calcs_, debug_, include_,
                       MacroPointer -> True}];
 
    CreateCalculationFunction[calc, opts]}];
-
-(* ------------------------------------------------------------------------ 
-   Startup file
-   ------------------------------------------------------------------------ *)
-
-CreateStartupFile[thornName_, bannerText_] :=
-  Module[{tmp, lang},
-  
-  lang = CodeGenC`SOURCELANGUAGE;
-  CodeGenC`SOURCELANGUAGE = "C";
-
-  tmp = {FileHeader["C"],
-
-   IncludeFile["cctk.h"],
-   DefineFunction[thornName <> "_Startup", "extern \"C\" int", "void",
-     {DefineVariable["banner", "const char*", Quote[bannerText]],
-      "CCTK_RegisterBanner(banner);\n",
-      "return 0;\n"}]};
-
-  CodeGenC`SOURCELANGUAGE = lang;
-
-  tmp
-   ];
 
 (* ------------------------------------------------------------------------ 
    Thorn creation

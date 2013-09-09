@@ -30,7 +30,8 @@ BeginPackage["KrancThorn`", {"CodeGen`", "Thorn`",
  "CalculationFunction`", "Errors`", "Helpers`", "CactusBoundary`",
  "KrancTensor`", "Param`", "Schedule`", "Interface`", "Kranc`", "Jacobian`",
  "ConservationCalculation`", "CaKernel`", "Calculation`", "ParamCheck`",
- "OpenCL`", "CodeGenConfiguration`", "CodeGenMakefile`", "CodeGenSymmetries`", "MoL`"}];
+ "OpenCL`", "CodeGenConfiguration`", "CodeGenMakefile`", "CodeGenSymmetries`", "MoL`",
+ "CodeGenStartup`"}];
 
 CreateKrancThorn::usage = "Construct a Kranc thorn";
 

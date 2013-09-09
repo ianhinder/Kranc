@@ -1,7 +1,7 @@
 
 (* $Id$ *)
 
-(*  Copyright 2004 Sascha Husa, Ian Hinder, Christiane Lechner
+(*  Copyright 2004-2013 Sascha Husa, Ian Hinder, Christiane Lechner
 
     This file is part of Kranc.
 
@@ -20,21 +20,13 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-(* This package provides a set of functions to create the various
-   parts of a Cactus thorn and assemble them. *)
+BeginPackage[
+  "Thorn`",
+  {"CodeGen`", "MapLookup`", "Helpers`", "Errors`", "Kranc`"}];
 
-BeginPackage["Thorn`", "CodeGen`", "CodeGenC`", "CodeGenCactus`", "CodeGenKranc`", "CodeGenCalculation`",
-  "MapLookup`", "KrancGroups`", "Helpers`",
-  "Errors`", "Kranc`", "CaKernel`", "Vectorisation`", "DGFE`", "OpenCL`"];
-
-(* These functions are externally visible, and comprise the public
-   interface to this package. *)
-CreateThorn::usage = "Create a general Cactus thorn from
-a thorn specification structure";
+CreateThorn::usage = "Create a general Cactus thorn from a thorn specification structure";
 
 Begin["`Private`"];
-
-
 
 (* ------------------------------------------------------------------------ 
    Thorn creation

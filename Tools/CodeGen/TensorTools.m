@@ -31,6 +31,8 @@ DefineTensor::usage = "DefineTensor[kernel] registers kernel as a \
 TensorTools tensor kernel.";
 DefineDerivative::usage = "DefineDerivative[pd] registers a symbol to be used as a derivative operator.";
 
+ClearAllTensors;
+
 MakeExplicit::usage = "MakeExplicit[x] converts an expression x \
 containing abstract indices into one containing components \
 instead.";
@@ -1421,7 +1423,18 @@ HasTensorAttribute[k_, attr_] :=
 IsTensor[k_] :=
   ListQ[TensorAttributes[k]];
 
+ClearAllTensors[] :=
+  (ClearAll[Tensor];
+   ClearAll[TensorCharacter];
+   ClearAll[TensorAttributes]);
 
+UndefineTensor[Tensor[T,___]] :=
+  Module[
+    {},
+    T[is:((TensorIndex[_,_] | _Integer) ..)] =.;
+    (* TODO: undefine the symmetries somehow *)
+    TensorCharacter[T] =.;
+    TensorAttributes[T] =.];
 
 
 

@@ -32,7 +32,6 @@ BeginPackage["Thorn`", "CodeGen`", "CodeGenC`", "CodeGenCactus`", "CodeGenKranc`
 CreateThorn::usage = "Create a general Cactus thorn from
 a thorn specification structure";
 CreateSetterSource::usage = "";
-CreatePrecompMacros::usage = "";
 CreateStartupFile::usage = "";
 
 Begin["`Private`"];
@@ -109,22 +108,6 @@ CreateSetterSource[calcs_, debug_, include_,
                       MacroPointer -> True}];
 
    CreateCalculationFunction[calc, opts]}];
-
-
-(* -------------------------------------------------------------------------- 
-   Precompmacros
-   -------------------------------------------------------------------------- *)
-
-(* Argument to this is the same as for CreateSetterSource.  This is
-   not implemented currently because the precomputations are performed
-   in the setter file itself.  We want to change this for readability
-   reasons.  The change will be to have this precompMacros.h file
-   define a macro performing the precomputations for *each loop* in
-   each function.  Then the setter source file just has a line
-   invoking the macro in each loop. *)
-CreatePrecompMacros[functions_] :=
-  Module[{},
-  {}];
 
 (* ------------------------------------------------------------------------ 
    Startup file

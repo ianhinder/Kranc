@@ -44,15 +44,7 @@ CreateMPCharSource::usage = "";
 CreatePrecompMacros::usage = "";
 CreateStartupFile::usage = "";
 
-(* Ensure that we can refer to symbols without the `sym prefix *)
-(*$ContextPath = Join[{"sym`"}, $ContextPath];*)
-
 Begin["`Private`"];
-
-(* ------------------------------------------------------------------------ 
-   Miscellaneous definitions, could be moved elsewhere
-   ------------------------------------------------------------------------ *)
-
 
 (* ------------------------------------------------------------------------ 
    Makefile

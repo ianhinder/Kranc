@@ -48,6 +48,13 @@ Module[{used, unrecognized},
     If[Length[unrecognized] > 0,
       ThrowError["Unrecognized named arguments: ", unrecognized]]];
 
+DefFn[
+  processODEGroups[odeGroups_List, groups_List] :=
+  Map[If[MemberQ[odeGroups, groupName[#]],
+         (* Print["Adding grid type array to ", groupName[#]]; *)
+         Append[#, GridType -> "array"],
+         #] &, groups]];
+
 (* --------------------------------------------------------------------------
    Thorn generation (main entry point for non-tensorial thorns)
    -------------------------------------------------------------------------- *)
@@ -161,6 +168,9 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
       Map[ConservationCalculationDeclaredGroups, consCalcsIn],1];
 
     groups = Join[groups, consGroups];
+
+    groups = processODEGroups[odeGroups, groups];
+
     declaredGroups = Join[declaredGroups, Map[groupName, consGroups]];
 
     declaredGroups = DeleteDuplicates[Join[declaredGroups, Flatten[Map[Map[groupName,lookup[#,LocalGroups,{}]] &, calcs],1]]];

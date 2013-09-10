@@ -222,7 +222,7 @@ CreateKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_,
            {"loopcontrol.h"},
            If[OptionValue[UseOpenCL], OpenCLIncludeFiles[], {}],
            If[OptionValue[UseVectors], {"vectors.h"}, {}]],
-      groupStructures,
+      declaredGroupStructures,
       UsesFunctions ->
         Join[MoLUsedFunctions[], {diffCoeff, getMap}, 
              CactusBoundary`GetUsedFunctions[]]],

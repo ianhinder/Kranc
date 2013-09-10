@@ -108,6 +108,23 @@ rhsODEGroupInterfaceStructure[group_, timelevels_] :=
   Variables -> groupVariables[group]
 }
 
+declaredGroupInterfaceStructure[group_] :=
+  Module[
+    {extras, gridType},
+    extras = GroupExtras[group];
+    gridType = lookup[extras, GridType, "GF"];
+    {
+      Name -> groupName[group], 
+      VariableType -> "CCTK_REAL",
+      Timelevels -> lookup[extras, Timelevels, lookup[extras, InterfaceTimelevels, 1]],
+      GridType -> gridType,
+      Comment -> groupName[group], 
+      Visibility -> "public",
+      Tags -> GroupTags[group],
+      gridType /. {"array" -> Sequence[Dim -> 1, Size -> 1], _ -> Sequence[]},
+      Variables -> groupVariables[group]
+    }];
+
 Options[CreateKrancInterface] = ThornOptions;
 
 CreateKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_,
@@ -118,7 +135,7 @@ CreateKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_,
   Module[{registerEvolved, (*registerConstrained,*)
     nonevolvedGroupStructures, evolvedGroupStructures, rhsGroupStructures,
     nonevolvedODEGroupStructures, evolvedODEGroupStructures, rhsODEGroupStructures,
-    groupStructures, interface, getMap},
+    groupStructures, interface, getMap, declaredGroupStructures, oldDeclaredGroups},
     VerifyGroupNames[nonevolvedGroups];
     VerifyGroupNames[evolvedGroups];
     VerifyGroupNames[rhsGroups];
@@ -130,6 +147,16 @@ CreateKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_,
     VerifyStringList[inheritedImplementations, "InheritedImplementations"];
     VerifyStringList[includeFiles, "IncludeFiles"];
     (* These are the aliased functions that are USED by this thorn from other thorns *)
+
+    oldDeclaredGroups = Join[nonevolvedGroups, evolvedGroups, rhsGroups, nonevolvedODEGroups,
+                          evolvedODEGroups, rhsODEGroups];
+
+    If[Union@oldDeclaredGroups =!= Union@declaredGroups,
+       Print["Group name mismatch:"];
+       Print["allGroupNames = ", Union@oldDeclaredGroups];
+       Print["declaredGroups = ", Union@Global`declaredGroups];
+       Print[""];
+       Quit[1]];
 
     diffCoeff = 
     {
@@ -169,10 +196,26 @@ CreateKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_,
       Map[rhsODEGroupInterfaceStructure[groupFromName[#, groups],
           OptionValue[EvolutionTimelevels]] &, rhsODEGroups];
 
+    declaredGroupStructures = 
+      Map[declaredGroupInterfaceStructure[groupFromName[#, groups]] &, 
+          declaredGroups];
+
+
     groupStructures = Join[nonevolvedGroupStructures,
                            evolvedGroupStructures, rhsGroupStructures,
                            nonevolvedODEGroupStructures,
                            evolvedODEGroupStructures, rhsODEGroupStructures];
+
+    If[Union@groupStructures =!= Union@declaredGroupStructures,
+       Print["groupStructures =!= declaredGroupStructures:"];
+       (* Print["groupStructures = ", Union@groupStructures]; *)
+       Print["groups = "];
+       PrintStructure[groups];
+       Print["groupStructures = "];
+       PrintStructure[Union@groupStructures];
+       Print["declaredGroupStructures = "];
+       PrintStructure[Union@declaredGroupStructures];
+       Quit[1]];
 
     interface = Join[CreateInterface[implementation, inheritedImplementations,
       Join[includeFiles, {CactusBoundary`GetIncludeFiles[]},

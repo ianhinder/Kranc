@@ -30,6 +30,25 @@ $evolveCalc = {
 
 
 
+Test[
+  ClearAllTensors[];
+  CreateKrancThornTT[
+    Append[$groups,{"ode_group", {a, b}}],
+    "TestThorns", "SimpleWaveODE",
+    PartialDerivatives -> $derivatives,
+    DeclaredGroups     -> {"evolved_group"},
+    ODEGroups -> {"ode_group"},
+    Calculations       -> {
+      $initialSineCalc /. ((Equations -> l) :>
+                           (Equations -> Join[l, {a->0,b->1}])),
+      $evolveCalc /. ((Equations -> l) :>
+                      (Equations -> Join[l, {dot[a] -> b, dot[b] -> -a}]))}]
+  ,
+  Null
+  ,
+  TestID->"SimpleWaveODE"
+]
+
 
 (****************************************************************)
 (* CreateThorn *)

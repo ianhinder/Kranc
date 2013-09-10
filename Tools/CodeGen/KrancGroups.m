@@ -55,6 +55,7 @@ CheckGroups;
 VerifyGroupNames;
 VerifyGroups;
 EnsureTimelevels;
+GroupExtras;
 
 Begin["`Private`"];
 
@@ -106,6 +107,9 @@ GroupTimelevels[g_] :=
   Module[{extras},
     extras = Drop[g, 2];
     lookupDefault[extras, Timelevels, False]];
+
+GroupExtras[g_] :=
+  Drop[g, 2];
 
 NonevolvedTimelevels[group_] :=
   Module[{tls = GroupTimelevels[group]},

@@ -203,6 +203,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     rhsGroups = Map[groupName, rhsGroupDefinitions];
     rhsODEGroups = Map[groupName, rhsODEGroupDefinitions];
 
+    declaredGroups = Join[declaredGroups, rhsGroups, odeGroups, rhsODEGroups];
+
     calcs = Map[Append[#, ODEGroups -> Join[odeGroups, rhsODEGroups]] &, calcs];
 
     (* Construct a source file for each calculation *)
@@ -223,7 +225,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     InfoMessage[Terse, "Creating interface file"];
     interface = CreateKrancInterface[nonevolvedGroups,
       evolvedGroups, rhsGroups, nonevolvedODEGroups, evolvedODEGroups,
-      rhsODEGroups, groups,
+      rhsODEGroups, declaredGroups, groups,
       implementation, inheritedImplementations, includeFiles, opts];
 
     (* Construct the param file *)

@@ -111,7 +111,7 @@ rhsODEGroupInterfaceStructure[group_, timelevels_] :=
 Options[CreateKrancInterface] = ThornOptions;
 
 CreateKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_,
-  nonevolvedODEGroups_, evolvedODEGroups_, rhsODEGroups_, groups_,
+  nonevolvedODEGroups_, evolvedODEGroups_, rhsODEGroups_, declaredGroups_, groups_,
   implementation_, inheritedImplementations_,
   includeFiles_, opts:OptionsPattern[]] :=
 

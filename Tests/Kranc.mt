@@ -186,3 +186,32 @@ Test[
   ,
   TestID->"ConservationCalculation"];
 
+Test[
+  ClearAllTensors[];
+  CreateKrancThornTT[
+    $groups, "TestThorns", "Analysis",
+    PartialDerivatives -> $derivatives,
+    DeclaredGroups     -> {"evolved_group"},
+    Calculations       -> {$initialSineCalc /.
+                           ((Schedule -> l) :>
+                            (Schedule -> {"at CCTK_ANALYSIS"}))}]
+  ,
+  Null
+  ,
+  TestID->"Analysis"
+]
+
+Test[
+  ClearAllTensors[];
+  CreateKrancThornTT[
+    {{"evolved_group", {phi, pi}, Timelevels -> 3}}, "TestThorns", "Analysis-3TL",
+    PartialDerivatives -> $derivatives,
+    DeclaredGroups     -> {"evolved_group"},
+    Calculations       -> {$initialSineCalc /.
+                           ((Schedule -> l) :>
+                            (Schedule -> {"at CCTK_ANALYSIS"}))}]
+  ,
+  Null
+  ,
+  TestID->"Analysis-3TL"
+]

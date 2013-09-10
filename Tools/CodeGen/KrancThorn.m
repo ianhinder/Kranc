@@ -175,6 +175,9 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     declaredGroups = DeleteDuplicates[Join[declaredGroups, Flatten[Map[Map[groupName,lookup[#,LocalGroups,{}]] &, calcs],1]]];
 
+    groups = MoLProcessGroups[declaredGroups,
+                              calcs, groups, evolutionTimelevels];
+
     (* Get the different types of group *)
     evolvedGroups = MoLEvolvedGroups[declaredGroups, calcs, groups];
     nonevolvedGroups = MoLNonevolvedGroups[declaredGroups, calcs, groups];

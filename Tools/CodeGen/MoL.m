@@ -34,6 +34,7 @@ EvolvedGroupToRHSGroup::usage = "";
 MoLRHSGroupDefinitions;
 MoLRHSODEGroupDefinitions;
 MoLUsedFunctions;
+MoLProcessGroups;
 
 Begin["`Private`"];
 
@@ -596,6 +597,19 @@ DefFn[
     };
     *)
   }];
+
+DefFn[
+  MoLProcessGroups[declaredGroups_List, calcs_List, groups_List,
+                   evolutionTimelevels_Integer] :=
+  Module[
+    {evolvedGroups, groups2},
+    evolvedGroups = MoLEvolvedGroups[declaredGroups, calcs, groups];
+
+    groups2 = Map[If[MemberQ[evolvedGroups, groupName[#]],
+                     (* Print["Adding InterfaceTimelevels to ", groupName[#]]; *)
+                     EnsureInterfaceTimelevels[#, evolutionTimelevels],
+                     #] &, groups];
+    groups2]];
 
 End[];
 

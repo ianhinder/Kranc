@@ -276,6 +276,52 @@ extendParameters[imp_, reals_, ints_, keywords_] :=
       Return[{Name -> imp, ExtendedParameters -> Join[realStructs, intStructs, keywordStructs]}],
       Return[{}]]];
 
+Options[usedParameters] = ThornOptions;
+
+DefFn[
+  usedParameters[parameters_List, OptionsPattern[]] :=
+  Module[
+    {genericfdStruct, allInherited, allExtended, implementationNames,
+     userImplementations, userImplementations2},
+
+    genericfdStruct =
+    {
+      Name -> "GenericFD",
+      UsedParameters -> 
+        Join[{{Name -> "assume_stress_energy_state", Type -> "CCTK_INT"}},
+             If[OptionValue[UseJacobian], JacobianGenericFDParameters[], {}]]
+    };
+
+    allInherited = Join[inheritedRealParameterNames[parameters],
+                        inheritedIntegerParameterNames[parameters],
+                        inheritedKeywordParameterNames[parameters]];
+
+    allExtended = Join[extendedRealParameterDefinitions[parameters],
+                       extendedIntegerParameterDefinitions[parameters],
+                       extendedKeywordParameterDefinitions[parameters]];
+         
+    implementationNames = Union[Map[implementationFromQualifiedName, allInherited],
+                                Map[implementationFromQualifiedName[lookup[#, Name]] &, allExtended]];
+
+    userImplementations = Map[
+      inheritParameters[
+        #,
+        inheritedRealParameterNames[parameters],
+        inheritedIntegerParameterNames[parameters],
+        inheritedKeywordParameterNames[parameters]] &, 
+      implementationNames];
+
+    userImplementations2 =
+         Map[extendParameters[#, extendedRealParameterDefinitions[parameters],
+                              extendedIntegerParameterDefinitions[parameters],
+                              extendedKeywordParameterDefinitions[parameters]] &, 
+             implementationNames];
+
+    userImplementations = If[userImplementations=={{}},{},userImplementations];
+    userImplementations2 = If[userImplementations2=={{}},{},userImplementations2];
+
+    Join[userImplementations, userImplementations2, {genericfdStruct, MoLUsedParameters[]}]]];
+
 Options[CreateKrancParam] = ThornOptions;
 CreateKrancParam[evolvedGroups_, nonevolvedGroups_,
   evolvedODEGroups_, nonevolvedODEGroups_, groups_, thornName_, 
@@ -306,13 +352,6 @@ CreateKrancParam[evolvedGroups_, nonevolvedGroups_,
       Steerable -> Recover
     };
 
-    genericfdStruct =
-    {
-      Name -> "GenericFD",
-      UsedParameters -> 
-        Join[{{Name -> "assume_stress_energy_state", Type -> "CCTK_INT"}},
-             If[OptionValue[UseJacobian], JacobianGenericFDParameters[], {}]]
-    };
     realStructs = Map[krancParamStruct[#, "CCTK_REAL", False] &, 
                       realParameterDefinitions[parameters]];
     verboseStruct = krancParamStruct[{Name -> "verbose", Default -> 0, Steerable -> Always}, "CCTK_INT", False];
@@ -322,33 +361,6 @@ CreateKrancParam[evolvedGroups_, nonevolvedGroups_,
     calcOffsetStructs = Map[krancParamStruct[{Name -> lookup[#, Name] <> "_calc_offset", Default -> 0, Steerable -> Always}, "CCTK_INT", False] &, calcs];
     keywordStructs = Map[krancKeywordParamStruct, keywordParameterDefinitions[parameters]];
 
-    allInherited = Join[inheritedRealParameterNames[parameters],
-                        inheritedIntegerParameterNames[parameters],
-                        inheritedKeywordParameterNames[parameters]];
-    allExtended = Join[extendedRealParameterDefinitions[parameters],
-                       extendedIntegerParameterDefinitions[parameters],
-                       extendedKeywordParameterDefinitions[parameters]];
-         
-    implementationNames = Union[Map[implementationFromQualifiedName, allInherited],
-                                Map[implementationFromQualifiedName[lookup[#, Name]] &, allExtended]];
-
-    userImplementations = Map[
-      inheritParameters[
-        #,
-        inheritedRealParameterNames[parameters],
-        inheritedIntegerParameterNames[parameters],
-        inheritedKeywordParameterNames[parameters]] &, 
-      implementationNames];
-    userImplementations2 =
-         Map[extendParameters[#, extendedRealParameterDefinitions[parameters],
-                              extendedIntegerParameterDefinitions[parameters],
-                              extendedKeywordParameterDefinitions[parameters]] &, 
-             implementationNames];
-
-    userImplementations = If[userImplementations=={{}},{},userImplementations];
-    userImplementations2 = If[userImplementations2=={{}},{},userImplementations2];
-
-    implementations = Join[userImplementations, userImplementations2, {genericfdStruct, MoLUsedParameters[]}];
     params = Join[{verboseStruct}, realStructs, intStructs, keywordStructs,
                   MoLParameterStructures[thornName, evolvedGroups, evolvedODEGroups, groups,
                                          evolutionTimelevels, defaultEvolutionTimelevels],
@@ -356,7 +368,7 @@ CreateKrancParam[evolvedGroups_, nonevolvedGroups_,
                   calcEveryStructs, calcOffsetStructs,
       CactusBoundary`GetParameters[evolvedGFs, evolvedGroups]];
 
-    paramspec = {Implementations -> implementations,
+    paramspec = {Implementations -> usedParameters[parameters, opts],
                  NewParameters   -> params};
 
 (*    Print["paramspec = ", paramspec];*)

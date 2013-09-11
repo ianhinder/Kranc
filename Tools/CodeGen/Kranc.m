@@ -53,6 +53,9 @@ InteriorNoSync, Boundary, BoundaryNoSync, BoundaryWithGhosts, Where, PreDefiniti
 AllowedSymbols, Parameters, ConditionalOnTextuals, ApplyBCs,
 SimpleCode};
 
+(* MoL.m *)
+MoLEvolved;
+
 (* Differencing.m *)
 
 {Name, Definitions, shift, spacing, SBPDerivative};

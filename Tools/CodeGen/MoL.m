@@ -609,7 +609,9 @@ DefFn[
 
     groups2 = Map[If[MemberQ[evolvedGroups, groupName[#]],
                      (* Print["Adding InterfaceTimelevels to ", groupName[#]]; *)
-                     EnsureInterfaceTimelevels[#, evolutionTimelevels],
+                     AddGroupExtra[
+                       EnsureInterfaceTimelevels[#, evolutionTimelevels],
+                       MoLEvolved -> True],
                      #] &, groups];
     groups2]];
 

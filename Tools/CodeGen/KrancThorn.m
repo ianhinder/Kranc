@@ -223,9 +223,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     (* Construct the interface file *)
     InfoMessage[Terse, "Creating interface file"];
-    interface = CreateKrancInterface[nonevolvedGroups,
-      evolvedGroups, rhsGroups, nonevolvedODEGroups, evolvedODEGroups,
-      rhsODEGroups, declaredGroups, groups,
+    interface = CreateKrancInterface[declaredGroups, groups,
       implementation, inheritedImplementations, includeFiles, opts];
 
     (* Construct the param file *)

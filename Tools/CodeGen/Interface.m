@@ -26,88 +26,6 @@ CreateKrancInterface;
 
 Begin["`Private`"];
 
-(* --------------------------------------------------------------------------
-   Interface and variable definitions
-   -------------------------------------------------------------------------- *)
-
-nonevolvedGroupInterfaceStructure[group_] := 
-{
-  Name -> groupName[group], 
-  VariableType -> "CCTK_REAL",
-  Timelevels -> NonevolvedTimelevels[group],
-  GridType -> "GF",
-  Comment -> groupName[group], 
-  Visibility -> "public",
-  Tags -> GroupTags[group],
-  Variables -> groupVariables[group]
-}
-
-nonevolvedODEGroupInterfaceStructure[group_] := 
-{
-  Name -> groupName[group], 
-  VariableType -> "CCTK_REAL",
-  Timelevels -> NonevolvedTimelevels[group],
-  GridType -> "array",
-  Comment -> groupName[group], 
-  Visibility -> "public",
-  Tags -> GroupTags[group],
-  Dim -> 1,
-  Size -> 1,
-  Variables -> groupVariables[group]
-}
-
-evolvedGroupInterfaceStructure[group_, timelevels_] := 
-{
-  Name -> groupName[group], 
-  VariableType -> "CCTK_REAL",
-  Timelevels -> timelevels, 
-  GridType -> "GF",
-  Comment -> groupName[group], 
-  Visibility -> "public",
-  Tags -> GroupTags[group],
-  Variables -> groupVariables[group]
-}
-
-evolvedODEGroupInterfaceStructure[group_, timelevels_] := 
-{
-  Name -> groupName[group], 
-  VariableType -> "CCTK_REAL",
-  Timelevels -> timelevels, 
-  GridType -> "array",
-  Comment -> groupName[group], 
-  Visibility -> "public",
-  Tags -> GroupTags[group],
-  Dim -> 1,
-  Size -> 1,
-  Variables -> groupVariables[group]
-}
-
-rhsGroupInterfaceStructure[group_, timelevels_] := 
-{
-  Name -> groupName[group], 
-  VariableType -> "CCTK_REAL",
-  Timelevels -> timelevels, 
-  GridType -> "GF",
-  Comment -> groupName[group], 
-  Visibility -> "public",
-  Tags -> GroupTags[group],
-  Variables -> groupVariables[group]
-}
-
-rhsODEGroupInterfaceStructure[group_, timelevels_] := 
-{
-  Name -> groupName[group], 
-  VariableType -> "CCTK_REAL",
-  Timelevels -> timelevels, 
-  GridType -> "array",
-  Comment -> groupName[group], 
-  Visibility -> "public",
-  Tags -> GroupTags[group],
-  Dim -> 1,
-  Size -> 1,
-  Variables -> groupVariables[group]
-}
-
 declaredGroupInterfaceStructure[group_] :=
   Module[
     {extras, gridType},
@@ -127,36 +45,16 @@ declaredGroupInterfaceStructure[group_] :=
 
 Options[CreateKrancInterface] = ThornOptions;
 
-CreateKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_,
-  nonevolvedODEGroups_, evolvedODEGroups_, rhsODEGroups_, declaredGroups_, groups_,
+CreateKrancInterface[declaredGroups_, groups_,
   implementation_, inheritedImplementations_,
   includeFiles_, opts:OptionsPattern[]] :=
 
-  Module[{registerEvolved, (*registerConstrained,*)
-    nonevolvedGroupStructures, evolvedGroupStructures, rhsGroupStructures,
-    nonevolvedODEGroupStructures, evolvedODEGroupStructures, rhsODEGroupStructures,
-    groupStructures, interface, getMap, declaredGroupStructures, oldDeclaredGroups},
-    VerifyGroupNames[nonevolvedGroups];
-    VerifyGroupNames[evolvedGroups];
-    VerifyGroupNames[rhsGroups];
-    VerifyGroupNames[nonevolvedODEGroups];
-    VerifyGroupNames[evolvedODEGroups];
-    VerifyGroupNames[rhsODEGroups];
+  Module[{diffCoeff, getMap, declaredGroupStructures, interface},
     VerifyGroups[groups];
     VerifyString[implementation];
     VerifyStringList[inheritedImplementations, "InheritedImplementations"];
     VerifyStringList[includeFiles, "IncludeFiles"];
     (* These are the aliased functions that are USED by this thorn from other thorns *)
-
-    oldDeclaredGroups = Join[nonevolvedGroups, evolvedGroups, rhsGroups, nonevolvedODEGroups,
-                          evolvedODEGroups, rhsODEGroups];
-
-    If[Union@oldDeclaredGroups =!= Union@declaredGroups,
-       Print["Group name mismatch:"];
-       Print["allGroupNames = ", Union@oldDeclaredGroups];
-       Print["declaredGroups = ", Union@Global`declaredGroups];
-       Print[""];
-       Quit[1]];
 
     diffCoeff = 
     {
@@ -172,50 +70,9 @@ CreateKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_,
       ArgString -> "CCTK_POINTER_TO_CONST IN cctkGH"
     };
 
-    nonevolvedGroupStructures = 
-      Map[nonevolvedGroupInterfaceStructure[groupFromName[#, groups]] &, 
-          nonevolvedGroups];
-
-    evolvedGroupStructures =
-      Map[evolvedGroupInterfaceStructure[groupFromName[#, groups],
-          OptionValue[EvolutionTimelevels]] &, evolvedGroups];
-
-    rhsGroupStructures =
-      Map[rhsGroupInterfaceStructure[groupFromName[#, groups],
-          OptionValue[EvolutionTimelevels]] &, rhsGroups];
-
-    nonevolvedODEGroupStructures = 
-      Map[nonevolvedODEGroupInterfaceStructure[groupFromName[#, groups]] &, 
-          nonevolvedODEGroups];
-
-    evolvedODEGroupStructures =
-      Map[evolvedODEGroupInterfaceStructure[groupFromName[#, groups],
-          OptionValue[EvolutionTimelevels]] &, evolvedODEGroups];
-
-    rhsODEGroupStructures =
-      Map[rhsODEGroupInterfaceStructure[groupFromName[#, groups],
-          OptionValue[EvolutionTimelevels]] &, rhsODEGroups];
-
     declaredGroupStructures = 
       Map[declaredGroupInterfaceStructure[groupFromName[#, groups]] &, 
           declaredGroups];
-
-
-    groupStructures = Join[nonevolvedGroupStructures,
-                           evolvedGroupStructures, rhsGroupStructures,
-                           nonevolvedODEGroupStructures,
-                           evolvedODEGroupStructures, rhsODEGroupStructures];
-
-    If[Union@groupStructures =!= Union@declaredGroupStructures,
-       Print["groupStructures =!= declaredGroupStructures:"];
-       (* Print["groupStructures = ", Union@groupStructures]; *)
-       Print["groups = "];
-       PrintStructure[groups];
-       Print["groupStructures = "];
-       PrintStructure[Union@groupStructures];
-       Print["declaredGroupStructures = "];
-       PrintStructure[Union@declaredGroupStructures];
-       Quit[1]];
 
     interface = Join[CreateInterface[implementation, inheritedImplementations,
       Join[includeFiles, {CactusBoundary`GetIncludeFiles[]},
@@ -229,7 +86,6 @@ CreateKrancInterface[nonevolvedGroups_, evolvedGroups_, rhsGroups_,
    {If[OptionValue[UseCaKernel], CaKernelInterfaceCLL[], {}]}];
 
     Return[interface]];
-
 
 End[];
 

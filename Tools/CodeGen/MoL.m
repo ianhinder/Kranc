@@ -627,8 +627,7 @@ DefFn[
   Module[
     {allEvolvedGroups, evolvedODEGroups, evolvedGroups, nEvolved, nevolvedODE},
 
-    allEvolvedGroups =
-    Select[declaredGroups, lookup[GroupExtras[groupFromName[#,groups]], MoLEvolved, False] &];
+    allEvolvedGroups = MoLEvolvedGroups[declaredGroups, groups];
 
     evolvedODEGroups =
     Select[allEvolvedGroups,

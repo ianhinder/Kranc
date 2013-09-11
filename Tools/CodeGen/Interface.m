@@ -26,7 +26,7 @@ CreateKrancInterface;
 
 Begin["`Private`"];
 
-declaredGroupInterfaceStructure[group_] :=
+DefFn[declaredGroupInterfaceStructure[group_List] :=
   Module[
     {extras, gridType},
     extras = GroupExtras[group];
@@ -41,19 +41,15 @@ declaredGroupInterfaceStructure[group_] :=
       Tags -> GroupTags[group],
       gridType /. {"array" -> Sequence[Dim -> 1, Size -> 1], _ -> Sequence[]},
       Variables -> groupVariables[group]
-    }];
+    }]];
 
 Options[CreateKrancInterface] = ThornOptions;
 
-CreateKrancInterface[declaredGroups_, groups_,
-  implementation_, inheritedImplementations_,
-  includeFiles_, opts:OptionsPattern[]] :=
+DefFn[CreateKrancInterface[declaredGroups:{_String...}, groups_List,
+  implementation_String, inheritedImplementations:{_String...},
+  includeFiles:{_String...}, opts:OptionsPattern[]] :=
 
   Module[{diffCoeff, getMap, declaredGroupStructures, interface},
-    VerifyGroups[groups];
-    VerifyString[implementation];
-    VerifyStringList[inheritedImplementations, "InheritedImplementations"];
-    VerifyStringList[includeFiles, "IncludeFiles"];
     (* These are the aliased functions that are USED by this thorn from other thorns *)
 
     diffCoeff = 
@@ -85,7 +81,7 @@ CreateKrancInterface[declaredGroups_, groups_,
              CactusBoundary`GetUsedFunctions[]]],
    {If[OptionValue[UseCaKernel], CaKernelInterfaceCLL[], {}]}];
 
-    Return[interface]];
+    Return[interface]]];
 
 End[];
 

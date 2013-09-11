@@ -146,7 +146,8 @@ createBoundScalarParam[groupOrGF_] := {
                  Steerable -> Always
 };
 
-GetParameters[evolvedGFs_, evolvedGroups_] :=
+DefFn[
+  GetParameters[evolvedGFs_List, evolvedGroups_List] :=
   Join[Map[createBoundTypeParam[#,"skip"] &, evolvedGFs],
        Map[createBoundTypeParam[#,"none"] &, Map[unqualifiedGroupName,evolvedGroups]],
 
@@ -157,7 +158,7 @@ GetParameters[evolvedGFs_, evolvedGroups_] :=
        Map[createBoundLimitParam, Map[unqualifiedGroupName,evolvedGroups]],
 
        Map[createBoundScalarParam, evolvedGFs],
-       Map[createBoundScalarParam, Map[unqualifiedGroupName,evolvedGroups]]];
+       Map[createBoundScalarParam, Map[unqualifiedGroupName,evolvedGroups]]]];
  
 
 GetSources[evolvedGroups_, groups_, implementation_, thornName_] :=

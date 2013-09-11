@@ -566,6 +566,8 @@ EvolvedGroupToRHSGroup[name_, groups_] :=
     group = SetGroupName[group, addrhs[name]];
     group = SetGroupVariables[group, newVars];
     group = AddGroupTag[group, "Prolongation" -> "None"];
+    group = DeleteGroupExtra[group, MoLEvolved];
+         
     Return[group]];
 
 DefFn[

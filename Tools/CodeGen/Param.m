@@ -332,17 +332,6 @@ CreateKrancParam[evolvedGroups_, nonevolvedGroups_,
     implementationNames = Union[Map[implementationFromQualifiedName, allInherited],
                                 Map[implementationFromQualifiedName[lookup[#, Name]] &, allExtended]];
 
-    molImplementation =
-    {
-      Name -> "MethodOfLines",
-      UsedParameters -> 
-      {
-        {Name -> "MoL_Num_Evolved_Vars",        Type -> "CCTK_INT"},
-        {Name -> "MoL_Num_ArrayEvolved_Vars",   Type -> "CCTK_INT"}
-        (* {Name -> "MoL_Num_Constrained_Vars", Type -> "CCTK_INT"} *)
-      }
-    };
-
     userImplementations = Map[
       inheritParameters[
         #,
@@ -359,7 +348,7 @@ CreateKrancParam[evolvedGroups_, nonevolvedGroups_,
     userImplementations = If[userImplementations=={{}},{},userImplementations];
     userImplementations2 = If[userImplementations2=={{}},{},userImplementations2];
 
-    implementations = Join[userImplementations, userImplementations2, {genericfdStruct, molImplementation}];
+    implementations = Join[userImplementations, userImplementations2, {genericfdStruct, MoLUsedParameters[]}];
     params = Join[{verboseStruct}, realStructs, intStructs, keywordStructs,
                   MoLParameterStructures[thornName, evolvedGroups, evolvedODEGroups, groups,
                                          evolutionTimelevels, defaultEvolutionTimelevels],

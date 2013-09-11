@@ -36,6 +36,7 @@ MoLRHSODEGroupDefinitions;
 MoLUsedFunctions;
 MoLProcessGroups;
 MoLParameterStructures;
+MoLUsedParameters;
 
 Begin["`Private`"];
 
@@ -664,6 +665,16 @@ DefFn[
        AllowedValues -> {{Value -> ToString[0] <> ":" <> ToString[evolutionTimelevels],
                           Description -> ""}},
        Steerable -> Recover}}]];
+
+DefFn[
+  MoLUsedParameters[] :=
+  { Name -> "MethodOfLines",
+    UsedParameters -> 
+    {
+      {Name -> "MoL_Num_Evolved_Vars",        Type -> "CCTK_INT"},
+      {Name -> "MoL_Num_ArrayEvolved_Vars",   Type -> "CCTK_INT"}
+      (* {Name -> "MoL_Num_Constrained_Vars", Type -> "CCTK_INT"} *)
+    }}];
 
 End[];
 

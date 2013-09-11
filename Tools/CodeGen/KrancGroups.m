@@ -56,6 +56,7 @@ VerifyGroupNames;
 VerifyGroups;
 EnsureInterfaceTimelevels;
 GroupExtras;
+DeleteGroupExtra;
 
 Begin["`Private`"];
 
@@ -91,6 +92,9 @@ CreateGroup[name_, vars_, extras_] :=
 AddGroupExtra[group_, extra_] :=
   Append[group, extra];
 
+DefFn[
+  DeleteGroupExtra[group_, extra_Symbol] :=
+  DeleteCases[group, extra -> _]];
 
 VerifyGroup[group_] :=
   Module[{},

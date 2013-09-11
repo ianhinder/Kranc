@@ -331,6 +331,30 @@ DefFn[
         integerParameterDefinitions[parameters]],
     Map[krancKeywordParamStruct, keywordParameterDefinitions[parameters]]]];
 
+DefFn[
+  commonParameterStructures[evolutionTimelevels_] :=
+  { krancParamStruct[{Name -> "verbose", Default -> 0, Steerable -> Always}, "CCTK_INT", False],
+
+    { Name -> "other_timelevels",
+      Type -> "CCTK_INT",
+      Default -> 1,
+      Description -> "Number of active timelevels for non-evolved grid functions",
+      Visibility -> "restricted",
+      AllowedValues -> {{Value -> ToString[0] <> ":" <> ToString[evolutionTimelevels],
+                         Description -> ""}},
+      Steerable -> Recover}}];
+
+DefFn[
+  calculationParameterStructures[calcs_List] :=
+  Join[
+    Map[krancParamStruct[{Name -> lookup[#, Name] <> "_calc_every",
+                          Default -> 1,
+                          Steerable -> Always}, "CCTK_INT", False] &,
+        calcs],
+    Map[krancParamStruct[{Name -> lookup[#, Name] <> "_calc_offset",
+                          Default -> 0,
+                          Steerable -> Always}, "CCTK_INT", False] &,
+        calcs]]];
 
 Options[CreateKrancParam] = ThornOptions;
 CreateKrancParam[evolvedGroups_, nonevolvedGroups_,
@@ -339,38 +363,14 @@ CreateKrancParam[evolvedGroups_, nonevolvedGroups_,
   evolutionTimelevels_, defaultEvolutionTimelevels_,
   calcs_, opts:OptionsPattern[]] :=
   Module[
-    {otherTimelevelsParam, genericfdStruct, verboseStruct, calcEveryStructs, calcOffsetStructs,
-     allInherited, allExtended, implementationNames,
-     userImplementations, userImplementations2, implementations,
-     params, paramspec, param},
+    {params, paramspec, param},
 
-    (* reals and ints are symbols containing parameter names.  The
-       inherited ones have implementation names as well *)
-
-    otherTimelevelsParam =
-    {
-      Name -> "other_timelevels",
-      Type -> "CCTK_INT",
-      Default -> 1,
-      Description -> "Number of active timelevels for non-evolved grid functions",
-      Visibility -> "restricted",
-      AllowedValues -> {{Value -> ToString[0] <> ":" <> ToString[evolutionTimelevels],
-                         Description -> ""}},
-      Steerable -> Recover
-    };
-
-    verboseStruct = krancParamStruct[{Name -> "verbose", Default -> 0, Steerable -> Always}, "CCTK_INT", False];
-    calcEveryStructs = Map[krancParamStruct[{Name -> lookup[#, Name] <> "_calc_every", Default -> 1, Steerable -> Always}, "CCTK_INT", False] &, calcs];
-    calcOffsetStructs = Map[krancParamStruct[{Name -> lookup[#, Name] <> "_calc_offset", Default -> 0, Steerable -> Always}, "CCTK_INT", False] &, calcs];
-
-    params = Join[{verboseStruct},
+    params = Join[commonParameterStructures[evolutionTimelevels],
                   userParameterStructs[parameters],
                   MoLParameterStructures[
                     thornName, evolvedGroups, evolvedODEGroups, groups,
                     evolutionTimelevels, defaultEvolutionTimelevels],
-                  {otherTimelevelsParam},
-                  calcEveryStructs,
-                  calcOffsetStructs,
+                  calculationParameterStructures[calcs],
                   CactusBoundary`GetParameters[variablesFromGroups[evolvedGroups, groups], evolvedGroups]];
 
     paramspec = {Implementations -> usedParameters[parameters, opts],

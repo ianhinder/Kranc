@@ -282,12 +282,12 @@ CreateKrancParam[evolvedGroups_, nonevolvedGroups_,
   parameters_,
   evolutionTimelevels_, defaultEvolutionTimelevels_,
   calcs_, opts:OptionsPattern[]] :=
-  Module[{nEvolved, evolvedMoLParam, evolvedGFs,
-     nEvolvedODE, evolvedODEMoLParam,
-    (*constrainedMoLParam,*) genericfdStruct, realStructs, intStructs,
-    allInherited, allExtended, implementationNames, molImplementation,
-    userImplementations, implementations, params, paramspec, param,
-    verboseStruct, calcOffsetStructs, calcEveryStructs},
+  Module[
+    {evolvedGFs, otherTimelevelsParam, genericfdStruct, realStructs,
+     verboseStruct, intStructs, calcEveryStructs, calcOffsetStructs,
+     keywordStructs, allInherited, allExtended, implementationNames,
+     userImplementations, userImplementations2, implementations,
+     params, paramspec, param},
 
     (* reals and ints are symbols containing parameter names.  The
        inherited ones have implementation names as well *)

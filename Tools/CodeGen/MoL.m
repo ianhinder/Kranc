@@ -35,6 +35,7 @@ MoLRHSGroupDefinitions;
 MoLRHSODEGroupDefinitions;
 MoLUsedFunctions;
 MoLProcessGroups;
+MoLParameterStructures;
 
 Begin["`Private`"];
 
@@ -610,6 +611,59 @@ DefFn[
                      EnsureInterfaceTimelevels[#, evolutionTimelevels],
                      #] &, groups];
     groups2]];
+
+DefFn[
+  MoLParameterStructures[thornName_, evolvedGroups_, evolvedODEGroups_, groups_, evolutionTimelevels_,
+                         defaultEvolutionTimelevels_] :=
+  Module[
+    {nEvolved, nevolvedODE},
+    nEvolved   = Length[variablesFromGroups[evolvedGroups, groups]];
+(*    nPrimitive = Length[variablesFromGroups[nonevolvedGroups, groups]];*)
+(*    nPrimitive = Length[getConstrainedVariables[evolvedGroups, groups]];*)
+    nEvolvedODE   = Length[variablesFromGroups[evolvedODEGroups, groups]];
+
+    {{  Name -> thornName <> "_MaxNumEvolvedVars",
+        Type -> "CCTK_INT",
+        Default -> nEvolved,
+        Description -> "Number of evolved variables used by this thorn",
+        Visibility -> "restricted",
+        AccumulatorBase -> "MethodofLines::MoL_Num_Evolved_Vars",
+        AllowedValues -> {{Value -> ToString[nEvolved] <> ":" <> ToString[nEvolved] , 
+                           Description -> "Number of evolved variables used by this thorn"}},
+        Steerable -> Recover},
+      { Name -> thornName <> "_MaxNumArrayEvolvedVars",
+        Type -> "CCTK_INT",
+        Default -> nEvolvedODE,
+        Description -> "Number of Array evolved variables used by this thorn",
+        Visibility -> "restricted",
+        AccumulatorBase -> "MethodofLines::MoL_Num_ArrayEvolved_Vars",
+        AllowedValues -> {{Value -> ToString[nEvolvedODE] <> ":" <> ToString[nEvolvedODE] , 
+                           Description -> "Number of Array evolved variables used by this thorn"}},
+        Steerable -> Recover},
+     { Name -> "timelevels", (* For evolved variables, kind of *)
+       Type -> "CCTK_INT",
+       Default -> defaultEvolutionTimelevels,
+       Description -> "Number of active timelevels",
+       Visibility -> "restricted",
+       AllowedValues -> {{Value -> ToString[0] <> ":" <> ToString[evolutionTimelevels],
+                          Description -> ""}},
+       Steerable -> Recover},
+     (* { Name -> thornName <> "_MaxNumConstrainedVars", *)
+     (*   Type -> "CCTK_INT", *)
+     (*   Default -> nPrimitive, *)
+     (*   Description -> "Number of constrained variables used by this thorn", *)
+     (*   Visibility -> "restricted", *)
+     (*   AccumulatorBase -> "MethodofLines::MoL_Num_Constrained_Vars", *)
+     (*   AllowedValues -> {{Value -> ToString[nPrimitive] <> ":" <> ToString[nPrimitive] ,  *)
+     (*                      Description -> "Number of constrained variables used by this thorn"}}}, *)
+     { Name -> "rhs_timelevels",
+       Type -> "CCTK_INT",
+       Default -> 1,
+       Description -> "Number of active RHS timelevels",
+       Visibility -> "restricted",
+       AllowedValues -> {{Value -> ToString[0] <> ":" <> ToString[evolutionTimelevels],
+                          Description -> ""}},
+       Steerable -> Recover}}]];
 
 End[];
 

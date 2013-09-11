@@ -20,7 +20,7 @@
 
 BeginPackage["Param`", {"Thorn`", "Errors`", "Helpers`", "MapLookup`", "KrancGroups`",
                         "Kranc`", "Jacobian`", "CodeGenParam`",
-                        "ConservationCalculation`"}];
+                        "ConservationCalculation`", "MoL`"}];
 
 CreateKrancParam;
 MakeFullParamDefs;
@@ -294,76 +294,6 @@ CreateKrancParam[evolvedGroups_, nonevolvedGroups_,
 
     evolvedGFs = variablesFromGroups[evolvedGroups, groups];
 
-    nEvolved   = Length[variablesFromGroups[evolvedGroups, groups]];
-(*    nPrimitive = Length[variablesFromGroups[nonevolvedGroups, groups]];*)
-(*    nPrimitive = Length[getConstrainedVariables[evolvedGroups, groups]];*)
-
-    evolvedMoLParam =
-    {
-      Name -> thornName <> "_MaxNumEvolvedVars",
-      Type -> "CCTK_INT",
-      Default -> nEvolved,
-      Description -> "Number of evolved variables used by this thorn",
-      Visibility -> "restricted",
-      AccumulatorBase -> "MethodofLines::MoL_Num_Evolved_Vars",
-      AllowedValues -> {{Value -> ToString[nEvolved] <> ":" <> ToString[nEvolved] , 
-                         Description -> "Number of evolved variables used by this thorn"}},
-      Steerable -> Recover
-    };
-
-    nEvolvedODE   = Length[variablesFromGroups[evolvedODEGroups, groups]];
-
-    evolvedODEMoLParam =
-    {
-      Name -> thornName <> "_MaxNumArrayEvolvedVars",
-      Type -> "CCTK_INT",
-      Default -> nEvolvedODE,
-      Description -> "Number of Array evolved variables used by this thorn",
-      Visibility -> "restricted",
-      AccumulatorBase -> "MethodofLines::MoL_Num_ArrayEvolved_Vars",
-      AllowedValues -> {{Value -> ToString[nEvolvedODE] <> ":" <> ToString[nEvolvedODE] , 
-                         Description -> "Number of Array evolved variables used by this thorn"}},
-      Steerable -> Recover
-    };
-
-    (*
-    constrainedMoLParam =
-    {
-      Name -> thornName <> "_MaxNumConstrainedVars",
-      Type -> "CCTK_INT",
-      Default -> nPrimitive,
-      Description -> "Number of constrained variables used by this thorn",
-      Visibility -> "restricted",
-      AccumulatorBase -> "MethodofLines::MoL_Num_Constrained_Vars",
-      AllowedValues -> {{Value -> ToString[nPrimitive] <> ":" <> ToString[nPrimitive] , 
-                         Description -> "Number of constrained variables used by this thorn"}}
-    };
-    *)
-
-    timelevelsParam =
-    {
-      Name -> "timelevels",
-      Type -> "CCTK_INT",
-      Default -> defaultEvolutionTimelevels,
-      Description -> "Number of active timelevels",
-      Visibility -> "restricted",
-      AllowedValues -> {{Value -> ToString[0] <> ":" <> ToString[evolutionTimelevels],
-                         Description -> ""}},
-      Steerable -> Recover
-    };
-
-    rhsTimelevelsParam =
-    {
-      Name -> "rhs_timelevels",
-      Type -> "CCTK_INT",
-      Default -> 1,
-      Description -> "Number of active RHS timelevels",
-      Visibility -> "restricted",
-      AllowedValues -> {{Value -> ToString[0] <> ":" <> ToString[evolutionTimelevels],
-                         Description -> ""}},
-      Steerable -> Recover
-    };
-
     otherTimelevelsParam =
     {
       Name -> "other_timelevels",
@@ -430,8 +360,10 @@ CreateKrancParam[evolvedGroups_, nonevolvedGroups_,
     userImplementations2 = If[userImplementations2=={{}},{},userImplementations2];
 
     implementations = Join[userImplementations, userImplementations2, {genericfdStruct, molImplementation}];
-    params = Join[{verboseStruct}, realStructs, intStructs, keywordStructs, {evolvedMoLParam,
-                  evolvedODEMoLParam, (*constrainedMoLParam,*) timelevelsParam, rhsTimelevelsParam, otherTimelevelsParam},
+    params = Join[{verboseStruct}, realStructs, intStructs, keywordStructs,
+                  MoLParameterStructures[thornName, evolvedGroups, evolvedODEGroups, groups,
+                                         evolutionTimelevels, defaultEvolutionTimelevels],
+                  {otherTimelevelsParam},
                   calcEveryStructs, calcOffsetStructs,
       CactusBoundary`GetParameters[evolvedGFs, evolvedGroups]];
 

@@ -616,7 +616,7 @@ DefFn[
     groups2]];
 
 DefFn[
-  MoLParameterStructures[thornName_, evolvedGroups_, evolvedODEGroups_, groups_, evolutionTimelevels_,
+  MoLParameterStructures[thornName_, declaredGroups_, evolvedGroups_, evolvedODEGroups_, groups_, evolutionTimelevels_,
                          defaultEvolutionTimelevels_] :=
   Module[
     {nEvolved, nevolvedODE},

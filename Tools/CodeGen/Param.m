@@ -358,7 +358,7 @@ DefFn[
 
 Options[CreateKrancParam] = ThornOptions;
 
-CreateKrancParam[evolvedGroups_, evolvedODEGroups_, groups_,
+CreateKrancParam[declaredGroups_, evolvedGroups_, evolvedODEGroups_, groups_,
                  thornName_, parameters_, evolutionTimelevels_,
                  defaultEvolutionTimelevels_, calcs_, opts:OptionsPattern[]] :=
   Module[
@@ -367,7 +367,7 @@ CreateKrancParam[evolvedGroups_, evolvedODEGroups_, groups_,
     params = Join[commonParameterStructures[evolutionTimelevels],
                   userParameterStructs[parameters],
                   MoLParameterStructures[
-                    thornName, evolvedGroups, evolvedODEGroups, groups,
+                    thornName, declaredGroups, evolvedGroups, evolvedODEGroups, groups,
                     evolutionTimelevels, defaultEvolutionTimelevels],
                   calculationParameterStructures[calcs],
                   CactusBoundary`GetParameters[variablesFromGroups[evolvedGroups, groups], evolvedGroups]];

@@ -228,7 +228,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     (* Construct the param file *)
     InfoMessage[Terse, "Creating param file"];
-    param = CreateKrancParam[evolvedGroups, 
+    param = CreateKrancParam[declaredGroups,
+                             evolvedGroups, 
                              evolvedODEGroups,
                              groups,
                              thornName,

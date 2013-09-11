@@ -147,7 +147,12 @@ createBoundScalarParam[groupOrGF_] := {
 };
 
 DefFn[
-  GetParameters[evolvedGFs_List, evolvedGroups_List] :=
+  GetParameters[declaredGroups_List, groups_List] :=
+  Module[
+    {evolvedGFs, evolvedGroups},
+    evolvedGroups = MoLEvolvedGroups[declaredGroups, groups];
+    evolvedGFs = variablesFromGroups[evolvedGroups, groups];
+
   Join[Map[createBoundTypeParam[#,"skip"] &, evolvedGFs],
        Map[createBoundTypeParam[#,"none"] &, Map[unqualifiedGroupName,evolvedGroups]],
 
@@ -158,7 +163,7 @@ DefFn[
        Map[createBoundLimitParam, Map[unqualifiedGroupName,evolvedGroups]],
 
        Map[createBoundScalarParam, evolvedGFs],
-       Map[createBoundScalarParam, Map[unqualifiedGroupName,evolvedGroups]]]];
+       Map[createBoundScalarParam, Map[unqualifiedGroupName,evolvedGroups]]]]];
  
 
 GetSources[evolvedGroups_, groups_, implementation_, thornName_] :=

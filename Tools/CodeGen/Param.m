@@ -370,7 +370,7 @@ CreateKrancParam[declaredGroups_, evolvedGroups_, evolvedODEGroups_, groups_,
                     thornName, declaredGroups, groups,
                     evolutionTimelevels, defaultEvolutionTimelevels],
                   calculationParameterStructures[calcs],
-                  CactusBoundary`GetParameters[variablesFromGroups[evolvedGroups, groups], evolvedGroups]];
+                  CactusBoundary`GetParameters[declaredGroups, groups]];
 
     paramspec = {Implementations -> usedParameters[parameters, opts],
                  NewParameters   -> params};

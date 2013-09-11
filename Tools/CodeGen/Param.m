@@ -330,8 +330,8 @@ CreateKrancParam[evolvedGroups_, nonevolvedGroups_,
   calcs_, opts:OptionsPattern[]] :=
   Module[
     {evolvedGFs, otherTimelevelsParam, genericfdStruct, realStructs,
-     verboseStruct, intStructs, calcEveryStructs, calcOffsetStructs,
-     keywordStructs, allInherited, allExtended, implementationNames,
+     intStructs, keywordStructs, verboseStruct, calcEveryStructs, calcOffsetStructs,
+     allInherited, allExtended, implementationNames,
      userImplementations, userImplementations2, implementations,
      params, paramspec, param},
 
@@ -354,19 +354,25 @@ CreateKrancParam[evolvedGroups_, nonevolvedGroups_,
 
     realStructs = Map[krancParamStruct[#, "CCTK_REAL", False] &, 
                       realParameterDefinitions[parameters]];
-    verboseStruct = krancParamStruct[{Name -> "verbose", Default -> 0, Steerable -> Always}, "CCTK_INT", False];
     intStructs = Map[krancParamStruct[#, "CCTK_INT", False] &, 
                      integerParameterDefinitions[parameters]];
-    calcEveryStructs = Map[krancParamStruct[{Name -> lookup[#, Name] <> "_calc_every", Default -> 1, Steerable -> Always}, "CCTK_INT", False] &, calcs];
-    calcOffsetStructs = Map[krancParamStruct[{Name -> lookup[#, Name] <> "_calc_offset", Default -> 0, Steerable -> Always}, "CCTK_INT", False] &, calcs];
     keywordStructs = Map[krancKeywordParamStruct, keywordParameterDefinitions[parameters]];
 
-    params = Join[{verboseStruct}, realStructs, intStructs, keywordStructs,
-                  MoLParameterStructures[thornName, evolvedGroups, evolvedODEGroups, groups,
-                                         evolutionTimelevels, defaultEvolutionTimelevels],
+    userStructs = Join[realStructs, intStructs, keywordStructs];
+
+    verboseStruct = krancParamStruct[{Name -> "verbose", Default -> 0, Steerable -> Always}, "CCTK_INT", False];
+    calcEveryStructs = Map[krancParamStruct[{Name -> lookup[#, Name] <> "_calc_every", Default -> 1, Steerable -> Always}, "CCTK_INT", False] &, calcs];
+    calcOffsetStructs = Map[krancParamStruct[{Name -> lookup[#, Name] <> "_calc_offset", Default -> 0, Steerable -> Always}, "CCTK_INT", False] &, calcs];
+
+    params = Join[{verboseStruct},
+                  userStructs,
+                  MoLParameterStructures[
+                    thornName, evolvedGroups, evolvedODEGroups, groups,
+                    evolutionTimelevels, defaultEvolutionTimelevels],
                   {otherTimelevelsParam},
-                  calcEveryStructs, calcOffsetStructs,
-      CactusBoundary`GetParameters[evolvedGFs, evolvedGroups]];
+                  calcEveryStructs,
+                  calcOffsetStructs,
+                  CactusBoundary`GetParameters[evolvedGFs, evolvedGroups]];
 
     paramspec = {Implementations -> usedParameters[parameters, opts],
                  NewParameters   -> params};

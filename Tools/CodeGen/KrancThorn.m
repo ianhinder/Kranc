@@ -75,9 +75,12 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     pDefs, consCalcs, consCalcsIn, consGroups, cakernel,
     hostCals, deviceCalcs, incFilenames},
 
-    (* Parse named arguments *)
-
     InfoMessage[Terse, "Processing arguments to CreateKrancThorn"];
+
+    (* ------------------------------------------------------------------------ 
+       Read named arguments
+       ------------------------------------------------------------------------ *)
+
     cktCheckNamedArgs[{opts}];
 
     calcs = OptionValue[Calculations];
@@ -116,6 +119,10 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     calcs = Map[Append[#, PartialDerivatives -> partialDerivs] &, calcs];
 
+    (* ------------------------------------------------------------------------ 
+       Add coordinates group
+       ------------------------------------------------------------------------ *)
+
     coordGroup = {"grid::coordinates", {Kranc`x,Kranc`y,Kranc`z,Kranc`r}};
 
     CheckGroups[groupsOrig];
@@ -123,13 +130,30 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     groups = Union[groupsOrig, {coordGroup},
                    SameTest->(ToLowerCase[#1]==ToLowerCase[#2]&)];
 
+    (* ------------------------------------------------------------------------ 
+       Separate derivatives
+       ------------------------------------------------------------------------ *)
+
     calcs = SeparateDerivatives[calcs];
 
+    (* ------------------------------------------------------------------------ 
+       Add groups defined in calculations to thorn groups
+       ------------------------------------------------------------------------ *)
+
     groups = DeleteDuplicates[Join[groups, Flatten[Map[lookup[#,LocalGroups,{}] &, calcs],1]]];
+
+    (* ------------------------------------------------------------------------ 
+       Add include files
+       ------------------------------------------------------------------------ *)
+
     includeFiles = Join[includeFiles, {"GenericFD.h", "Symmetry.h", "sbp_calc_coeffs.h"}];
 
     If[OptionValue[UseCaKernel],
        includeFiles = Append[includeFiles, "CaCUDALib_driver_support.h"]];
+
+    (* ------------------------------------------------------------------------ 
+       Inherited implementations
+       ------------------------------------------------------------------------ *)
 
     inheritedImplementations = Join[inheritedImplementations, {"Grid",
      "GenericFD"}, CactusBoundary`GetInheritedImplementations[]];
@@ -148,6 +172,10 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     VerifyGroupNames[odeGroups];
 
     If[OptionValue[UseJacobian], JacobianCheckGroups[groups]];
+
+    (* ------------------------------------------------------------------------ 
+       Conservation Calculations
+       ------------------------------------------------------------------------ *)
 
     consCalcsIn = Append[#,Groups -> groups]& /@
                     OptionValue[ConservationCalculations];
@@ -169,11 +197,19 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     groups = Join[groups, consGroups];
 
-    groups = processODEGroups[odeGroups, groups];
-
     declaredGroups = Join[declaredGroups, Map[groupName, consGroups]];
 
+    (* ------------------------------------------------------------------------ 
+       ODEs
+       ------------------------------------------------------------------------ *)
+
+    groups = processODEGroups[odeGroups, groups];
+
     declaredGroups = DeleteDuplicates[Join[declaredGroups, Flatten[Map[Map[groupName,lookup[#,LocalGroups,{}]] &, calcs],1]]];
+
+    (* ------------------------------------------------------------------------ 
+       MoL
+       ------------------------------------------------------------------------ *)
 
     groups = MoLProcessGroups[declaredGroups,
                               calcs, groups, evolutionTimelevels];
@@ -198,6 +234,10 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     (* Add the groups into the calcs *)
     calcs = Map[Join[#, {Groups -> groups}] &, calcs];
 
+    (* ------------------------------------------------------------------------ 
+       Split calculations
+       ------------------------------------------------------------------------ *)
+
     calcs = SplitCalculations[calcs];
 
     rhsGroups = Map[groupName, rhsGroupDefinitions];
@@ -206,8 +246,6 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     declaredGroups = Join[declaredGroups, rhsGroups, odeGroups, rhsODEGroups];
 
     calcs = Map[Append[#, ODEGroups -> Join[odeGroups, rhsODEGroups]] &, calcs];
-
-    (* Construct a source file for each calculation *)
 
     calcs = Map[Append[#, Parameters -> AllNumericParameters[parameters]] &, calcs];
 
@@ -289,6 +327,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     hostCalcs = Select[calcs, !CalculationOnDevice[#] &];
     deviceCalcs = Select[calcs, CalculationOnDevice];
 
+    (* Construct a source file for each calculation *)
     calcSources = Join[Map[CreateSetterSource[{#}, False, {}, opts] &, hostCalcs],
                        Map[CaKernelCode[#,opts] &, deviceCalcs]];
 

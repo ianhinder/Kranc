@@ -367,7 +367,7 @@ CreateKrancParam[declaredGroups_, evolvedGroups_, evolvedODEGroups_, groups_,
     params = Join[commonParameterStructures[evolutionTimelevels],
                   userParameterStructs[parameters],
                   MoLParameterStructures[
-                    thornName, declaredGroups, evolvedGroups, evolvedODEGroups, groups,
+                    thornName, declaredGroups, groups,
                     evolutionTimelevels, defaultEvolutionTimelevels],
                   calculationParameterStructures[calcs],
                   CactusBoundary`GetParameters[variablesFromGroups[evolvedGroups, groups], evolvedGroups]];

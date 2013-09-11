@@ -618,10 +618,20 @@ DefFn[
     groups2]];
 
 DefFn[
-  MoLParameterStructures[thornName_, declaredGroups_, evolvedGroups_, evolvedODEGroups_, groups_, evolutionTimelevels_,
+  MoLParameterStructures[thornName_, declaredGroups_, groups_, evolutionTimelevels_,
                          defaultEvolutionTimelevels_] :=
   Module[
-    {nEvolved, nevolvedODE},
+    {allEvolvedGroups, evolvedODEGroups, evolvedGroups, nEvolved, nevolvedODE},
+
+    allEvolvedGroups =
+    Select[declaredGroups, lookup[GroupExtras[groupFromName[#,groups]], MoLEvolved, False] &];
+
+    evolvedODEGroups =
+    Select[allEvolvedGroups,
+           (lookup[GroupExtras[groupFromName[#,groups]], GridType, "GF"] === "array") &];
+
+    evolvedGroups = Complement[allEvolvedGroups, evolvedODEGroups];
+
     nEvolved   = Length[variablesFromGroups[evolvedGroups, groups]];
 (*    nPrimitive = Length[variablesFromGroups[nonevolvedGroups, groups]];*)
 (*    nPrimitive = Length[getConstrainedVariables[evolvedGroups, groups]];*)

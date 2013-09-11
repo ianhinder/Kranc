@@ -357,11 +357,10 @@ DefFn[
         calcs]]];
 
 Options[CreateKrancParam] = ThornOptions;
-CreateKrancParam[evolvedGroups_, nonevolvedGroups_,
-  evolvedODEGroups_, nonevolvedODEGroups_, groups_, thornName_, 
-  parameters_,
-  evolutionTimelevels_, defaultEvolutionTimelevels_,
-  calcs_, opts:OptionsPattern[]] :=
+
+CreateKrancParam[evolvedGroups_, evolvedODEGroups_, groups_,
+                 thornName_, parameters_, evolutionTimelevels_,
+                 defaultEvolutionTimelevels_, calcs_, opts:OptionsPattern[]] :=
   Module[
     {params, paramspec, param},
 

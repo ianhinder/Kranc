@@ -228,12 +228,14 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     (* Construct the param file *)
     InfoMessage[Terse, "Creating param file"];
-    param = CreateKrancParam[evolvedGroups, nonevolvedGroups,
-      evolvedODEGroups, nonevolvedODEGroups,
-      groups, thornName,
-      parameters,
-      evolutionTimelevels, defaultEvolutionTimelevels,
-      calcs, opts];
+    param = CreateKrancParam[evolvedGroups, 
+                             evolvedODEGroups,
+                             groups,
+                             thornName,
+                             parameters,
+                             evolutionTimelevels,
+                             defaultEvolutionTimelevels,
+                             calcs, opts];
 
     (* Construct the schedule file *)
     InfoMessage[Terse, "Creating schedule file"];

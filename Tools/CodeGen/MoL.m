@@ -537,6 +537,10 @@ DefFn[MoLEvolvedGroups[declaredGroups_, calcs_, groups_] :=
     evolvedGroups = containingGroups[evolvedVars, groups];
     Return[evolvedGroups]]];
 
+DefFn[
+  MoLEvolvedGroups[declaredGroups_List, groups_List] :=
+  Select[declaredGroups, lookup[GroupExtras[groupFromName[#,groups]], MoLEvolved, False] &]];
+
 DefFn[MoLNonevolvedGroups[declaredGroups_, calcs_, groups_] :=
   Module[{allVars, evolvedVars, evolvedGroups, nonevolvedGroups},
     VerifyGroupNames[declaredGroups];

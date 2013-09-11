@@ -339,15 +339,13 @@ CreateKrancParam[evolvedGroups_, nonevolvedGroups_,
   evolutionTimelevels_, defaultEvolutionTimelevels_,
   calcs_, opts:OptionsPattern[]] :=
   Module[
-    {evolvedGFs, otherTimelevelsParam, genericfdStruct, verboseStruct, calcEveryStructs, calcOffsetStructs,
+    {otherTimelevelsParam, genericfdStruct, verboseStruct, calcEveryStructs, calcOffsetStructs,
      allInherited, allExtended, implementationNames,
      userImplementations, userImplementations2, implementations,
      params, paramspec, param},
 
     (* reals and ints are symbols containing parameter names.  The
        inherited ones have implementation names as well *)
-
-    evolvedGFs = variablesFromGroups[evolvedGroups, groups];
 
     otherTimelevelsParam =
     {
@@ -373,7 +371,7 @@ CreateKrancParam[evolvedGroups_, nonevolvedGroups_,
                   {otherTimelevelsParam},
                   calcEveryStructs,
                   calcOffsetStructs,
-                  CactusBoundary`GetParameters[evolvedGFs, evolvedGroups]];
+                  CactusBoundary`GetParameters[variablesFromGroups[evolvedGroups, groups], evolvedGroups]];
 
     paramspec = {Implementations -> usedParameters[parameters, opts],
                  NewParameters   -> params};

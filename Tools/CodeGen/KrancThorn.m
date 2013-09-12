@@ -177,6 +177,9 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        Conservation Calculations
        ------------------------------------------------------------------------ *)
 
+    Module[
+      {consCalcsIn, consCalcs, consGroups},
+
     consCalcsIn = Append[#,Groups -> groups]& /@
                     OptionValue[ConservationCalculations];
 
@@ -197,7 +200,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     groups = Join[groups, consGroups];
 
-    declaredGroups = Join[declaredGroups, Map[groupName, consGroups]];
+    declaredGroups = Join[declaredGroups, Map[groupName, consGroups]]];
 
     (* ------------------------------------------------------------------------ 
        ODEs

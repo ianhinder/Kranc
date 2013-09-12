@@ -73,8 +73,9 @@ DefFn[checkCondition[{cond_, error_String}] :=
     (* rendervalue[a_String] := a; -- Allow literal pass-through *)
     rendervalue[a_?NumberQ] := ToString[a];
     rendervalue[Parameter[a_String]] := a;
-    rendervalue[a_ /; MemberQ[params,a]] := ToString[a];
-    rendervalue[x_] := ThrowError["Unexpected value in run-time conditional expression (value):", x, "in", cond];
+    (* TODO: pass in valid parameters *)
+    rendervalue[a_ (*/; MemberQ[params,a] *) ] := ToString[a];
+    (* rendervalue[x_] := ThrowError["Unexpected value in run-time conditional expression (value):", x, "in", cond]; *)
 
     ConditionalOnParameterTextual[
       renderbool[cond],

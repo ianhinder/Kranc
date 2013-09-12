@@ -71,7 +71,6 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     interface, evolvedGroupDefinitions, thornspec,
     evolvedODEGroups, nonevolvedODEGroups,
     evolvedODEGroupDefinitions, rhsODEGroups,
-    reflectionSymmetries,
     consCalcs, consCalcsIn, consGroups, cakernel,
     sources = {}},
 
@@ -106,7 +105,6 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     partialDerivs = OptionValue[PartialDerivatives];
     If[OptionValue[ConservationCalculations] =!= {},
        partialDerivs = Join[partialDerivs, ConservationDifferencingOperators[]]];
-    reflectionSymmetries = OptionValue[ReflectionSymmetries];
 
     (* ------------------------------------------------------------------------ 
        CaKernel
@@ -332,7 +330,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
         {Filename -> "RegisterSymmetries.cc",
          Contents -> CreateSymmetriesRegistrationSource[
            thornName, implementation, 
-           allGFs, reflectionSymmetries, False]}]];
+           allGFs, OptionValue[ReflectionSymmetries], False]}]];
 
     (* ------------------------------------------------------------------------ 
        Add parameter check source file

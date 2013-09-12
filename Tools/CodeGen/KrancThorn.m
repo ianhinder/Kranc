@@ -231,6 +231,11 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        MoL
        ------------------------------------------------------------------------ *)
 
+    Module[
+      {evolvedGroups, nonevolvedGroups, evolvedODEGroups,
+       nonevolvedODEGroups, rhsGroupDefinitions,
+       rhsODEGroupDefinitions, rhsGroups, rhsODEGroups},
+
     groups = MoLProcessGroups[declaredGroups,
                               calcs, groups, evolutionTimelevels];
 
@@ -244,15 +249,17 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     (* Replace the dots in the calculation *)
     calcs = MoLReplaceDots[calcs];
 
-    Module[
-      {rhsGroupDefinitions = MoLRHSGroupDefinitions[groups, evolvedGroups],
-       rhsODEGroupDefinitions = MoLRHSODEGroupDefinitions[groups, evolvedODEGroups]},
+    rhsGroupDefinitions = MoLRHSGroupDefinitions[groups, evolvedGroups];
+    rhsODEGroupDefinitions = MoLRHSODEGroupDefinitions[groups, evolvedODEGroups];
 
-      (* Add the RHS groups *)
-      groups = Join[groups, rhsGroupDefinitions, rhsODEGroupDefinitions];
+    (* Add the RHS groups *)
+    groups = Join[groups, rhsGroupDefinitions, rhsODEGroupDefinitions];
 
-      rhsGroups = Map[groupName, rhsGroupDefinitions];
-      rhsODEGroups = Map[groupName, rhsODEGroupDefinitions]];
+    rhsGroups = Map[groupName, rhsGroupDefinitions];
+    rhsODEGroups = Map[groupName, rhsODEGroupDefinitions];
+
+    (* This possibly shouldn't be in MoL but under ODEs instead *)
+    calcs = Map[Append[#, ODEGroups -> Join[odeGroups, rhsODEGroups]] &, calcs];
 
     declaredGroups = Join[declaredGroups, rhsGroups, odeGroups, rhsODEGroups];
 
@@ -264,15 +271,13 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
       {Filename -> "RegisterMoL.cc",
        Contents -> CreateKrancMoLRegister[
          evolvedGroups, nonevolvedGroups, evolvedODEGroups,
-         nonevolvedODEGroups, groups, implementation, thornName]}];
+         nonevolvedODEGroups, groups, implementation, thornName]}]];
 
     (* ------------------------------------------------------------------------ 
        Add options to calculations
        ------------------------------------------------------------------------ *)
 
     calcs = Map[Join[#, {Groups -> groups}] &, calcs];
-
-    calcs = Map[Append[#, ODEGroups -> Join[odeGroups, rhsODEGroups]] &, calcs];
 
     calcs = Map[Append[#, Parameters -> AllNumericParameters[parameters]] &, calcs];
 

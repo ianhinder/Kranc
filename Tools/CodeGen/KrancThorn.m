@@ -67,7 +67,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     evolutionTimelevels, defaultEvolutionTimelevels,
     parameters,
     configuration,
-    partialDerivs, coordGroup, evolvedGroups, rhsGroups, nonevolvedGroups,
+    partialDerivs, evolvedGroups, rhsGroups, nonevolvedGroups,
     interface, evolvedGroupDefinitions, thornspec,
     evolvedODEGroups, nonevolvedODEGroups,
     evolvedODEGroupDefinitions, rhsODEGroups,
@@ -123,11 +123,10 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        Add coordinates group
        ------------------------------------------------------------------------ *)
 
-    coordGroup = {"grid::coordinates", {Kranc`x,Kranc`y,Kranc`z,Kranc`r}};
-
     CheckGroups[groupsOrig];
 
-    groups = Union[groupsOrig, {coordGroup},
+    groups = Union[groupsOrig,
+                   {{"grid::coordinates", {Kranc`x,Kranc`y,Kranc`z,Kranc`r}}},
                    SameTest->(ToLowerCase[#1]==ToLowerCase[#2]&)];
 
     (* ------------------------------------------------------------------------ 

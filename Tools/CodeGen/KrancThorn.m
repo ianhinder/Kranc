@@ -310,8 +310,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        Create Boundary source files
        ------------------------------------------------------------------------ *)
 
-    boundarySources = CactusBoundary`GetSources[evolvedGroups, groups, 
-                                            implementation, thornName];
+    boundarySources = CactusBoundary`GetSources[evolvedGroups, groups, implementation, thornName];
+    sources = Join[sources, boundarySources];
 
     (* ------------------------------------------------------------------------ 
        Create symmetry registration source file
@@ -395,7 +395,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
                   {Filename -> "RegisterSymmetries.cc", Contents -> symregister},
                   {Filename -> "Differencing.h", Contents -> diffHeader}},
                   MapThread[{Filename -> #1, Contents -> #2} &, 
-                            {calcFilenames, calcSources}], boundarySources, 
+                            {calcFilenames, calcSources}],
                   If[Length[OptionValue[ParameterConditions]] > 0,
                      {{Filename -> "ParamCheck.cc",
                       Contents -> ParameterCheckSource[thornName, OptionValue[ParameterConditions]]}},

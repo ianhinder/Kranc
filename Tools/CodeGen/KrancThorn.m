@@ -68,9 +68,9 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     parameters,
     configuration,
     partialDerivs, coordGroup, evolvedGroups, rhsGroups, nonevolvedGroups,
-    interface, evolvedGroupDefinitions, rhsGroupDefinitions, thornspec,
+    interface, evolvedGroupDefinitions, thornspec,
     evolvedODEGroups, nonevolvedODEGroups,
-    evolvedODEGroupDefinitions, rhsODEGroupDefinitions, rhsODEGroups,
+    evolvedODEGroupDefinitions, rhsODEGroups,
     boundarySources, reflectionSymmetries,
     pDefs, consCalcs, consCalcsIn, consGroups, cakernel,
     hostCals, deviceCalcs, incFilenames, sources = {}},
@@ -224,18 +224,18 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     (* Replace the dots in the calculation *)
     calcs = MoLReplaceDots[calcs];
 
-    (* Add the RHS groups *)
-    rhsGroupDefinitions = MoLRHSGroupDefinitions[groups, evolvedGroups];
-    groups = Join[groups, rhsGroupDefinitions];
+    Module[
+      {rhsGroupDefinitions = MoLRHSGroupDefinitions[groups, evolvedGroups],
+       rhsODEGroupDefinitions = MoLRHSODEGroupDefinitions[groups, evolvedODEGroups]},
 
-    rhsODEGroupDefinitions = MoLRHSODEGroupDefinitions[groups, evolvedODEGroups];
-    groups = Join[groups, rhsODEGroupDefinitions];
+      (* Add the RHS groups *)
+      groups = Join[groups, rhsGroupDefinitions, rhsODEGroupDefinitions];
 
-    (* Add the groups into the calcs *)
-    calcs = Map[Join[#, {Groups -> groups}] &, calcs];
+      (* Add the groups into the calcs *)
+      calcs = Map[Join[#, {Groups -> groups}] &, calcs];
 
-    rhsGroups = Map[groupName, rhsGroupDefinitions];
-    rhsODEGroups = Map[groupName, rhsODEGroupDefinitions];
+      rhsGroups = Map[groupName, rhsGroupDefinitions];
+      rhsODEGroups = Map[groupName, rhsODEGroupDefinitions]];
 
     declaredGroups = Join[declaredGroups, rhsGroups, odeGroups, rhsODEGroups];
 

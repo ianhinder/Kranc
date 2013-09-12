@@ -162,7 +162,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        Add include files
        ------------------------------------------------------------------------ *)
 
-    includeFiles = Join[includeFiles, {"GenericFD.h", "Symmetry.h", "sbp_calc_coeffs.h"}];
+    includeFiles = Join[includeFiles, {"GenericFD.h", "sbp_calc_coeffs.h"}];
 
     (* ------------------------------------------------------------------------ 
        Inherited implementations
@@ -276,6 +276,22 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     calcs = SplitCalculations[calcs];
 
     (* ------------------------------------------------------------------------ 
+       Symmetries
+       ------------------------------------------------------------------------ *)
+
+    AppendTo[includeFiles, "Symmetry.h"];
+
+    Module[{allGFs = Join[variablesFromGroups[evolvedGroups, groups],
+                          variablesFromGroups[nonevolvedGroups, groups]]},
+      InfoMessage[Terse, "Creating symmetry registration file"];
+      AppendTo[
+        sources,
+        {Filename -> "RegisterSymmetries.cc",
+         Contents -> CreateSymmetriesRegistrationSource[
+           thornName, implementation, 
+           allGFs, OptionValue[ReflectionSymmetries], False]}]];
+
+    (* ------------------------------------------------------------------------ 
        Startup source file
        ------------------------------------------------------------------------ *)
 
@@ -324,20 +340,6 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     sources = Join[
       sources,
       CactusBoundary`GetSources[evolvedGroups, groups, implementation, thornName]];
-
-    (* ------------------------------------------------------------------------ 
-       Create symmetry registration source file
-       ------------------------------------------------------------------------ *)
-
-    Module[{allGFs = Join[variablesFromGroups[evolvedGroups, groups],
-                          variablesFromGroups[nonevolvedGroups, groups]]},
-      InfoMessage[Terse, "Creating symmetry registration file"];
-      AppendTo[
-        sources,
-        {Filename -> "RegisterSymmetries.cc",
-         Contents -> CreateSymmetriesRegistrationSource[
-           thornName, implementation, 
-           allGFs, OptionValue[ReflectionSymmetries], False]}]];
 
     (* ------------------------------------------------------------------------ 
        Add parameter check source file

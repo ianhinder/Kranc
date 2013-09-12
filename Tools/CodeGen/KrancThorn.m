@@ -343,7 +343,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     sources = Join[
       sources,
-      CactusBoundary`GetSources[evolvedGroups, declaredGroups, groups, implementation, thornName]];
+      CactusBoundary`GetSources[declaredGroups, groups, implementation, thornName]];
 
     (* ------------------------------------------------------------------------ 
        Add parameter check source file

@@ -77,34 +77,43 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     InfoMessage[Terse, "Processing arguments to CreateKrancThorn"];
 
     (* ------------------------------------------------------------------------ 
-       Read named arguments
+       Read named arguments and apply nontrivial defaults
        ------------------------------------------------------------------------ *)
 
     cktCheckNamedArgs[{opts}];
 
     calcs = OptionValue[Calculations];
-
-    calcs = Map[mapReplaceAdd[#, Shorthands, Join[lookup[#,Shorthands,{}],OptionValue[Shorthands]]] &, calcs];
-
     declaredGroups = OptionValue[DeclaredGroups];
     odeGroups = OptionValue[ODEGroups];
-    implementation = 
-      If[OptionValue[Implementation] =!= None, 
-        OptionValue[Implementation],
-        thornName];
-
-    calcs = Map[Append[#, Implementation -> implementation] &, calcs];
-
+    implementation = If[OptionValue[Implementation] =!= None,
+                        OptionValue[Implementation],
+                        thornName];
     inheritedImplementations = OptionValue[InheritedImplementations];
     includeFiles = OptionValue[IncludeFiles];
     evolutionTimelevels = OptionValue[EvolutionTimelevels]; (* Redundant *)
     defaultEvolutionTimelevels = lookupDefault[{opts}, DefaultEvolutionTimelevels, evolutionTimelevels];
+    partialDerivs = OptionValue[PartialDerivatives];
+
+    (* ------------------------------------------------------------------------ 
+       Add conservation differencing operators to partialDerivs
+       ------------------------------------------------------------------------ *)
+
+    If[OptionValue[ConservationCalculations] =!= {},
+       partialDerivs = Join[partialDerivs, ConservationDifferencingOperators[]]];
+
+    (* ------------------------------------------------------------------------ 
+       Construct parameter database from named arguments
+       ------------------------------------------------------------------------ *)
 
     parameters = ParameterDatabase[opts];
 
-    partialDerivs = OptionValue[PartialDerivatives];
-    If[OptionValue[ConservationCalculations] =!= {},
-       partialDerivs = Join[partialDerivs, ConservationDifferencingOperators[]]];
+    (* ------------------------------------------------------------------------ 
+       Add thorn-global options to calculations
+       ------------------------------------------------------------------------ *)
+
+    calcs = Map[mapReplaceAdd[#, Shorthands, Join[lookup[#,Shorthands,{}],OptionValue[Shorthands]]] &, calcs];
+    calcs = Map[Append[#, Implementation -> implementation] &, calcs];
+    calcs = Map[Append[#, PartialDerivatives -> partialDerivs] &, calcs];
 
     (* ------------------------------------------------------------------------ 
        CaKernel
@@ -117,8 +126,6 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        calcs = WithHostCalculations[calcs]];
 
     If[!And@@Map[ListQ, calcs], Print[Short[calcs//InputForm]]; ThrowError["Result of WithHostCalculations is not a list of lists"]];
-
-    calcs = Map[Append[#, PartialDerivatives -> partialDerivs] &, calcs];
 
     If[OptionValue[UseCaKernel],
        includeFiles = Append[includeFiles, "CaCUDALib_driver_support.h"]];

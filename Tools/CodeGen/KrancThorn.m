@@ -108,6 +108,10 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        partialDerivs = Join[partialDerivs, ConservationDifferencingOperators[]]];
     reflectionSymmetries = OptionValue[ReflectionSymmetries];
 
+    (* ------------------------------------------------------------------------ 
+       Process calculations for CaKernel
+       ------------------------------------------------------------------------ *)
+
     (* Make the CaKernel option calculation-specific *)
     calcs = Map[Append[#,UseCaKernel -> OptionValue[UseCaKernel]] &, calcs];
 
@@ -115,7 +119,6 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        calcs = WithHostCalculations[calcs]];
 
     If[!And@@Map[ListQ, calcs], Print[Short[calcs//InputForm]]; ThrowError["Result of WithHostCalculations is not a list of lists"]];
-
 
     calcs = Map[Append[#, PartialDerivatives -> partialDerivs] &, calcs];
 
@@ -359,11 +362,6 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
         diffHeader];
       If[OptionValue[UseOpenCL], diffHeader = OpenCLProcessDifferencingHeader[diffHeader]];
       AppendTo[sources, {Filename -> "Differencing.h", Contents -> diffHeader}]];
-
-    (* ------------------------------------------------------------------------ 
-       Add predefinitions to calculations
-       ------------------------------------------------------------------------ *)
-
 
     (* ------------------------------------------------------------------------ 
        Create calculation source files

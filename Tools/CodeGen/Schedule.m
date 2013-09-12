@@ -286,7 +286,9 @@ CreateKrancScheduleFile[calcs_, groups_, declaredGroups_, evolvedGroups_, rhsGro
 
     scheduledFunctions = 
       Join[{scheduledStartup, scheduleRegisterSymmetries}, 
-        scheduledCalcs, CactusBoundary`GetScheduledFunctions[thornName, evolvedGroups],
+        scheduledCalcs, CactusBoundary`GetScheduledFunctions[thornName,
+                                                             declaredGroups,
+                                                             groups],
            {scheduleMoLRegister}, If[Length[OptionValue[ParameterConditions]] > 0,
                                      {ParameterCheckSchedule[thornName]},
                                      {}]];

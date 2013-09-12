@@ -75,12 +75,12 @@ GetScheduledGroups[thornName_] :=
  }
 };
 
-GetScheduledFunctions[thornName_, evolvedGroups_] :=
+GetScheduledFunctions[thornName_, declaredGroups_List, groups_List] :=
 {
   {
     Name          -> boundariesName[thornName],
     SchedulePoint -> "in MoL_PostStep",
-    SynchronizedGroups -> evolvedGroups,
+    SynchronizedGroups -> MoLEvolvedGroups[declaredGroups, groups],
     Language      -> "C",
     Options       -> "level", 
     Comment       -> "select boundary conditions"

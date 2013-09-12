@@ -166,12 +166,18 @@ DefFn[
        Map[createBoundScalarParam, Map[unqualifiedGroupName,evolvedGroups]]]]];
  
 
-GetSources[evolvedGroups_, groups_, implementation_, thornName_] :=
+GetSources[evolvedGroups_, declaredGroups_, groups_, implementation_, thornName_] :=
   Module[{boundarySpec, evolvedGFs},
-    evolvedGFs = variablesFromGroups[evolvedGroups, groups];
+    evolvedGroups2 = MoLEvolvedGroups[declaredGroups, groups];
+
+    If[Union@evolvedGroups2 =!= Union[evolvedGroups],
+       Print["Group mismatch"];
+       Quit[1]];
+
+    evolvedGFs = variablesFromGroups[evolvedGroups2, groups];
     boundarySpec = 
     {
-      Groups -> evolvedGroups, 
+      Groups -> evolvedGroups2, 
       EvolvedGFs -> Map[qualifyGFName[#, groups, implementation] &, evolvedGFs],
       BaseImplementation -> implementation, 
       ThornName -> thornName,

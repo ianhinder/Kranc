@@ -242,7 +242,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     InfoMessage[Terse, "Creating MoL registration file"];
     (* TODO: only do this for thorns with evolved variables *)
 
-    AppendTo[sources, 
+    AppendTo[
+      sources, 
       {Filename -> "RegisterMoL.cc",
        Contents -> CreateKrancMoLRegister[
          evolvedGroups, nonevolvedGroups, evolvedODEGroups,
@@ -269,7 +270,10 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        ------------------------------------------------------------------------ *)
 
     InfoMessage[Terse, "Creating startup file"];
-    startup = CreateStartupFile[thornName, thornName];
+    AppendTo[
+      sources,
+      {Filename -> "Startup.cc",
+       Contents -> CreateStartupFile[thornName, thornName]}];
 
     (* ------------------------------------------------------------------------ 
        Create CCL files
@@ -389,7 +393,6 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
                  CaKernel      -> cakernel,
                  Makefile      -> make,
                  Sources       -> Join[sources, {
-                  {Filename -> "Startup.cc", Contents -> startup}, 
                   {Filename -> "RegisterSymmetries.cc", Contents -> symregister},
                   {Filename -> "Differencing.h", Contents -> diffHeader}},
                   MapThread[{Filename -> #1, Contents -> #2} &, 

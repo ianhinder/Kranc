@@ -71,7 +71,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     interface, evolvedGroupDefinitions, thornspec,
     evolvedODEGroups, nonevolvedODEGroups,
     evolvedODEGroupDefinitions, rhsODEGroups,
-    boundarySources, reflectionSymmetries,
+    reflectionSymmetries,
     consCalcs, consCalcsIn, consGroups, cakernel,
     sources = {}},
 
@@ -310,8 +310,9 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        Create Boundary source files
        ------------------------------------------------------------------------ *)
 
-    boundarySources = CactusBoundary`GetSources[evolvedGroups, groups, implementation, thornName];
-    sources = Join[sources, boundarySources];
+    sources = Join[
+      sources,
+      CactusBoundary`GetSources[evolvedGroups, groups, implementation, thornName]];
 
     (* ------------------------------------------------------------------------ 
        Create symmetry registration source file

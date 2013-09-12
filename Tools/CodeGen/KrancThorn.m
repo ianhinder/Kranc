@@ -72,7 +72,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     evolvedODEGroups, nonevolvedODEGroups,
     evolvedODEGroupDefinitions, rhsODEGroups,
     boundarySources, reflectionSymmetries,
-    pDefs, consCalcs, consCalcsIn, consGroups, cakernel,
+    consCalcs, consCalcsIn, consGroups, cakernel,
     sources = {}},
 
     InfoMessage[Terse, "Processing arguments to CreateKrancThorn"];
@@ -341,11 +341,12 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        ------------------------------------------------------------------------ *)
 
     Module[
-      {diffHeader},
+      {diffHeader, pDefs},
       InfoMessage[Terse, "Creating differencing header file"];
       {pDefs, diffHeader} = CreateDifferencingHeader[
         partialDerivs, OptionValue[ZeroDimensions],
         OptionValue[UseVectors], OptionValue[IntParameters]];
+      calcs = Map[Join[#, {PreDefinitions -> pDefs}] &, calcs];
       diffHeader = Join[
         If[OptionValue[UseVectors] && ! OptionValue[UseOpenCL],
            {"#include <assert.h>\n",
@@ -360,7 +361,6 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        Add predefinitions to calculations
        ------------------------------------------------------------------------ *)
 
-    calcs = Map[Join[#, {PreDefinitions -> pDefs}] &, calcs];
 
     (* ------------------------------------------------------------------------ 
        Create calculation source files

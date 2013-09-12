@@ -234,20 +234,16 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     (* Add the groups into the calcs *)
     calcs = Map[Join[#, {Groups -> groups}] &, calcs];
 
+    rhsGroups = Map[groupName, rhsGroupDefinitions];
+    rhsODEGroups = Map[groupName, rhsODEGroupDefinitions];
+
+    declaredGroups = Join[declaredGroups, rhsGroups, odeGroups, rhsODEGroups];
+
     (* ------------------------------------------------------------------------ 
        Split calculations
        ------------------------------------------------------------------------ *)
 
     calcs = SplitCalculations[calcs];
-
-    (* ------------------------------------------------------------------------ 
-       Add MoL groups to declaredGroups
-       ------------------------------------------------------------------------ *)
-
-    rhsGroups = Map[groupName, rhsGroupDefinitions];
-    rhsODEGroups = Map[groupName, rhsODEGroupDefinitions];
-
-    declaredGroups = Join[declaredGroups, rhsGroups, odeGroups, rhsODEGroups];
 
     (* ------------------------------------------------------------------------ 
        Add options to calculations

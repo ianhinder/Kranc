@@ -215,3 +215,18 @@ Test[
   ,
   TestID->"Analysis-3TL"
 ]
+
+Test[
+  ClearAllTensors[];
+  CreateKrancThornTT[
+    $groups, "TestThorns", "ParamCheck",
+    PartialDerivatives -> $derivatives,
+    DeclaredGroups     -> {"evolved_group"},
+    Calculations       -> {$initialSineCalc, $evolveCalc},
+    RealParameters -> {aparam},
+    ParameterConditions -> {{aparam == 0, "aparam must be == 0"}}]
+  ,
+  Null
+  ,
+  TestID->"ParamCheck"
+]

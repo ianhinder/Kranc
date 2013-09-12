@@ -73,7 +73,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     evolvedODEGroupDefinitions, rhsODEGroupDefinitions, rhsODEGroups,
     boundarySources, reflectionSymmetries,
     pDefs, consCalcs, consCalcsIn, consGroups, cakernel,
-    hostCals, deviceCalcs, incFilenames},
+    hostCals, deviceCalcs, incFilenames, sources = {}},
 
     InfoMessage[Terse, "Processing arguments to CreateKrancThorn"];
 
@@ -241,7 +241,12 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     InfoMessage[Terse, "Creating MoL registration file"];
     (* TODO: only do this for thorns with evolved variables *)
-    molregister = CreateKrancMoLRegister[evolvedGroups, nonevolvedGroups, evolvedODEGroups, nonevolvedODEGroups, groups, implementation, thornName];
+
+    AppendTo[sources, 
+      {Filename -> "RegisterMoL.cc",
+       Contents -> CreateKrancMoLRegister[
+         evolvedGroups, nonevolvedGroups, evolvedODEGroups,
+         nonevolvedODEGroups, groups, implementation, thornName]}];
 
     (* ------------------------------------------------------------------------ 
        Split calculations
@@ -383,9 +388,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
                  Param         -> param,
                  CaKernel      -> cakernel,
                  Makefile      -> make,
-                 Sources       -> Join[{
+                 Sources       -> Join[sources, {
                   {Filename -> "Startup.cc", Contents -> startup}, 
-                  {Filename -> "RegisterMoL.cc", Contents -> molregister},
                   {Filename -> "RegisterSymmetries.cc", Contents -> symregister},
                   {Filename -> "Differencing.h", Contents -> diffHeader}},
                   MapThread[{Filename -> #1, Contents -> #2} &, 

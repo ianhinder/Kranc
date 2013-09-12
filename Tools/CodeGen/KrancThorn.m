@@ -239,6 +239,10 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     declaredGroups = Join[declaredGroups, rhsGroups, odeGroups, rhsODEGroups];
 
+    InfoMessage[Terse, "Creating MoL registration file"];
+    (* TODO: only do this for thorns with evolved variables *)
+    molregister = CreateKrancMoLRegister[evolvedGroups, nonevolvedGroups, evolvedODEGroups, nonevolvedODEGroups, groups, implementation, thornName];
+
     (* ------------------------------------------------------------------------ 
        Split calculations
        ------------------------------------------------------------------------ *)
@@ -300,15 +304,6 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     boundarySources = CactusBoundary`GetSources[evolvedGroups, groups, 
                                             implementation, thornName];
-
-    (* ------------------------------------------------------------------------ 
-       Create MoL registration source file
-       ------------------------------------------------------------------------ *)
-
-    (* TODO: only do this for thorns with evolved variables *)
-
-    InfoMessage[Terse, "Creating MoL registration file"];
-    molregister = CreateKrancMoLRegister[evolvedGroups, nonevolvedGroups, evolvedODEGroups, nonevolvedODEGroups, groups, implementation, thornName];
 
     (* ------------------------------------------------------------------------ 
        Create symmetry registration source file

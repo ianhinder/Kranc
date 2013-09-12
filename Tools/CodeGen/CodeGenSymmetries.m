@@ -21,7 +21,7 @@
 BeginPackage[
   "CodeGenSymmetries`",
   {"Errors`", "Helpers`", "Kranc`", "CodeGenCactus`", "MapLookup`", "CodeGenKranc`",
-   "CodeGenC`", "CodeGen`"}];
+   "CodeGenC`", "CodeGen`", "KrancGroups`"}];
 
 CreateSymmetriesRegistrationSource::usage = "";
 
@@ -63,18 +63,38 @@ DefFn[
 (* Given a symmetries registration structure as defined above, return a
    C CodeGen structure of a source file which will register the symmetries. *)
 DefFn[
-  CreateSymmetriesRegistrationSource[thornName_String, implementationName_String, GFs_List,
+  CreateSymmetriesRegistrationSource[thornName_String, implementationName_String,
+                                     declaredGroups_List, groups_List, GFs_List,
                                      reflectionSymmetries_List, debug:(True|False)] :=
   Module[
-    {spec, j, lang, tmp},
+    {spec, j, lang, tmp, GFs2, nonRHSGroups},
 
     If[debug, Print["Registering Symmetries for: ", GFs]];
 
     lang = CodeGenC`SOURCELANGUAGE;
     CodeGenC`SOURCELANGUAGE = "C";
 
+    (* TODO: symmetries should probably be applied to all groups, but
+       for compatibility, apply them only to the non-RHS groups as
+       this is what was done before *)
+    nonRHSGroups = Select[declaredGroups, 
+                          (!(lookup[GroupExtras[groupFromName[#, groups]], 
+                                    MoLRHS,
+                                    False] || 
+                             lookup[GroupExtras[groupFromName[#, groups]], 
+                                    GridType,
+                                    "gf"] === "array")) &];
+    
+    GFs2 = variablesFromGroups[nonRHSGroups, groups];
+    
+    If[Union[GFs2] =!= Union[GFs],
+       Print["GFs don't match"];
+       Print["GFs = ", Union[GFs]];
+       Print["GFs2 = ", Union[GFs2]];
+       Quit[1]];
+
     spec = Map[{FullName -> implementationName <> "::" <> ToString@#,
-                Sym      -> calcSymmetry[#, Union@reflectionSymmetries]} &, GFs];
+                Sym      -> calcSymmetry[#, Union@reflectionSymmetries]} &, GFs2];
 
     tmp = {FileHeader["C"],
            
@@ -91,7 +111,6 @@ DefFn[
                 {}]]};
 
     CodeGenC`SOURCELANGUAGE = lang;
-
     tmp]];
 
 End[];

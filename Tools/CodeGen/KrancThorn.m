@@ -296,7 +296,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
         {Filename -> "RegisterSymmetries.cc",
          Contents -> CreateSymmetriesRegistrationSource[
            thornName, implementation, 
-           allGFs, OptionValue[ReflectionSymmetries], False]}]];
+           declaredGroups, groups, allGFs, OptionValue[ReflectionSymmetries], False]}]];
 
     (* ------------------------------------------------------------------------ 
        Startup source file

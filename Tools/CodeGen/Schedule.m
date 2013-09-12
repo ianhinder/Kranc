@@ -266,25 +266,6 @@ CreateKrancScheduleFile[calcs_, groups_, declaredGroups_, evolvedGroups_, rhsGro
       Comment       -> "register symmetries"
     };
 
-    globalStorageGroups =
-      Join[
-        Map[
-          Module[
-            {tl},
-            (* Number of timelevels requested for this group, or 1 if no request made *)
-            tl = NonevolvedTimelevels[groupFromName[#, groups]];
-            If[tl===1,
-               storageStructure[#, "other_timelevels"],
-               storageStructure[#, "timelevels"]]] &,
-          (* over *)
-          nonevolvedGroups],
-
-        Map[storageStructure[#, "timelevels"] &,
-            evolvedGroups],
-
-        Map[storageStructure[#, "rhs_timelevels"] &,
-            rhsGroups]];
-
     scheduleTimelevels[gn_] :=
       Module[
         {groupDef, extras},
@@ -298,13 +279,7 @@ CreateKrancScheduleFile[calcs_, groups_, declaredGroups_, evolvedGroups_, rhsGro
                     "other_timelevels",
                     "timelevels"]]];
 
-    globalStorageGroups2 = Map[storageStructure[#, scheduleTimelevels[#]] &, declaredGroups];
-
-    If[Union@globalStorageGroups2 =!= Union@globalStorageGroups,
-       Print["Global storage groups differ:"];
-       Print["globalStorageGroups = ", Union@globalStorageGroups];
-       Print["globalStorageGroups2 = ", Union@globalStorageGroups2];
-       Quit[1]];
+    globalStorageGroups = Map[storageStructure[#, scheduleTimelevels[#]] &, declaredGroups];
 
     (* Schedule groups defined in calculations *)
     calcGroups = Union[Flatten[Map[lookup[#, ScheduleGroups, {}] &, calcs],1]];
@@ -320,7 +295,7 @@ CreateKrancScheduleFile[calcs_, groups_, declaredGroups_, evolvedGroups_, rhsGro
        scheduledFunctions = Join[scheduledFunctions, CaKernelSchedule[thornName]]];
 
     allParams = Union@@((lookup[#,Parameters] &) /@ calcs);
-    schedule = CreateSchedule[globalStorageGroups2, 
+    schedule = CreateSchedule[globalStorageGroups, 
       Join[CactusBoundary`GetScheduledGroups[thornName], calcGroups], scheduledFunctions, allParams];
 
     Return[schedule]];

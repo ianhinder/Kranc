@@ -234,7 +234,7 @@ scheduleCalc[calc_, groups_, thornName_, OptionsPattern[]] :=
          bcGroupSched["in MoL_PseudoEvolutionBoundaries after MoL_PostStep"]},{}]]]];
 
 Options[CreateKrancScheduleFile] = ThornOptions;
-CreateKrancScheduleFile[calcs_, groups_, declaredGroups_, evolvedGroups_, rhsGroups_, nonevolvedGroups_, thornName_, 
+CreateKrancScheduleFile[calcs_, declaredGroups_, groups_, thornName_, 
                         evolutionTimelevels_, opts:OptionsPattern[]] :=
   Module[{scheduledCalcs, scheduledStartup, scheduleMoLRegister, globalStorageGroups, scheduledFunctions, schedule, allParams, calcGroups, scheduleTimelevels},
 

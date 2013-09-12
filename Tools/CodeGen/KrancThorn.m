@@ -329,9 +329,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
                              calcs, opts];
 
     InfoMessage[Terse, "Creating schedule file"];
-    schedule = CreateKrancScheduleFile[calcs, groups, declaredGroups, Join[evolvedGroups,evolvedODEGroups],
-      Join[rhsGroups,rhsODEGroups], Join[nonevolvedGroups,nonevolvedODEGroups], thornName,
-      evolutionTimelevels,opts];
+    schedule = CreateKrancScheduleFile[calcs, declaredGroups, groups, thornName,
+                                       evolutionTimelevels,opts];
 
     If[OptionValue[UseCaKernel],
        InfoMessage[Terse, "Creating CaKernel file"];

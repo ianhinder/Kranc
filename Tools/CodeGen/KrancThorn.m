@@ -328,6 +328,15 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
            allGFs, reflectionSymmetries, False]}]];
 
     (* ------------------------------------------------------------------------ 
+       Add parameter check source file
+       ------------------------------------------------------------------------ *)
+   
+    If[Length[OptionValue[ParameterConditions]] > 0,
+       AppendTo[sources,
+                {Filename -> "ParamCheck.cc",
+                 Contents -> ParameterCheckSource[thornName, OptionValue[ParameterConditions]]}]];
+
+    (* ------------------------------------------------------------------------ 
        Create finite differencing header file
        ------------------------------------------------------------------------ *)
 
@@ -398,11 +407,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
                  Param         -> param,
                  CaKernel      -> cakernel,
                  Makefile      -> make,
-                 Sources       -> Join[sources,
-                  If[Length[OptionValue[ParameterConditions]] > 0,
-                     {{Filename -> "ParamCheck.cc",
-                      Contents -> ParameterCheckSource[thornName, OptionValue[ParameterConditions]]}},
-                     {}]]};
+                 Sources       -> sources};
     InfoMessage[Terse, "Creating thorn"];
     CreateThorn[thornspec]];
 

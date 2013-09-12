@@ -389,10 +389,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        ------------------------------------------------------------------------ *)
 
     InfoMessage[Terse, "Creating make file"];
-    make = CreateMakefile[Join[{"Startup.cc", "RegisterSymmetries.cc"},
-                               {"RegisterMoL.cc"}, If[Length[OptionValue[ParameterConditions]] > 0, {"ParamCheck.cc"}, {}],
-                               incFilenames,
-                               Map[lookup[#, Filename] &, boundarySources]]];
+    make = CreateMakefile[Sort[Select[lookup[#, Filename] & /@ sources, StringMatchQ[#, "*.cc"] &]]];
 
     (* ------------------------------------------------------------------------ 
        Create thorn

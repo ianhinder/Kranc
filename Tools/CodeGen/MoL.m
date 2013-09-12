@@ -571,6 +571,7 @@ EvolvedGroupToRHSGroup[name_, groups_] :=
     group = SetGroupVariables[group, newVars];
     group = AddGroupTag[group, "Prolongation" -> "None"];
     group = DeleteGroupExtra[group, MoLEvolved];
+    group = group /. (ScheduleTimelevels -> _) :> (ScheduleTimelevels -> "rhs_timelevels");
          
     Return[group]];
 
@@ -616,8 +617,11 @@ DefFn[
     groups2 = Map[If[MemberQ[evolvedGroups, groupName[#]],
                      (* Print["Adding InterfaceTimelevels to ", groupName[#]]; *)
                      AddGroupExtra[
-                       EnsureInterfaceTimelevels[#, evolutionTimelevels],
-                       MoLEvolved -> True],
+                       AddGroupExtra[
+                         EnsureInterfaceTimelevels[#, evolutionTimelevels],
+                         MoLEvolved -> True],
+                       ScheduleTimelevels -> "timelevels"],
+                     (* else *)
                      #] &, groups];
     groups2]];
 

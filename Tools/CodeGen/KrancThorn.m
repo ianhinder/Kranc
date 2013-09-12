@@ -109,7 +109,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     reflectionSymmetries = OptionValue[ReflectionSymmetries];
 
     (* ------------------------------------------------------------------------ 
-       Process calculations for CaKernel
+       CaKernel
        ------------------------------------------------------------------------ *)
 
     (* Make the CaKernel option calculation-specific *)
@@ -121,6 +121,15 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     If[!And@@Map[ListQ, calcs], Print[Short[calcs//InputForm]]; ThrowError["Result of WithHostCalculations is not a list of lists"]];
 
     calcs = Map[Append[#, PartialDerivatives -> partialDerivs] &, calcs];
+
+    If[OptionValue[UseCaKernel],
+       includeFiles = Append[includeFiles, "CaCUDALib_driver_support.h"]];
+
+    If[OptionValue[UseCaKernel],
+       inheritedImplementations = Append[inheritedImplementations, "Accelerator"]];
+
+    (* Add ExecuteOn -> Device to any CaKernel calculation that has no ExecuteOn option *)
+    calcs = Map[If[!lookup[#,UseCaKernel,False], #, If[mapContains[#,ExecuteOn], #, Append[#,ExecuteOn->Device]]] &, calcs];
 
     (* ------------------------------------------------------------------------ 
        Add coordinates group
@@ -150,18 +159,12 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     includeFiles = Join[includeFiles, {"GenericFD.h", "Symmetry.h", "sbp_calc_coeffs.h"}];
 
-    If[OptionValue[UseCaKernel],
-       includeFiles = Append[includeFiles, "CaCUDALib_driver_support.h"]];
-
     (* ------------------------------------------------------------------------ 
        Inherited implementations
        ------------------------------------------------------------------------ *)
 
     inheritedImplementations = Join[inheritedImplementations, {"Grid",
      "GenericFD"}, CactusBoundary`GetInheritedImplementations[]];
-
-    If[OptionValue[UseCaKernel],
-       inheritedImplementations = Append[inheritedImplementations, "Accelerator"]];
 
     (* ------------------------------------------------------------------------ 
        Check input parameters
@@ -260,8 +263,6 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     calcs = Map[Append[#, ODEGroups -> Join[odeGroups, rhsODEGroups]] &, calcs];
 
     calcs = Map[Append[#, Parameters -> AllNumericParameters[parameters]] &, calcs];
-
-    calcs = Map[If[!lookup[#,UseCaKernel,False], #, If[mapContains[#,ExecuteOn], #, Append[#,ExecuteOn->Device]]] &, calcs];
 
     (* ------------------------------------------------------------------------ 
        Split calculations according to SplitVars option

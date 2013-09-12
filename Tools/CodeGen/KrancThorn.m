@@ -178,29 +178,27 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        ------------------------------------------------------------------------ *)
 
     Module[
-      {consCalcsIn, consCalcs, consGroups},
+      {inputConsCalcs, outputConsCalcs, consGroups},
 
-    consCalcsIn = Append[#,Groups -> groups]& /@
-                    OptionValue[ConservationCalculations];
+      inputConsCalcs = Map[Append[#, Groups -> groups] &, OptionValue[ConservationCalculations]];
 
-    (* Add in calculations to solve any conservation laws that have
-       been provided *)
+      outputConsCalcs = 
+      Flatten[
+        Map[
+          ProcessConservationCalculation[#, thornName] &,
+          inputConsCalcs],
+        1];
 
-    consCalcs = Flatten[Map[ProcessConservationCalculation[#,thornName] &,
-                            consCalcsIn],1];
+      outputConsCalcs = Map[Join[#, {PartialDerivatives -> partialDerivs,
+                                     Implementation -> implementation}] &,
+                            outputConsCalcs];
 
-    consCalcs = Map[Join[#, {PartialDerivatives -> partialDerivs,
-                             Implementation -> implementation}] &, consCalcs];
-
-    calcs = Join[calcs,consCalcs];
-    (* Print["consCalcs = ", consCalcs]; *)
-
-    consGroups = Union@Flatten[
-      Map[ConservationCalculationDeclaredGroups, consCalcsIn],1];
-
-    groups = Join[groups, consGroups];
-
-    declaredGroups = Join[declaredGroups, Map[groupName, consGroups]]];
+      consGroups = Union@Flatten[
+        Map[ConservationCalculationDeclaredGroups, inputConsCalcs],1];
+      
+      calcs = Join[calcs,outputConsCalcs];
+      groups = Join[groups, consGroups];
+      declaredGroups = Join[declaredGroups, Map[groupName, consGroups]]];
 
     (* ------------------------------------------------------------------------ 
        ODEs

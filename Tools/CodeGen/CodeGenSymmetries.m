@@ -60,20 +60,6 @@ DefFn[
        Print["WARNING: defaulting to symmetries of a scalar for "<>ToString[gf]];
        Return[{1,1,1}]]]];
 
-
-(* This function guesses the symmetries based on component names as we
-   have not been given them *)
-DefFn[
-  calcSymmetry[gf_] :=
-  Module[
-    {sym = {1,1,1} (* default *), q, string},
-    string = ToString@gf;
-    While[
-      IntegerQ[q = ToExpression@StringTake[string, -1]],
-      sym[[q]] = -sym[[q]];
-      string = StringDrop[string, -1]];
-    sym]];
-
 (* Given a symmetries registration structure as defined above, return a
    C CodeGen structure of a source file which will register the symmetries. *)
 DefFn[
@@ -87,10 +73,7 @@ DefFn[
     CodeGenC`SOURCELANGUAGE = "C";
 
     spec = Map[{FullName -> implementationName <> "::" <> ToString@#,
-                Sym      -> If[reflectionSymmetries === False,
-                                 calcSymmetry[#],
-                                 calcSymmetry[#, Union@reflectionSymmetries]]} &,
-                 GFs];
+                Sym      -> calcSymmetry[#, Union@reflectionSymmetries]} &, GFs];
 
     tmp = {FileHeader["C"],
            

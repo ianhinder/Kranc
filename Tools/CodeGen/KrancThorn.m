@@ -288,15 +288,13 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     AppendTo[includeFiles, "Symmetry.h"];
 
-    Module[{allGFs = Join[variablesFromGroups[evolvedGroups, groups],
-                          variablesFromGroups[nonevolvedGroups, groups]]},
-      InfoMessage[Terse, "Creating symmetry registration file"];
-      AppendTo[
-        sources,
-        {Filename -> "RegisterSymmetries.cc",
-         Contents -> CreateSymmetriesRegistrationSource[
-           thornName, implementation, 
-           declaredGroups, groups, allGFs, OptionValue[ReflectionSymmetries], False]}]];
+    InfoMessage[Terse, "Creating symmetry registration file"];
+    AppendTo[
+      sources,
+      {Filename -> "RegisterSymmetries.cc",
+       Contents -> CreateSymmetriesRegistrationSource[
+         thornName, implementation, 
+         declaredGroups, groups, OptionValue[ReflectionSymmetries], False]}];
 
     (* ------------------------------------------------------------------------ 
        Startup source file

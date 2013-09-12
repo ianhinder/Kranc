@@ -64,10 +64,10 @@ DefFn[
    C CodeGen structure of a source file which will register the symmetries. *)
 DefFn[
   CreateSymmetriesRegistrationSource[thornName_String, implementationName_String,
-                                     declaredGroups_List, groups_List, GFs_List,
+                                     declaredGroups_List, groups_List,
                                      reflectionSymmetries_List, debug:(True|False)] :=
   Module[
-    {spec, j, lang, tmp, GFs2, nonRHSGroups},
+    {spec, j, lang, tmp, GFs, nonRHSGroups},
 
     If[debug, Print["Registering Symmetries for: ", GFs]];
 
@@ -85,16 +85,10 @@ DefFn[
                                     GridType,
                                     "gf"] === "array")) &];
     
-    GFs2 = variablesFromGroups[nonRHSGroups, groups];
-    
-    If[Union[GFs2] =!= Union[GFs],
-       Print["GFs don't match"];
-       Print["GFs = ", Union[GFs]];
-       Print["GFs2 = ", Union[GFs2]];
-       Quit[1]];
+    GFs = variablesFromGroups[nonRHSGroups, groups];
 
     spec = Map[{FullName -> implementationName <> "::" <> ToString@#,
-                Sym      -> calcSymmetry[#, Union@reflectionSymmetries]} &, GFs2];
+                Sym      -> calcSymmetry[#, Union@reflectionSymmetries]} &, GFs];
 
     tmp = {FileHeader["C"],
            

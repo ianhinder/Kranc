@@ -86,11 +86,11 @@ DefFn[
     lang = CodeGenC`SOURCELANGUAGE;
     CodeGenC`SOURCELANGUAGE = "C";
 
-    spec = Table[{FullName -> implementationName <> "::" <> ToString@GFs[[j]],
-                  Sym      -> If[reflectionSymmetries === False,
-                                 calcSymmetry[GFs[[j]]],
-                                 calcSymmetry[GFs[[j]], Union@reflectionSymmetries]]},
-                 {j, 1, Length@GFs}];
+    spec = Map[{FullName -> implementationName <> "::" <> ToString@#,
+                Sym      -> If[reflectionSymmetries === False,
+                                 calcSymmetry[#],
+                                 calcSymmetry[#, Union@reflectionSymmetries]]} &,
+                 GFs];
 
     tmp = {FileHeader["C"],
            

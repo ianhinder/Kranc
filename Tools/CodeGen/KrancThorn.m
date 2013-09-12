@@ -95,6 +95,12 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     partialDerivs = OptionValue[PartialDerivatives];
 
     (* ------------------------------------------------------------------------ 
+       Add required include files
+       ------------------------------------------------------------------------ *)
+
+    includeFiles = Join[includeFiles, {"GenericFD.h"}];
+
+    (* ------------------------------------------------------------------------ 
        Add conservation differencing operators to partialDerivs
        ------------------------------------------------------------------------ *)
 
@@ -164,12 +170,6 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        ------------------------------------------------------------------------ *)
 
     groups = DeleteDuplicates[Join[groups, Flatten[Map[lookup[#,LocalGroups,{}] &, calcs],1]]];
-
-    (* ------------------------------------------------------------------------ 
-       Add include files
-       ------------------------------------------------------------------------ *)
-
-    includeFiles = Join[includeFiles, {"GenericFD.h"}];
 
     (* ------------------------------------------------------------------------ 
        Inherited implementations

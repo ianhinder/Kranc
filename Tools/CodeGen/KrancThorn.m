@@ -153,6 +153,13 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     calcs = SeparateDerivatives[calcs];
 
     (* ------------------------------------------------------------------------ 
+       SummationByParts thorn
+       ------------------------------------------------------------------------ *)
+
+    If[Cases[{pddefs}, SBPDerivative[_], Infinity] != {},
+       AppendTo[includeFiles, "sbp_calc_coeffs.h"]];
+
+    (* ------------------------------------------------------------------------ 
        Add groups defined in calculations to thorn groups
        ------------------------------------------------------------------------ *)
 
@@ -162,7 +169,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        Add include files
        ------------------------------------------------------------------------ *)
 
-    includeFiles = Join[includeFiles, {"GenericFD.h", "sbp_calc_coeffs.h"}];
+    includeFiles = Join[includeFiles, {"GenericFD.h"}];
 
     (* ------------------------------------------------------------------------ 
        Inherited implementations

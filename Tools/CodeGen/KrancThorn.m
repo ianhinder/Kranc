@@ -73,7 +73,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     evolvedODEGroupDefinitions, rhsODEGroups,
     boundarySources, reflectionSymmetries,
     pDefs, consCalcs, consCalcsIn, consGroups, cakernel,
-    hostCals, deviceCalcs, incFilenames, sources = {}},
+    hostCals, deviceCalcs, sources = {}},
 
     InfoMessage[Terse, "Processing arguments to CreateKrancThorn"];
 
@@ -381,8 +381,6 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
                          Contents -> CaKernelCode[#,opts]} &,
                         deviceCalcs];
     sources = Join[sources, deviceSources];
-
-    incFilenames = Map[lookup[#, Name] <> ext &, hostCalcs];
 
     (* ------------------------------------------------------------------------ 
        Create Makefile

@@ -73,7 +73,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     evolvedODEGroupDefinitions, rhsODEGroups,
     boundarySources, reflectionSymmetries,
     pDefs, consCalcs, consCalcsIn, consGroups, cakernel,
-    hostCals, deviceCalcs, sources = {}},
+    sources = {}},
 
     InfoMessage[Terse, "Processing arguments to CreateKrancThorn"];
 
@@ -366,21 +366,17 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        Create calculation source files
        ------------------------------------------------------------------------ *)
 
-    ext = CodeGenC`SOURCESUFFIX;
-
     InfoMessage[Terse, "Creating calculation source files"];
 
-    hostCalcs = Select[calcs, !CalculationOnDevice[#] &];
-    hostSources = Map[{Filename -> lookup[#, Name] <> ext,
-                       Contents -> CreateSetterSource[{#}, False, {}, opts]} &,
-                      hostCalcs];
-    sources = Join[sources, hostSources];
+    sources = Join[sources,
+                   Map[{Filename -> lookup[#, Name] <> ".cc",
+                        Contents -> CreateSetterSource[{#}, False, {}, opts]} &,
+                       Select[calcs, !CalculationOnDevice[#] &]]];
 
-    deviceCalcs = Select[calcs, CalculationOnDevice];
-    deviceSources = Map[{Filename -> "CaKernel__"<>lookup[#, Name] <> ".code",
-                         Contents -> CaKernelCode[#,opts]} &,
-                        deviceCalcs];
-    sources = Join[sources, deviceSources];
+    sources = Join[sources,
+                   Map[{Filename -> "CaKernel__"<>lookup[#, Name] <> ".code",
+                        Contents -> CaKernelCode[#,opts]} &,
+                       Select[calcs, CalculationOnDevice]]];
 
     (* ------------------------------------------------------------------------ 
        Create Makefile

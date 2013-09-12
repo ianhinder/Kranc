@@ -231,9 +231,6 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
       (* Add the RHS groups *)
       groups = Join[groups, rhsGroupDefinitions, rhsODEGroupDefinitions];
 
-      (* Add the groups into the calcs *)
-      calcs = Map[Join[#, {Groups -> groups}] &, calcs];
-
       rhsGroups = Map[groupName, rhsGroupDefinitions];
       rhsODEGroups = Map[groupName, rhsODEGroupDefinitions]];
 
@@ -250,20 +247,22 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
          nonevolvedODEGroups, groups, implementation, thornName]}];
 
     (* ------------------------------------------------------------------------ 
-       Split calculations
-       ------------------------------------------------------------------------ *)
-
-    calcs = SplitCalculations[calcs];
-
-    (* ------------------------------------------------------------------------ 
        Add options to calculations
        ------------------------------------------------------------------------ *)
+
+    calcs = Map[Join[#, {Groups -> groups}] &, calcs];
 
     calcs = Map[Append[#, ODEGroups -> Join[odeGroups, rhsODEGroups]] &, calcs];
 
     calcs = Map[Append[#, Parameters -> AllNumericParameters[parameters]] &, calcs];
 
     calcs = Map[If[!lookup[#,UseCaKernel,False], #, If[mapContains[#,ExecuteOn], #, Append[#,ExecuteOn->Device]]] &, calcs];
+
+    (* ------------------------------------------------------------------------ 
+       Split calculations according to SplitVars option
+       ------------------------------------------------------------------------ *)
+
+    calcs = SplitCalculations[calcs];
 
     (* ------------------------------------------------------------------------ 
        Startup source file

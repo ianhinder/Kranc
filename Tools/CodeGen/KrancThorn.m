@@ -68,10 +68,10 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     parameters,
     configuration,
     partialDerivs, evolvedGroups, rhsGroups, nonevolvedGroups,
-    interface, evolvedGroupDefinitions, thornspec,
+    interface, evolvedGroupDefinitions,
     evolvedODEGroups, nonevolvedODEGroups,
     evolvedODEGroupDefinitions, rhsODEGroups,
-    consCalcs, consCalcsIn, consGroups, cakernel,
+    cakernel,
     sources = {}},
 
     InfoMessage[Terse, "Processing arguments to CreateKrancThorn"];
@@ -406,17 +406,20 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        ------------------------------------------------------------------------ *)
 
     (* Put all the above together and generate the Cactus thorn *)
-    thornspec = {Name          -> thornName, 
-                 Directory     -> parentDirectory,
-                 Configuration -> configuration,
-	         Interface     -> interface, 
-                 Schedule      -> schedule, 
-                 Param         -> param,
-                 CaKernel      -> cakernel,
-                 Makefile      -> make,
-                 Sources       -> sources};
-    InfoMessage[Terse, "Creating thorn"];
-    CreateThorn[thornspec]];
+
+    Module[
+      {thornspec},
+      thornspec = {Name          -> thornName, 
+                   Directory     -> parentDirectory,
+                   Configuration -> configuration,
+                   Interface     -> interface, 
+                   Schedule      -> schedule, 
+                   Param         -> param,
+                   CaKernel      -> cakernel,
+                   Makefile      -> make,
+                   Sources       -> sources};
+      InfoMessage[Terse, "Creating thorn"];
+      CreateThorn[thornspec]]];
 
 End[];
 EndPackage[];

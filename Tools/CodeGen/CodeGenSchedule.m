@@ -70,13 +70,8 @@ groupStorage[spec_] :=
       IntegerQ[tls],
       {"STORAGE: ", group, "[", tls, "]\n"},
 
-      ListQ[tls],
-      If[!MatchQ[tls, {_String, _Integer}],
-         Error["Unrecognized Timelevels value "<>ToString[tls]]];
-      Module[
-        {param,max},
-        {param,max} = tls;
-        {"STORAGE: ", group, "[", param, "]\n"}],
+      StringQ[tls],
+      {"STORAGE: ", group, "[", tls, "]\n"},
 
       True, Error["Unrecognized Timelevels value "<>ToString[tls]]]];
 

@@ -34,12 +34,12 @@ Begin["`Private`"];
 (* Symmetries registration spec = {FullName -> "impl::GFname", 
                                     Sym      -> {symX, symY, symZ}} *)
 
-SymmetriesBlock[spec_] :=
+symmetriesBlock[spec_] :=
 
   Module[{i, KrancDim},
 
   If[!MatchQ[spec, {FullName -> _String, Sym -> {_,_,_}}],
-    ThrowError["SymmetriesBlock: Expecting a symmetry registration spec but got ", spec]];
+    ThrowError["symmetriesBlock: Expecting a symmetry registration spec but got ", spec]];
 
   KrancDim = 3;
 
@@ -119,7 +119,7 @@ CreateSymmetriesRegistrationSource[thornName_, implementationName_, GFs_, reflec
 
       CommentedBlock["Register symmetries of grid functions",
 
-      Map[SymmetriesBlock, spec]]},
+      Map[symmetriesBlock, spec]]},
      {}]
 ]
   };

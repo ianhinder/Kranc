@@ -331,21 +331,21 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        Create finite differencing header file
        ------------------------------------------------------------------------ *)
 
-    InfoMessage[Terse, "Creating differencing header file"];
-    {pDefs, diffHeader} = CreateDifferencingHeader[partialDerivs, OptionValue[ZeroDimensions], OptionValue[UseVectors], OptionValue[IntParameters]];
-    diffHeader = Join[
+    Module[
+      {diffHeader},
+      InfoMessage[Terse, "Creating differencing header file"];
+      {pDefs, diffHeader} = CreateDifferencingHeader[
+        partialDerivs, OptionValue[ZeroDimensions],
+        OptionValue[UseVectors], OptionValue[IntParameters]];
+      diffHeader = Join[
         If[OptionValue[UseVectors] && ! OptionValue[UseOpenCL],
            {"#include <assert.h>\n",
             "#include \"vectors.h\"\n",
             "\n"},
            {}],
         diffHeader];
-
-    (* ------------------------------------------------------------------------ 
-       Process finite differencing header file for OpenCL
-       ------------------------------------------------------------------------ *)
-
-    If[OptionValue[UseOpenCL], diffHeader = OpenCLProcessDifferencingHeader[diffHeader]];
+      If[OptionValue[UseOpenCL], diffHeader = OpenCLProcessDifferencingHeader[diffHeader]];
+      AppendTo[sources, {Filename -> "Differencing.h", Contents -> diffHeader}]];
 
     (* ------------------------------------------------------------------------ 
        Add predefinitions to calculations
@@ -395,8 +395,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
                  Param         -> param,
                  CaKernel      -> cakernel,
                  Makefile      -> make,
-                 Sources       -> Join[sources, {
-                  {Filename -> "Differencing.h", Contents -> diffHeader}},
+                 Sources       -> Join[sources,
                   MapThread[{Filename -> #1, Contents -> #2} &, 
                             {calcFilenames, calcSources}],
                   If[Length[OptionValue[ParameterConditions]] > 0,

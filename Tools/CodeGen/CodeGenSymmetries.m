@@ -63,7 +63,8 @@ DefFn[
 (* Given a symmetries registration structure as defined above, return a
    C CodeGen structure of a source file which will register the symmetries. *)
 DefFn[
-  CreateSymmetriesRegistrationSource[thornName_, implementationName_, GFs_, reflectionSymmetries_, debug_] :=
+  CreateSymmetriesRegistrationSource[thornName_String, implementationName_String, GFs_List,
+                                     reflectionSymmetries_List, debug:(True|False)] :=
   Module[
     {spec, j, lang, tmp},
 

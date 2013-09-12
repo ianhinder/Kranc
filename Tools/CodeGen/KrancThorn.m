@@ -320,8 +320,12 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     Module[{allGFs = Join[variablesFromGroups[evolvedGroups, groups],
                           variablesFromGroups[nonevolvedGroups, groups]]},
       InfoMessage[Terse, "Creating symmetry registration file"];
-      symregister = CreateSymmetriesRegistrationSource[thornName, implementation, 
-        allGFs, reflectionSymmetries, False]];
+      AppendTo[
+        sources,
+        {Filename -> "RegisterSymmetries.cc",
+         Contents -> CreateSymmetriesRegistrationSource[
+           thornName, implementation, 
+           allGFs, reflectionSymmetries, False]}]];
 
     (* ------------------------------------------------------------------------ 
        Create finite differencing header file
@@ -392,7 +396,6 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
                  CaKernel      -> cakernel,
                  Makefile      -> make,
                  Sources       -> Join[sources, {
-                  {Filename -> "RegisterSymmetries.cc", Contents -> symregister},
                   {Filename -> "Differencing.h", Contents -> diffHeader}},
                   MapThread[{Filename -> #1, Contents -> #2} &, 
                             {calcFilenames, calcSources}],

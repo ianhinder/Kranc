@@ -572,6 +572,7 @@ EvolvedGroupToRHSGroup[name_, groups_] :=
     group = AddGroupTag[group, "Prolongation" -> "None"];
     group = DeleteGroupExtra[group, MoLEvolved];
     group = group /. (ScheduleTimelevels -> _) :> (ScheduleTimelevels -> "rhs_timelevels");
+    group = AddGroupExtra[group, MoLRHS -> "True"];
          
     Return[group]];
 

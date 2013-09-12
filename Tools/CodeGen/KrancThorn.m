@@ -362,13 +362,16 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     InfoMessage[Terse, "Creating calculation source files"];
 
     hostCalcs = Select[calcs, !CalculationOnDevice[#] &];
+    hostSources = Map[{Filename -> lookup[#, Name] <> ext,
+                       Contents -> CreateSetterSource[{#}, False, {}, opts]} &,
+                      hostCalcs];
+    sources = Join[sources, hostSources];
+
     deviceCalcs = Select[calcs, CalculationOnDevice];
-
-    calcSources = Join[Map[CreateSetterSource[{#}, False, {}, opts] &, hostCalcs],
-                       Map[CaKernelCode[#,opts] &, deviceCalcs]];
-
-    calcFilenames = Join[Map[lookup[#, Name] <> ext &, hostCalcs],
-                         Map["CaKernel__"<>lookup[#, Name] <> ".code" &, deviceCalcs]];
+    deviceSources = Map[{Filename -> "CaKernel__"<>lookup[#, Name] <> ".code",
+                         Contents -> CaKernelCode[#,opts]} &,
+                        deviceCalcs];
+    sources = Join[sources, deviceSources];
 
     incFilenames = Map[lookup[#, Name] <> ext &, hostCalcs];
 
@@ -396,8 +399,6 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
                  CaKernel      -> cakernel,
                  Makefile      -> make,
                  Sources       -> Join[sources,
-                  MapThread[{Filename -> #1, Contents -> #2} &, 
-                            {calcFilenames, calcSources}],
                   If[Length[OptionValue[ParameterConditions]] > 0,
                      {{Filename -> "ParamCheck.cc",
                       Contents -> ParameterCheckSource[thornName, OptionValue[ParameterConditions]]}},

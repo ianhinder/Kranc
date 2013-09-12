@@ -236,7 +236,7 @@ scheduleCalc[calc_, groups_, thornName_, OptionsPattern[]] :=
 Options[CreateKrancScheduleFile] = ThornOptions;
 CreateKrancScheduleFile[calcs_, groups_, declaredGroups_, evolvedGroups_, rhsGroups_, nonevolvedGroups_, thornName_, 
                         evolutionTimelevels_, opts:OptionsPattern[]] :=
-  Module[{scheduledCalcs, scheduledStartup, scheduleMoLRegister, globalStorageGroups, scheduledFunctions, schedule, allParams, calcGroups},
+  Module[{scheduledCalcs, scheduledStartup, scheduleMoLRegister, globalStorageGroups, scheduledFunctions, schedule, allParams, calcGroups, scheduleTimelevels},
 
     scheduledCalcs = Flatten[Map[scheduleCalc[#, groups, thornName, opts] &, calcs], 1];
     scheduledStartup = 
@@ -285,6 +285,27 @@ CreateKrancScheduleFile[calcs_, groups_, declaredGroups_, evolvedGroups_, rhsGro
         Map[storageStructure[#, "rhs_timelevels"] &,
             rhsGroups]];
 
+    scheduleTimelevels[gn_] :=
+      Module[
+        {groupDef, extras},
+        groupDef = groupFromName[gn, groups];
+        extras = GroupExtras[groupDef];
+        lookup[extras, ScheduleTimelevels, 
+               (* Nonevolved groups do not have a ScheduleTimelevels
+                  extra; we use this old code for now *)
+                 (* Number of timelevels requested for this group, or 1 if no request made *)
+                 If[NonevolvedTimelevels[groupDef]===1,
+                    "other_timelevels",
+                    "timelevels"]]];
+
+    globalStorageGroups2 = Map[storageStructure[#, scheduleTimelevels[#]] &, declaredGroups];
+
+    If[Union@globalStorageGroups2 =!= Union@globalStorageGroups,
+       Print["Global storage groups differ:"];
+       Print["globalStorageGroups = ", Union@globalStorageGroups];
+       Print["globalStorageGroups2 = ", Union@globalStorageGroups2];
+       Quit[1]];
+
     (* Schedule groups defined in calculations *)
     calcGroups = Union[Flatten[Map[lookup[#, ScheduleGroups, {}] &, calcs],1]];
 
@@ -299,7 +320,7 @@ CreateKrancScheduleFile[calcs_, groups_, declaredGroups_, evolvedGroups_, rhsGro
        scheduledFunctions = Join[scheduledFunctions, CaKernelSchedule[thornName]]];
 
     allParams = Union@@((lookup[#,Parameters] &) /@ calcs);
-    schedule = CreateSchedule[globalStorageGroups, 
+    schedule = CreateSchedule[globalStorageGroups2, 
       Join[CactusBoundary`GetScheduledGroups[thornName], calcGroups], scheduledFunctions, allParams];
 
     Return[schedule]];

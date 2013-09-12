@@ -82,13 +82,6 @@ Module[{},
 sym
 ];
 
-(* Compatibility function to be called by KrancThorns because it
-   doesn't understand reflection symmetries *)
-CreateSymmetriesRegistrationSource[thornName_, implementationName_, GFs_, debug_] :=
-  CreateSymmetriesRegistrationSource[thornName, implementationName, GFs, False, debug];
-
-
-
 (* Given a symmetries registration structure as defined above, return a
    C CodeGen structure of a source file which will register the symmetries. *)
 CreateSymmetriesRegistrationSource[thornName_, implementationName_, GFs_, reflectionSymmetries_, debug_] :=

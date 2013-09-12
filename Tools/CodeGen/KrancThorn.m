@@ -161,9 +161,11 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     If[OptionValue[UseCaKernel],
        inheritedImplementations = Append[inheritedImplementations, "Accelerator"]];
 
-    InfoMessage[Terse, "Verifying arguments"];
+    (* ------------------------------------------------------------------------ 
+       Check input parameters
+       ------------------------------------------------------------------------ *)
 
-    (* Check parameters *)
+    InfoMessage[Terse, "Verifying arguments"];
     VerifyGroups[groups];
     VerifyString[parentDirectory];
     VerifyString[thornName];

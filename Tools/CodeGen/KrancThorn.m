@@ -307,12 +307,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        Create Boundary source files
        ------------------------------------------------------------------------ *)
 
-    c = JoinObjectField[
-      c, "Sources",
-      CactusBoundary`GetSources[
-        Sequence@@
-        (GetObjectField[c,#]& /@
-         {"DeclaredGroups", "Groups", "Implementation", "Name"})]];
+    c = CactusBoundaryProcessCode[c, opts];
 
     (* ------------------------------------------------------------------------ 
        Add parameter check source file

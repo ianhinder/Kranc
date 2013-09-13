@@ -33,7 +33,8 @@
     *)
 
 BeginPackage["CactusBoundary`", {"CodeGen`", "Thorn`",
- "MapLookup`", "KrancGroups`", "Errors`", "Helpers`", "Kranc`", "MoL`"}];
+ "MapLookup`", "KrancGroups`", "Errors`", "Helpers`", "Kranc`", "MoL`",
+ "Code`", "Object`"}];
 
 GetInheritedImplementations::usage = "";
 GetIncludeFiles::usage = "";
@@ -42,6 +43,7 @@ GetScheduledGroups::usage = "";
 GetScheduledFunctions::usage = "";
 GetParameters::usage = "";
 GetSources::usage = "";
+CactusBoundaryProcessCode;
 
 Begin["`Private`"];
 
@@ -183,6 +185,19 @@ GetSources[declaredGroups_, groups_, implementation_, thornName_] :=
 
     Return[{{Filename -> "Boundaries.cc", 
              Contents -> CreateMoLBoundariesSource[boundarySpec]}}]];
+
+DefFn[
+  CactusBoundaryProcessCode[cIn_Code, opts___] :=
+  Module[
+    {c = cIn},
+
+    c = JoinObjectField[
+      c, "Sources",
+      CactusBoundary`GetSources[
+        Sequence@@
+        (GetObjectField[c,#]& /@
+         {"DeclaredGroups", "Groups", "Implementation", "Name"})]];
+    c]];
 
 End[];
 EndPackage[];

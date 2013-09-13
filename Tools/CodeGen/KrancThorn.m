@@ -105,7 +105,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
                          "IncludeFiles" -> includeFiles,
                          "EvolutionTimelevels" -> evolutionTimelevels,
                          "DefaultEvolutionTimelevels" -> defaultEvolutionTimelevels,
-                         "PartialDerivatives" -> partialDerivs}];
+                         "PartialDerivatives" -> partialDerivs,
+                         "Sources" -> {}}];
 
     (* ------------------------------------------------------------------------ 
        Add required include files
@@ -203,33 +204,27 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
                             Flatten[Map[lookup[#,LocalGroups,{}] &,
                                         GetObjectField[c, "Calculations"]],1]]]];
 
-    includeFiles = GetObjectField[c, "IncludeFiles"];
-    partialDerivs = GetObjectField[c, "PartialDerivatives"];
-    parameters = GetObjectField[c, "Parameters"];
-    calcs = GetObjectField[c, "Calculations"];
-    inheritedImplementations = GetObjectField[c, "InheritedImplementations"];
-    groups = GetObjectField[c, "Groups"];
-
     (* ------------------------------------------------------------------------ 
        Inherited implementations
        ------------------------------------------------------------------------ *)
 
-    inheritedImplementations = Join[inheritedImplementations, {"Grid",
-     "GenericFD"}, CactusBoundary`GetInheritedImplementations[]];
+    c = JoinObjectField[c, "InheritedImplementations",
+                        Join[{"Grid", "GenericFD"},
+                             CactusBoundary`GetInheritedImplementations[]]];
 
     (* ------------------------------------------------------------------------ 
        Check input parameters
        ------------------------------------------------------------------------ *)
 
     InfoMessage[Terse, "Verifying arguments"];
-    VerifyGroups[groups];
+    VerifyGroups[GetObjectField[c, "Groups"]];
     VerifyString[parentDirectory];
-    VerifyString[thornName];
-    VerifyString[implementation];
-    VerifyGroupNames[declaredGroups];
-    VerifyGroupNames[odeGroups];
+    VerifyString[GetObjectField[c, "Name"]];
+    VerifyString[GetObjectField[c, "Implementation"]];
+    VerifyGroupNames[GetObjectField[c, "DeclaredGroups"]];
+    VerifyGroupNames[GetObjectField[c, "ODEGroups"]];
 
-    If[OptionValue[UseJacobian], JacobianCheckGroups[groups]];
+    If[OptionValue[UseJacobian], JacobianCheckGroups[GetObjectField[c, "Groups"]]];
 
     (* ------------------------------------------------------------------------ 
        Conservation Calculations
@@ -238,33 +233,41 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     Module[
       {inputConsCalcs, outputConsCalcs, consGroups},
 
-      inputConsCalcs = Map[Append[#, Groups -> groups] &, OptionValue[ConservationCalculations]];
+      inputConsCalcs = Map[Append[#, Groups -> GetObjectField[c, "Groups"]] &,
+                           OptionValue[ConservationCalculations]];
 
       outputConsCalcs = 
       Flatten[
         Map[
-          ProcessConservationCalculation[#, thornName] &,
+          ProcessConservationCalculation[#, GetObjectField[c, "Name"]] &,
           inputConsCalcs],
         1];
 
-      outputConsCalcs = Map[Join[#, {PartialDerivatives -> partialDerivs,
-                                     Implementation -> implementation}] &,
-                            outputConsCalcs];
+      outputConsCalcs =
+      Map[Join[#, {PartialDerivatives -> GetObjectField[c, "PartialDerivatives"],
+                   Implementation -> GetObjectField[c, "Implementation"]}] &,
+          outputConsCalcs];
 
       consGroups = Union@Flatten[
         Map[ConservationCalculationDeclaredGroups, inputConsCalcs],1];
       
-      calcs = Join[calcs,outputConsCalcs];
-      groups = Join[groups, consGroups];
-      declaredGroups = Join[declaredGroups, Map[groupName, consGroups]]];
+      c = JoinObjectField[c, "Calculations", outputConsCalcs];
+      c = JoinObjectField[c, "Groups", consGroups];
+      c = JoinObjectField[c, "DeclaredGroups", Map[groupName, consGroups]]];
+
 
     (* ------------------------------------------------------------------------ 
        ODEs
        ------------------------------------------------------------------------ *)
 
-    groups = processODEGroups[odeGroups, groups];
+    c = SetObjectField[c, "Groups", processODEGroups[GetObjectField[c, "ODEGroups"],
+                                                     GetObjectField[c, "Groups"]]];
 
-    declaredGroups = DeleteDuplicates[Join[declaredGroups, Flatten[Map[Map[groupName,lookup[#,LocalGroups,{}]] &, calcs],1]]];
+    c = SetObjectField[
+      c, "DeclaredGroups", 
+      DeleteDuplicates[Join[GetObjectField[c, "DeclaredGroups"],
+                            Flatten[Map[Map[groupName,lookup[#,LocalGroups,{}]] &,
+                                        GetObjectField[c, "Calculations"]],1]]]];
 
     (* ------------------------------------------------------------------------ 
        MoL
@@ -273,10 +276,17 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     Module[
       {evolvedGroups, nonevolvedGroups, evolvedODEGroups,
        nonevolvedODEGroups, rhsGroupDefinitions,
-       rhsODEGroupDefinitions, rhsGroups, rhsODEGroups},
+       rhsODEGroupDefinitions, rhsGroups, rhsODEGroups,
+
+       groups, declaredGroups, calcs, odeGroups},
+
+    groups = GetObjectField[c, "Groups"];
+    declaredGroups = GetObjectField[c, "DeclaredGroups"];
+    calcs = GetObjectField[c, "Calculations"];
+    odeGroups = GetObjectField[c, "ODEGroups"];
 
     groups = MoLProcessGroups[declaredGroups,
-                              calcs, groups, evolutionTimelevels];
+                              calcs, groups, GetObjectField[c,"EvolutionTimelevels"]];
 
     (* Get the different types of group *)
     evolvedGroups = MoLEvolvedGroups[declaredGroups, calcs, groups];
@@ -305,8 +315,11 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     InfoMessage[Terse, "Creating MoL registration file"];
     (* TODO: only do this for thorns with evolved variables *)
 
-    AppendTo[
-      sources, 
+    c = SetObjectField[c, "Groups", groups];
+    c = SetObjectField[c, "DeclaredGroups", declaredGroups];
+    c = SetObjectField[c, "Calculations", calcs];
+    c = AppendObjectField[
+      c, "Sources",
       {Filename -> "RegisterMoL.cc",
        Contents -> CreateKrancMoLRegister[
          evolvedGroups, nonevolvedGroups, evolvedODEGroups,
@@ -316,9 +329,23 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        Add options to calculations
        ------------------------------------------------------------------------ *)
 
-    calcs = Map[Join[#, {Groups -> groups}] &, calcs];
+    c = SetObjectField[c, "Calculations", 
+                       Map[Join[#, {Groups -> GetObjectField[c, "Groups"]}] &,
+                           GetObjectField[c, "Calculations"]]];
 
-    calcs = Map[Append[#, Parameters -> AllNumericParameters[parameters]] &, calcs];
+    c = SetObjectField[
+      c, "Calculations", 
+      Map[Append[#, Parameters -> AllNumericParameters[GetObjectField[c, "Parameters"]]] &,
+          GetObjectField[c, "Calculations"]]];
+
+    includeFiles = GetObjectField[c, "IncludeFiles"];
+    partialDerivs = GetObjectField[c, "PartialDerivatives"];
+    parameters = GetObjectField[c, "Parameters"];
+    calcs = GetObjectField[c, "Calculations"];
+    inheritedImplementations = GetObjectField[c, "InheritedImplementations"];
+    groups = GetObjectField[c, "Groups"];
+    declaredGroups = GetObjectField[c, "DeclaredGroups"];
+    sources = GetObjectField[c, "Sources"];
 
     (* ------------------------------------------------------------------------ 
        Split calculations according to SplitVars option

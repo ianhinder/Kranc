@@ -62,18 +62,7 @@ DefFn[
 Options[CreateKrancThorn] = ThornOptions;
 
 CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[]] :=
-  Module[{calcs, declaredGroups, odeGroups, implementation,
-    inheritedImplementations, includeFiles,
-    evolutionTimelevels, defaultEvolutionTimelevels,
-    parameters,
-    configuration,
-    partialDerivs, evolvedGroups, rhsGroups, nonevolvedGroups,
-    interface, evolvedGroupDefinitions,
-    evolvedODEGroups, nonevolvedODEGroups,
-    evolvedODEGroupDefinitions, rhsODEGroups,
-    cakernel,
-    sources = {},
-    c},
+  Module[{configuration, interface, schedule, param, make, cakernel, c},
 
     InfoMessage[Terse, "Processing arguments to CreateKrancThorn"];
 
@@ -83,30 +72,23 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     cktCheckNamedArgs[{opts}];
 
-    calcs = OptionValue[Calculations];
-    declaredGroups = OptionValue[DeclaredGroups];
-    odeGroups = OptionValue[ODEGroups];
-    implementation = If[OptionValue[Implementation] =!= None,
-                        OptionValue[Implementation],
-                        thornName];
-    inheritedImplementations = OptionValue[InheritedImplementations];
-    includeFiles = OptionValue[IncludeFiles];
-    evolutionTimelevels = OptionValue[EvolutionTimelevels]; (* Redundant *)
-    defaultEvolutionTimelevels = lookupDefault[{opts}, DefaultEvolutionTimelevels, evolutionTimelevels];
-    partialDerivs = OptionValue[PartialDerivatives];
-
-    c = NewObject[Code, {"Name" -> thornName,
-                         "Groups" -> groupsOrig,
-                         "DeclaredGroups" -> declaredGroups,
-                         "Calculations" -> calcs,
-                         "ODEGroups" -> odeGroups,
-                         "Implementation" -> implementation,
-                         "InheritedImplementations" -> inheritedImplementations,
-                         "IncludeFiles" -> includeFiles,
-                         "EvolutionTimelevels" -> evolutionTimelevels,
-                         "DefaultEvolutionTimelevels" -> defaultEvolutionTimelevels,
-                         "PartialDerivatives" -> partialDerivs,
-                         "Sources" -> {}}];
+    c = NewObject[
+      Code, 
+      {"Name" -> thornName,
+       "Groups" -> groupsOrig,
+       "DeclaredGroups" -> OptionValue[DeclaredGroups],
+       "Calculations" -> OptionValue[Calculations],
+       "ODEGroups" -> OptionValue[ODEGroups],
+       "Implementation" -> If[OptionValue[Implementation] =!= None,
+                              OptionValue[Implementation],
+                              thornName],
+       "InheritedImplementations" -> OptionValue[InheritedImplementations],
+       "IncludeFiles" -> OptionValue[IncludeFiles],
+       "EvolutionTimelevels" -> OptionValue[EvolutionTimelevels],
+       "DefaultEvolutionTimelevels" -> lookupDefault[{opts}, DefaultEvolutionTimelevels,
+                                                     OptionValue[EvolutionTimelevels]],
+       "PartialDerivatives" -> OptionValue[PartialDerivatives],
+       "Sources" -> {}}];
 
     (* ------------------------------------------------------------------------ 
        Add required include files
@@ -135,8 +117,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
       {calcs = GetObjectField[c, "Calculations"]},
 
       calcs = Map[mapReplaceAdd[#, Shorthands, Join[lookup[#,Shorthands,{}],OptionValue[Shorthands]]] &, calcs];
-      calcs = Map[Append[#, Implementation -> implementation] &, calcs];
-      calcs = Map[Append[#, PartialDerivatives -> partialDerivs] &, calcs];
+      calcs = Map[Append[#, Implementation -> GetObjectField[c, "Implementation"]] &, calcs];
+      calcs = Map[Append[#, PartialDerivatives -> GetObjectField[c, "PartialDerivatives"]] &, calcs];
       SetObjectField[c, "Calculations", calcs]];
      
     (* ------------------------------------------------------------------------ 
@@ -323,7 +305,9 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
       {Filename -> "RegisterMoL.cc",
        Contents -> CreateKrancMoLRegister[
          evolvedGroups, nonevolvedGroups, evolvedODEGroups,
-         nonevolvedODEGroups, groups, implementation, thornName]}]];
+         nonevolvedODEGroups, 
+         Sequence@@(GetObjectField[c,#]& /@ 
+                    {"Groups", "Implementation", "Name"})]}]];
 
     (* ------------------------------------------------------------------------ 
        Add options to calculations

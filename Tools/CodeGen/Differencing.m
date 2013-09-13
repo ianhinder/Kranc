@@ -135,7 +135,7 @@ point. TODO: Should be checked by someone competent!
 
 BeginPackage["Differencing`", {"CodeGen`", "CodeGenC`", "CodeGenCactus`", "CodeGenKranc`",
                                "Kranc`", "MapLookup`", 
-             (* "LinearAlgebra`MatrixManipulation`", *) "Errors`"}];
+             (* "LinearAlgebra`MatrixManipulation`", *) "Errors`", "Code`", "Object`"}];
 
 CreateDifferencingHeader::usage = "";
 PrecomputeDerivatives::usage = "";
@@ -154,6 +154,7 @@ spacing::usage = "";
 ComponentDerivativeOperatorStencilWidth::usage = "";
 CheckStencil::usage = "";
 StencilSize::usage = "";
+DifferencingProcessCode;
 
 GridFunctionDerivativeToDef;
 
@@ -801,6 +802,31 @@ expandDerivOpOverParameters[op_, intParams_] :=
     If[usedParams === {},
       {op},
       expandDerivOpOverParameter[op, usedParams[[1]]]]];
+
+
+Options[DifferencingProcessCode] = ThornOptions;
+
+DefFn[
+  DifferencingProcessCode[cIn_Code, opts:OptionsPattern[]] :=
+  Module[
+    {diffHeader, pDefs, c = cIn},
+    InfoMessage[Terse, "Creating differencing header file"];
+    {pDefs, diffHeader} = CreateDifferencingHeader[
+      GetObjectField[c, "PartialDerivatives"], OptionValue[ZeroDimensions],
+      OptionValue[UseVectors], OptionValue[IntParameters]];
+    c = SetObjectField[c, "Calculations", Map[Join[#, {PreDefinitions -> pDefs}] &, GetObjectField[c, "Calculations"]]];
+    diffHeader = Join[
+      If[OptionValue[UseVectors] && ! OptionValue[UseOpenCL],
+         {"#include <assert.h>\n",
+          "#include \"vectors.h\"\n",
+          "\n"},
+         {}],
+      diffHeader];
+    (* TODO: fix circular dependency which stops us from importing OpenCL in this package *)
+    If[OptionValue[UseOpenCL], diffHeader = OpenCL`OpenCLProcessDifferencingHeader[diffHeader]];
+    AppendObjectField[
+      c, "Sources",
+      {Filename -> "Differencing.h", Contents -> diffHeader}]]];
 
 End[];
 

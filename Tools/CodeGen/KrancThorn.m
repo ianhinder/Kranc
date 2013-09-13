@@ -345,24 +345,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        Create finite differencing header file
        ------------------------------------------------------------------------ *)
 
-    Module[
-      {diffHeader, pDefs},
-      InfoMessage[Terse, "Creating differencing header file"];
-      {pDefs, diffHeader} = CreateDifferencingHeader[
-        GetObjectField[c, "PartialDerivatives"], OptionValue[ZeroDimensions],
-        OptionValue[UseVectors], OptionValue[IntParameters]];
-      c = SetObjectField[c, "Calculations", Map[Join[#, {PreDefinitions -> pDefs}] &, GetObjectField[c, "Calculations"]]];
-      diffHeader = Join[
-        If[OptionValue[UseVectors] && ! OptionValue[UseOpenCL],
-           {"#include <assert.h>\n",
-            "#include \"vectors.h\"\n",
-            "\n"},
-           {}],
-        diffHeader];
-      If[OptionValue[UseOpenCL], diffHeader = OpenCLProcessDifferencingHeader[diffHeader]];
-      c = AppendObjectField[
-        c, "Sources",
-        {Filename -> "Differencing.h", Contents -> diffHeader}]];
+    c = DifferencingProcessCode[c, opts];
 
     (* ------------------------------------------------------------------------ 
        Create calculation source files

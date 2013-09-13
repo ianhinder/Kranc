@@ -82,6 +82,21 @@ DefFn[
   splitCalculationsProcessCode[cIn_Code, opts___] :=
   ApplyToObjectField[cIn, "Calculations", SplitCalculations]];
 
+DefFn[
+  distributeOptionsProcessCode[cIn_Code, opts___] :=
+  Module[
+    {c = cIn},
+    c = SetObjectField[
+      c, "Calculations", 
+      Map[Join[#, {Groups -> GetObjectField[c, "Groups"]}] &,
+          GetObjectField[c, "Calculations"]]];
+
+    c = SetObjectField[
+      c, "Calculations", 
+      Map[Append[#, Parameters -> AllNumericParameters[GetObjectField[c, "Parameters"]]] &,
+          GetObjectField[c, "Calculations"]]];
+    c]];
+
 (* --------------------------------------------------------------------------
    Thorn generation (main entry point for non-tensorial thorns)
    -------------------------------------------------------------------------- *)
@@ -225,17 +240,10 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     c = MoLProcessCode[c, opts];
 
     (* ------------------------------------------------------------------------ 
-       Add options to calculations
+       Add selected code options to calculations
        ------------------------------------------------------------------------ *)
 
-    c = SetObjectField[c, "Calculations", 
-                       Map[Join[#, {Groups -> GetObjectField[c, "Groups"]}] &,
-                           GetObjectField[c, "Calculations"]]];
-
-    c = SetObjectField[
-      c, "Calculations", 
-      Map[Append[#, Parameters -> AllNumericParameters[GetObjectField[c, "Parameters"]]] &,
-          GetObjectField[c, "Calculations"]]];
+    c = distributeOptionsProcessCode[c, opts];
 
     (* ------------------------------------------------------------------------ 
        Split calculations according to SplitVars option

@@ -197,6 +197,9 @@ DefFn[
         Sequence@@
         (GetObjectField[c,#]& /@
          {"DeclaredGroups", "Groups", "Implementation", "Name"})]];
+
+    c = JoinObjectField[c, "InheritedImplementations",
+                        CactusBoundary`GetInheritedImplementations[]];
     c]];
 
 End[];

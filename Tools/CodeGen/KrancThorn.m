@@ -178,9 +178,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        Inherited implementations
        ------------------------------------------------------------------------ *)
 
-    c = JoinObjectField[c, "InheritedImplementations",
-                        Join[{"GenericFD"},
-                             CactusBoundary`GetInheritedImplementations[]]];
+    c = AppendObjectField[c, "InheritedImplementations", "GenericFD"];
 
     (* ------------------------------------------------------------------------ 
        Check input parameters
@@ -257,6 +255,12 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
          OptionValue[ReflectionSymmetries], False]}];
 
     (* ------------------------------------------------------------------------ 
+       Boundary thorn
+       ------------------------------------------------------------------------ *)
+
+    c = CactusBoundaryProcessCode[c, opts];
+
+    (* ------------------------------------------------------------------------ 
        Startup source file
        ------------------------------------------------------------------------ *)
 
@@ -302,12 +306,6 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     ,
        cakernel = None;
     ];
-
-    (* ------------------------------------------------------------------------ 
-       Create Boundary source files
-       ------------------------------------------------------------------------ *)
-
-    c = CactusBoundaryProcessCode[c, opts];
 
     (* ------------------------------------------------------------------------ 
        Add parameter check source file

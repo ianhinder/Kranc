@@ -55,6 +55,16 @@ DefFn[
          Append[#, GridType -> "array"],
          #] &, groups]];
 
+Options[ODEProcessCode] = ThornOptions;
+
+DefFn[
+  ODEProcessCode[cIn_Code, opts:OptionsPattern[]] :=
+  Module[
+    {c = cIn},
+    c = SetObjectField[c, "Groups", processODEGroups[GetObjectField[c, "ODEGroups"],
+                                                     GetObjectField[c, "Groups"]]];
+    c]];
+
 DefFn[
   coordinatesProcessCode[cIn_Code, opts___] :=
   Module[
@@ -224,8 +234,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        ODEs
        ------------------------------------------------------------------------ *)
 
-    c = SetObjectField[c, "Groups", processODEGroups[GetObjectField[c, "ODEGroups"],
-                                                     GetObjectField[c, "Groups"]]];
+    c = ODEProcessCode[c, opts];
 
     c = SetObjectField[
       c, "DeclaredGroups", 

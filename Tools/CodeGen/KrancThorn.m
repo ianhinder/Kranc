@@ -243,17 +243,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        Symmetries
        ------------------------------------------------------------------------ *)
 
-    c = AppendObjectField[c, "IncludeFiles", "Symmetry.h"];
-
-    InfoMessage[Terse, "Creating symmetry registration file"];
-
-    c = AppendObjectField[
-      c, "Sources", 
-      {Filename -> "RegisterSymmetries.cc",
-       Contents -> CreateSymmetriesRegistrationSource[
-         GetObjectField[c, "Name"], GetObjectField[c,"Implementation"], 
-         GetObjectField[c, "DeclaredGroups"], GetObjectField[c, "Groups"],
-         OptionValue[ReflectionSymmetries], False]}];
+    c = SymmetriesProcessCode[c, opts];
 
     (* ------------------------------------------------------------------------ 
        Boundary thorn

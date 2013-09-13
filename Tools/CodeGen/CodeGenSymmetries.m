@@ -21,9 +21,10 @@
 BeginPackage[
   "CodeGenSymmetries`",
   {"Errors`", "Helpers`", "Kranc`", "CodeGenCactus`", "MapLookup`", "CodeGenKranc`",
-   "CodeGenC`", "CodeGen`", "KrancGroups`"}];
+   "CodeGenC`", "CodeGen`", "KrancGroups`", "Code`", "Object`"}];
 
 CreateSymmetriesRegistrationSource::usage = "";
+SymmetriesProcessCode;
 
 Begin["`Private`"];
 
@@ -106,6 +107,22 @@ DefFn[
 
     CodeGenC`SOURCELANGUAGE = lang;
     tmp]];
+
+Options[SymmetriesProcessCode] = ThornOptions;
+
+DefFn[
+  SymmetriesProcessCode[cIn_Code, opts:OptionsPattern[]] :=
+  Module[
+    {c = cIn},
+    InfoMessage[Terse, "Creating symmetry registration file"];
+    c = AppendObjectField[c, "IncludeFiles", "Symmetry.h"];
+    c = AppendObjectField[
+      c, "Sources", 
+      {Filename -> "RegisterSymmetries.cc",
+       Contents -> CreateSymmetriesRegistrationSource[
+         GetObjectField[c, "Name"], GetObjectField[c,"Implementation"], 
+         GetObjectField[c, "DeclaredGroups"], GetObjectField[c, "Groups"],
+         OptionValue[ReflectionSymmetries], False]}]]];
 
 End[];
 

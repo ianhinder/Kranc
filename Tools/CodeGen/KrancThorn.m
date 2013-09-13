@@ -125,27 +125,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        CaKernel
        ------------------------------------------------------------------------ *)
 
-    c = Module[
-      {calcs = GetObjectField[c, "Calculations"]},
-
-      (* Make the CaKernel option calculation-specific *)
-      calcs = Map[Append[#,UseCaKernel -> OptionValue[UseCaKernel]] &, calcs];
-      
-      If[OptionValue[GenerateHostCode] && OptionValue[UseCaKernel],
-         calcs = WithHostCalculations[calcs]];
-
-      If[!And@@Map[ListQ, calcs], Print[Short[calcs//InputForm]]; ThrowError["Result of WithHostCalculations is not a list of lists"]];
-
-      (* Add ExecuteOn -> Device to any CaKernel calculation that has no ExecuteOn option *)
-      calcs = Map[If[!lookup[#,UseCaKernel,False], #, If[mapContains[#,ExecuteOn], #, Append[#,ExecuteOn->Device]]] &, calcs];
-
-      SetObjectField[c, "Calculations", calcs]];
-
-    If[OptionValue[UseCaKernel],
-       c = AppendObjectField[c, "IncludeFiles", "CaCUDALib_driver_support.h"]];
-
-    If[OptionValue[UseCaKernel],
-       c = AppendObjectField[c, "InheritedImplementations", "Accelerator"]];
+    c = CaKernelProcessCode[c, opts];
 
     (* ------------------------------------------------------------------------ 
        Add coordinates group

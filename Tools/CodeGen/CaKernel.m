@@ -19,7 +19,7 @@
 *)
 
 BeginPackage["CaKernel`", {"Errors`", "Helpers`", "Kranc`", "CodeGenCactus`", "CodeGenKranc`", "MapLookup`",
-                           "Calculation`", "CodeGen`", "CodeGenCalculation`", "CodeGenC`"}];
+                           "Calculation`", "CodeGen`", "CodeGenCalculation`", "CodeGenC`", "Code`", "Object`"}];
 
 CaKernelCCL;
 CaKernelCode;
@@ -28,6 +28,7 @@ CaKernelSchedule;
 CaKernelConfigurationCLL;
 CaKernelInterfaceCLL;
 WithHostCalculations;
+CaKernelProcessCode;
 
 Begin["`Private`"];
 
@@ -245,6 +246,34 @@ DefFn[
 DefFn[
   WithHostCalculations[calcs_List] :=
     Flatten[Map[splitHostCaKernel, calcs],1]];
+
+Options[CaKernelProcessCode] = ThornOptions;
+
+DefFn[
+  CaKernelProcessCode[c_Code, opts:OptionsPattern[]] :=
+  Module[
+    {calcs = GetObjectField[c, "Calculations"], c2},
+
+    (* Make the CaKernel option calculation-specific *)
+    calcs = Map[Append[#,UseCaKernel -> OptionValue[UseCaKernel]] &, calcs];
+    
+    If[OptionValue[GenerateHostCode] && OptionValue[UseCaKernel],
+       calcs = WithHostCalculations[calcs]];
+
+    If[!And@@Map[ListQ, calcs], Print[Short[calcs//InputForm]]; ThrowError["Result of WithHostCalculations is not a list of lists"]];
+
+    (* Add ExecuteOn -> Device to any CaKernel calculation that has no ExecuteOn option *)
+    calcs = Map[If[!lookup[#,UseCaKernel,False], #, If[mapContains[#,ExecuteOn], #, Append[#,ExecuteOn->Device]]] &, calcs];
+
+    c2 = SetObjectField[c, "Calculations", calcs];
+
+    If[OptionValue[UseCaKernel],
+       c2 = AppendObjectField[c2, "IncludeFiles", "CaCUDALib_driver_support.h"]];
+
+    If[OptionValue[UseCaKernel],
+       c2 = AppendObjectField[c2, "InheritedImplementations", "Accelerator"]];
+    c2]];
+
 
 End[];
 

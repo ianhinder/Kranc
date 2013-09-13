@@ -122,6 +122,12 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     c = genericFDProcessCode[c, opts];
 
     (* ------------------------------------------------------------------------ 
+       Coordinates
+       ------------------------------------------------------------------------ *)
+
+    c = coordinatesProcessCode[c, opts];
+
+    (* ------------------------------------------------------------------------ 
        Add conservation differencing operators to partialDerivs
        ------------------------------------------------------------------------ *)
 
@@ -151,12 +157,6 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        ------------------------------------------------------------------------ *)
 
     c = CaKernelProcessCode[c, opts];
-
-    (* ------------------------------------------------------------------------ 
-       Add coordinates group
-       ------------------------------------------------------------------------ *)
-
-    c = coordinatesProcessCode[c, opts];
 
     (* ------------------------------------------------------------------------ 
        Separate derivatives

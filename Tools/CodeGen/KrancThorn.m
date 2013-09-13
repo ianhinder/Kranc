@@ -70,6 +70,14 @@ DefFn[
     c = AppendObjectField[c, "InheritedImplementations", "Grid"];
     c]];
 
+DefFn[
+  genericFDProcessCode[cIn_Code, opts___] :=
+  Module[
+    {c = cIn},
+    c = AppendObjectField[c, "IncludeFiles", "GenericFD.h"];
+    c = AppendObjectField[c, "InheritedImplementations", "GenericFD"];
+    c]];
+
 (* --------------------------------------------------------------------------
    Thorn generation (main entry point for non-tensorial thorns)
    -------------------------------------------------------------------------- *)
@@ -106,10 +114,10 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        "Sources" -> {}}];
 
     (* ------------------------------------------------------------------------ 
-       Add required include files
+       GenericFD
        ------------------------------------------------------------------------ *)
 
-    c = AppendObjectField[c, "IncludeFiles", "GenericFD.h"];
+    c = genericFDProcessCode[c, opts];
 
     (* ------------------------------------------------------------------------ 
        Add conservation differencing operators to partialDerivs
@@ -173,12 +181,6 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
       DeleteDuplicates[Join[GetObjectField[c, "Groups"],
                             Flatten[Map[lookup[#,LocalGroups,{}] &,
                                         GetObjectField[c, "Calculations"]],1]]]];
-
-    (* ------------------------------------------------------------------------ 
-       Inherited implementations
-       ------------------------------------------------------------------------ *)
-
-    c = AppendObjectField[c, "InheritedImplementations", "GenericFD"];
 
     (* ------------------------------------------------------------------------ 
        Check input parameters

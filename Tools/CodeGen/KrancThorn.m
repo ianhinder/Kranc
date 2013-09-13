@@ -262,6 +262,18 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     c = CactusBoundaryProcessCode[c, opts];
 
     (* ------------------------------------------------------------------------ 
+       Add parameter check source file
+       ------------------------------------------------------------------------ *)
+   
+    c = ParamCheckProcessCode[c, opts];
+
+    (* ------------------------------------------------------------------------ 
+       Create finite differencing header file
+       ------------------------------------------------------------------------ *)
+
+    c = DifferencingProcessCode[c, opts];
+
+    (* ------------------------------------------------------------------------ 
        Startup source file
        ------------------------------------------------------------------------ *)
 
@@ -307,18 +319,6 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     ,
        cakernel = None;
     ];
-
-    (* ------------------------------------------------------------------------ 
-       Add parameter check source file
-       ------------------------------------------------------------------------ *)
-   
-    c = ParamCheckProcessCode[c, opts];
-
-    (* ------------------------------------------------------------------------ 
-       Create finite differencing header file
-       ------------------------------------------------------------------------ *)
-
-    c = DifferencingProcessCode[c, opts];
 
     (* ------------------------------------------------------------------------ 
        Create calculation source files

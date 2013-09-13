@@ -113,17 +113,16 @@ CreateInterface[implementation_, inheritedImplementations_, includeFiles_,
                 groups_, opts___] :=
   {FileHeader["CCL"],
    "implements: ", implementation, "\n\n",
-   "inherits:   ", SpaceSeparated[inheritedImplementations], "\n\n",
+   "inherits:   ", SpaceSeparated[Sort[inheritedImplementations]], "\n\n",
    If[mapContains[{opts}, Friends],
-     {"friend:     ", SpaceSeparated[lookup[{opts}, Friends]]},{}],
+     {"friend:     ", SpaceSeparated[Sort[lookup[{opts}, Friends]]]},{}],
    "\n\n",
-   Map[{"USES INCLUDE: ", #, "\n"} &, includeFiles],
+   Map[{"USES INCLUDE: ", #, "\n"} &, Sort[includeFiles]],
    "\n",
 
    Map[usesFunction,     lookupDefault[{opts}, UsesFunctions, {}]],
 
    Map[providesFunction, lookupDefault[{opts}, ProvidesFunctions, {}]],
-
 
    NewlineSeparated[Map[FlattenBlock[interfaceGroupBlock[#]] &, groups]]};
 

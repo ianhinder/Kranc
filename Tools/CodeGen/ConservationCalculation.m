@@ -19,7 +19,7 @@
 *)
 
 BeginPackage["ConservationCalculation`", {"Errors`", "Helpers`", "Kranc`",
-  "MapLookup`", "KrancGroups`", "CodeGenCalculation`", "Differencing`"}];
+  "MapLookup`", "KrancGroups`", "CodeGenCalculation`", "Differencing`", "Code`", "Object`"}];
 
 ProcessConservationCalculation;
 ConservationDifferencingOperators;
@@ -32,6 +32,7 @@ ConservationDifferencingRealParameters;
 hlleAlpha;
 PrimitiveEquations;
 ConservedEquations;
+ConservationCalculationProcessCode;
 
 Begin["`Private`"];
 
@@ -217,6 +218,36 @@ ConservationCalculationDeclaredGroups[calc_] :=
     Map[CreateGroup[
       ToString[#]<>"_flux_group",
       {fluxSymbol[#]}, {}] &, consVars[calc]]];
+
+Options[ConservationCalculationProcessCode] = ThornOptions;
+
+DefFn[
+  ConservationCalculationProcessCode[cIn_Code,opts:OptionsPattern[]] :=
+  Module[
+    {inputConsCalcs, outputConsCalcs, consGroups, c=cIn},
+
+    inputConsCalcs = Map[Append[#, Groups -> GetObjectField[c, "Groups"]] &,
+                         OptionValue[ConservationCalculations]];
+
+    outputConsCalcs = 
+    Flatten[
+      Map[
+        ProcessConservationCalculation[#, GetObjectField[c, "Name"]] &,
+        inputConsCalcs],
+      1];
+
+    outputConsCalcs =
+    Map[Join[#, {PartialDerivatives -> GetObjectField[c, "PartialDerivatives"],
+                 Implementation -> GetObjectField[c, "Implementation"]}] &,
+        outputConsCalcs];
+
+    consGroups = Union@Flatten[
+      Map[ConservationCalculationDeclaredGroups, inputConsCalcs],1];
+    
+    c = JoinObjectField[c, "Calculations", outputConsCalcs];
+    c = JoinObjectField[c, "Groups", consGroups];
+    c = JoinObjectField[c, "DeclaredGroups", Map[groupName, consGroups]];
+    c]];
 
 End[];
 

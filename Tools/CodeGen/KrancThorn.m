@@ -192,31 +192,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        Conservation Calculations
        ------------------------------------------------------------------------ *)
 
-    Module[
-      {inputConsCalcs, outputConsCalcs, consGroups},
-
-      inputConsCalcs = Map[Append[#, Groups -> GetObjectField[c, "Groups"]] &,
-                           OptionValue[ConservationCalculations]];
-
-      outputConsCalcs = 
-      Flatten[
-        Map[
-          ProcessConservationCalculation[#, GetObjectField[c, "Name"]] &,
-          inputConsCalcs],
-        1];
-
-      outputConsCalcs =
-      Map[Join[#, {PartialDerivatives -> GetObjectField[c, "PartialDerivatives"],
-                   Implementation -> GetObjectField[c, "Implementation"]}] &,
-          outputConsCalcs];
-
-      consGroups = Union@Flatten[
-        Map[ConservationCalculationDeclaredGroups, inputConsCalcs],1];
-      
-      c = JoinObjectField[c, "Calculations", outputConsCalcs];
-      c = JoinObjectField[c, "Groups", consGroups];
-      c = JoinObjectField[c, "DeclaredGroups", Map[groupName, consGroups]]];
-
+    c = ConservationCalculationProcessCode[c, opts];
 
     (* ------------------------------------------------------------------------ 
        ODEs

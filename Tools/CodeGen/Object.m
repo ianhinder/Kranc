@@ -25,6 +25,7 @@ SetObjectField;
 GetObjectField;
 AppendObjectField;
 JoinObjectField;
+ApplyToObjectField;
 
 Begin["`Private`"];
 
@@ -61,6 +62,11 @@ DefFn[
 DefFn[
   JoinObjectField[obj_, field_String, values_List] :=
   SetObjectField[obj, field, Join[GetObjectField[obj, field], values]]];
+
+DefFn[
+  ApplyToObjectField[obj_, field_String, f_] :=
+  SetObjectField[obj, field, f[GetObjectField[obj, field]]]];
+  
 
 End[];
 

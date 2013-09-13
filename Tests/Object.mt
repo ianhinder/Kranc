@@ -69,3 +69,11 @@ Test[
   ,
   TestID->"JoinObjectField-Exists"
 ]
+
+Test[
+  ApplyToObjectField[NewObject[Obj, {"Key1" -> 1, "Key2" -> 2}], "Key1", g]
+  ,
+  Obj["Key1" -> g[1], "Key2" -> 2]
+  ,
+  TestID->"ApplyToObjectField"
+]

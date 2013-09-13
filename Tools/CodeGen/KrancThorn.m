@@ -93,9 +93,12 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        Read named arguments and apply nontrivial defaults
        ------------------------------------------------------------------------ *)
 
+    InfoMessage[Terse, "Verifying arguments"];
     cktCheckNamedArgs[{opts}];
-
     CheckGroups[groupsOrig];
+    VerifyGroups[groupsOrig];
+    VerifyString[parentDirectory];
+    VerifyString[thornName];
 
     c = NewObject[
       Code, 
@@ -114,6 +117,10 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
                                                      OptionValue[EvolutionTimelevels]],
        "PartialDerivatives" -> OptionValue[PartialDerivatives],
        "Sources" -> {}}];
+
+    VerifyString[GetObjectField[c, "Implementation"]];
+    VerifyGroupNames[GetObjectField[c, "DeclaredGroups"]];
+    VerifyGroupNames[GetObjectField[c, "ODEGroups"]];
 
     (* ------------------------------------------------------------------------ 
        GenericFD
@@ -185,14 +192,6 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     (* ------------------------------------------------------------------------ 
        Check input parameters
        ------------------------------------------------------------------------ *)
-
-    InfoMessage[Terse, "Verifying arguments"];
-    VerifyGroups[GetObjectField[c, "Groups"]];
-    VerifyString[parentDirectory];
-    VerifyString[GetObjectField[c, "Name"]];
-    VerifyString[GetObjectField[c, "Implementation"]];
-    VerifyGroupNames[GetObjectField[c, "DeclaredGroups"]];
-    VerifyGroupNames[GetObjectField[c, "ODEGroups"]];
 
     If[OptionValue[UseJacobian], JacobianCheckGroups[GetObjectField[c, "Groups"]]];
 

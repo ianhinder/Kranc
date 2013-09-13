@@ -338,44 +338,39 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
       Map[Append[#, Parameters -> AllNumericParameters[GetObjectField[c, "Parameters"]]] &,
           GetObjectField[c, "Calculations"]]];
 
-    includeFiles = GetObjectField[c, "IncludeFiles"];
-    partialDerivs = GetObjectField[c, "PartialDerivatives"];
-    parameters = GetObjectField[c, "Parameters"];
-    calcs = GetObjectField[c, "Calculations"];
-    inheritedImplementations = GetObjectField[c, "InheritedImplementations"];
-    groups = GetObjectField[c, "Groups"];
-    declaredGroups = GetObjectField[c, "DeclaredGroups"];
-    sources = GetObjectField[c, "Sources"];
-
     (* ------------------------------------------------------------------------ 
        Split calculations according to SplitVars option
        ------------------------------------------------------------------------ *)
 
-    calcs = SplitCalculations[calcs];
+    c = ApplyToObjectField[c, "Calculations", SplitCalculations];
 
     (* ------------------------------------------------------------------------ 
        Symmetries
        ------------------------------------------------------------------------ *)
 
-    AppendTo[includeFiles, "Symmetry.h"];
+    c = AppendObjectField[c, "IncludeFiles", "Symmetry.h"];
 
     InfoMessage[Terse, "Creating symmetry registration file"];
-    AppendTo[
-      sources,
+
+    c = AppendObjectField[
+      c, "Sources", 
       {Filename -> "RegisterSymmetries.cc",
        Contents -> CreateSymmetriesRegistrationSource[
-         thornName, implementation, 
-         declaredGroups, groups, OptionValue[ReflectionSymmetries], False]}];
+         GetObjectField[c, "Name"], GetObjectField[c,"Implementation"], 
+         GetObjectField[c, "DeclaredGroups"], GetObjectField[c, "Groups"],
+         OptionValue[ReflectionSymmetries], False]}];
 
     (* ------------------------------------------------------------------------ 
        Startup source file
        ------------------------------------------------------------------------ *)
 
     InfoMessage[Terse, "Creating startup file"];
-    AppendTo[
-      sources,
+
+    c = AppendObjectField[
+      c, "Sources",
       {Filename -> "Startup.cc",
-       Contents -> CreateStartupFile[thornName, thornName]}];
+       Contents -> CreateStartupFile[GetObjectField[c, "Name"],
+                                     GetObjectField[c, "Name"]]}];
 
     (* ------------------------------------------------------------------------ 
        Create CCL files
@@ -384,26 +379,30 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     InfoMessage[Terse, "Creating configuration file"];
     configuration = CreateConfiguration[opts];
 
+    (* TODO: Pass Code object directly into these functions *)
+
     InfoMessage[Terse, "Creating interface file"];
-    interface = CreateKrancInterface[declaredGroups, groups,
-      implementation, inheritedImplementations, includeFiles, opts];
+    interface = CreateKrancInterface[Sequence@@(GetObjectField[c,#]& /@ {"DeclaredGroups", "Groups",
+      "Implementation", "InheritedImplementations", "IncludeFiles"}), opts];
 
     InfoMessage[Terse, "Creating param file"];
-    param = CreateKrancParam[declaredGroups,
-                             groups,
-                             thornName,
-                             parameters,
-                             evolutionTimelevels,
-                             defaultEvolutionTimelevels,
-                             calcs, opts];
+    param = CreateKrancParam[
+      Sequence@@
+      (GetObjectField[c,#]& /@
+       {"DeclaredGroups", "Groups", "Name", "Parameters",
+        "EvolutionTimelevels", "DefaultEvolutionTimelevels",
+        "Calculations"}), opts];
 
     InfoMessage[Terse, "Creating schedule file"];
-    schedule = CreateKrancScheduleFile[calcs, declaredGroups, groups, thornName,
-                                       evolutionTimelevels,opts];
+    schedule = CreateKrancScheduleFile[
+      Sequence@@
+      (GetObjectField[c,#]& /@
+       {"Calculations", "DeclaredGroups", "Groups", "Name",
+        "EvolutionTimelevels"}), opts];
 
     If[OptionValue[UseCaKernel],
        InfoMessage[Terse, "Creating CaKernel file"];
-       cakernel = CaKernelCCL[calcs, opts];
+       cakernel = CaKernelCCL[GetObjectField[c, "Calculations"], opts];
     ,
        cakernel = None;
     ];
@@ -412,18 +411,32 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        Create Boundary source files
        ------------------------------------------------------------------------ *)
 
-    sources = Join[
-      sources,
-      CactusBoundary`GetSources[declaredGroups, groups, implementation, thornName]];
+    c = JoinObjectField[
+      c, "Sources",
+      CactusBoundary`GetSources[
+        Sequence@@
+        (GetObjectField[c,#]& /@
+         {"DeclaredGroups", "Groups", "Implementation", "Name"})]];
 
     (* ------------------------------------------------------------------------ 
        Add parameter check source file
        ------------------------------------------------------------------------ *)
    
     If[Length[OptionValue[ParameterConditions]] > 0,
-       AppendTo[sources,
-                {Filename -> "ParamCheck.cc",
-                 Contents -> ParameterCheckSource[thornName, OptionValue[ParameterConditions]]}]];
+       c = AppendObjectField[
+         c, "Sources",
+         {Filename -> "ParamCheck.cc",
+          Contents -> ParameterCheckSource[GetObjectField[c, "Name"], 
+                                           OptionValue[ParameterConditions]]}]];
+
+    includeFiles = GetObjectField[c, "IncludeFiles"];
+    partialDerivs = GetObjectField[c, "PartialDerivatives"];
+    parameters = GetObjectField[c, "Parameters"];
+    calcs = GetObjectField[c, "Calculations"];
+    inheritedImplementations = GetObjectField[c, "InheritedImplementations"];
+    groups = GetObjectField[c, "Groups"];
+    declaredGroups = GetObjectField[c, "DeclaredGroups"];
+    sources = GetObjectField[c, "Sources"];
 
     (* ------------------------------------------------------------------------ 
        Create finite differencing header file

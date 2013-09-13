@@ -476,7 +476,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
                    Param         -> param,
                    CaKernel      -> cakernel,
                    Makefile      -> make,
-                   Sources       -> GetObjectField[c, "Name"]};
+                   Sources       -> GetObjectField[c, "Sources"]};
       InfoMessage[Terse, "Creating thorn"];
       CreateThorn[thornspec]]];
 

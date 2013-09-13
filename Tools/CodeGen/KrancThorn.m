@@ -429,15 +429,6 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
           Contents -> ParameterCheckSource[GetObjectField[c, "Name"], 
                                            OptionValue[ParameterConditions]]}]];
 
-    includeFiles = GetObjectField[c, "IncludeFiles"];
-    partialDerivs = GetObjectField[c, "PartialDerivatives"];
-    parameters = GetObjectField[c, "Parameters"];
-    calcs = GetObjectField[c, "Calculations"];
-    inheritedImplementations = GetObjectField[c, "InheritedImplementations"];
-    groups = GetObjectField[c, "Groups"];
-    declaredGroups = GetObjectField[c, "DeclaredGroups"];
-    sources = GetObjectField[c, "Sources"];
-
     (* ------------------------------------------------------------------------ 
        Create finite differencing header file
        ------------------------------------------------------------------------ *)
@@ -446,9 +437,9 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
       {diffHeader, pDefs},
       InfoMessage[Terse, "Creating differencing header file"];
       {pDefs, diffHeader} = CreateDifferencingHeader[
-        partialDerivs, OptionValue[ZeroDimensions],
+        GetObjectField[c, "PartialDerivatives"], OptionValue[ZeroDimensions],
         OptionValue[UseVectors], OptionValue[IntParameters]];
-      calcs = Map[Join[#, {PreDefinitions -> pDefs}] &, calcs];
+      c = SetObjectField[c, "Calculations", Map[Join[#, {PreDefinitions -> pDefs}] &, GetObjectField[c, "Calculations"]]];
       diffHeader = Join[
         If[OptionValue[UseVectors] && ! OptionValue[UseOpenCL],
            {"#include <assert.h>\n",
@@ -457,7 +448,9 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
            {}],
         diffHeader];
       If[OptionValue[UseOpenCL], diffHeader = OpenCLProcessDifferencingHeader[diffHeader]];
-      AppendTo[sources, {Filename -> "Differencing.h", Contents -> diffHeader}]];
+      c = AppendObjectField[
+        c, "Sources",
+        {Filename -> "Differencing.h", Contents -> diffHeader}]];
 
     (* ------------------------------------------------------------------------ 
        Create calculation source files
@@ -465,22 +458,23 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     InfoMessage[Terse, "Creating calculation source files"];
 
-    sources = Join[sources,
-                   Map[{Filename -> lookup[#, Name] <> ".cc",
-                        Contents -> CreateSetterSource[{#}, False, {}, opts]} &,
-                       Select[calcs, !CalculationOnDevice[#] &]]];
-
-    sources = Join[sources,
-                   Map[{Filename -> "CaKernel__"<>lookup[#, Name] <> ".code",
-                        Contents -> CaKernelCode[#,opts]} &,
-                       Select[calcs, CalculationOnDevice]]];
+    c = JoinObjectField[
+      c, "Sources", 
+      Join[Map[{Filename -> lookup[#, Name] <> ".cc",
+                Contents -> CreateSetterSource[{#}, False, {}, opts]} &,
+               Select[GetObjectField[c, "Calculations"], !CalculationOnDevice[#] &]],
+           Map[{Filename -> "CaKernel__"<>lookup[#, Name] <> ".code",
+                Contents -> CaKernelCode[#,opts]} &,
+               Select[GetObjectField[c, "Calculations"], CalculationOnDevice]]]];
 
     (* ------------------------------------------------------------------------ 
        Create Makefile
        ------------------------------------------------------------------------ *)
 
     InfoMessage[Terse, "Creating make file"];
-    make = CreateMakefile[Sort[Select[lookup[#, Filename] & /@ sources, StringMatchQ[#, "*.cc"] &]]];
+    make = CreateMakefile[Sort[Select[lookup[#, Filename] & /@ 
+                                      GetObjectField[c, "Sources"],
+                                      StringMatchQ[#, "*.cc"] &]]];
 
     (* ------------------------------------------------------------------------ 
        Create thorn
@@ -490,7 +484,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     Module[
       {thornspec},
-      thornspec = {Name          -> thornName, 
+      thornspec = {Name          -> GetObjectField[c, "Name"], 
                    Directory     -> parentDirectory,
                    Configuration -> configuration,
                    Interface     -> interface, 
@@ -498,7 +492,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
                    Param         -> param,
                    CaKernel      -> cakernel,
                    Makefile      -> make,
-                   Sources       -> sources};
+                   Sources       -> GetObjectField[c, "Name"]};
       InfoMessage[Terse, "Creating thorn"];
       CreateThorn[thornspec]]];
 

@@ -78,6 +78,10 @@ DefFn[
     c = AppendObjectField[c, "InheritedImplementations", "GenericFD"];
     c]];
 
+DefFn[
+  splitCalculationsProcessCode[cIn_Code, opts___] :=
+  ApplyToObjectField[cIn, "Calculations", SplitCalculations]];
+
 (* --------------------------------------------------------------------------
    Thorn generation (main entry point for non-tensorial thorns)
    -------------------------------------------------------------------------- *)
@@ -237,7 +241,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        Split calculations according to SplitVars option
        ------------------------------------------------------------------------ *)
 
-    c = ApplyToObjectField[c, "Calculations", SplitCalculations];
+    c = splitCalculationsProcessCode[c, opts];
 
     (* ------------------------------------------------------------------------ 
        Symmetries

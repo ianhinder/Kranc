@@ -31,7 +31,7 @@ BeginPackage["KrancThorn`", {"CodeGen`", "Thorn`",
  "KrancTensor`", "Param`", "Schedule`", "Interface`", "Kranc`", "Jacobian`",
  "ConservationCalculation`", "CaKernel`", "Calculation`", "ParamCheck`",
  "OpenCL`", "CodeGenConfiguration`", "CodeGenMakefile`", "CodeGenSymmetries`", "MoL`",
- "CodeGenStartup`", "CodeGenCalculation`"}];
+ "CodeGenStartup`", "CodeGenCalculation`", "Code`", "Object`"}];
 
 CreateKrancThorn::usage = "Construct a Kranc thorn";
 
@@ -72,7 +72,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     evolvedODEGroups, nonevolvedODEGroups,
     evolvedODEGroupDefinitions, rhsODEGroups,
     cakernel,
-    sources = {}},
+    sources = {},
+    c},
 
     InfoMessage[Terse, "Processing arguments to CreateKrancThorn"];
 
@@ -94,82 +95,120 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     defaultEvolutionTimelevels = lookupDefault[{opts}, DefaultEvolutionTimelevels, evolutionTimelevels];
     partialDerivs = OptionValue[PartialDerivatives];
 
+    c = NewObject[Code, {"Name" -> thornName,
+                         "Groups" -> groupsOrig,
+                         "DeclaredGroups" -> declaredGroups,
+                         "Calculations" -> calcs,
+                         "ODEGroups" -> odeGroups,
+                         "Implementation" -> implementation,
+                         "InheritedImplementations" -> inheritedImplementations,
+                         "IncludeFiles" -> includeFiles,
+                         "EvolutionTimelevels" -> evolutionTimelevels,
+                         "DefaultEvolutionTimelevels" -> defaultEvolutionTimelevels,
+                         "PartialDerivatives" -> partialDerivs}];
+
     (* ------------------------------------------------------------------------ 
        Add required include files
        ------------------------------------------------------------------------ *)
 
-    includeFiles = Join[includeFiles, {"GenericFD.h"}];
+    c = AppendObjectField[c, "IncludeFiles", "GenericFD.h"];
 
     (* ------------------------------------------------------------------------ 
        Add conservation differencing operators to partialDerivs
        ------------------------------------------------------------------------ *)
 
     If[OptionValue[ConservationCalculations] =!= {},
-       partialDerivs = Join[partialDerivs, ConservationDifferencingOperators[]]];
+       c = JoinObjectField[c, "PartialDerivatives", ConservationDifferencingOperators[]]];
 
     (* ------------------------------------------------------------------------ 
        Construct parameter database from named arguments
        ------------------------------------------------------------------------ *)
 
-    parameters = ParameterDatabase[opts];
+    c = SetObjectField[c, "Parameters", ParameterDatabase[opts]];
 
     (* ------------------------------------------------------------------------ 
        Add thorn-global options to calculations
        ------------------------------------------------------------------------ *)
 
-    calcs = Map[mapReplaceAdd[#, Shorthands, Join[lookup[#,Shorthands,{}],OptionValue[Shorthands]]] &, calcs];
-    calcs = Map[Append[#, Implementation -> implementation] &, calcs];
-    calcs = Map[Append[#, PartialDerivatives -> partialDerivs] &, calcs];
+    c = Module[
+      {calcs = GetObjectField[c, "Calculations"]},
 
+      calcs = Map[mapReplaceAdd[#, Shorthands, Join[lookup[#,Shorthands,{}],OptionValue[Shorthands]]] &, calcs];
+      calcs = Map[Append[#, Implementation -> implementation] &, calcs];
+      calcs = Map[Append[#, PartialDerivatives -> partialDerivs] &, calcs];
+      SetObjectField[c, "Calculations", calcs]];
+     
     (* ------------------------------------------------------------------------ 
        CaKernel
        ------------------------------------------------------------------------ *)
 
-    (* Make the CaKernel option calculation-specific *)
-    calcs = Map[Append[#,UseCaKernel -> OptionValue[UseCaKernel]] &, calcs];
+    c = Module[
+      {calcs = GetObjectField[c, "Calculations"]},
 
-    If[OptionValue[GenerateHostCode] && OptionValue[UseCaKernel],
-       calcs = WithHostCalculations[calcs]];
+      (* Make the CaKernel option calculation-specific *)
+      calcs = Map[Append[#,UseCaKernel -> OptionValue[UseCaKernel]] &, calcs];
+      
+      If[OptionValue[GenerateHostCode] && OptionValue[UseCaKernel],
+         calcs = WithHostCalculations[calcs]];
 
-    If[!And@@Map[ListQ, calcs], Print[Short[calcs//InputForm]]; ThrowError["Result of WithHostCalculations is not a list of lists"]];
+      If[!And@@Map[ListQ, calcs], Print[Short[calcs//InputForm]]; ThrowError["Result of WithHostCalculations is not a list of lists"]];
+
+      (* Add ExecuteOn -> Device to any CaKernel calculation that has no ExecuteOn option *)
+      calcs = Map[If[!lookup[#,UseCaKernel,False], #, If[mapContains[#,ExecuteOn], #, Append[#,ExecuteOn->Device]]] &, calcs];
+
+      SetObjectField[c, "Calculations", calcs]];
 
     If[OptionValue[UseCaKernel],
-       includeFiles = Append[includeFiles, "CaCUDALib_driver_support.h"]];
+       c = AppendObjectField[c, "IncludeFiles", "CaCUDALib_driver_support.h"]];
 
     If[OptionValue[UseCaKernel],
-       inheritedImplementations = Append[inheritedImplementations, "Accelerator"]];
-
-    (* Add ExecuteOn -> Device to any CaKernel calculation that has no ExecuteOn option *)
-    calcs = Map[If[!lookup[#,UseCaKernel,False], #, If[mapContains[#,ExecuteOn], #, Append[#,ExecuteOn->Device]]] &, calcs];
+       c = AppendObjectField[c, "InheritedImplementations", "Accelerator"]];
 
     (* ------------------------------------------------------------------------ 
        Add coordinates group
        ------------------------------------------------------------------------ *)
 
-    CheckGroups[groupsOrig];
+    CheckGroups[GetObjectField[c, "Groups"]];
 
-    groups = Union[groupsOrig,
-                   {{"grid::coordinates", {Kranc`x,Kranc`y,Kranc`z,Kranc`r}}},
-                   SameTest->(ToLowerCase[#1]==ToLowerCase[#2]&)];
+    (* TODO: this should just be an Append.  The order of the groups
+       should not matter.  We could also check that the input groups
+       do not contain the coordinates. *)
+
+    c = SetObjectField[c, "Groups", 
+                       Union[GetObjectField[c, "Groups"],
+                             {{"grid::coordinates", {Kranc`x,Kranc`y,Kranc`z,Kranc`r}}},
+                             SameTest->(ToLowerCase[#1]==ToLowerCase[#2]&)]];
 
     (* ------------------------------------------------------------------------ 
        Separate derivatives
        ------------------------------------------------------------------------ *)
 
-    calcs = SeparateDerivatives[calcs];
+    c = SetObjectField[c, "Calculations",
+                       SeparateDerivatives[GetObjectField[c, "Calculations"]]];
 
     (* ------------------------------------------------------------------------ 
        SummationByParts thorn
        ------------------------------------------------------------------------ *)
 
     If[Cases[{pddefs}, SBPDerivative[_], Infinity] != {},
-       AppendTo[includeFiles, "sbp_calc_coeffs.h"]];
+       c = AppendObjectField[c, "IncludeFiles", "sbp_calc_coeffs.h"]];
 
     (* ------------------------------------------------------------------------ 
        Add groups defined in calculations to thorn groups
        ------------------------------------------------------------------------ *)
 
-    groups = DeleteDuplicates[Join[groups, Flatten[Map[lookup[#,LocalGroups,{}] &, calcs],1]]];
+    c = SetObjectField[
+      c, "Groups",
+      DeleteDuplicates[Join[GetObjectField[c, "Groups"],
+                            Flatten[Map[lookup[#,LocalGroups,{}] &,
+                                        GetObjectField[c, "Calculations"]],1]]]];
+
+    includeFiles = GetObjectField[c, "IncludeFiles"];
+    partialDerivs = GetObjectField[c, "PartialDerivatives"];
+    parameters = GetObjectField[c, "Parameters"];
+    calcs = GetObjectField[c, "Calculations"];
+    inheritedImplementations = GetObjectField[c, "InheritedImplementations"];
+    groups = GetObjectField[c, "Groups"];
 
     (* ------------------------------------------------------------------------ 
        Inherited implementations

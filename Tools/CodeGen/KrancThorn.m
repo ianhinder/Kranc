@@ -55,6 +55,20 @@ DefFn[
          Append[#, GridType -> "array"],
          #] &, groups]];
 
+DefFn[
+  coordinatesProcessCode[cIn_Code, opts___] :=
+  Module[
+    {c = cIn},
+    (* TODO: this should just be an Append.  The order of the groups
+       should not matter.  We could also check that the input groups
+       do not contain the coordinates. *)
+
+    c = SetObjectField[c, "Groups", 
+                       Union[GetObjectField[c, "Groups"],
+                             {{"grid::coordinates", {Kranc`x,Kranc`y,Kranc`z,Kranc`r}}},
+                             SameTest->(ToLowerCase[#1]==ToLowerCase[#2]&)]];
+    c]];
+
 (* --------------------------------------------------------------------------
    Thorn generation (main entry point for non-tensorial thorns)
    -------------------------------------------------------------------------- *)
@@ -133,14 +147,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     CheckGroups[GetObjectField[c, "Groups"]];
 
-    (* TODO: this should just be an Append.  The order of the groups
-       should not matter.  We could also check that the input groups
-       do not contain the coordinates. *)
-
-    c = SetObjectField[c, "Groups", 
-                       Union[GetObjectField[c, "Groups"],
-                             {{"grid::coordinates", {Kranc`x,Kranc`y,Kranc`z,Kranc`r}}},
-                             SameTest->(ToLowerCase[#1]==ToLowerCase[#2]&)]];
+    c = coordinatesProcessCode[c, opts];
 
     (* ------------------------------------------------------------------------ 
        Separate derivatives

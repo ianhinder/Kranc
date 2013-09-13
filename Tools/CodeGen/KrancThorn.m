@@ -95,6 +95,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     cktCheckNamedArgs[{opts}];
 
+    CheckGroups[groupsOrig];
+
     c = NewObject[
       Code, 
       {"Name" -> thornName,
@@ -153,8 +155,6 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     (* ------------------------------------------------------------------------ 
        Add coordinates group
        ------------------------------------------------------------------------ *)
-
-    CheckGroups[GetObjectField[c, "Groups"]];
 
     c = coordinatesProcessCode[c, opts];
 

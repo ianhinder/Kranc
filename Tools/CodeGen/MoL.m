@@ -21,7 +21,7 @@
 BeginPackage[
   "MoL`",
   {"Errors`", "Helpers`", "Kranc`", "CodeGenKranc`", "MapLookup`", "CodeGenCactus`",
-   "CodeGen`", "CodeGenC`", "KrancGroups`", "Calculation`"}];
+   "CodeGen`", "CodeGenC`", "KrancGroups`", "Calculation`", "Code`", "Object`"}];
 
 CreateKrancMoLRegister;
 CreateMoLBoundariesSource::usage = "";
@@ -37,6 +37,7 @@ MoLUsedFunctions;
 MoLProcessGroups;
 MoLParameterStructures;
 MoLUsedParameters;
+MoLProcessCode;
 
 Begin["`Private`"];
 
@@ -697,6 +698,65 @@ DefFn[
       {Name -> "MoL_Num_ArrayEvolved_Vars",   Type -> "CCTK_INT"}
       (* {Name -> "MoL_Num_Constrained_Vars", Type -> "CCTK_INT"} *)
     }}];
+
+Options[MoLProcessCode] = ThornOptions;
+
+DefFn[
+  MoLProcessCode[cIn_Code, opts:OptionsPattern[]] :=
+  Module[
+    {evolvedGroups, nonevolvedGroups, evolvedODEGroups,
+     nonevolvedODEGroups, rhsGroupDefinitions,
+     rhsODEGroupDefinitions, rhsGroups, rhsODEGroups,
+
+     groups, declaredGroups, calcs, odeGroups,
+     c = cIn},
+
+    groups = GetObjectField[c, "Groups"];
+    declaredGroups = GetObjectField[c, "DeclaredGroups"];
+    calcs = GetObjectField[c, "Calculations"];
+    odeGroups = GetObjectField[c, "ODEGroups"];
+
+    groups = MoLProcessGroups[declaredGroups,
+                              calcs, groups, GetObjectField[c,"EvolutionTimelevels"]];
+
+    (* Get the different types of group *)
+    evolvedGroups = MoLEvolvedGroups[declaredGroups, calcs, groups];
+    nonevolvedGroups = MoLNonevolvedGroups[declaredGroups, calcs, groups];
+
+    evolvedODEGroups = MoLEvolvedGroups[odeGroups, calcs, groups];
+    nonevolvedODEGroups = MoLNonevolvedGroups[odeGroups, calcs, groups];
+
+    (* Replace the dots in the calculation *)
+    calcs = MoLReplaceDots[calcs];
+
+    rhsGroupDefinitions = MoLRHSGroupDefinitions[groups, evolvedGroups];
+    rhsODEGroupDefinitions = MoLRHSODEGroupDefinitions[groups, evolvedODEGroups];
+
+    (* Add the RHS groups *)
+    groups = Join[groups, rhsGroupDefinitions, rhsODEGroupDefinitions];
+
+    rhsGroups = Map[groupName, rhsGroupDefinitions];
+    rhsODEGroups = Map[groupName, rhsODEGroupDefinitions];
+
+    (* This possibly shouldn't be in MoL but under ODEs instead *)
+    calcs = Map[Append[#, ODEGroups -> Join[odeGroups, rhsODEGroups]] &, calcs];
+
+    declaredGroups = Join[declaredGroups, rhsGroups, odeGroups, rhsODEGroups];
+
+    InfoMessage[Terse, "Creating MoL registration file"];
+    (* TODO: only do this for thorns with evolved variables *)
+
+    c = SetObjectField[c, "Groups", groups];
+    c = SetObjectField[c, "DeclaredGroups", declaredGroups];
+    c = SetObjectField[c, "Calculations", calcs];
+    AppendObjectField[
+      c, "Sources",
+      {Filename -> "RegisterMoL.cc",
+       Contents -> CreateKrancMoLRegister[
+         evolvedGroups, nonevolvedGroups, evolvedODEGroups,
+         nonevolvedODEGroups, 
+         Sequence@@(GetObjectField[c,#]& /@ 
+                    {"Groups", "Implementation", "Name"})]}]]];
 
 End[];
 

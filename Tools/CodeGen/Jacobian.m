@@ -19,7 +19,7 @@
 *)
 
 BeginPackage["Jacobian`", {"Errors`", "Helpers`", "Kranc`", "Differencing`", "MapLookup`",
-                           "CodeGen`", "CodeGenC`", "KrancGroups`"}];
+                           "CodeGen`", "CodeGenC`", "KrancGroups`", "Code`", "Object`"}];
 
 JacobianQ;
 InsertJacobian;
@@ -29,6 +29,7 @@ JacobianSymbols;
 JacobianGroups;
 JacobianCheckGroups;
 JacobianConditionalGridFunctions;
+JacobianProcessCode;
 
 Begin["`Private`"];
 
@@ -193,6 +194,16 @@ JacobianConditionalGridFunctions[] :=
    ("dJ" ~~ DigitCharacter ~~ DigitCharacter ~~ DigitCharacter),
    "use_jacobian",
    None};
+
+Options[JacobianProcessCode] = ThornOptions;
+
+DefFn[
+  JacobianProcessCode[c_Code, opts:OptionsPattern[]] :=
+  Module[
+    {},
+    If[OptionValue[UseJacobian],
+       JacobianCheckGroups[GetObjectField[c, "Groups"]]];
+    c]];
 
 End[];
 

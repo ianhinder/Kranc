@@ -190,10 +190,10 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
                                         GetObjectField[c, "Calculations"]],1]]]];
 
     (* ------------------------------------------------------------------------ 
-       Check input parameters
+       Jacobian
        ------------------------------------------------------------------------ *)
 
-    If[OptionValue[UseJacobian], JacobianCheckGroups[GetObjectField[c, "Groups"]]];
+    c = JacobianProcessCode[c, opts];
 
     (* ------------------------------------------------------------------------ 
        Conservation Calculations

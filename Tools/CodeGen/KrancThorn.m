@@ -107,6 +107,17 @@ DefFn[
           GetObjectField[c, "Calculations"]]];
     c]];
 
+DefFn[
+  declaredGroupsProcessCode[cIn_Code, opts___] :=
+  Module[
+    {c = cIn},
+    c = SetObjectField[
+      c, "DeclaredGroups", 
+      DeleteDuplicates[Join[GetObjectField[c, "DeclaredGroups"],
+                            Flatten[Map[Map[groupName,lookup[#,LocalGroups,{}]] &,
+                                        GetObjectField[c, "Calculations"]],1]]]];
+    c]];
+
 (* --------------------------------------------------------------------------
    Thorn generation (main entry point for non-tensorial thorns)
    -------------------------------------------------------------------------- *)
@@ -236,11 +247,11 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     c = ODEProcessCode[c, opts];
 
-    c = SetObjectField[
-      c, "DeclaredGroups", 
-      DeleteDuplicates[Join[GetObjectField[c, "DeclaredGroups"],
-                            Flatten[Map[Map[groupName,lookup[#,LocalGroups,{}]] &,
-                                        GetObjectField[c, "Calculations"]],1]]]];
+    (* ------------------------------------------------------------------------ 
+       Declared groups
+       ------------------------------------------------------------------------ *)
+
+    c = declaredGroupsProcessCode[c, opts];
 
     (* ------------------------------------------------------------------------ 
        MoL

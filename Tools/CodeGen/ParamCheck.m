@@ -19,10 +19,11 @@
 *)
 
 BeginPackage["ParamCheck`", {"Errors`", "Helpers`", "Kranc`", "CodeGenCactus`",
-                             "CodeGenC`", "CodeGen`", "CodeGenKranc`"}];
+                             "CodeGenC`", "CodeGen`", "CodeGenKranc`", "Code`", "Object`"}];
 
 ParameterCheckSource;
 ParameterCheckSchedule;
+ParamCheckProcessCode;
 
 Begin["`Private`"];
 
@@ -80,6 +81,20 @@ DefFn[checkCondition[{cond_, error_String}] :=
     ConditionalOnParameterTextual[
       renderbool[cond],
       {"CCTK_WARN(CCTK_WARN_ABORT, ", StringDrop[Stringify[error],-1], ");\n"}]]];
+
+Options[ParamCheckProcessCode] = ThornOptions;
+
+DefFn[
+  ParamCheckProcessCode[cIn_Code, opts:OptionsPattern[]] :=
+  Module[
+    {c = cIn},
+    If[Length[OptionValue[ParameterConditions]] > 0,
+       c = AppendObjectField[
+         c, "Sources",
+         {Filename -> "ParamCheck.cc",
+          Contents -> ParameterCheckSource[GetObjectField[c, "Name"], 
+                                           OptionValue[ParameterConditions]]}]];
+    c]];
 
 End[];
 

@@ -334,12 +334,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        Add parameter check source file
        ------------------------------------------------------------------------ *)
    
-    If[Length[OptionValue[ParameterConditions]] > 0,
-       c = AppendObjectField[
-         c, "Sources",
-         {Filename -> "ParamCheck.cc",
-          Contents -> ParameterCheckSource[GetObjectField[c, "Name"], 
-                                           OptionValue[ParameterConditions]]}]];
+    c = ParamCheckProcessCode[c, opts];
 
     (* ------------------------------------------------------------------------ 
        Create finite differencing header file

@@ -67,6 +67,7 @@ DefFn[
                        Union[GetObjectField[c, "Groups"],
                              {{"grid::coordinates", {Kranc`x,Kranc`y,Kranc`z,Kranc`r}}},
                              SameTest->(ToLowerCase[#1]==ToLowerCase[#2]&)]];
+    c = AppendObjectField[c, "InheritedImplementations", "Grid"];
     c]];
 
 (* --------------------------------------------------------------------------
@@ -178,7 +179,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        ------------------------------------------------------------------------ *)
 
     c = JoinObjectField[c, "InheritedImplementations",
-                        Join[{"Grid", "GenericFD"},
+                        Join[{"GenericFD"},
                              CactusBoundary`GetInheritedImplementations[]]];
 
     (* ------------------------------------------------------------------------ 

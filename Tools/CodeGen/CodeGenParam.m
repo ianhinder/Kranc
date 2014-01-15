@@ -75,8 +75,8 @@ parameterBlock[spec_] :=
      (* For each allowed value of the parameter specified in the spec,
         create a line with the value and the description *)
      Map[{renderValue[lookup[spec,Type], lookup[#, Value]], " :: ", 
-    Quote[lookup[#, Description]], "\n"} &, 
-          lookupDefault[spec, AllowedValues, {}]],
+          Quote[lookup[#, Description]], "\n"} &, 
+         lookupDefault[spec, AllowedValues, {}]],
 
      (* Output the line describing the default value of the parameter *)
      renderValue[lookup[spec,Type], lookup[spec, Default]]],

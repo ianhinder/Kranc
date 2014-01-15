@@ -200,10 +200,20 @@ unqualifiedName[name_] :=
    Code generation functions
    ------------------------------------------------------------------------ *)
 
+(* Extend an allowed value that is just a value and does not yet
+   follow the {Value->..., Description->...} syntax *)
+extendAllowedValue[avList_List] :=
+  {Value -> lookup[avList, Value], 
+   Description -> lookupDefault[avList, Description, ""]};
+extendAllowedValue[val_] :=
+  {Value -> val, Description -> ""};
+
 krancParamStruct[definition_, type_, inherited_] :=
-  Module[{description, name},
+  Module[{allowedValues, description, name},
     name = lookup[definition, Name];
     description = lookupDefault[definition, Description, name];
+    allowedValues = extendAllowedValue /@
+         lookupDefault[definition, AllowedValues, {"*:*"}];
     Join[
     {Name        -> name,
      Type        -> type, 
@@ -215,19 +225,19 @@ krancParamStruct[definition_, type_, inherited_] :=
       {}],
     If[inherited,
       {},
-      {AllowedValues -> {{Value -> "*:*", Description -> ""}}}]]];
+      {AllowedValues -> allowedValues}]]];
 
 krancParamStructExtended[definition_, type_] :=
   Module[{allowedValues, description, name},
     name = unqualifiedName[lookup[definition, Name]];
     description = lookupDefault[definition, Description, name];
-    allowedValues = lookup[definition, AllowedValues];
+    allowedValues = extendAllowedValue /@ lookup[definition, AllowedValues];
     {Name        -> name,
      Type        -> type, 
      Description -> description,
      Default     -> "",
      Visibility  -> "restricted",
-     AllowedValues -> Map[{Value -> #, Description -> ""} &, allowedValues]}];
+     AllowedValues -> allowedValues}];
 
 krancKeywordParamStruct[struct_] :=
   Join[
@@ -239,7 +249,7 @@ krancKeywordParamStruct[struct_] :=
   If[mapContains[struct, Steerable],
     {Steerable -> lookup[struct, Steerable]},
     {}],
-  {AllowedValues -> Map[{Value -> #, Description -> #} &, lookup[struct, AllowedValues]]}];
+  {AllowedValues -> extendAllowedValue /@ lookup[struct, AllowedValues]}];
 
 MakeFullParamDefs[params_] :=
   Module[{p},

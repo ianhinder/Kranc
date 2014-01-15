@@ -106,7 +106,7 @@ DefFn[
       "    switch (dir) {",
       Table[{
         "    case hrscc::policy::" <> {"x", "y", "z"}[[dir]] <> ": {",
-        Map["      flux"<>ToString[#]<>"L = *observer.field[variables_t::i"<>ToString[#]<>" + "<>ToString[dir-1]<>"*DGFE_"<>name<>"::nvars];" &, vars],
+        Map["      flux"<>ToString[#]<>"L = observer.field[variables_t::i"<>ToString[#]<>" + "<>ToString[dir-1]<>"*DGFE_"<>name<>"::nvars];" &, vars],
         "      break;",
         "    }"},
             {dir, 1, 3}],

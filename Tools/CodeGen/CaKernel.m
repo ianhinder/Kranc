@@ -238,8 +238,8 @@ DefFn[
        (* Apply the conditional to the routines, not to the group *)
        newCalcs = MapThread[AddConditionSuffix,
                             {newCalcs,
-                             {"Accelerator::host_process",
-                              "Accelerator::device_process"}}];
+                             {"ChemoraDevice::host_process",
+                              "ChemoraDevice::device_process"}}];
 
        newCalcs]]];
 

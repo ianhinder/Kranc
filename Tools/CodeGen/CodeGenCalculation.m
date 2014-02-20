@@ -309,7 +309,6 @@ DefFn[
   odeGroups = lookupDefault[cleancalc, ODEGroups, {}];
   If[useJacobian, groups = Join[groups, JacobianGroups[]]];
   pddefs = lookupDefault[cleancalc, PartialDerivatives, {}];
-  where = lookupDefault[cleancalc, Where, Everywhere];
   addToStencilWidth = lookupDefault[cleancalc, AddToStencilWidth, 0];
   pDefs = lookup[cleancalc, PreDefinitions];
   haveCondTextuals = mapContains[cleancalc, ConditionalOnTextuals];
@@ -351,6 +350,7 @@ DefFn[
   If[!VectorQ[stencilSize],
      stencilSize = MapThread[Max,Map[Last,stencilSize[[2]]]]];
 
+  where = GetCalculationWhere[cleancalc];
   If[where === Automatic,
      where = If[MatchQ[stencilSize, {0,0,0}] =!= True, Interior, Everywhere]];
 

@@ -110,6 +110,7 @@ DefFn[
 
 DefFn[
   GetCalculationWhere[calc_List] :=
+  (* TODO: support Automatic here, but we need to calculate the stencil size *)
   lookup[calc,Where, Everywhere]];
 
 DefFn[

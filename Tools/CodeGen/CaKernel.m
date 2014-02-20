@@ -83,6 +83,11 @@ DefFn[
                         Flatten[Map[{#,#} &,
                                     CalculationStencilSize[calc]],1],","]]];
 
+    attrs = Append[attrs, "EXTERIOR" ->
+      If[MemberQ[{Everywhere, BoundaryWithGhosts}, GetCalculationWhere[calc]],
+        Quote["1,1,1,1,1,1"],
+        Quote["0,0,0,0,0,0"]]];
+
     CCLBlock["CCTK_CUDA_KERNEL", lookup[calc, Name], attrs,
              variableBlocks[calc]]]];
 

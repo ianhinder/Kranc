@@ -1,0 +1,72 @@
+# File produced by Kranc
+
+
+STORAGE: phi_group[timelevels]
+
+STORAGE: pi_group[timelevels]
+
+STORAGE: phi_grouprhs[rhs_timelevels]
+
+STORAGE: pi_grouprhs[rhs_timelevels]
+
+schedule SimpleWaveScriptCaKernel_Startup at STARTUP
+{
+  LANG: C
+  OPTIONS: meta
+} "create banner"
+
+schedule SimpleWaveScriptCaKernel_RegisterSymmetries in SymmetryRegister
+{
+  LANG: C
+  OPTIONS: meta
+} "register symmetries"
+
+schedule CAKERNEL_Launch_initial_sine_calc as initial_sine_calc at initial
+{
+  LANG: C
+  TAGS: Device=1
+  READS: grid::x(Everywhere)
+  READS: SimpleWaveScriptCaKernel::pi(Everywhere)
+  WRITES: SimpleWaveScriptCaKernel::phi(ERROR(Automatic))
+  WRITES: SimpleWaveScriptCaKernel::pi(ERROR(Automatic))
+} "initial_sine_calc"
+
+schedule CAKERNEL_Launch_calc_rhs as calc_rhs in mol_calcrhs
+{
+  LANG: C
+  TAGS: Device=1
+  READS: SimpleWaveScriptCaKernel::phi(Everywhere)
+  READS: SimpleWaveScriptCaKernel::pi(Everywhere)
+  WRITES: SimpleWaveScriptCaKernel::phirhs(ERROR(Automatic))
+  WRITES: SimpleWaveScriptCaKernel::pirhs(ERROR(Automatic))
+} "calc_rhs"
+
+schedule SimpleWaveScriptCaKernel_SelectBoundConds in MoL_PostStep
+{
+  LANG: C
+  OPTIONS: level
+  SYNC: phi_group
+  SYNC: pi_group
+} "select boundary conditions"
+
+schedule SimpleWaveScriptCaKernel_CheckBoundaries at BASEGRID
+{
+  LANG: C
+  OPTIONS: meta
+} "check boundaries treatment"
+
+schedule SimpleWaveScriptCaKernel_RegisterVars in MoL_Register
+{
+  LANG: C
+  OPTIONS: meta
+} "Register Variables for MoL"
+
+schedule SimpleWaveScriptCaKernel_Init in CCTK_BASEGRID after Accelerator_SetDevice
+{
+  LANG: C
+  OPTIONS: local
+} "Initialize CUDA Device"
+
+schedule group ApplyBCs as SimpleWaveScriptCaKernel_ApplyBCs in MoL_PostStep after SimpleWaveScriptCaKernel_SelectBoundConds
+{
+} "Apply boundary conditions controlled by thorn Boundary"

@@ -145,12 +145,14 @@ process["func"["name"[name_],exprs__]] :=
     If[MemberQ[First/@fns,name], (name/.fns)@@Map[process,{exprs}],
        ThrowError["Unrecognised function: ", name]]];
 
-process["expr"[mul_]] := process[mul];
-process["expr"[]] := 0;
+process["mexpr"[mul_]] := process[mul];
+process["mexpr"[]] := 0;
 
 (* Addition, subtraction, multiplication and division are all left-associative *)
-process["expr"[cs___, a_, "addop"["+"], b_]] := process["expr"[cs,a]] + process[b];
-process["expr"[cs___, a_, "addop"["-"], b_]] := process["expr"[cs,a]] - process[b];
+process["mexpr"[cs___, a_, "addop"["+"], b_]] := process["mexpr"[cs,a]] + process[b];
+process["mexpr"[cs___, a_, "addop"["-"], b_]] := process["mexpr"[cs,a]] - process[b];
+
+process["expr"[m:"mexpr"[___]]] := process[m];
 
 process["mul"[pow_]] := process[pow];
 process["mul"[]] := 1;

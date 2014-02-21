@@ -187,7 +187,10 @@ process["option"["disable"[features__]]] :=
 process[h:"derivatives"["deqns"[eqs___]]] :=
   Map[process, {eqs}];
 
-process[d:"deqn"[___]] := Print["no handler for ", d];
+process[d:"deqn"[___]] :=
+  Module[{},
+    Print["(deqn) No handler for ", d];
+    ThrowError["Failed to parse script"]];
 
 process["deqn"[("dtensor"["dname"[dname_],
                           "tensor"["name"[tName_],

@@ -58,7 +58,7 @@ process[thorn:"thorn"[content___]] :=
     
     Do[Switch[el,
               "calculation"[___], AppendTo[calcs,process[el]],
-              "name"[_], name = el[[1]],
+              "uname"[_], name = el[[1]],
               "variables"["begin variables end variables"], Null,
               "temporaries"["begin temporaries end temporaries"], Null,
               "variables"[__], variables = Join[variables,List@@Map[process,el]],

@@ -86,7 +86,7 @@ DefFn[
                                     stencil],1],","]]];
 
     attrs = Append[attrs, "EXTERIOR" ->
-      If[MemberQ[{Everywhere, BoundaryWithGhosts, BoundaryNoSync},
+      If[MemberQ[{Everywhere, BoundaryWithGhosts},
                  GetCalculationWhere[calc]] || 
         (MemberQ[stencil, 0] && Total[stencil] =!= 0 (* both zero and nonzero elements *)),
         Quote["1,1,1,1,1,1"],

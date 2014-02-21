@@ -1,84 +1,25 @@
 # File produced by Kranc
 
 
-if (other_timelevels == 1)
-{
-  STORAGE: CB_group[1]
-}
+STORAGE: El_group[timelevels]
 
-if (other_timelevels == 1)
-{
-  STORAGE: CEl_group[1]
-}
+STORAGE: B_group[timelevels]
 
-if (other_timelevels == 1)
-{
-  STORAGE: rho_group[1]
-}
+STORAGE: CEl_group[other_timelevels]
 
-if (timelevels == 1)
-{
-  STORAGE: B_group[1]
-}
-if (timelevels == 2)
-{
-  STORAGE: B_group[2]
-}
-if (timelevels == 3)
-{
-  STORAGE: B_group[3]
-}
+STORAGE: CB_group[other_timelevels]
 
-if (timelevels == 1)
-{
-  STORAGE: El_group[1]
-}
-if (timelevels == 2)
-{
-  STORAGE: El_group[2]
-}
-if (timelevels == 3)
-{
-  STORAGE: El_group[3]
-}
+STORAGE: rho_group[other_timelevels]
 
-if (rhs_timelevels == 1)
-{
-  STORAGE: B_grouprhs[1]
-}
-if (rhs_timelevels == 2)
-{
-  STORAGE: B_grouprhs[2]
-}
-if (rhs_timelevels == 3)
-{
-  STORAGE: B_grouprhs[3]
-}
+STORAGE: B_grouprhs[rhs_timelevels]
 
-if (rhs_timelevels == 1)
-{
-  STORAGE: El_grouprhs[1]
-}
-if (rhs_timelevels == 2)
-{
-  STORAGE: El_grouprhs[2]
-}
-if (rhs_timelevels == 3)
-{
-  STORAGE: El_grouprhs[3]
-}
+STORAGE: El_grouprhs[rhs_timelevels]
 
 schedule EMScript_Startup at STARTUP
 {
   LANG: C
   OPTIONS: meta
 } "create banner"
-
-schedule EMScript_RegisterVars in MoL_Register
-{
-  LANG: C
-  OPTIONS: meta
-} "Register Variables for MoL"
 
 schedule EMScript_RegisterSymmetries in SymmetryRegister
 {
@@ -89,29 +30,64 @@ schedule EMScript_RegisterSymmetries in SymmetryRegister
 schedule EM_initial at initial
 {
   LANG: C
+  READS: grid::x(Everywhere)
+  READS: grid::y(Everywhere)
+  WRITES: EMScript::B1(ERROR(Automatic))
+  WRITES: EMScript::B2(ERROR(Automatic))
+  WRITES: EMScript::B3(ERROR(Automatic))
+  WRITES: EMScript::El1(ERROR(Automatic))
+  WRITES: EMScript::El2(ERROR(Automatic))
+  WRITES: EMScript::El3(ERROR(Automatic))
 } "EM_initial"
 
 schedule EM_evol in MoL_CalcRHS
 {
   LANG: C
+  READS: EMScript::B1(Everywhere)
+  READS: EMScript::B2(Everywhere)
+  READS: EMScript::B3(Everywhere)
+  READS: EMScript::El1(Everywhere)
+  READS: EMScript::El2(Everywhere)
+  READS: EMScript::El3(Everywhere)
+  WRITES: EMScript::B1rhs(ERROR(Automatic))
+  WRITES: EMScript::B2rhs(ERROR(Automatic))
+  WRITES: EMScript::B3rhs(ERROR(Automatic))
+  WRITES: EMScript::El1rhs(ERROR(Automatic))
+  WRITES: EMScript::El2rhs(ERROR(Automatic))
+  WRITES: EMScript::El3rhs(ERROR(Automatic))
 } "EM_evol"
 
 schedule EM_constraints at analysis
 {
   LANG: C
+  READS: EMScript::B1(Everywhere)
+  READS: EMScript::B2(Everywhere)
+  READS: EMScript::B3(Everywhere)
+  READS: EMScript::El1(Everywhere)
+  READS: EMScript::El2(Everywhere)
+  READS: EMScript::El3(Everywhere)
+  WRITES: EMScript::CB(ERROR(Automatic))
+  WRITES: EMScript::CEl(ERROR(Automatic))
 } "EM_constraints"
 
 schedule EM_energy at analysis
 {
   LANG: C
+  READS: EMScript::B1(Everywhere)
+  READS: EMScript::B2(Everywhere)
+  READS: EMScript::B3(Everywhere)
+  READS: EMScript::El1(Everywhere)
+  READS: EMScript::El2(Everywhere)
+  READS: EMScript::El3(Everywhere)
+  WRITES: EMScript::rho(ERROR(Automatic))
 } "EM_energy"
 
 schedule EMScript_SelectBoundConds in MoL_PostStep
 {
   LANG: C
   OPTIONS: level
-  SYNC: B_group
   SYNC: El_group
+  SYNC: B_group
 } "select boundary conditions"
 
 schedule EMScript_CheckBoundaries at BASEGRID
@@ -120,7 +96,12 @@ schedule EMScript_CheckBoundaries at BASEGRID
   OPTIONS: meta
 } "check boundaries treatment"
 
+schedule EMScript_RegisterVars in MoL_Register
+{
+  LANG: C
+  OPTIONS: meta
+} "Register Variables for MoL"
+
 schedule group ApplyBCs as EMScript_ApplyBCs in MoL_PostStep after EMScript_SelectBoundConds
 {
-  # no language specified
 } "Apply boundary conditions controlled by thorn Boundary"

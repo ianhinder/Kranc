@@ -1,18 +1,15 @@
 # File produced by Kranc
 
-implements: My_New_Implementation
+implements: EMScript
 
-inherits:   ADMBase Grid GenericFD Boundary
+inherits:   Boundary GenericFD Grid
 
 
 
 USES INCLUDE: GenericFD.h
-USES INCLUDE: Symmetry.h
-USES INCLUDE: sbp_calc_coeffs.h
-USES INCLUDE: Boundary.h
 USES INCLUDE: loopcontrol.h
-USES INCLUDE: OpenCLRunTime.h
-USES INCLUDE: vectors.h
+USES INCLUDE: Symmetry.h
+USES INCLUDE: Boundary.h
 
 CCTK_INT FUNCTION MoLRegisterEvolved(CCTK_INT IN EvolvedIndex, CCTK_INT IN RHSIndex)
 USES FUNCTION MoLRegisterEvolved
@@ -30,22 +27,12 @@ CCTK_INT FUNCTION Boundary_SelectVarForBC(CCTK_POINTER_TO_CONST IN GH, CCTK_INT 
 USES FUNCTION Boundary_SelectVarForBC
 
 public:
-CCTK_REAL CB_group type=GF timelevels=1 tags='tensortypealias="Scalar" tensorweight=0'
+CCTK_REAL El_group type=GF timelevels=3 tags='tensortypealias="D" tensorweight=0'
 {
-  CB
-} "CB_group"
-
-public:
-CCTK_REAL CEl_group type=GF timelevels=1 tags='tensortypealias="Scalar" tensorweight=0'
-{
-  CEl
-} "CEl_group"
-
-public:
-CCTK_REAL rho_group type=GF timelevels=1 tags='tensortypealias="Scalar" tensorweight=0'
-{
-  rho
-} "rho_group"
+  El1,
+  El2,
+  El3
+} "El_group"
 
 public:
 CCTK_REAL B_group type=GF timelevels=3 tags='tensortypealias="D" tensorweight=0'
@@ -56,15 +43,25 @@ CCTK_REAL B_group type=GF timelevels=3 tags='tensortypealias="D" tensorweight=0'
 } "B_group"
 
 public:
-CCTK_REAL El_group type=GF timelevels=3 tags='tensortypealias="D" tensorweight=0'
+CCTK_REAL CEl_group type=GF timelevels=1 tags='tensortypealias="Scalar" tensorweight=0'
 {
-  El1,
-  El2,
-  El3
-} "El_group"
+  CEl
+} "CEl_group"
 
 public:
-CCTK_REAL B_grouprhs type=GF timelevels=3 tags='tensortypealias="D" tensorweight=0'
+CCTK_REAL CB_group type=GF timelevels=1 tags='tensortypealias="Scalar" tensorweight=0'
+{
+  CB
+} "CB_group"
+
+public:
+CCTK_REAL rho_group type=GF timelevels=1 tags='tensortypealias="Scalar" tensorweight=0'
+{
+  rho
+} "rho_group"
+
+public:
+CCTK_REAL B_grouprhs type=GF timelevels=3 tags='tensortypealias="D" tensorweight=0 Prolongation="None"'
 {
   B1rhs,
   B2rhs,
@@ -72,7 +69,7 @@ CCTK_REAL B_grouprhs type=GF timelevels=3 tags='tensortypealias="D" tensorweight
 } "B_grouprhs"
 
 public:
-CCTK_REAL El_grouprhs type=GF timelevels=3 tags='tensortypealias="D" tensorweight=0'
+CCTK_REAL El_grouprhs type=GF timelevels=3 tags='tensortypealias="D" tensorweight=0 Prolongation="None"'
 {
   El1rhs,
   El2rhs,

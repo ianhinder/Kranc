@@ -1,6 +1,6 @@
 # File produced by Kranc
 
 REQUIRES GenericFD
-REQUIRES LoopControl
-REQUIRES OpenCL OpenCLRunTime
-REQUIRES Vectors
+OPTIONAL LoopControl
+{
+}

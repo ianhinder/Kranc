@@ -4,7 +4,7 @@
 
 extern "C" int EMScript_Startup(void)
 {
-  const char * banner = "EMScript";
+  const char* banner CCTK_ATTRIBUTE_UNUSED = "EMScript";
   CCTK_RegisterBanner(banner);
   return 0;
 }

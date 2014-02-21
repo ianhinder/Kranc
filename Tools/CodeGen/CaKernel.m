@@ -69,22 +69,26 @@ DefFn[
   kernelCCLBlock[calc_, tileSize_List] :=
   Module[
     {bnd = BoundaryCalculationQ[calc],
-     int, attrs},
+     int, attrs, stencil},
     int = !bnd;
 
     attrs = {"TYPE" -> If[int, "gpu_cuda/3dblock", "gpu_cuda/boundary_s"],
              "TILE" -> Quote[StringJoin[Riffle[ToString/@tileSize,","]]],
              "SHARECODE" -> "yes"};
 
+    stencil = CalculationStencilSize[calc];
+
     If[int,
        attrs = Append[attrs, 
                       "STENCIL" ->
                       Quote@FlattenBlock@Riffle[
                         Flatten[Map[{#,#} &,
-                                    CalculationStencilSize[calc]],1],","]]];
+                                    stencil],1],","]]];
 
     attrs = Append[attrs, "EXTERIOR" ->
-      If[MemberQ[{Everywhere, BoundaryWithGhosts}, GetCalculationWhere[calc]],
+      If[MemberQ[{Everywhere, BoundaryWithGhosts, BoundaryNoSync},
+                 GetCalculationWhere[calc]] || 
+        (MemberQ[stencil, 0] && Total[stencil] =!= 0 (* both zero and nonzero elements *)),
         Quote["1,1,1,1,1,1"],
         Quote["0,0,0,0,0,0"]]];
 

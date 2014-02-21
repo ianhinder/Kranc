@@ -1,6 +1,6 @@
-skipper = \b([ \t\n\r]+|#.*)*
+skipper = \b([ \t\n\r]+|\#.*)*
 int = [0-9]+
-end = ([ \t]+|#.*)*\r*\n
+end = ([ \t]+|\#.*)*\r*\n
 name = [A-Za-z][A-Za-z0-9]*
 uname = [A-Za-z][A-Za-z0-9_]*
 lower_index = ({index_symbol}|\({index_expr}(,{index_expr})*\))

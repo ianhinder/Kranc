@@ -1,57 +1,13 @@
 # File produced by Kranc
 
 
-if (timelevels == 1)
-{
-  STORAGE: phi_group[1]
-}
-if (timelevels == 2)
-{
-  STORAGE: phi_group[2]
-}
-if (timelevels == 3)
-{
-  STORAGE: phi_group[3]
-}
+STORAGE: phi_group[timelevels]
 
-if (timelevels == 1)
-{
-  STORAGE: pi_group[1]
-}
-if (timelevels == 2)
-{
-  STORAGE: pi_group[2]
-}
-if (timelevels == 3)
-{
-  STORAGE: pi_group[3]
-}
+STORAGE: pi_group[timelevels]
 
-if (rhs_timelevels == 1)
-{
-  STORAGE: phi_grouprhs[1]
-}
-if (rhs_timelevels == 2)
-{
-  STORAGE: phi_grouprhs[2]
-}
-if (rhs_timelevels == 3)
-{
-  STORAGE: phi_grouprhs[3]
-}
+STORAGE: phi_grouprhs[rhs_timelevels]
 
-if (rhs_timelevels == 1)
-{
-  STORAGE: pi_grouprhs[1]
-}
-if (rhs_timelevels == 2)
-{
-  STORAGE: pi_grouprhs[2]
-}
-if (rhs_timelevels == 3)
-{
-  STORAGE: pi_grouprhs[3]
-}
+STORAGE: pi_grouprhs[rhs_timelevels]
 
 schedule WaveCaKernelScript_Startup at STARTUP
 {
@@ -65,31 +21,32 @@ schedule WaveCaKernelScript_RegisterSymmetries in SymmetryRegister
   OPTIONS: meta
 } "register symmetries"
 
-schedule CAKERNEL_Launch_initial_gaussian_calc at initial
+schedule CAKERNEL_Launch_initial_gaussian_calc as initial_gaussian_calc at initial
 {
   LANG: C
   TAGS: Device=1
-  READS:    grid::coordinates
-  WRITES:   WaveCaKernelScript::phi_group
-  WRITES:   WaveCaKernelScript::pi_group
+  READS: grid::x(Everywhere)
+  WRITES: WaveCaKernelScript::phi(ERROR(Automatic))
+  WRITES: WaveCaKernelScript::pi(ERROR(Automatic))
 } "initial_gaussian_calc"
 
-schedule CAKERNEL_Launch_calc_rhs in MoL_CalcRHS
+schedule CAKERNEL_Launch_calc_rhs as calc_rhs in MoL_CalcRHS
 {
   LANG: C
   TAGS: Device=1
-  READS:    WaveCaKernelScript::pi_group
-  WRITES:   WaveCaKernelScript::phi_grouprhs
-  WRITES:   WaveCaKernelScript::pi_grouprhs
+  READS: WaveCaKernelScript::phi(Everywhere)
+  READS: WaveCaKernelScript::pi(Everywhere)
+  WRITES: WaveCaKernelScript::phirhs(ERROR(Automatic))
+  WRITES: WaveCaKernelScript::pirhs(ERROR(Automatic))
 } "calc_rhs"
 
-schedule CAKERNEL_Launch_calc_bound_rhs in MoL_RHSBoundaries
+schedule CAKERNEL_Launch_calc_bound_rhs as calc_bound_rhs in MoL_RHSBoundaries
 {
   LANG: C
   TAGS: Device=1
-  READS:    grid::coordinates
-  WRITES:   WaveCaKernelScript::phi_grouprhs
-  WRITES:   WaveCaKernelScript::pi_grouprhs
+  READS: grid::x(Everywhere)
+  WRITES: WaveCaKernelScript::phirhs(ERROR(Automatic))
+  WRITES: WaveCaKernelScript::pirhs(ERROR(Automatic))
 } "calc_bound_rhs"
 
 schedule WaveCaKernelScript_SelectBoundConds in MoL_PostStep
@@ -112,7 +69,12 @@ schedule WaveCaKernelScript_RegisterVars in MoL_Register
   OPTIONS: meta
 } "Register Variables for MoL"
 
+schedule WaveCaKernelScript_Init in CCTK_BASEGRID after Accelerator_SetDevice
+{
+  LANG: C
+  OPTIONS: local
+} "Initialize CUDA Device"
+
 schedule group ApplyBCs as WaveCaKernelScript_ApplyBCs in MoL_PostStep after WaveCaKernelScript_SelectBoundConds
 {
-  # no language specified
 } "Apply boundary conditions controlled by thorn Boundary"

@@ -2,15 +2,14 @@
 
 implements: SimpleWaveScript
 
-inherits:   Grid GenericFD Boundary
+inherits:   Boundary GenericFD Grid
 
 
 
 USES INCLUDE: GenericFD.h
-USES INCLUDE: Symmetry.h
-USES INCLUDE: sbp_calc_coeffs.h
-USES INCLUDE: Boundary.h
 USES INCLUDE: loopcontrol.h
+USES INCLUDE: Symmetry.h
+USES INCLUDE: Boundary.h
 
 CCTK_INT FUNCTION MoLRegisterEvolved(CCTK_INT IN EvolvedIndex, CCTK_INT IN RHSIndex)
 USES FUNCTION MoLRegisterEvolved
@@ -40,13 +39,13 @@ CCTK_REAL pi_group type=GF timelevels=3 tags='tensortypealias="Scalar" tensorwei
 } "pi_group"
 
 public:
-CCTK_REAL phi_grouprhs type=GF timelevels=3 tags='tensortypealias="Scalar" tensorweight=0'
+CCTK_REAL phi_grouprhs type=GF timelevels=3 tags='tensortypealias="Scalar" tensorweight=0 Prolongation="None"'
 {
   phirhs
 } "phi_grouprhs"
 
 public:
-CCTK_REAL pi_grouprhs type=GF timelevels=3 tags='tensortypealias="Scalar" tensorweight=0'
+CCTK_REAL pi_grouprhs type=GF timelevels=3 tags='tensortypealias="Scalar" tensorweight=0 Prolongation="None"'
 {
   pirhs
 } "pi_grouprhs"

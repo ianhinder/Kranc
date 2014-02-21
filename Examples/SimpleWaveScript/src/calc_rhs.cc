@@ -17,17 +17,19 @@
 
 /* Define macros used in calculations */
 #define INITVALUE (42)
-#define QAD(x) (SQR(SQR(x)))
-#define INV(x) ((1.0) / (x))
+#define INV(x) ((CCTK_REAL)1.0 / (x))
 #define SQR(x) ((x) * (x))
-#define CUB(x) ((x) * (x) * (x))
+#define CUB(x) ((x) * SQR(x))
+#define QAD(x) (SQR(SQR(x)))
 
 extern "C" void calc_rhs_SelectBCs(CCTK_ARGUMENTS)
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  CCTK_INT ierr = 0;
+  if (cctk_iteration % calc_rhs_calc_every != calc_rhs_calc_offset)
+    return;
+  CCTK_INT ierr CCTK_ATTRIBUTE_UNUSED = 0;
   ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, GenericFD_GetBoundaryWidth(cctkGH), -1 /* no table */, "SimpleWaveScript::phi_grouprhs","flat");
   if (ierr < 0)
     CCTK_WARN(1, "Failed to register flat BC for SimpleWaveScript::phi_grouprhs.");
@@ -37,59 +39,62 @@ extern "C" void calc_rhs_SelectBCs(CCTK_ARGUMENTS)
   return;
 }
 
-static void calc_rhs_Body(cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const imin[3], int const imax[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[])
+static void calc_rhs_Body(const cGH* restrict const cctkGH, const int dir, const int face, const CCTK_REAL normal[3], const CCTK_REAL tangentA[3], const CCTK_REAL tangentB[3], const int imin[3], const int imax[3], const int n_subblock_gfs, CCTK_REAL* restrict const subblock_gfs[])
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
   
-  /* Declare finite differencing variables */
-  
   /* Include user-supplied include files */
   
   /* Initialise finite differencing variables */
-  ptrdiff_t const di = 1;
-  ptrdiff_t const dj = CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0);
-  ptrdiff_t const dk = CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0);
-  ptrdiff_t const cdi = sizeof(CCTK_REAL) * di;
-  ptrdiff_t const cdj = sizeof(CCTK_REAL) * dj;
-  ptrdiff_t const cdk = sizeof(CCTK_REAL) * dk;
-  CCTK_REAL const dx = ToReal(CCTK_DELTA_SPACE(0));
-  CCTK_REAL const dy = ToReal(CCTK_DELTA_SPACE(1));
-  CCTK_REAL const dz = ToReal(CCTK_DELTA_SPACE(2));
-  CCTK_REAL const dt = ToReal(CCTK_DELTA_TIME);
-  CCTK_REAL const t = ToReal(cctk_time);
-  CCTK_REAL const dxi = INV(dx);
-  CCTK_REAL const dyi = INV(dy);
-  CCTK_REAL const dzi = INV(dz);
-  CCTK_REAL const khalf = 0.5;
-  CCTK_REAL const kthird = 1/3.0;
-  CCTK_REAL const ktwothird = 2.0/3.0;
-  CCTK_REAL const kfourthird = 4.0/3.0;
-  CCTK_REAL const keightthird = 8.0/3.0;
-  CCTK_REAL const hdxi = 0.5 * dxi;
-  CCTK_REAL const hdyi = 0.5 * dyi;
-  CCTK_REAL const hdzi = 0.5 * dzi;
+  const ptrdiff_t di CCTK_ATTRIBUTE_UNUSED = 1;
+  const ptrdiff_t dj CCTK_ATTRIBUTE_UNUSED = CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0);
+  const ptrdiff_t dk CCTK_ATTRIBUTE_UNUSED = CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0);
+  const ptrdiff_t cdi CCTK_ATTRIBUTE_UNUSED = sizeof(CCTK_REAL) * di;
+  const ptrdiff_t cdj CCTK_ATTRIBUTE_UNUSED = sizeof(CCTK_REAL) * dj;
+  const ptrdiff_t cdk CCTK_ATTRIBUTE_UNUSED = sizeof(CCTK_REAL) * dk;
+  const CCTK_REAL dx CCTK_ATTRIBUTE_UNUSED = ToReal(CCTK_DELTA_SPACE(0));
+  const CCTK_REAL dy CCTK_ATTRIBUTE_UNUSED = ToReal(CCTK_DELTA_SPACE(1));
+  const CCTK_REAL dz CCTK_ATTRIBUTE_UNUSED = ToReal(CCTK_DELTA_SPACE(2));
+  const CCTK_REAL dt CCTK_ATTRIBUTE_UNUSED = ToReal(CCTK_DELTA_TIME);
+  const CCTK_REAL t CCTK_ATTRIBUTE_UNUSED = ToReal(cctk_time);
+  const CCTK_REAL dxi CCTK_ATTRIBUTE_UNUSED = INV(dx);
+  const CCTK_REAL dyi CCTK_ATTRIBUTE_UNUSED = INV(dy);
+  const CCTK_REAL dzi CCTK_ATTRIBUTE_UNUSED = INV(dz);
+  const CCTK_REAL khalf CCTK_ATTRIBUTE_UNUSED = 0.5;
+  const CCTK_REAL kthird CCTK_ATTRIBUTE_UNUSED = 
+    0.333333333333333333333333333333;
+  const CCTK_REAL ktwothird CCTK_ATTRIBUTE_UNUSED = 
+    0.666666666666666666666666666667;
+  const CCTK_REAL kfourthird CCTK_ATTRIBUTE_UNUSED = 
+    1.33333333333333333333333333333;
+  const CCTK_REAL hdxi CCTK_ATTRIBUTE_UNUSED = 0.5*dxi;
+  const CCTK_REAL hdyi CCTK_ATTRIBUTE_UNUSED = 0.5*dyi;
+  const CCTK_REAL hdzi CCTK_ATTRIBUTE_UNUSED = 0.5*dzi;
   
   /* Initialize predefined quantities */
-  CCTK_REAL const p1o12dx = 0.0833333333333333333333333333333*INV(dx);
-  CCTK_REAL const p1o12dy = 0.0833333333333333333333333333333*INV(dy);
-  CCTK_REAL const p1o12dz = 0.0833333333333333333333333333333*INV(dz);
-  CCTK_REAL const p1o144dxdy = 0.00694444444444444444444444444444*INV(dx)*INV(dy);
-  CCTK_REAL const p1o144dxdz = 0.00694444444444444444444444444444*INV(dx)*INV(dz);
-  CCTK_REAL const p1o144dydz = 0.00694444444444444444444444444444*INV(dy)*INV(dz);
-  CCTK_REAL const p1o2dx = 0.5*INV(dx);
-  CCTK_REAL const p1o2dy = 0.5*INV(dy);
-  CCTK_REAL const p1o2dz = 0.5*INV(dz);
-  CCTK_REAL const p1o4dxdy = 0.25*INV(dx)*INV(dy);
-  CCTK_REAL const p1o4dxdz = 0.25*INV(dx)*INV(dz);
-  CCTK_REAL const p1o4dydz = 0.25*INV(dy)*INV(dz);
-  CCTK_REAL const p1odx2 = INV(SQR(dx));
-  CCTK_REAL const p1ody2 = INV(SQR(dy));
-  CCTK_REAL const p1odz2 = INV(SQR(dz));
-  CCTK_REAL const pm1o12dx2 = -0.0833333333333333333333333333333*INV(SQR(dx));
-  CCTK_REAL const pm1o12dy2 = -0.0833333333333333333333333333333*INV(SQR(dy));
-  CCTK_REAL const pm1o12dz2 = -0.0833333333333333333333333333333*INV(SQR(dz));
+  const CCTK_REAL p1o12dx CCTK_ATTRIBUTE_UNUSED = 0.0833333333333333333333333333333*INV(dx);
+  const CCTK_REAL p1o12dy CCTK_ATTRIBUTE_UNUSED = 0.0833333333333333333333333333333*INV(dy);
+  const CCTK_REAL p1o12dz CCTK_ATTRIBUTE_UNUSED = 0.0833333333333333333333333333333*INV(dz);
+  const CCTK_REAL p1o144dxdy CCTK_ATTRIBUTE_UNUSED = 0.00694444444444444444444444444444*INV(dx*dy);
+  const CCTK_REAL p1o144dxdz CCTK_ATTRIBUTE_UNUSED = 0.00694444444444444444444444444444*INV(dx*dz);
+  const CCTK_REAL p1o144dydz CCTK_ATTRIBUTE_UNUSED = 0.00694444444444444444444444444444*INV(dy*dz);
+  const CCTK_REAL p1o2dx CCTK_ATTRIBUTE_UNUSED = 0.5*INV(dx);
+  const CCTK_REAL p1o2dy CCTK_ATTRIBUTE_UNUSED = 0.5*INV(dy);
+  const CCTK_REAL p1o2dz CCTK_ATTRIBUTE_UNUSED = 0.5*INV(dz);
+  const CCTK_REAL p1o4dxdy CCTK_ATTRIBUTE_UNUSED = 0.25*INV(dx*dy);
+  const CCTK_REAL p1o4dxdz CCTK_ATTRIBUTE_UNUSED = 0.25*INV(dx*dz);
+  const CCTK_REAL p1o4dydz CCTK_ATTRIBUTE_UNUSED = 0.25*INV(dy*dz);
+  const CCTK_REAL p1odx CCTK_ATTRIBUTE_UNUSED = INV(dx);
+  const CCTK_REAL p1odx2 CCTK_ATTRIBUTE_UNUSED = INV(SQR(dx));
+  const CCTK_REAL p1ody CCTK_ATTRIBUTE_UNUSED = INV(dy);
+  const CCTK_REAL p1ody2 CCTK_ATTRIBUTE_UNUSED = INV(SQR(dy));
+  const CCTK_REAL p1odz CCTK_ATTRIBUTE_UNUSED = INV(dz);
+  const CCTK_REAL p1odz2 CCTK_ATTRIBUTE_UNUSED = INV(SQR(dz));
+  const CCTK_REAL pm1o12dx2 CCTK_ATTRIBUTE_UNUSED = -0.0833333333333333333333333333333*INV(SQR(dx));
+  const CCTK_REAL pm1o12dy2 CCTK_ATTRIBUTE_UNUSED = -0.0833333333333333333333333333333*INV(SQR(dy));
+  const CCTK_REAL pm1o12dz2 CCTK_ATTRIBUTE_UNUSED = -0.0833333333333333333333333333333*INV(SQR(dz));
   
   /* Assign local copies of arrays functions */
   
@@ -100,52 +105,65 @@ static void calc_rhs_Body(cGH const * restrict const cctkGH, int const dir, int 
   /* Copy local copies back to grid functions */
   
   /* Loop over the grid points */
-  #pragma omp parallel
-  CCTK_LOOP3 (calc_rhs,
-    i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-    cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+  const int imin0=imin[0];
+  const int imin1=imin[1];
+  const int imin2=imin[2];
+  const int imax0=imax[0];
+  const int imax1=imax[1];
+  const int imax2=imax[2];
+  #pragma omp parallel // reduction(+: vec_iter_counter, vec_op_counter, vec_mem_counter)
+  CCTK_LOOP3(calc_rhs,
+    i,j,k, imin0,imin1,imin2, imax0,imax1,imax2,
+    cctk_ash[0],cctk_ash[1],cctk_ash[2])
   {
-    ptrdiff_t const index = di*i + dj*j + dk*k;
+    const ptrdiff_t index CCTK_ATTRIBUTE_UNUSED = di*i + dj*j + dk*k;
+    // ++vec_iter_counter;
     
     /* Assign local copies of grid functions */
     
-    CCTK_REAL phiL = phi[index];
-    CCTK_REAL piL = pi[index];
+    CCTK_REAL phiL CCTK_ATTRIBUTE_UNUSED = phi[index];
+    CCTK_REAL piL CCTK_ATTRIBUTE_UNUSED = pi[index];
     
     
     /* Include user supplied include files */
     
     /* Precompute derivatives */
-    CCTK_REAL PDstandard11phi;
-    CCTK_REAL PDstandard22phi;
-    CCTK_REAL PDstandard33phi;
+    CCTK_REAL PDstandard11phi CCTK_ATTRIBUTE_UNUSED;
+    CCTK_REAL PDstandard22phi CCTK_ATTRIBUTE_UNUSED;
+    CCTK_REAL PDstandard33phi CCTK_ATTRIBUTE_UNUSED;
     
-    switch(fdOrder)
+    switch (fdOrder)
     {
       case 2:
+      {
         PDstandard11phi = PDstandardfdOrder211(&phi[index]);
         PDstandard22phi = PDstandardfdOrder222(&phi[index]);
         PDstandard33phi = PDstandardfdOrder233(&phi[index]);
         break;
+      }
       
       case 4:
+      {
         PDstandard11phi = PDstandardfdOrder411(&phi[index]);
         PDstandard22phi = PDstandardfdOrder422(&phi[index]);
         PDstandard33phi = PDstandardfdOrder433(&phi[index]);
         break;
+      }
+      default:
+        CCTK_BUILTIN_UNREACHABLE();
     }
     
     /* Calculate temporaries and grid functions */
-    CCTK_REAL phirhsL = piL;
+    CCTK_REAL phirhsL CCTK_ATTRIBUTE_UNUSED = piL;
     
-    CCTK_REAL pirhsL = PDstandard11phi + PDstandard22phi + 
-      PDstandard33phi;
+    CCTK_REAL pirhsL CCTK_ATTRIBUTE_UNUSED = PDstandard11phi + 
+      PDstandard22phi + PDstandard33phi;
     
     /* Copy local copies back to grid functions */
     phirhs[index] = phirhsL;
     pirhs[index] = pirhsL;
   }
-  CCTK_ENDLOOP3 (calc_rhs);
+  CCTK_ENDLOOP3(calc_rhs);
 }
 
 extern "C" void calc_rhs(CCTK_ARGUMENTS)
@@ -164,21 +182,31 @@ extern "C" void calc_rhs(CCTK_ARGUMENTS)
     return;
   }
   
-  const char *groups[] = {"SimpleWaveScript::phi_group","SimpleWaveScript::phi_grouprhs","SimpleWaveScript::pi_group","SimpleWaveScript::pi_grouprhs"};
+  const char* const groups[] = {
+    "SimpleWaveScript::phi_group",
+    "SimpleWaveScript::phi_grouprhs",
+    "SimpleWaveScript::pi_group",
+    "SimpleWaveScript::pi_grouprhs"};
   GenericFD_AssertGroupStorage(cctkGH, "calc_rhs", 4, groups);
   
-  switch(fdOrder)
+  switch (fdOrder)
   {
     case 2:
+    {
       GenericFD_EnsureStencilFits(cctkGH, "calc_rhs", 1, 1, 1);
       break;
+    }
     
     case 4:
+    {
       GenericFD_EnsureStencilFits(cctkGH, "calc_rhs", 2, 2, 2);
       break;
+    }
+    default:
+      CCTK_BUILTIN_UNREACHABLE();
   }
   
-  GenericFD_LoopOverInterior(cctkGH, &calc_rhs_Body);
+  GenericFD_LoopOverInterior(cctkGH, calc_rhs_Body);
   
   if (verbose > 1)
   {

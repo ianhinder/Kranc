@@ -1,69 +1,19 @@
 # File produced by Kranc
 
 
-if (timelevels == 1)
-{
-  STORAGE: phi_group[1]
-}
-if (timelevels == 2)
-{
-  STORAGE: phi_group[2]
-}
-if (timelevels == 3)
-{
-  STORAGE: phi_group[3]
-}
+STORAGE: phi_group[timelevels]
 
-if (timelevels == 1)
-{
-  STORAGE: pi_group[1]
-}
-if (timelevels == 2)
-{
-  STORAGE: pi_group[2]
-}
-if (timelevels == 3)
-{
-  STORAGE: pi_group[3]
-}
+STORAGE: pi_group[timelevels]
 
-if (rhs_timelevels == 1)
-{
-  STORAGE: phi_grouprhs[1]
-}
-if (rhs_timelevels == 2)
-{
-  STORAGE: phi_grouprhs[2]
-}
-if (rhs_timelevels == 3)
-{
-  STORAGE: phi_grouprhs[3]
-}
+STORAGE: phi_grouprhs[rhs_timelevels]
 
-if (rhs_timelevels == 1)
-{
-  STORAGE: pi_grouprhs[1]
-}
-if (rhs_timelevels == 2)
-{
-  STORAGE: pi_grouprhs[2]
-}
-if (rhs_timelevels == 3)
-{
-  STORAGE: pi_grouprhs[3]
-}
+STORAGE: pi_grouprhs[rhs_timelevels]
 
 schedule SimpleWaveScript_Startup at STARTUP
 {
   LANG: C
   OPTIONS: meta
 } "create banner"
-
-schedule SimpleWaveScript_RegisterVars in MoL_Register
-{
-  LANG: C
-  OPTIONS: meta
-} "Register Variables for MoL"
 
 schedule SimpleWaveScript_RegisterSymmetries in SymmetryRegister
 {
@@ -74,11 +24,19 @@ schedule SimpleWaveScript_RegisterSymmetries in SymmetryRegister
 schedule initial_sine_calc at initial
 {
   LANG: C
+  READS: grid::x(Everywhere)
+  READS: SimpleWaveScript::pi(Everywhere)
+  WRITES: SimpleWaveScript::phi(ERROR(Automatic))
+  WRITES: SimpleWaveScript::pi(ERROR(Automatic))
 } "initial_sine_calc"
 
 schedule calc_rhs in mol_calcrhs
 {
   LANG: C
+  READS: SimpleWaveScript::phi(Everywhere)
+  READS: SimpleWaveScript::pi(Everywhere)
+  WRITES: SimpleWaveScript::phirhs(ERROR(Automatic))
+  WRITES: SimpleWaveScript::pirhs(ERROR(Automatic))
 } "calc_rhs"
 
 schedule SimpleWaveScript_SelectBoundConds in MoL_PostStep
@@ -95,7 +53,12 @@ schedule SimpleWaveScript_CheckBoundaries at BASEGRID
   OPTIONS: meta
 } "check boundaries treatment"
 
+schedule SimpleWaveScript_RegisterVars in MoL_Register
+{
+  LANG: C
+  OPTIONS: meta
+} "Register Variables for MoL"
+
 schedule group ApplyBCs as SimpleWaveScript_ApplyBCs in MoL_PostStep after SimpleWaveScript_SelectBoundConds
 {
-  # no language specified
 } "Apply boundary conditions controlled by thorn Boundary"

@@ -4,7 +4,7 @@
 
 extern "C" int SimpleWaveScript_Startup(void)
 {
-  const char * banner = "SimpleWaveScript";
+  const char* banner CCTK_ATTRIBUTE_UNUSED = "SimpleWaveScript";
   CCTK_RegisterBanner(banner);
   return 0;
 }

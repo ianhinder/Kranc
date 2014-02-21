@@ -216,6 +216,8 @@ process["deqn"[("dtensor"["dname"[dname_],
 
     ToExpression[dname][Pattern[Evaluate[ind],_]] -> (rhsEval/.{spacing[1]->spacing[ind],shift[1]->shift[ind]})];
 
+(* Differencing operators *)
+
 process["tensor"["name"[k_],
                  "indices"[a___,
                            pos_["index_expr"[sym:"index_symbol"[i_],
@@ -224,6 +226,8 @@ process["tensor"["name"[k_],
   (shift[dimof[i]]^If[op==="+", int, -int] *
    process["tensor"["name"[k],
                     "indices"[a,pos[sym],b]]]);
+
+(* TODO: support multi-dimensional grid function accesses, i.e. v_(i+1,j) *)
 
 process["tensor"["name"[k_],
                  "indices"[a___,

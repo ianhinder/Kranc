@@ -280,7 +280,7 @@ DefFn[
           shorts, eqs, parameters, parameterRules, odeGroups,
           functionName, dsUsed, groups, pddefs, cleancalc, eqLoop, where,
           addToStencilWidth, pDefs, haveCondTextuals, condTextuals, calc,
-          kernelCall, DGFEDefs, DGFEInit, DGFECall, debug, useJacobian,
+          kernelCall, DGFEDefs, DGFEInit, DGFECallCode, debug, useJacobian,
           imp, gridName, stencilSize},
 
   debug = OptionValue[Debug];
@@ -402,7 +402,7 @@ DefFn[
   DGFEInit = If[OptionValue[UseDGFE], DGFEInitialise[cleancalc], {}];
 
   DGFECallCode = If[OptionValue[UseDGFE] && lookupDefault[cleancalc, UseDGFE, False],
-       DGFECall[cleancalc_],
+       DGFECall[cleancalc],
        {}];
 
   InfoMessage[InfoFull,"Generating function"];

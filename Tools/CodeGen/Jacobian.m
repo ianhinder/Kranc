@@ -132,18 +132,18 @@ CommentedBlock["Jacobian variable pointers",
     "\n",
     Table[{"const CCTK_REAL* restrict const J",i,j," CCTK_ATTRIBUTE_UNUSED = use_jacobian ? jacobian_ptrs[",(i-1)*3+j-1,"] : 0;\n"},{i,1,3},{j,1,3}],
     "\n",
-   (* "const CCTK_REAL* restrict jacobian_determinant_ptrs[1] CCTK_ATTRIBUTE_UNUSED;\n", *)
-   (* "if (use_jacobian) GenericFD_GroupDataPointers(cctkGH, jacobian_determinant_group,\n", *)
-   (* "                                              1, jacobian_determinant_ptrs);\n", *)
-   (*  "\n", *)
-   (*  {"const CCTK_REAL* restrict const detJ CCTK_ATTRIBUTE_UNUSED = use_jacobian ? jacobian_ptrs[0] : 0;\n"}, *)
-   (*  "\n", *)
-   (* "const CCTK_REAL* restrict jacobian_inverse_ptrs[9] CCTK_ATTRIBUTE_UNUSED;\n", *)
-   (* "if (use_jacobian) GenericFD_GroupDataPointers(cctkGH, jacobian_inverse_group,\n", *)
-   (* "                                              9, jacobian_inverse_ptrs);\n", *)
-   (*  "\n", *)
-   (*  Table[{"const CCTK_REAL* restrict const iJ",i,j," CCTK_ATTRIBUTE_UNUSED = use_jacobian ? jacobian_inverse_ptrs[",(i-1)*3+j-1,"] : 0;\n"},{i,1,3},{j,1,3}], *)
-   (* "\n", *)
+   "const CCTK_REAL* restrict jacobian_determinant_ptrs[1] CCTK_ATTRIBUTE_UNUSED;\n",
+   "if (use_jacobian && strlen(jacobian_determinant_group) > 0) GenericFD_GroupDataPointers(cctkGH, jacobian_determinant_group,\n",
+   "                                              1, jacobian_determinant_ptrs);\n",
+    "\n",
+    {"const CCTK_REAL* restrict const detJ CCTK_ATTRIBUTE_UNUSED = use_jacobian ? jacobian_ptrs[0] : 0;\n"},
+    "\n",
+   "const CCTK_REAL* restrict jacobian_inverse_ptrs[9] CCTK_ATTRIBUTE_UNUSED;\n",
+   "if (use_jacobian && strlen(jacobian_inverse_group) > 0) GenericFD_GroupDataPointers(cctkGH, jacobian_inverse_group,\n",
+   "                                              9, jacobian_inverse_ptrs);\n",
+    "\n",
+    Table[{"const CCTK_REAL* restrict const iJ",i,j," CCTK_ATTRIBUTE_UNUSED = use_jacobian ? jacobian_inverse_ptrs[",(i-1)*3+j-1,"] : 0;\n"},{i,1,3},{j,1,3}],
+   "\n",
    "const CCTK_REAL* restrict jacobian_derivative_ptrs[18] CCTK_ATTRIBUTE_UNUSED;\n",
    "if (use_jacobian) GenericFD_GroupDataPointers(cctkGH, jacobian_derivative_group,\n",
    "                                              18, jacobian_derivative_ptrs);\n",

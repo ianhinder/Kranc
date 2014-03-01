@@ -311,3 +311,18 @@ Module[{evolveCalc, pd},
   ,
   TestID->"GFOffset"
 ]
+
+
+Test[
+  ClearAllTensors[];
+  CreateKrancThornTT[
+    $groups, "TestThorns", "MergeFiles",
+    PartialDerivatives -> $derivatives,
+    DeclaredGroups     -> {"evolved_group"},
+    Calculations       -> {$initialSineCalc, $evolveCalc},
+    MergeFiles         -> FileNameJoin[{KrancDirectory,"Tests/Data/MergeFiles"}]]
+  ,
+  Null
+  ,
+  TestID->"MergeFiles"
+]

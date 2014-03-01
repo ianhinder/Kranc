@@ -43,7 +43,7 @@ Begin["`Private`"];
    responsible for making sure that the parent directory exists; this
    function does not automatically create any parent directories. *)
 CreateThorn[thorn_] :=
-  Module[{thornDirectory, sourceDirectory},
+  Module[{thornDirectory, sourceDirectory, generatedFiles},
 
     thornDirectory = lookup[thorn, Directory] <> "/" <> lookup[thorn, Name];
     sourceDirectory = thornDirectory <> "/src";
@@ -52,6 +52,8 @@ CreateThorn[thorn_] :=
 
     EnsureDirectory[thornDirectory];
     EnsureDirectory[sourceDirectory];
+
+    generatedFiles = Flatten@Reap[
 
     GenerateFile[thornDirectory <> "/configuration.ccl", lookup[thorn, Configuration]];
     GenerateFile[thornDirectory <> "/interface.ccl",     lookup[thorn, Interface]];
@@ -65,7 +67,11 @@ CreateThorn[thorn_] :=
                                                lookup[#, Contents]] &,
                                                lookup[thorn, Sources]];
 
-    GenerateFile[sourceDirectory <> "/make.code.defn", lookup[thorn, Makefile]];
+    GenerateFile[sourceDirectory <> "/make.code.defn", lookup[thorn, Makefile]],
+
+      GenerateFile];
+
+    mergeFiles[lookup[thorn,MergeFiles], thornDirectory, generatedFiles];
 
     (* Update thorn directory timestamp so that it can be used in makefiles *)
     GenerateFile[thornDirectory <> "/temp", {}];
@@ -73,6 +79,30 @@ CreateThorn[thorn_] :=
 
     Print["Thorn ", thornDirectory, " created successfully"];
 ];
+
+DefFn[mergeFiles[from_, to_String, generatedFiles_List] :=
+  If[from === None, 
+    None,
+    (* else *)
+    Module[{allFiles},
+      allFiles = FileNameDrop[#,FileNameDepth[from]]& /@ FileNames["*", from, Infinity];
+      Map[mergeFile[from, to, #, generatedFiles] &, allFiles]]]];
+
+DefFn[mergeFile[from_String, to_String, path_String, generatedFiles_List] :=
+  Module[{fromPath, toPath},
+    fromPath = FileNameJoin[{from,path}];
+    toPath = FileNameJoin[{to,path}];
+
+    If[DirectoryQ[fromPath],
+      If[!DirectoryQ[toPath],
+        CreateDirectory[toPath, CreateIntermediateDirectories->True]],
+      (* else *)
+      If[MemberQ[generatedFiles, toPath],
+        Module[{orig = Import[toPath,"Text"], new = Import[fromPath,"Text"]},
+          Export[toPath, orig<>"\n"<>new, "Text"]],
+        (* else *)
+        If[FileExistsQ[toPath], DeleteFile[toPath]];
+        CopyFile[fromPath,toPath]]]]];
 
 End[];
 

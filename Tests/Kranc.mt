@@ -230,3 +230,46 @@ Test[
   ,
   TestID->"ParamCheck"
 ]
+
+
+Test[
+  ClearAllTensors[];
+  CreateKrancThornTT[
+    $groups, "TestThorns", "LoopControlNone",
+    PartialDerivatives -> $derivatives,
+    DeclaredGroups     -> {"evolved_group"},
+    Calculations       -> {$initialSineCalc, $evolveCalc},
+    UseLoopControl     -> False]
+  ,
+  Null
+  ,
+  TestID->"LoopControlNone"
+]
+
+Test[
+  ClearAllTensors[];
+  CreateKrancThornTT[
+    $groups, "TestThorns", "LoopControlAll",
+    PartialDerivatives -> $derivatives,
+    DeclaredGroups     -> {"evolved_group"},
+    Calculations       -> {$initialSineCalc, $evolveCalc},
+    UseLoopControl     -> True]
+  ,
+  Null
+  ,
+  TestID->"LoopControlAll"
+]
+
+Test[
+  ClearAllTensors[];
+  CreateKrancThornTT[
+    $groups, "TestThorns", "LoopControlOne",
+    PartialDerivatives -> $derivatives,
+    DeclaredGroups     -> {"evolved_group"},
+    Calculations       -> {$initialSineCalc, Append[$evolveCalc,UseLoopControl->False]},
+    UseLoopControl     -> True]
+  ,
+  Null
+  ,
+  TestID->"LoopControlNone"
+]

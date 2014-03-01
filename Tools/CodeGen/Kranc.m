@@ -93,6 +93,7 @@ ThornOptions =
   ZeroDimensions -> {},
   UseLoopControl -> False, (* ignored *)
   UseDGFE -> False,
+  Tile -> False,
   UseOpenCL -> False,
   UseVectors -> False,
   ProhibitAssignmentToGridFunctionsRead -> False,

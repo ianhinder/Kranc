@@ -44,6 +44,7 @@ RemoveUnusedShorthands;
 VerifyCalculation;
 CalculationSymbols;
 VerifyNewCalculation;
+TileCalculationQ;
 
 Begin["`Private`"];
 
@@ -412,7 +413,7 @@ VerifyCalculation[calc_] :=
          SeparatedDerivatives, SeparatedDerivatives2,
          LocalGroups, NoSimplify, UseDGFE, SimpleCode, UseCaKernel,
          UseJacobian,
-         ScheduleGroups, TriggerGroups};
+         ScheduleGroups, TriggerGroups, ThornName, Tile};
 
     usedKeys = Map[First, calc];
     unknownKeys = Complement[usedKeys, allowedKeys];
@@ -467,6 +468,9 @@ VerifyNewCalculation[calc_] :=
     If[mapContains[calc, Equations],
       VerifyListContent[lookup[calc, Equations], Rule," while checking the calculation called " <> ToString[calcName]],
       ThrowError["Invalid Calculation structure. Must contain Equations element: " <> ToString[calc]]]];
+
+DefFn[TileCalculationQ[calc_] :=
+  lookup[calc,Tile]];
 
 End[];
 

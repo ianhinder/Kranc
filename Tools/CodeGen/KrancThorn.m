@@ -133,6 +133,16 @@ DefFn[
                                         GetObjectField[c, "Calculations"]],1]]]];
     c]];
 
+Options[loopControlProcessCode] = ThornOptions;
+DefFn[
+  loopControlProcessCode[cIn_Code, opts:OptionsPattern[]] :=
+  Module[
+    {},
+    If[OptionValue[UseVectors] && !OptionValue[UseLoopControl],
+      ThrowError["UseVectors -> True requires UseLoopControl -> True"]];
+    SetObjectField[cIn, "Calculations", SetCalculationLoopControl[#,opts] & /@ GetObjectField[cIn, "Calculations"]]]];
+
+
 (* --------------------------------------------------------------------------
    Thorn generation (main entry point for non-tensorial thorns)
    -------------------------------------------------------------------------- *)
@@ -214,13 +224,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
       calcs = Map[Append[#, PartialDerivatives -> GetObjectField[c, "PartialDerivatives"]] &, calcs];
       calcs = Map[Append[#, ThornName -> GetObjectField[c, "Name"]] &, calcs];
 
-      If[OptionValue[UseVectors] && !OptionValue[UseLoopControl],
-        ThrowError["UseVectors -> True requires UseLoopControl -> True"]];
-
-      calcs = Map[SetCalculationLoopControl[#,opts] &, calcs];
-
       SetObjectField[c, "Calculations", calcs]];
-     
+
     (* ------------------------------------------------------------------------ 
        CaKernel
        ------------------------------------------------------------------------ *)
@@ -269,6 +274,12 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     c = ODEProcessCode[c, opts];
 
+    (* ------------------------------------------------------------------------ 
+       LoopControl
+       ------------------------------------------------------------------------ *)
+
+    c = loopControlProcessCode[c, opts];
+     
     (* ------------------------------------------------------------------------ 
        Declared groups
        ------------------------------------------------------------------------ *)

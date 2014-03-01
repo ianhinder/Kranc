@@ -2,15 +2,14 @@
 
 implements: WaveHost
 
-inherits:   Grid GenericFD Boundary
+inherits:   Boundary GenericFD Grid
 
 
 
 USES INCLUDE: GenericFD.h
-USES INCLUDE: Symmetry.h
-USES INCLUDE: sbp_calc_coeffs.h
-USES INCLUDE: Boundary.h
 USES INCLUDE: loopcontrol.h
+USES INCLUDE: Symmetry.h
+USES INCLUDE: Boundary.h
 
 CCTK_INT FUNCTION MoLRegisterEvolved(CCTK_INT IN EvolvedIndex, CCTK_INT IN RHSIndex)
 USES FUNCTION MoLRegisterEvolved
@@ -28,12 +27,6 @@ CCTK_INT FUNCTION Boundary_SelectVarForBC(CCTK_POINTER_TO_CONST IN GH, CCTK_INT 
 USES FUNCTION Boundary_SelectVarForBC
 
 public:
-CCTK_REAL xCopy_g type=GF timelevels=1 tags=''
-{
-  xCopy
-} "xCopy_g"
-
-public:
 CCTK_REAL phi_g type=GF timelevels=2 tags=''
 {
   phi
@@ -44,6 +37,12 @@ CCTK_REAL pi_g type=GF timelevels=2 tags=''
 {
   pi
 } "pi_g"
+
+public:
+CCTK_REAL xCopy_g type=GF timelevels=1 tags=''
+{
+  xCopy
+} "xCopy_g"
 
 public:
 CCTK_REAL phi_grhs type=GF timelevels=2 tags='Prolongation="None"'

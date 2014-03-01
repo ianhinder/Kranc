@@ -273,3 +273,41 @@ Test[
   ,
   TestID->"LoopControlNone"
 ]
+
+
+Test[
+Module[{evolveCalc, pd},
+
+  pd[u_,1,1] := (GFOffset[u,1,0,0] + GFOffset[u,-1,0,0] - 2 u)/dx^2;
+  pd[u_,2,2] := (GFOffset[u,0,1,0] + GFOffset[u,0,-1,0] - 2 u)/dy^2;
+  pd[u_,3,3] := (GFOffset[u,0,0,1] + GFOffset[u,0,0,-1] - 2 u)/dz^2;
+
+  pdShort[u_,i_Integer,j_Integer] := Symbol["pd"<>ToString[u]<>ToString[i]<>ToString[j]];
+
+  ClearAllTensors[];
+
+  evolveCalc = {
+  Name      -> "calc_rhs",
+  Schedule  -> {"IN MoL_CalcRHS"},
+  Where     -> Interior,
+  Shorthands -> {pdphi11, pdphi22, pdphi33},
+  Equations ->
+  {
+    pdphi11 -> pd[phi,1,1],
+    pdphi22 -> pd[phi,2,2],
+    pdphi33 -> pd[phi,3,3],
+
+    dot[phi] -> pi,
+    dot[pi]  -> Euc[ui,uj] pdShort[phi,li,lj]
+  }};
+
+  CreateKrancThornTT[
+    $groups, "TestThorns", "GFOffset",
+    PartialDerivatives -> $derivatives,
+    DeclaredGroups     -> {"evolved_group"},
+    Calculations       -> {$initialSineCalc, evolveCalc}]]
+  ,
+  Null
+  ,
+  TestID->"GFOffset"
+]

@@ -575,7 +575,7 @@ DefFn[
     functionName = ToString@lookup[cleancalc, Name];
 
     (* Replace grid functions with their local forms *)
-    eqsReplaced = eqs2 /. localMap;
+    eqsReplaced = eqs2 /. Join[{g:GFOffset[___]:>g},localMap];
 
     gridFunctionsFreeQ[x_] :=
     Module[

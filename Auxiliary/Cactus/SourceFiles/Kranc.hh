@@ -15,3 +15,5 @@ public:
 
 void @THORN_NAME@_TiledLoopOverInterior(cGH const * restrict const cctkGH,
                                         void (calc)(const cGH* restrict const cctkGH, const KrancData &kd));
+
+#define GFOffset(u,di,dj,dk) KRANC_GFOFFSET3D(&u[index],di,dj,dk)

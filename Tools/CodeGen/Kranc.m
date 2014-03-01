@@ -46,7 +46,7 @@ Everywhere, normal1, normal2, normal3, INV, SQR, CUB, QAD, dot, pow,
 exp, dt, dx, dy, dz, idx, idy, idz, t, MinMod, VanLeer, BodyFunction,
 CallerFunction, LoopFunction, GFAccessFunction, InitFDVariables,
 MacroPointer, CachedVariables, SplitBy, SeparatedDerivatives,
-SeparatedDerivatives2}
+SeparatedDerivatives2,GFOffset}
 
 {ConditionalOnKeyword, ConditionalOnKeywords, CollectList, Interior,
 InteriorNoSync, Boundary, BoundaryNoSync, BoundaryWithGhosts, Where, PreDefinitions,

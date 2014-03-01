@@ -213,6 +213,12 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
       calcs = Map[Append[#, Implementation -> GetObjectField[c, "Implementation"]] &, calcs];
       calcs = Map[Append[#, PartialDerivatives -> GetObjectField[c, "PartialDerivatives"]] &, calcs];
       calcs = Map[Append[#, ThornName -> GetObjectField[c, "Name"]] &, calcs];
+
+      If[OptionValue[UseVectors] && !OptionValue[UseLoopControl],
+        ThrowError["UseVectors -> True requires UseLoopControl -> True"]];
+
+      calcs = Map[SetCalculationLoopControl[#,opts] &, calcs];
+
       SetObjectField[c, "Calculations", calcs]];
      
     (* ------------------------------------------------------------------------ 

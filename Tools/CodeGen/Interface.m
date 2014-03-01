@@ -72,7 +72,7 @@ DefFn[CreateKrancInterface[declaredGroups:{_String...}, groups_List,
 
     interface = Join[CreateInterface[implementation, inheritedImplementations,
       Join[includeFiles, {CactusBoundary`GetIncludeFiles[]},
-           {"loopcontrol.h"},
+           If[OptionValue[UseLoopControl], {"loopcontrol.h"}, {}],
            If[OptionValue[UseOpenCL], OpenCLIncludeFiles[], {}],
            If[OptionValue[UseVectors], {"vectors.h"}, {}]],
       declaredGroupStructures,

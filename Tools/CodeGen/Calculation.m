@@ -45,6 +45,8 @@ VerifyCalculation;
 CalculationSymbols;
 VerifyNewCalculation;
 TileCalculationQ;
+CalculationLoopControlQ;
+SetCalculationLoopControl;
 
 Begin["`Private`"];
 
@@ -413,7 +415,7 @@ VerifyCalculation[calc_] :=
          SeparatedDerivatives, SeparatedDerivatives2,
          LocalGroups, NoSimplify, UseDGFE, SimpleCode, UseCaKernel,
          UseJacobian,
-         ScheduleGroups, TriggerGroups, ThornName, Tile};
+         ScheduleGroups, TriggerGroups, ThornName, Tile, UseLoopControl};
 
     usedKeys = Map[First, calc];
     unknownKeys = Complement[usedKeys, allowedKeys];
@@ -471,6 +473,15 @@ VerifyNewCalculation[calc_] :=
 
 DefFn[TileCalculationQ[calc_] :=
   lookup[calc,Tile]];
+
+DefFn[CalculationLoopControlQ[calc_] :=
+  lookup[calc,UseLoopControl]];
+
+Options[SetCalculationLoopControl] = ThornOptions;
+DefFn[SetCalculationLoopControl[calc_, opts:OptionsPattern[]] :=
+  mapReplaceAdd[calc, UseLoopControl,
+    OptionValue[UseLoopControl] &&
+    lookupDefault[calc, UseLoopControl, True] =!= False]];
 
 End[];
 

@@ -36,8 +36,9 @@ Options[CreateConfiguration] = ThornOptions;
 CreateConfiguration[opts:OptionsPattern[]] :=
   {FileHeader["CCL"],
    "REQUIRES GenericFD\n",
-   If[OptionValue[UseVectors], 
-      "REQUIRES LoopControl\n", "OPTIONAL LoopControl\n{\n}\n"],
+    If[OptionValue[UseLoopControl],
+      If[OptionValue[UseVectors], 
+        "REQUIRES LoopControl\n", "OPTIONAL LoopControl\n{\n}\n"],{}],
    If[OptionValue[UseDGFE], DGFEConfigurationCCL[], {}],
    If[OptionValue[UseOpenCL], OpenCLConfigurationCCL[], {}],
    If[OptionValue[UseVectors], VectorisationConfigurationCCL[], {}],

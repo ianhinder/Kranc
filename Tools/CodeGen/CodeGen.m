@@ -87,6 +87,7 @@ DefFn[
     {fp = OpenWrite[filename]},
     CheckBlock[contents];
     WriteString[fp, FlattenBlock[contents]];
+    Sow[filename, GenerateFile];
     Close[fp]]];
 
 DefFn[

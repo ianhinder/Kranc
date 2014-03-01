@@ -30,11 +30,13 @@ Begin["`Private`"];
    Makefile
    ------------------------------------------------------------------------ *)
 
+sourceQ[name_String] := StringMatchQ[name,"*.cc"];
+
 (* Return a CodeGen block representing a makefile which refers to the
    list of filenames sourceFiles *)
 CreateMakefile[sourceFiles_] :=
   {FileHeader["Makefile"],
-   "SRCS = ", Map[{#, " "} &, sourceFiles], "\n"};
+   "SRCS = ", Map[{#, " "} &, Select[sourceFiles, sourceQ]], "\n"};
 
 End[];
 

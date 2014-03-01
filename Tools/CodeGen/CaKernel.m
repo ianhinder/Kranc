@@ -184,6 +184,9 @@ DefFn[CaKernelCode[calc_List,opts___] :=
                        InitFDVariables -> CaKernelInitialiseFDVariables[],
                        MacroPointer -> False}];
 
+    (* Kranc Tiling is not supported for CaKernel thorns *)
+    calc2 = mapReplaceAdd[calc2, Tile, False];
+
     If[!int,
 
        calc2 = calc2 /. {normal1 -> "bound_x", normal2 -> "bound_y", normal3 -> "bound_z"}];

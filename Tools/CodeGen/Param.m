@@ -123,8 +123,7 @@ DefFn[ParameterDatabase[opts:OptionsPattern[]] :=
        realParams = Join[realParams,ConservationDifferencingRealParameters[]]];
     intParams = OptionValue[IntParameters];
 
-    If[OptionValue[Tile],
-      intParams = Join[intParams, tilingIntParameters[opts]]];
+    intParams = Join[intParams, tilingIntParameters[opts]];
 
     realParamDefs = MakeFullParamDefs[realParams];
     intParamDefs = MakeFullParamDefs[intParams];

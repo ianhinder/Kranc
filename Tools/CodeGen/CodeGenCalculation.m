@@ -74,7 +74,7 @@ Options[CreateSetterSource] = ThornOptions;
 
 CreateSetterSource[calcs_, debug_, include_,
   opts:OptionsPattern[]] :=
-  Module[{calc = First[calcs],bodyFunction},
+  Module[{calc = First[calcs],bodyFunction,tiledBodyFunction},
 
   If[!MatchQ[include, _List],
     ThrowError["CreateSetterSource: Include should be a list but is in fact " <> ToString[include]]];
@@ -97,7 +97,7 @@ CreateSetterSource[calcs_, debug_, include_,
    Map[IncludeFile, Join[{"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h",
                          (*"precomputations.h",*) "GenericFD.h", "Differencing.h"},
                          include,
-                         {"cctk_Loop.h", "loopcontrol.h"},
+                         {"cctk_Loop.h", "loopcontrol.h", "Kranc.hh"},
                          If[OptionValue[UseOpenCL], OpenCLIncludeFiles[], {}],
                          If[OptionValue[UseVectors], VectorisationIncludeFiles[], {}]]],
    CalculationMacros[OptionValue[UseVectors]],
@@ -114,9 +114,28 @@ CreateSetterSource[calcs_, debug_, include_,
     #
   }] &;
 
-   calc = Join[calc, {BodyFunction -> bodyFunction, 
+   tiledBodyFunction = DefineFunction[lookup[calc,Name]<>"_Body", "static void", "const cGH* restrict const cctkGH, const KrancData &kd",
+  {
+    "DECLARE_CCTK_ARGUMENTS;\n",
+    "DECLARE_CCTK_PARAMETERS;\n\n", 
+
+    "const int dir = kd.dir;\n",
+    "const int face = kd.face;\n",
+    "const int imin[3] = {kd.imin[0], kd.imin[1], kd.imin[2]};\n",
+    "const int imax[3] = {kd.imax[0], kd.imax[1], kd.imax[2]};\n",
+
+    #
+  }] &;
+
+    calc = Append[calc,Tile->(MatchQ[GetCalculationWhere[calc],Interior | InteriorNoSync]
+      && OptionValue[Tile])];
+
+
+   calc = Join[calc, {BodyFunction -> If[TileCalculationQ[calc],
+                                         tiledBodyFunction,
+                                         bodyFunction], 
                       CallerFunction -> True,
-                      LoopFunction -> (GenericGridLoop[lookup[calc,Name],#,opts] &),
+                      LoopFunction -> (GenericGridLoop[lookup[calc,Name],#,TileCalculationQ[calc], opts] &),
                       GFAccessFunction -> ({#,"[","index","]"} &),
                       InitFDVariables -> InitialiseFDVariables[OptionValue[UseVectors]],
                       MacroPointer -> True}];
@@ -372,7 +391,7 @@ DefFn[
   (* Check that there are no unknown symbols in the calculation *)
   allSymbols = CalculationSymbols[cleancalc];
   knownSymbols = Join[lookupDefault[cleancalc, AllowedSymbols, {}], gfs, shorts, parameters,
-    {dx,dy,dz,dt,idx,idy,idz,t, usejacobian, Pi, E, Symbol["i"], Symbol["j"], Symbol["k"], normal1, normal2,
+    {dx,dy,dz,dt,idx,idy,idz,t, usejacobian, Pi, E, Symbol["i"], Symbol["j"], Symbol["k"], Symbol["ti"], Symbol["tj"], Symbol["tk"], normal1, normal2,
     normal3, tangentA1, tangentA2, tangentA3, tangentB1, tangentB2, tangentB3},
     If[useJacobian, JacobianSymbols[], {}]];
 
@@ -385,10 +404,10 @@ DefFn[
   kernelCall = Switch[where,
     Everywhere,
       "GenericFD_LoopOverEverything(cctkGH, " <> bodyFunctionName <> ");\n",
-    Interior,
-      "GenericFD_LoopOverInterior(cctkGH, " <> bodyFunctionName <> ");\n",
-    InteriorNoSync,
-      "GenericFD_LoopOverInterior(cctkGH, " <> bodyFunctionName <> ");\n",
+    Interior | InteriorNoSync,
+    If[TileCalculationQ[cleancalc],
+      lookup[cleancalc,ThornName]<>"_TiledLoopOverInterior(cctkGH, " <> bodyFunctionName <> ");\n",
+      "GenericFD_LoopOverInterior(cctkGH, " <> bodyFunctionName <> ");\n"],
     Boundary | BoundaryNoSync,
       "GenericFD_LoopOverBoundary(cctkGH, " <> bodyFunctionName <> ");\n",
     BoundaryWithGhosts,

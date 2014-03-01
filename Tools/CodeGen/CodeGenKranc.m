@@ -134,10 +134,10 @@ DefFn[
       AssignVariableFromExpression["hdyi", 0.5 "dyi", True, vectorise, Const -> True],
       AssignVariableFromExpression["hdzi", 0.5 "dzi", True, vectorise, Const -> True]}]];
 
-Options[GenericGridLoop] = ThornOptions;
+Options[GenericGridLoop] = Join[ThornOptions, {Tile -> False}];
 
 DefFn[
-  GenericGridLoop[functionName_String, block:CodeGenBlock, opts:OptionsPattern[]] :=
+  GenericGridLoop[functionName_String, block:CodeGenBlock, tile_, opts:OptionsPattern[]] :=
   CommentedBlock[
     "Loop over the grid points",
     { (* Circumvent a compiler bug on Blue Gene/Q *)
@@ -173,6 +173,11 @@ DefFn[
          If[OptionValue[UseVectors],
             "// vec_iter_counter+=CCTK_REAL_VEC_SIZE;\n",
             "// ++vec_iter_counter;\n"],
+          If[tile,
+            {"const int ti = i - kd.tile_imin[0];\n",
+             "const int tj = j - kd.tile_imin[1];\n",
+             "const int tk = k - kd.tile_imin[2];\n"},
+            {}],
          block}],
       "}\n",
       If[OptionValue[UseVectors], "CCTK_ENDLOOP3STR", "CCTK_ENDLOOP3"] <>

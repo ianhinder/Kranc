@@ -104,7 +104,14 @@ Options[ParameterDatabase] = ThornOptions;
 (*   unqualifiedName /@ ParamName /@  *)
 (*   Select[allParameters, MemberQ[{"Real", "Integer"}, parameterType[#]] &]; *)
 
-DefFn[ParameterDatabase[OptionsPattern[]] :=
+tilingIntParameters[opts___] :=
+  {{
+    Name -> "tile_size",
+    Description -> "Loop tile size",
+    Default -> -1
+   }};
+
+DefFn[ParameterDatabase[opts:OptionsPattern[]] :=
   Module[
     {realParams, intParams, keywordParams,
      inheritedRealParams, inheritedIntParams, inheritedKeywordParams,
@@ -115,6 +122,9 @@ DefFn[ParameterDatabase[OptionsPattern[]] :=
     If[OptionValue[ConservationCalculations] =!= {},
        realParams = Join[realParams,ConservationDifferencingRealParameters[]]];
     intParams = OptionValue[IntParameters];
+
+    intParams = Join[intParams, tilingIntParameters[opts]];
+
     realParamDefs = MakeFullParamDefs[realParams];
     intParamDefs = MakeFullParamDefs[intParams];
     keywordParams = OptionValue[KeywordParameters];

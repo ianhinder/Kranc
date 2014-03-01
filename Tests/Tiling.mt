@@ -40,6 +40,7 @@ Test[
   CreateKrancThornTT[
     $groups, "TestThorns", "TilingTest",
     PartialDerivatives -> $derivatives,
+    Tile               -> True,
     DeclaredGroups     -> {"evolved_group"},
     Calculations       -> {$initialSineCalc, $evolveCalc}]
   ,

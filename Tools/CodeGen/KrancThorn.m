@@ -81,11 +81,26 @@ DefFn[
     c]];
 
 DefFn[
+  embeddedFile[name_String,c_, opts___] :=
+    StringReplace[Import[FileNameJoin[{KrancDirectory,"Auxiliary/Cactus/SourceFiles",name}], "Text"], "@THORN_NAME@" -> GetObjectField[c,"Name"]]];
+
+DefFn[
   genericFDProcessCode[cIn_Code, opts___] :=
   Module[
-    {c = cIn},
+    {c = cIn, krancSource, krancHeader},
     c = AppendObjectField[c, "IncludeFiles", "GenericFD.h"];
     c = AppendObjectField[c, "InheritedImplementations", "GenericFD"];
+
+    krancSource =
+    {Filename -> "Kranc.cc",
+     Contents -> embeddedFile["Kranc.cc",c,opts]};
+
+    krancHeader =
+    {Filename -> "Kranc.hh",
+     Contents -> embeddedFile["Kranc.hh",c, opts]};
+
+    c = AppendObjectField[c, "Sources", krancSource];
+    c = AppendObjectField[c, "Sources", krancHeader];
     c]];
 
 DefFn[

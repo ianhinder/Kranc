@@ -115,7 +115,7 @@ CreateSetterSource[calcs_, debug_, include_,
     #
   }] &;
 
-   tiledBodyFunction = DefineFunction[lookup[calc,Name]<>"_Body", "static void", "const cGH* restrict const cctkGH, const KrancData &kd",
+   tiledBodyFunction = DefineFunction[lookup[calc,Name]<>"_Body", "static void", "const cGH* restrict const cctkGH, const KrancData & restrict kd",
   {
     "DECLARE_CCTK_ARGUMENTS;\n",
     "DECLARE_CCTK_PARAMETERS;\n\n", 
@@ -128,7 +128,8 @@ CreateSetterSource[calcs_, debug_, include_,
     #
   }] &;
 
-    calc = Append[calc,Tile->(MatchQ[GetCalculationWhere[calc],Interior | InteriorNoSync]
+    calc = Append[calc,Tile->(MatchQ[GetCalculationWhere[calc],
+                                     Everywhere | Interior | InteriorNoSync]
       && OptionValue[Tile])];
 
 
@@ -404,7 +405,9 @@ DefFn[
 
   kernelCall = Switch[where,
     Everywhere,
-      "GenericFD_LoopOverEverything(cctkGH, " <> bodyFunctionName <> ");\n",
+    If[TileCalculationQ[cleancalc],
+      lookup[cleancalc,ThornName]<>"_TiledLoopOverEverything(cctkGH, " <> bodyFunctionName <> ");\n",
+      "GenericFD_LoopOverEverything(cctkGH, " <> bodyFunctionName <> ");\n"],
     Interior | InteriorNoSync,
     If[TileCalculationQ[cleancalc],
       lookup[cleancalc,ThornName]<>"_TiledLoopOverInterior(cctkGH, " <> bodyFunctionName <> ");\n",

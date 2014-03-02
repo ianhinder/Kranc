@@ -120,10 +120,10 @@ CreateSetterSource[calcs_, debug_, include_,
     "DECLARE_CCTK_ARGUMENTS;\n",
     "DECLARE_CCTK_PARAMETERS;\n\n", 
 
-    "const int dir = kd.dir;\n",
-    "const int face = kd.face;\n",
-    "const int imin[3] = {kd.imin[0], kd.imin[1], kd.imin[2]};\n",
-    "const int imax[3] = {kd.imax[0], kd.imax[1], kd.imax[2]};\n",
+    "const int dir CCTK_ATTRIBUTE_UNUSED = kd.dir;\n",
+    "const int face CCTK_ATTRIBUTE_UNUSED = kd.face;\n",
+    "const int imin[3] = {kd.tile_imin[0], kd.tile_imin[1], kd.tile_imin[2]};\n",
+    "const int imax[3] = {kd.tile_imax[0], kd.tile_imax[1], kd.tile_imax[2]};\n",
 
     #
   }] &;

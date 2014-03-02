@@ -86,7 +86,8 @@ CreateSetterSource[calcs_, debug_, include_,
    "#define KRANC_" <> ToUpperCase[CodeGenC`SOURCELANGUAGE] <> "\n\n",
 
    If[CodeGenC`SOURCELANGUAGE == "C",
-         {IncludeSystemFile["assert.h"],
+         {IncludeSystemFile["algorithm"],
+          IncludeSystemFile["assert.h"],
           IncludeSystemFile["math.h"],
           IncludeSystemFile["stdio.h"],
           IncludeSystemFile["stdlib.h"],
@@ -122,8 +123,12 @@ CreateSetterSource[calcs_, debug_, include_,
 
     "const int dir CCTK_ATTRIBUTE_UNUSED = kd.dir;\n",
     "const int face CCTK_ATTRIBUTE_UNUSED = kd.face;\n",
-    "const int imin[3] = {kd.tile_imin[0], kd.tile_imin[1], kd.tile_imin[2]};\n",
-    "const int imax[3] = {kd.tile_imax[0], kd.tile_imax[1], kd.tile_imax[2]};\n",
+    "const int imin[3] = {std::max(kd.imin[0], kd.tile_imin[0]),\n",
+    "                     std::max(kd.imin[1], kd.tile_imin[1]),\n",
+    "                     std::max(kd.imin[2], kd.tile_imin[2])};\n",
+    "const int imax[3] = {std::min(kd.imax[0], kd.tile_imax[0]),\n",
+    "                     std::min(kd.imax[1], kd.tile_imax[1]),\n",
+    "                     std::min(kd.imax[2], kd.tile_imax[2])};\n",
 
     #
   }] &;

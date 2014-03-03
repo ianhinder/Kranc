@@ -107,12 +107,12 @@ void @THORN_NAME@_TiledLoop(
         kd.face = 0;
         // TODO: initialise the rest, or use a constructor
 
-        kd.tile_imin[0] = tk;
-        kd.tile_imax[0] = tk + tile_size_l[2];
+        kd.tile_imin[0] = ti;
+        kd.tile_imax[0] = ti + tile_size_l[0];
         kd.tile_imin[1] = tj;
         kd.tile_imax[1] = tj + tile_size_l[1];
-        kd.tile_imin[2] = ti;
-        kd.tile_imax[2] = ti + tile_size_l[0];
+        kd.tile_imin[2] = tk;
+        kd.tile_imax[2] = tk + tile_size_l[2];
 
         calc(cctkGH, kd);
       }

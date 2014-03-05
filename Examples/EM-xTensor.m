@@ -19,9 +19,6 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-$KrancTensorPackage="xTensorKranc`";
-Get["KrancTensor`"];
-
 PrependTo[$Path, "../../EinsteinExact/m"];
 
 Check[Get["Metrics`LoadMetric`"],

@@ -94,12 +94,15 @@ void @THORN_NAME@_TiledLoop(
     }
   }
 
+  const int dti = tile_size_l[0];
+  const int dtj = tile_size_l[1];
+  const int dtk = tile_size_l[2];
 #pragma omp parallel for collapse(3)
-  for (int tk = tiled_imin[2]; tk < tiled_imax[2]; tk += tile_size_l[2])
+  for (int tk = tiled_imin[2]; tk < tiled_imax[2]; tk += dtk)
   {
-    for (int tj = tiled_imin[1]; tj < tiled_imax[1]; tj += tile_size_l[1])
+    for (int tj = tiled_imin[1]; tj < tiled_imax[1]; tj += dtj)
     {
-      for (int ti = tiled_imin[0]; ti < tiled_imax[0]; ti += tile_size_l[0])
+      for (int ti = tiled_imin[0]; ti < tiled_imax[0]; ti += dti)
       {
         KrancData kd = kd_coarse;
 
@@ -108,11 +111,11 @@ void @THORN_NAME@_TiledLoop(
         // TODO: initialise the rest, or use a constructor
 
         kd.tile_imin[0] = ti;
-        kd.tile_imax[0] = ti + tile_size_l[0];
+        kd.tile_imax[0] = ti + dti;
         kd.tile_imin[1] = tj;
-        kd.tile_imax[1] = tj + tile_size_l[1];
+        kd.tile_imax[1] = tj + dtj;
         kd.tile_imin[2] = tk;
-        kd.tile_imax[2] = tk + tile_size_l[2];
+        kd.tile_imax[2] = tk + dtk;
 
         calc(cctkGH, kd);
       }

@@ -17,7 +17,15 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307
 *)
 
-BeginPackage["xTensorKranc`", {"Differencing`", "Kranc`", "KrancGroups`", "xAct`xTensor`", "xAct`xCore`", "xAct`xCoba`"}];
+BeginPackage["xTensorKranc`",
+  {"Differencing`", "Kranc`", "KrancGroups`"}
+];
+
+Block[{Print},
+  Needs["xAct`xTensor`"];
+  Needs["xAct`xCore`"];
+  Needs["xAct`xCoba`"];
+];
 
 CreateGroupFromTensor::usage = "";
 ReflectionSymmetries::usage = "Produce a list of reflection symmetries of a tensor.";

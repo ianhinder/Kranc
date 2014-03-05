@@ -24,11 +24,13 @@
 (* Wrapper providing tensor support to Kranc (from TensorTools or xTensor)  *)
 (****************************************************************************)
 
-$KrancTensorPackage = "TensorToolsKranc`";
+If[!ValueQ[$KrancTensorPackage],
+  $KrancTensorPackage = Sequence["TensorToolsKranc`", "TensorTools`"];
+];
 
 BeginPackage["KrancTensor`", {"Errors`", "KrancThorn`", "MapLookup`", "KrancGroups`",
                               "Kranc`", $KrancTensorPackage, "ConservationCalculation`",
-                              "TensorTools`", "KrancGroups`", "Differencing`",
+                              "KrancGroups`", "Differencing`",
                               "Piraha`", "ScriptOutput`"}];
 
 CreateKrancThornTT::usage = "Construct a Kranc thorn using tensor expressions.";

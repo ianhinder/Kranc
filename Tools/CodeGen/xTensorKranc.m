@@ -18,7 +18,7 @@
 *)
 
 BeginPackage["xTensorKranc`",
-  {"Differencing`", "Kranc`", "KrancGroups`"}
+  {"Differencing`", "Errors`", "Kranc`", "KrancGroups`"}
 ];
 
 CreateGroupFromTensor::usage = "CreateGroupFromTensor[T[a, b, ...]] Creates a variable group from the tensor T";
@@ -102,11 +102,9 @@ ExpandComponents[lhs_ -> rhs_] :=
   Module[{lhsB, rhsB, lhsC, rhsC, lhsCi, inds, rules},
    (* Check we have a valid tensor equation *)
 
-   If[! MatchQ[lhs, (dot[_?xTensorQ[___]] | _?xTensorQ[___])],
-    ThrowError["Invalid left hand side in equation"]
-    ];
    (* FIXME: Maybe we should find an alternative to Quiet here *)
-   Check[Quiet[Validate[lhs + rhs], Validate::unknown], ThrowError["Invalid tensor expression"]];
+   Check[Quiet[Validate[lhs + rhs], Validate::unknown],
+     ThrowError["Invalid tensor equation", lhs -> rhs]];
 
    (* Convert abstract index expressions to KrancBasis *)
    lhsB = toBasis[lhs];
@@ -146,6 +144,7 @@ ExpandComponents[x_] :=
 ReflectionSymmetries[t_Symbol?xTensorQ[inds__]] :=
   Module[{cnums, components, componentIndices, counts},
     (* Get the compoent indices of the basis *)
+    InfoMessage[InfoFull, "Getting symmetries of ", InputForm[t[inds]]]
     cnums = CNumbersOf[KrancBasis, VBundleOfBasis[KrancBasis]];
 
     (* Get a list of components of the tensor t in the basis b *)
@@ -184,7 +183,7 @@ CreateGroupFromTensor[t_Symbol?xTensorQ[inds__]] := Module[{tCharString, nInds, 
 
   (* Get a string representing the character of the tensor *)
   tCharString = tensorCharacterString[t[inds]];
-  InfoMessage[InfoFull, "Tensor character string: ", tCharString];
+  InfoMessage[InfoFull, "Tensor character string: " <> tCharString];
 
   (* Check if the tensor is symmetric *)
   nInds = Length[SlotsOfTensor[t]];

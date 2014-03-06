@@ -183,7 +183,7 @@ CreateGroupFromTensor[t_Symbol?xTensorQ[inds__]] := Module[{tCharString, nInds, 
   If[SymmetryGroupOfTensor[t] == StrongGenSet[Range[nInds],GenSet[Cycles[Range[nInds]]]], 
         tCharString = tCharString <> "_sym"];
 
-  (* FIXME: Add tensorspecial, cartesianreflectionparities  and tensorparity *)
+  (* FIXME: Add tensorspecial, cartesianreflectionparities, checkpoint and tensorparity *)
   tags = {"tensortypealias" -> tCharString, "tensorweight" -> WeightOfTensor[t]};
 
   vars = If[nInds == 0, {t}, {ExpandComponents[t[inds]]}];

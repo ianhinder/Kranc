@@ -19,18 +19,6 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-PrependTo[$Path, "../../EinsteinExact/m"];
-
-Check[Get["Metrics`LoadMetric`"],
-      Print["Cannot load Metrics package"]; Quit[1],
-      Get::noopen];
-
-Print["Using Metrics database at ", FindFile["Metrics`LoadMetric`"]];
-
-$DefInfoQ=False;
-$CVVerbose=False;
-$PrePrint=ScreenDollarIndices;
-
 (**************************************************************************************)
 (* Derivatives *)
 (**************************************************************************************)
@@ -51,26 +39,23 @@ derivatives =
 (**************************************************************************************)
 (* Tensors *)
 (**************************************************************************************)
-(* Load Euclidean metric and set components of g, epsilon and gamma *)
-LoadMetric["Euclidean"];
-MetricCompute[g, Euclidean, "Christoffel"[1,-1,-1], CVSimplify -> Simplify];
-AllComponentValues[ToBasis[Euclidean][epsilong[-a,e,f]],
-  Table[Signature[{i,j,k}],{i,3},{j,3},{k,3}]];
-RuleToSet[ChristoffelCDPDEuclidean];
-RuleToSet[g];
-RuleToSet[epsilong];
 
-(* Register the tensor quantities with the TensorTools package *)
-DefTensor[El[-a],EuclideanM];
-DefTensor[B[-a],EuclideanM];
+DefineTensor[El[-a]];
+DefineTensor[B[-a]];
+
+DefineTensor[eps[-a, b, c]];
+SetComponents[eps[-a, b, c], Array[Signature[{##}] &, {3, 3, 3}]];
+
+DefineTensor[gInv[a, b]];
+SetComponents[gInv[a, b], IdentityMatrix[{3,3}]];
 
 (**************************************************************************************)
 (* Groups *)
 (**************************************************************************************)
 
 (* NB This will give B the symmetries of a VECTOR, which is not correct *)
-evolvedGroups = Map[CreateGroupFromTensor, ToBasis[Euclidean][{El[-a], B[-a]}]];
-evaluatedGroups = 
+evolvedGroups = Map[CreateGroupFromTensor, {El[-a], B[-a]}];
+evaluatedGroups =
  {{"constraints", {CEl, CB}},
   {"endens",{rho}}};
 
@@ -87,7 +72,7 @@ initialCalc =
 {
   Name -> "EM_initial",
   Schedule -> {"at CCTK_INITIAL"},
-  Equations -> 
+  Equations ->
   {
     El1 -> sigma*Cos[2 Pi (x + y)] ,
     El2 -> - (1 - sigma)*Cos[2 Pi x] - sigma*Cos[2 Pi (x + y)],
@@ -107,10 +92,10 @@ evolCalc =
   Name -> "EM_evol",
   Schedule -> {"in MoL_CalcRHS"},
   Where -> Interior,
-  Equations -> 
+  Equations ->
   {
-    dot[ToBasis[Euclidean][El[-a]]] -> ToBasis[Euclidean][(epsilong[-a,e,f]  CD[-e][B[-f]])],
-    dot[ToBasis[Euclidean][ B[-a]]] -> ToBasis[Euclidean][-(epsilong[-a,e,f] CD[-e][El[-f]])]
+    dot[El[-a]] -> (eps[-a,e,f] pd[B[-f], -e]),
+    dot[B[-a]] -> -(eps[-a,e,f] pd[El[-f], -e])
   }
 };
 
@@ -122,10 +107,10 @@ constraintsCalc =
 {
   Name -> "EM_constraints",
   Where -> Interior,
-  Equations -> 
+  Equations ->
   {
-    CEl -> ToBasis[Euclidean][g[a,b]CD[-b][El[-a]]],
-    CB -> ToBasis[Euclidean][ g[a,b]CD[-b][B[-a]]] 
+    CEl -> gInv[a, b] pd[El[-a], -b],
+    CB -> gInv[a, b] pd[B[-a], -b]
   }
 };
 
@@ -136,9 +121,9 @@ constraintsCalc =
 energyCalc =
 {
   Name -> "EM_energy",
-  Equations -> 
+  Equations ->
   {
-    rho -> ToBasis[Euclidean][g[a,b] El[-a] El[-b]/2 + g[a,b] B[-a] B[-b]/2]
+    rho -> gInv[a, b] El[-a] El[-b] / 2 + gInv[a, b] B[-a] B[-b] / 2
   }
 };
 
@@ -148,15 +133,15 @@ realParameters = {sigma};
 (* Construct the thorn *)
 (**************************************************************************************)
 
-calculations = 
+calculations =
 {
   initialCalc,
-  evolCalc, 
-  constraintsCalc, 
+  evolCalc,
+  constraintsCalc,
   energyCalc
 };
 
-CreateKrancThornTT[groups, "xTensor", "EM", 
+CreateKrancThornTT[groups, "xTensor", "EM",
   Calculations -> calculations,
   DeclaredGroups -> declaredGroupNames,
   PartialDerivatives -> derivatives,

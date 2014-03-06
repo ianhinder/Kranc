@@ -30,7 +30,7 @@ Begin["`Private`"];
 
 storageStructure[groupName_, timelevels_] := 
 {
-  Group -> groupName, 
+  KrancGroup -> groupName,
   Timelevels -> timelevels
 };
 

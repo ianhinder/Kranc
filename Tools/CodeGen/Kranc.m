@@ -119,7 +119,7 @@ LocalGroups;
 (* Thorn.m *)
 
 {AccumulatorBase, ThornImplementation, Name, Type, Extend, Default,
-Comment, Range, Implementation, Group, SchedulePoint, Language,
+Comment, Range, Implementation, KrancGroup, SchedulePoint, Language,
 RequiredGroups, RequiredRegion, ProvidedGroups, ProvidedRegion,
 SynchronizedGroups, StorageGroups, Timelevels, TimelevelsParameter,
 VariableType, GridType, Dim, Size,

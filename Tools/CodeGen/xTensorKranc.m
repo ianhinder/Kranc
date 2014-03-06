@@ -29,7 +29,6 @@ CreateGroupFromTensor::usage = "CreateGroupFromTensor[T[a, b, ...]] Creates a va
 ReflectionSymmetries::usage = "ReflectionSymmetries[T[a, b, ...]] Produces a list of reflection symmetries of the tensor T.";
 ExpandComponents::usage = "ExpandComponents[expr] converts an expression x containing abstract indices into one containing components instead."
 
-pd::usage = "pd[t, i] represents the i component of the partial derivative of the tensor t.";
 Euc::usage = "Euc[i, j] represents the Euclidean tensor which is 1 if i=j, and 0 otherwise.";
 Eps::usage = "Eps[i, j, k] represents the Levi-Civita alternating tensor";
 
@@ -63,7 +62,6 @@ Block[{$DefInfoQ = False},
   DefBasis[KrancBasis, TangentKrancManifold, Range[dimension]];
   DefInertHead[dot];
 ];
-pd[t_, i_] := PDKrancBasis[i][t];
 
 (*************************************************************)
 (* Add some convenience xTensor wrapper functions *)
@@ -108,6 +106,7 @@ krancForm[expr_] :=
       SymbolJoin[t, Sequence @@ ToString /@ {i}[[All, 1]]], 
     t_Symbol?xTensorQ[] :> t,
     (* FIXME: Better handling of derivatives *)
+    (* pd_?CovDQ[i : (_?CIndexQ ..)][t_?xTensorQ] :> SymbolJoin[pd, krancForm[t], i[[1]]] *)
     PDKrancBasis[i_][t_] :> Global`PDstandard2nd[krancForm[t], i[[1]]]};
 
 SetAttributes[ExpandComponents, Listable];

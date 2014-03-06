@@ -21,12 +21,14 @@ BeginPackage["xTensorKranc`",
   {"Differencing`", "Errors`", "Kranc`", "KrancGroups`"}
 ];
 
-CreateGroupFromTensor::usage = "CreateGroupFromTensor[T[a, b, ...]] Creates a variable group from the tensor T";
 DefineTensor::usage = "DefineTensor[T[a, b, ...]] defines the tensor T with indices a, b, c, ....";
+DefineDerivative::usage = "DefineDerivative[pd] registers a symbol to be used as a derivative operator.";
 SetComponents::usage = "SetComponents[T[a, b, ...], v] defines the components of the tensor T to be the values given in the list v."
 
+CreateGroupFromTensor::usage = "CreateGroupFromTensor[T[a, b, ...]] Creates a variable group from the tensor T";
 ReflectionSymmetries::usage = "ReflectionSymmetries[T[a, b, ...]] Produces a list of reflection symmetries of the tensor T.";
 ExpandComponents::usage = "ExpandComponents[expr] converts an expression x containing abstract indices into one containing components instead."
+
 pd::usage = "pd[t, i] represents the i component of the partial derivative of the tensor t.";
 Euc::usage = "Euc[i, j] represents the Euclidean tensor which is 1 if i=j, and 0 otherwise.";
 Eps::usage = "Eps[i, j, k] represents the Levi-Civita alternating tensor";
@@ -63,9 +65,18 @@ Block[{$DefInfoQ = False},
 ];
 pd[t_, i_] := PDKrancBasis[i][t];
 
-(* Add some convenience functions *)
+(*************************************************************)
+(* Add some convenience xTensor wrapper functions *)
+(*************************************************************)
+
 DefineTensor[t_[inds___], opts___] :=
  Block[{$DefInfoQ = False}, DefTensor[t[inds], KrancManifold, opts]];
+
+DefineDerivative[pd_] :=
+ Block[{$DefInfoQ = False},
+  InfoMessage[InfoFull, "Defining derivative:", pd];
+  DefCovD[pd[-$KrancIndices[[1]]], Curvature -> False, Torsion -> False]
+];
 
 toBasis[dot[x_]] := dot[toBasis[x]];
 toBasis[x_] := FixedPoint[ToBasis[KrancBasis], x];

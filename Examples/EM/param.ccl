@@ -3,6 +3,7 @@
 
 shares: GenericFD
 
+USES CCTK_INT assume_stress_energy_state
 
 
 shares: MethodOfLines
@@ -17,10 +18,22 @@ CCTK_INT verbose "verbose" STEERABLE=ALWAYS
 } 0
 
 restricted:
+CCTK_INT other_timelevels "Number of active timelevels for non-evolved grid functions" STEERABLE=RECOVER
+{
+  0:3 :: ""
+} 1
+
+restricted:
 CCTK_REAL sigma "sigma"
 {
   "*:*" :: ""
 } 0
+
+restricted:
+CCTK_INT tile_size "Loop tile size"
+{
+  *:* :: ""
+} -1
 
 restricted:
 CCTK_INT EM_MaxNumEvolvedVars "Number of evolved variables used by this thorn" ACCUMULATOR-BASE=MethodofLines::MoL_Num_Evolved_Vars STEERABLE=RECOVER
@@ -42,12 +55,6 @@ CCTK_INT timelevels "Number of active timelevels" STEERABLE=RECOVER
 
 restricted:
 CCTK_INT rhs_timelevels "Number of active RHS timelevels" STEERABLE=RECOVER
-{
-  0:3 :: ""
-} 1
-
-restricted:
-CCTK_INT other_timelevels "Number of active timelevels for non-evolved grid functions" STEERABLE=RECOVER
 {
   0:3 :: ""
 } 1
@@ -101,42 +108,6 @@ CCTK_INT EM_energy_calc_offset "EM_energy_calc_offset" STEERABLE=ALWAYS
 } 0
 
 private:
-KEYWORD B1_bound "Boundary condition to implement" STEERABLE=ALWAYS
-{
-  "flat" :: "Flat boundary condition"
-  "none" :: "No boundary condition"
-  "static" :: "Boundaries held fixed"
-  "radiative" :: "Radiation boundary condition"
-  "scalar" :: "Dirichlet boundary condition"
-  "newrad" :: "Improved radiative boundary condition"
-  "skip" :: "skip boundary condition code"
-} "skip"
-
-private:
-KEYWORD B2_bound "Boundary condition to implement" STEERABLE=ALWAYS
-{
-  "flat" :: "Flat boundary condition"
-  "none" :: "No boundary condition"
-  "static" :: "Boundaries held fixed"
-  "radiative" :: "Radiation boundary condition"
-  "scalar" :: "Dirichlet boundary condition"
-  "newrad" :: "Improved radiative boundary condition"
-  "skip" :: "skip boundary condition code"
-} "skip"
-
-private:
-KEYWORD B3_bound "Boundary condition to implement" STEERABLE=ALWAYS
-{
-  "flat" :: "Flat boundary condition"
-  "none" :: "No boundary condition"
-  "static" :: "Boundaries held fixed"
-  "radiative" :: "Radiation boundary condition"
-  "scalar" :: "Dirichlet boundary condition"
-  "newrad" :: "Improved radiative boundary condition"
-  "skip" :: "skip boundary condition code"
-} "skip"
-
-private:
 KEYWORD El1_bound "Boundary condition to implement" STEERABLE=ALWAYS
 {
   "flat" :: "Flat boundary condition"
@@ -173,7 +144,7 @@ KEYWORD El3_bound "Boundary condition to implement" STEERABLE=ALWAYS
 } "skip"
 
 private:
-KEYWORD B_group_bound "Boundary condition to implement" STEERABLE=ALWAYS
+KEYWORD B1_bound "Boundary condition to implement" STEERABLE=ALWAYS
 {
   "flat" :: "Flat boundary condition"
   "none" :: "No boundary condition"
@@ -182,7 +153,31 @@ KEYWORD B_group_bound "Boundary condition to implement" STEERABLE=ALWAYS
   "scalar" :: "Dirichlet boundary condition"
   "newrad" :: "Improved radiative boundary condition"
   "skip" :: "skip boundary condition code"
-} "none"
+} "skip"
+
+private:
+KEYWORD B2_bound "Boundary condition to implement" STEERABLE=ALWAYS
+{
+  "flat" :: "Flat boundary condition"
+  "none" :: "No boundary condition"
+  "static" :: "Boundaries held fixed"
+  "radiative" :: "Radiation boundary condition"
+  "scalar" :: "Dirichlet boundary condition"
+  "newrad" :: "Improved radiative boundary condition"
+  "skip" :: "skip boundary condition code"
+} "skip"
+
+private:
+KEYWORD B3_bound "Boundary condition to implement" STEERABLE=ALWAYS
+{
+  "flat" :: "Flat boundary condition"
+  "none" :: "No boundary condition"
+  "static" :: "Boundaries held fixed"
+  "radiative" :: "Radiation boundary condition"
+  "scalar" :: "Dirichlet boundary condition"
+  "newrad" :: "Improved radiative boundary condition"
+  "skip" :: "skip boundary condition code"
+} "skip"
 
 private:
 KEYWORD El_group_bound "Boundary condition to implement" STEERABLE=ALWAYS
@@ -197,22 +192,16 @@ KEYWORD El_group_bound "Boundary condition to implement" STEERABLE=ALWAYS
 } "none"
 
 private:
-CCTK_REAL B1_bound_speed "characteristic speed at boundary" STEERABLE=ALWAYS
+KEYWORD B_group_bound "Boundary condition to implement" STEERABLE=ALWAYS
 {
-  "0:*" :: "outgoing characteristic speed > 0"
-} 1.
-
-private:
-CCTK_REAL B2_bound_speed "characteristic speed at boundary" STEERABLE=ALWAYS
-{
-  "0:*" :: "outgoing characteristic speed > 0"
-} 1.
-
-private:
-CCTK_REAL B3_bound_speed "characteristic speed at boundary" STEERABLE=ALWAYS
-{
-  "0:*" :: "outgoing characteristic speed > 0"
-} 1.
+  "flat" :: "Flat boundary condition"
+  "none" :: "No boundary condition"
+  "static" :: "Boundaries held fixed"
+  "radiative" :: "Radiation boundary condition"
+  "scalar" :: "Dirichlet boundary condition"
+  "newrad" :: "Improved radiative boundary condition"
+  "skip" :: "skip boundary condition code"
+} "none"
 
 private:
 CCTK_REAL El1_bound_speed "characteristic speed at boundary" STEERABLE=ALWAYS
@@ -233,7 +222,19 @@ CCTK_REAL El3_bound_speed "characteristic speed at boundary" STEERABLE=ALWAYS
 } 1.
 
 private:
-CCTK_REAL B_group_bound_speed "characteristic speed at boundary" STEERABLE=ALWAYS
+CCTK_REAL B1_bound_speed "characteristic speed at boundary" STEERABLE=ALWAYS
+{
+  "0:*" :: "outgoing characteristic speed > 0"
+} 1.
+
+private:
+CCTK_REAL B2_bound_speed "characteristic speed at boundary" STEERABLE=ALWAYS
+{
+  "0:*" :: "outgoing characteristic speed > 0"
+} 1.
+
+private:
+CCTK_REAL B3_bound_speed "characteristic speed at boundary" STEERABLE=ALWAYS
 {
   "0:*" :: "outgoing characteristic speed > 0"
 } 1.
@@ -245,22 +246,10 @@ CCTK_REAL El_group_bound_speed "characteristic speed at boundary" STEERABLE=ALWA
 } 1.
 
 private:
-CCTK_REAL B1_bound_limit "limit value for r -> infinity" STEERABLE=ALWAYS
+CCTK_REAL B_group_bound_speed "characteristic speed at boundary" STEERABLE=ALWAYS
 {
-  "*:*" :: "value of limit value is unrestricted"
-} 0.
-
-private:
-CCTK_REAL B2_bound_limit "limit value for r -> infinity" STEERABLE=ALWAYS
-{
-  "*:*" :: "value of limit value is unrestricted"
-} 0.
-
-private:
-CCTK_REAL B3_bound_limit "limit value for r -> infinity" STEERABLE=ALWAYS
-{
-  "*:*" :: "value of limit value is unrestricted"
-} 0.
+  "0:*" :: "outgoing characteristic speed > 0"
+} 1.
 
 private:
 CCTK_REAL El1_bound_limit "limit value for r -> infinity" STEERABLE=ALWAYS
@@ -281,7 +270,19 @@ CCTK_REAL El3_bound_limit "limit value for r -> infinity" STEERABLE=ALWAYS
 } 0.
 
 private:
-CCTK_REAL B_group_bound_limit "limit value for r -> infinity" STEERABLE=ALWAYS
+CCTK_REAL B1_bound_limit "limit value for r -> infinity" STEERABLE=ALWAYS
+{
+  "*:*" :: "value of limit value is unrestricted"
+} 0.
+
+private:
+CCTK_REAL B2_bound_limit "limit value for r -> infinity" STEERABLE=ALWAYS
+{
+  "*:*" :: "value of limit value is unrestricted"
+} 0.
+
+private:
+CCTK_REAL B3_bound_limit "limit value for r -> infinity" STEERABLE=ALWAYS
 {
   "*:*" :: "value of limit value is unrestricted"
 } 0.
@@ -293,21 +294,9 @@ CCTK_REAL El_group_bound_limit "limit value for r -> infinity" STEERABLE=ALWAYS
 } 0.
 
 private:
-CCTK_REAL B1_bound_scalar "Dirichlet boundary value" STEERABLE=ALWAYS
+CCTK_REAL B_group_bound_limit "limit value for r -> infinity" STEERABLE=ALWAYS
 {
-  "*:*" :: "unrestricted"
-} 0.
-
-private:
-CCTK_REAL B2_bound_scalar "Dirichlet boundary value" STEERABLE=ALWAYS
-{
-  "*:*" :: "unrestricted"
-} 0.
-
-private:
-CCTK_REAL B3_bound_scalar "Dirichlet boundary value" STEERABLE=ALWAYS
-{
-  "*:*" :: "unrestricted"
+  "*:*" :: "value of limit value is unrestricted"
 } 0.
 
 private:
@@ -329,13 +318,31 @@ CCTK_REAL El3_bound_scalar "Dirichlet boundary value" STEERABLE=ALWAYS
 } 0.
 
 private:
-CCTK_REAL B_group_bound_scalar "Dirichlet boundary value" STEERABLE=ALWAYS
+CCTK_REAL B1_bound_scalar "Dirichlet boundary value" STEERABLE=ALWAYS
+{
+  "*:*" :: "unrestricted"
+} 0.
+
+private:
+CCTK_REAL B2_bound_scalar "Dirichlet boundary value" STEERABLE=ALWAYS
+{
+  "*:*" :: "unrestricted"
+} 0.
+
+private:
+CCTK_REAL B3_bound_scalar "Dirichlet boundary value" STEERABLE=ALWAYS
 {
   "*:*" :: "unrestricted"
 } 0.
 
 private:
 CCTK_REAL El_group_bound_scalar "Dirichlet boundary value" STEERABLE=ALWAYS
+{
+  "*:*" :: "unrestricted"
+} 0.
+
+private:
+CCTK_REAL B_group_bound_scalar "Dirichlet boundary value" STEERABLE=ALWAYS
 {
   "*:*" :: "unrestricted"
 } 0.

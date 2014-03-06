@@ -166,12 +166,6 @@ ReflectionSymmetries[t_] := t -> {1, 1, 1};
 ReflectionSymmetries[x___]:= ThrowError["ReflectionSymmetries error: "<>ToString[x]];
 
 (*************************************************************)
-(* GetTensorAttribute *)
-(*************************************************************)
-
-GetTensorAttribute[t_Symbol?xTensorQ, TensorWeight] := WeightOfTensor[t];
-
-(*************************************************************)
 (* CreateGroupFromTensor *)
 (*************************************************************)
 
@@ -190,7 +184,7 @@ CreateGroupFromTensor[t_Symbol?xTensorQ[inds__]] := Module[{tCharString, nInds, 
         tCharString = tCharString <> "_sym"];
 
   (* FIXME: Add tensorspecial, cartesianreflectionparities  and tensorparity *)
-  tags = {"tensortypealias" -> tCharString, "tensorweight" -> GetTensorAttribute[t, TensorWeight]};
+  tags = {"tensortypealias" -> tCharString, "tensorweight" -> WeightOfTensor[t]};
 
   vars = If[nInds == 0, {t}, {ExpandComponents[t[inds]]}];
   group = CreateGroup[SymbolName[t] <> "_group", vars, {Tags -> tags}];

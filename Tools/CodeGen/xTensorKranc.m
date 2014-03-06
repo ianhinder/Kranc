@@ -21,19 +21,26 @@ BeginPackage["xTensorKranc`",
   {"Differencing`", "Kranc`", "KrancGroups`"}
 ];
 
+CreateGroupFromTensor::usage = "CreateGroupFromTensor[T[a, b, ...]] Creates a variable group from the tensor T";
+DefineTensor::usage = "DefineTensor[T[a, b, ...]] defines the tensor T with indices a, b, c, ....";
+ReflectionSymmetries::usage = "ReflectionSymmetries[T[a, b, ...]] Produces a list of reflection symmetries of the tensor T.";
+ExpandComponents::usage = "ExpandComponents[expr] converts an expression x containing abstract indices into one containing components instead."
+
+$KrancIndices = xAct`xTensor`IndexRange[a, l];
+
+Begin["`Private`"];
+
+(*************************************************************)
+(* Set up xTensor *)
+(*************************************************************)
+contexts = $ContextPath;
 Block[{Print},
   Needs["xAct`xTensor`"];
   Needs["xAct`xCore`"];
   Needs["xAct`xCoba`"];
 ];
-
-CreateGroupFromTensor::usage = "";
-ReflectionSymmetries::usage = "Produce a list of reflection symmetries of a tensor.";
-ExpandComponents::usage = "ExpandComponents[expr] converts an expression x containing abstract indices into one containing components instead."
-IncludeCharacter::usage = "IncludeCharacter is an option for makeExplicit which specifies whether the character should also be included in the generated variable names."
-TensorCharacterString::usage = "TensorCharacterString[tensor[inds]] returns a string consisting of a sequence of U's and D's representing the character of tensor."
-
-Begin["`Private`"];
+newContexts = Complement[$ContextPath, contexts];
+Protect[$KrancIndices];
 
 (* FIXME: Add support for ManualCartesian attribute *)
 TensorCharacterString[t_Symbol?xTensorQ[]] := "Scalar";
@@ -135,3 +142,8 @@ CheckTensors[expr_] := Validate[expr];
 
 End[];
 EndPackage[];
+
+(* Add xAct packages to $ContextPath *)
+Do[
+  If[!MemberQ[$ContextPath, package], AppendTo[$ContextPath, package]],
+  {package, xTensorKranc`Private`newContexts}];

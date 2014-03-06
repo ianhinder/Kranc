@@ -183,7 +183,6 @@ CreateGroupFromTensor[t_Symbol?xTensorQ[inds__]] := Module[{tCharString, nInds, 
 
   (* Get a string representing the character of the tensor *)
   tCharString = tensorCharacterString[t[inds]];
-  InfoMessage[InfoFull, "Tensor character string: " <> tCharString];
 
   (* Check if the tensor is symmetric *)
   nInds = Length[SlotsOfTensor[t]];

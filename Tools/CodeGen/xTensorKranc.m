@@ -37,6 +37,9 @@ Do[
   Evaluate[Symbol["u"<>ToString[ind]]] = ind;
   , {ind, $KrancIndices}];
 
+KrancManifold;
+TangentKrancManifold;
+
 Begin["`Private`"];
 
 (*************************************************************)

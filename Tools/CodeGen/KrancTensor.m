@@ -25,7 +25,7 @@
 (****************************************************************************)
 
 If[!ValueQ[$KrancTensorPackage],
-  $KrancTensorPackage = Sequence["TensorToolsKranc`", "TensorTools`"];
+  $KrancTensorPackage = "xTensorKranc`";
 ];
 
 BeginPackage["KrancTensor`", {"Errors`", "KrancThorn`", "MapLookup`", "KrancGroups`",

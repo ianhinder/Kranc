@@ -28,6 +28,8 @@ SetComponents::usage = "SetComponents[T[a, b, ...], v] defines the components of
 ReflectionSymmetries::usage = "ReflectionSymmetries[T[a, b, ...]] Produces a list of reflection symmetries of the tensor T.";
 ExpandComponents::usage = "ExpandComponents[expr] converts an expression x containing abstract indices into one containing components instead."
 pd::usage = "pd[t, i] represents the i component of the partial derivative of the tensor t.";
+Euc::usage = "Euc[i, j] represents the Euclidean tensor which is 1 if i=j, and 0 otherwise.";
+Eps::usage = "Eps[i, j, k] represents the Levi-Civita alternating tensor";
 
 $KrancIndices = Symbol /@ CharacterRange["a", "q"];
 Do[
@@ -62,14 +64,24 @@ pd[t_, i_] := PDKrancBasis[i][t];
 DefineTensor[t_[inds___], opts___] :=
  Block[{$DefInfoQ = False}, DefTensor[t[inds], KrancManifold, opts]];
 
+toBasis[dot[x_]] := dot[toBasis[x]];
+toBasis[x_] := FixedPoint[ToBasis[KrancBasis], x];
+
 SetComponents[t_?xTensorQ[i :(_?AIndexQ ...)], values_] :=
-  Module[{},
+ Module[{},
   AllComponentValues[toBasis[t[i]], values];
   RuleToSet[t];
 ]
 
-toBasis[dot[x_]] := dot[toBasis[x]];
-toBasis[x_] := FixedPoint[ToBasis[KrancBasis], x];
+(* FIXME: I'm not sure if we really should be encouraging the use of these *)
+Module[{a,b,c},
+  {a, b, c} = $KrancIndices[[1;;3]];
+  DefineTensor[Eps[-a, -b, -c]];
+  SetComponents[Eps[-a, -b, -c], Array[Signature[{##}] &, {3, 3, 3}]];
+
+  DefineTensor[Euc[a, b]];
+  SetComponents[Euc[a, b], IdentityMatrix[{3,3}]];
+];
 
 (*************************************************************)
 (* ExpandComponents *)

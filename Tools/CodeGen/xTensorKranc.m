@@ -30,6 +30,10 @@ ExpandComponents::usage = "ExpandComponents[expr] converts an expression x conta
 pd::usage = "pd[t, i] represents the i component of the partial derivative of the tensor t.";
 
 $KrancIndices = Symbol /@ CharacterRange["a", "q"];
+Do[
+  Evaluate[Symbol["l"<>ToString[ind]]] = -ind;
+  Evaluate[Symbol["u"<>ToString[ind]]] = ind;
+  , {ind, $KrancIndices}];
 
 Begin["`Private`"];
 

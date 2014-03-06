@@ -2,9 +2,6 @@
 script = If[ValueQ[$KrancScript],$KrancScript,$CommandLine[[-1]]];
 Kranc`KrancDirectory = If[ValueQ[$KrancDirectory], $KrancDirectory, Environment["KRANCDIR"]];
 
-(* Uncomment the following to use xTensor in place of TensorTools *)
-(* $KrancTensorPackage=Sequence["TensorTools`", "TensorToolsKranc`"]; *)
-
 $Path = Join[$Path,
   {Kranc`KrancDirectory <> "/Tools/CodeGen",
    Kranc`KrancDirectory <> "/Tools/MathematicaMisc",

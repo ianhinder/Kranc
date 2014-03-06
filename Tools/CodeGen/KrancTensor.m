@@ -24,12 +24,8 @@
 (* Wrapper providing tensor support to Kranc (from TensorTools or xTensor)  *)
 (****************************************************************************)
 
-If[!ValueQ[$KrancTensorPackage],
-  $KrancTensorPackage = "xTensorKranc`";
-];
-
 BeginPackage["KrancTensor`", {"Errors`", "KrancThorn`", "MapLookup`", "KrancGroups`",
-                              "Kranc`", $KrancTensorPackage, "ConservationCalculation`",
+                              "Kranc`", "xTensorKranc`", "ConservationCalculation`",
                               "KrancGroups`", "Differencing`",
                               "Piraha`", "ScriptOutput`"}];
 

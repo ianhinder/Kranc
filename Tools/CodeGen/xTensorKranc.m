@@ -31,7 +31,7 @@ pd::usage = "pd[t, i] represents the i component of the partial derivative of th
 Euc::usage = "Euc[i, j] represents the Euclidean tensor which is 1 if i=j, and 0 otherwise.";
 Eps::usage = "Eps[i, j, k] represents the Levi-Civita alternating tensor";
 
-$KrancIndices = Symbol /@ CharacterRange["a", "q"];
+$KrancIndices = Symbol /@ Complement[CharacterRange["a", "z"], {"h", "r", "x", "y", "z"}];
 Do[
   Evaluate[Symbol["l"<>ToString[ind]]] = -ind;
   Evaluate[Symbol["u"<>ToString[ind]]] = ind;

@@ -7,7 +7,7 @@ STORAGE: Frho_group[other_timelevels]
 
 STORAGE: F2rho_group[other_timelevels]
 
-STORAGE: V_group[other_timelevels]
+STORAGE: v_group[other_timelevels]
 
 STORAGE: rho_grouprhs[rhs_timelevels]
 
@@ -31,9 +31,9 @@ if (CCTK_EQUALS(initial_data, "sine"))
     LANG: C
     READS: grid::x(Everywhere)
     WRITES: Advect::rho(Everywhere)
-    WRITES: Advect::V1(Everywhere)
-    WRITES: Advect::V2(Everywhere)
-    WRITES: Advect::V3(Everywhere)
+    WRITES: Advect::v1(Everywhere)
+    WRITES: Advect::v2(Everywhere)
+    WRITES: Advect::v3(Everywhere)
   } "advect_initial_sine"
 }
 
@@ -45,9 +45,9 @@ if (CCTK_EQUALS(initial_data, "shock"))
     LANG: C
     READS: grid::x(Everywhere)
     WRITES: Advect::rho(Everywhere)
-    WRITES: Advect::V1(Everywhere)
-    WRITES: Advect::V2(Everywhere)
-    WRITES: Advect::V3(Everywhere)
+    WRITES: Advect::v1(Everywhere)
+    WRITES: Advect::v2(Everywhere)
+    WRITES: Advect::v3(Everywhere)
   } "advect_initial_shock"
 }
 
@@ -64,9 +64,9 @@ schedule advect_flux in MoL_PostStep after Advect_ApplyBCs
 {
   LANG: C
   READS: Advect::rho(Everywhere)
-  READS: Advect::V1(Everywhere)
-  READS: Advect::V2(Everywhere)
-  READS: Advect::V3(Everywhere)
+  READS: Advect::v1(Everywhere)
+  READS: Advect::v2(Everywhere)
+  READS: Advect::v3(Everywhere)
   WRITES: Advect::Frho1(Everywhere)
   WRITES: Advect::Frho2(Everywhere)
   WRITES: Advect::Frho3(Everywhere)

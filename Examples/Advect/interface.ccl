@@ -49,12 +49,12 @@ CCTK_REAL F2rho_group type=GF timelevels=1 tags='tensortypealias="U" tensorweigh
 } "F2rho_group"
 
 public:
-CCTK_REAL V_group type=GF timelevels=1 tags='tensortypealias="U" tensorweight=0'
+CCTK_REAL v_group type=GF timelevels=1 tags='tensortypealias="U" tensorweight=0'
 {
-  V1,
-  V2,
-  V3
-} "V_group"
+  v1,
+  v2,
+  v3
+} "v_group"
 
 public:
 CCTK_REAL rho_grouprhs type=GF timelevels=3 tags='tensortypealias="Scalar" tensorweight=0 Prolongation="None"'

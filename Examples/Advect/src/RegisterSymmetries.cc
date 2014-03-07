@@ -54,16 +54,16 @@ extern "C" void Advect_RegisterSymmetries(CCTK_ARGUMENTS)
   sym[0] = -1;
   sym[1] = 1;
   sym[2] = 1;
-  SetCartSymVN(cctkGH, sym, "Advect::V1");
+  SetCartSymVN(cctkGH, sym, "Advect::v1");
   
   sym[0] = 1;
   sym[1] = -1;
   sym[2] = 1;
-  SetCartSymVN(cctkGH, sym, "Advect::V2");
+  SetCartSymVN(cctkGH, sym, "Advect::v2");
   
   sym[0] = 1;
   sym[1] = 1;
   sym[2] = -1;
-  SetCartSymVN(cctkGH, sym, "Advect::V3");
+  SetCartSymVN(cctkGH, sym, "Advect::v3");
   
 }

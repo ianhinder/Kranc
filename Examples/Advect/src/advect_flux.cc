@@ -106,9 +106,9 @@ static void advect_flux_Body(const cGH* restrict const cctkGH, const int dir, co
     /* Assign local copies of grid functions */
     
     CCTK_REAL rhoL CCTK_ATTRIBUTE_UNUSED = rho[index];
-    CCTK_REAL V1L CCTK_ATTRIBUTE_UNUSED = V1[index];
-    CCTK_REAL V2L CCTK_ATTRIBUTE_UNUSED = V2[index];
-    CCTK_REAL V3L CCTK_ATTRIBUTE_UNUSED = V3[index];
+    CCTK_REAL v1L CCTK_ATTRIBUTE_UNUSED = v1[index];
+    CCTK_REAL v2L CCTK_ATTRIBUTE_UNUSED = v2[index];
+    CCTK_REAL v3L CCTK_ATTRIBUTE_UNUSED = v3[index];
     
     
     /* Include user supplied include files */
@@ -116,11 +116,11 @@ static void advect_flux_Body(const cGH* restrict const cctkGH, const int dir, co
     /* Precompute derivatives */
     
     /* Calculate temporaries and grid functions */
-    CCTK_REAL Frho1L CCTK_ATTRIBUTE_UNUSED = rhoL*V1L;
+    CCTK_REAL Frho1L CCTK_ATTRIBUTE_UNUSED = rhoL*v1L;
     
-    CCTK_REAL Frho2L CCTK_ATTRIBUTE_UNUSED = rhoL*V2L;
+    CCTK_REAL Frho2L CCTK_ATTRIBUTE_UNUSED = rhoL*v2L;
     
-    CCTK_REAL Frho3L CCTK_ATTRIBUTE_UNUSED = rhoL*V3L;
+    CCTK_REAL Frho3L CCTK_ATTRIBUTE_UNUSED = rhoL*v3L;
     
     /* Copy local copies back to grid functions */
     Frho1[index] = Frho1L;
@@ -149,7 +149,7 @@ extern "C" void advect_flux(CCTK_ARGUMENTS)
   const char* const groups[] = {
     "Advect::Frho_group",
     "Advect::rho_group",
-    "Advect::V_group"};
+    "Advect::v_group"};
   GenericFD_AssertGroupStorage(cctkGH, "advect_flux", 3, groups);
   
   

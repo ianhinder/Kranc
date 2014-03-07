@@ -113,20 +113,20 @@ static void advect_initial_shock_Body(const cGH* restrict const cctkGH, const in
     /* Precompute derivatives */
     
     /* Calculate temporaries and grid functions */
-    CCTK_REAL V1L CCTK_ATTRIBUTE_UNUSED = ToReal(v0);
+    CCTK_REAL v1L CCTK_ATTRIBUTE_UNUSED = ToReal(v0);
     
-    CCTK_REAL V2L CCTK_ATTRIBUTE_UNUSED = 0;
+    CCTK_REAL v2L CCTK_ATTRIBUTE_UNUSED = 0;
     
-    CCTK_REAL V3L CCTK_ATTRIBUTE_UNUSED = 0;
+    CCTK_REAL v3L CCTK_ATTRIBUTE_UNUSED = 0;
     
     CCTK_REAL rhoL CCTK_ATTRIBUTE_UNUSED = StepFunction(-0.5 + 
       xL)*ToReal(amp);
     
     /* Copy local copies back to grid functions */
     rho[index] = rhoL;
-    V1[index] = V1L;
-    V2[index] = V2L;
-    V3[index] = V3L;
+    v1[index] = v1L;
+    v2[index] = v2L;
+    v3[index] = v3L;
   }
   CCTK_ENDLOOP3(advect_initial_shock);
 }
@@ -150,7 +150,7 @@ extern "C" void advect_initial_shock(CCTK_ARGUMENTS)
   const char* const groups[] = {
     "grid::coordinates",
     "Advect::rho_group",
-    "Advect::V_group"};
+    "Advect::v_group"};
   GenericFD_AssertGroupStorage(cctkGH, "advect_initial_shock", 3, groups);
   
   

@@ -122,6 +122,7 @@ DefineDerivative[pd_, numderiv_] :=
     pd[-i_?AbstractIndexQ][t_] := nd[PDKrancBasis[{-i, -KrancBasis}][t]];
     pd[t_, -i_?AbstractIndexQ] := nd[PDKrancBasis[{-i, -KrancBasis}][t]];
     pd[t_, i_Integer?Negative] := nd[PDKrancBasis[{-i, -KrancBasis}][t]];
+    pd[t_, i_Integer?Positive] := nd[PDKrancBasis[{i, -KrancBasis}][t]];
 
     (* Distribute the nd wrapper over Plus, e.g. expand
        nd[pd[t[0],0] + pd[t[1],1]] out to nd[pd[t[0],0]] + nd[pd[t[1],1]].

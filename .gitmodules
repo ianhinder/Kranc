@@ -1,0 +1,3 @@
+[submodule "Tests/TestThorns"]
+	path = Tests/TestThorns
+	url = https://github.com/ianhinder/KrancData.git

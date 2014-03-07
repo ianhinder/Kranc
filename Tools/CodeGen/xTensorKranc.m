@@ -64,20 +64,34 @@ Block[{$DefInfoQ = False},
 ];
 
 (*************************************************************)
-(* Add some convenience xTensor wrapper functions *)
+(* DefineTensor *)
 (*************************************************************)
 
 DefineTensor[t_[inds___], opts___] :=
  Block[{$DefInfoQ = False}, DefTensor[t[inds], KrancManifold, opts]];
 
+(*************************************************************)
+(* DefineDerivative *)
+(*************************************************************)
+
+(* Define a new derivative operator. This is defined in terms of
+   xTensor's partial derivative operator wrapped in an inert head
+   to keep track of what the numerical discretisation should be. *)
 DefineDerivative[pd_, numderiv_] :=
  Block[{$DefInfoQ = False},
   InfoMessage[InfoFull, "Defining derivative:", pd];
   Module[{nd},
     DefInertHead[nd];
     NumericalDiscretisation[nd] ^= numderiv;
+
+    (* Support both prefix (xTensor) and postfix (Kranc) style derivatives *)
     pd[i_][t_] := nd[PDKrancBasis[i][t]];
     pd[t_, i_] := nd[PDKrancBasis[i][t]];
+
+    (* Distribute the nd wrapper over Plus, e.g. expand
+       nd[pd[t[0],0] + pd[t[1],1]] out to nd[pd[t[0],0]] + nd[pd[t[1],1]].
+       This is important for xTensor's canonicalizer to work reliably. *)
+    e : nd[_Plus] := Distribute[Unevaluated[e]];
   ]
 ];
 

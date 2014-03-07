@@ -160,7 +160,7 @@ krancForm[expr_] :=
   expr //. {
     Scalar[x_] :> NoScalar[x], 
     t_Symbol?xTensorQ[i : (_?CIndexQ ..)] :> 
-      SymbolJoin[t, Sequence @@ ToString /@ {i}[[All, 1]]], 
+      SymbolJoin[PrintAs[t], Sequence @@ ToString /@ {i}[[All, 1]]], 
     t_Symbol?xTensorQ[] :> PrintAs[t],
     (* FIXME: Better handling of derivatives *)
     nd_[pd_?CovDQ[i : (_?CIndexQ ..)][t_?xTensorQ[inds__]]] :> NumericalDiscretisation[nd][krancForm[t[inds]], i[[1]]]

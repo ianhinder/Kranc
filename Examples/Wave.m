@@ -30,12 +30,13 @@ derivatives =
   PDplus[i_] -> DPlus[i]
 };
 
-Map[DefineTensor, {norm, dir}];
+Map[DefineTensor, {norm[ui], dir[li]}];
 
 zerodims = {};
 
-PD = PDstandard2nd;
-PDnorm = PDplus;
+DefineDerivative[pd, PDstandard];
+DefineDerivative[pdo, PDonesided2nd];
+DefineDerivative[PDnorm, PDplus];
 
 evolvedGroup = {"evolved", {phi, pi}, Timelevels -> 3};
 normGroup    = {"norms",   {VL2, VDP, EL2}, Timelevels -> 3};
@@ -106,7 +107,7 @@ importerCalc =
 evolveEquations =
 {
   dot[phi] -> pi,
-  dot[pi]  -> PDstandard[phi,li,lj] Euc[ui,uj]
+  dot[pi]  -> pd[phi,li,lj] Euc[ui,uj]
 }
 
 evolveCalc = 
@@ -138,7 +139,7 @@ normEquations =
 {
   VL2squared -> phi^2 + pi^2,
   VL2 -> Sqrt[VL2squared],
-  VDPsquared -> pi^2 + PDnorm[phi,li] PDnorm[phi,ui],
+  VDPsquared -> pi^2 + Euc[ui,uj] PDnorm[phi,li] PDnorm[phi,lj],
   VDP -> Sqrt[VDPsquared],
   EL2squared -> phiError^2 + piError^2,
   EL2 -> Sqrt[EL2squared]
@@ -170,21 +171,21 @@ boundaryCalc =
   Schedule -> {"in MoL_RHSBoundaries"},
   ConditionalOnKeyword -> {"boundary_condition", "radiative"},
   Where -> Boundary,
-  Shorthands -> {norm[ui], dir[ui]},
+  Shorthands -> {norm[ui], dir[li]},
   Equations ->
   {
     norm1 -> -x/r, 
     norm2 -> -y/r,
     norm3 -> -z/r,
 
-    dir[ui] -> Sign[norm[ui]],
+    dir[li] -> EucDD[li, lj] Sign[norm[uj]],
 
     (* \partial_t u = - (u - u_0) / r - \partial_r u
        for u_0 some background solution. In this case, Minkowski in Cartesian 
        coordinates. *)
     
-    dot[phi] -> -(phi - 0) / r + norm[ui] PDonesided2nd[phi, li],
-    dot[pi] -> -(pi - 0) / r + norm[ui] PDonesided2nd[pi, li]
+    dot[phi] -> -(phi - 0) / r + norm[ui] pdo[phi, li],
+    dot[pi] -> -(pi - 0) / r + norm[ui] pdo[pi, li]
   }
 };
 

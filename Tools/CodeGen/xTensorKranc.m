@@ -100,6 +100,8 @@ DefineTensor[s_, opts___] :=
   KrancScalarQ[s] = True;
 ]];
 
+DefineTensor[(t_|t_[___]), ___] /; MemberQ[$KrancIndices, t] :=
+ ThrowError["Cannot use "<>SymbolName[t]<>" as a tensor as it is already used as a tensor index."];
 
 (*************************************************************)
 (* DefineDerivative *)

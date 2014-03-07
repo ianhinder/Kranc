@@ -138,8 +138,8 @@ DefineDerivative[pd_, numderiv_] :=
 
     (* Support both prefix (xTensor) and postfix (Kranc) style derivatives *)
     (* Automatically convert abstract and numeric indices to basis indices *)
+    pd[t_, i : (-_?AbstractIndexQ) ..] := nd[Fold[PDKrancBasis[{#2, -KrancBasis}][#1] &, t, {i}]];
     pd[-i_?AbstractIndexQ][t_] := nd[PDKrancBasis[{-i, -KrancBasis}][t]];
-    pd[t_, -i_?AbstractIndexQ] := nd[PDKrancBasis[{-i, -KrancBasis}][t]];
     pd[t_, i_Integer?Negative] := nd[PDKrancBasis[{-i, -KrancBasis}][t]];
     pd[t_, i_Integer?Positive] := nd[PDKrancBasis[{i, -KrancBasis}][t]];
 
@@ -182,11 +182,12 @@ Module[{a,b,c},
 krancForm[expr_] := 
   expr //. {
     Scalar[x_] :> NoScalar[x], 
+    pd_?CovDQ[i__][pd_?CovDQ[j__][t_]] :> pd[j, i][t],
+    nd_[pd_?CovDQ[i : (_?CIndexQ ..)][t_?xTensorQ[inds___]]] :>
+     NumericalDiscretisation[nd][krancForm[t[inds]], Sequence @@ ({i}[[All, 1]])],
     t_Symbol?xTensorQ[i : (_?CIndexQ ..)] :> 
-      SymbolJoin[t, Sequence @@ ToString /@ {i}[[All, 1]]],
-    t_Symbol?xTensorQ[] :> t,
-    (* FIXME: Better handling of derivatives *)
-    nd_[pd_?CovDQ[i : (_?CIndexQ ..)][t_?xTensorQ[inds___]]] :> NumericalDiscretisation[nd][krancForm[t[inds]], i[[1]]]
+     SymbolJoin[t, Sequence @@ ToString /@ {i}[[All, 1]]],
+    t_Symbol?xTensorQ[] :> t
   };
 
 SetAttributes[ExpandComponents, Listable];

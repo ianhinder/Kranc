@@ -65,7 +65,8 @@ Block[{$DefInfoQ = False},
   DefManifold[KrancManifold, dimension, $KrancIndices];
   DefBasis[KrancBasis, TangentKrancManifold, Range[dimension]];
   DefInertHead[dot];
-  DefScalarFunction[StepFunction];
+  DefInertHead[KrancSign];
+  DefInertHead[StepFunction];
 ];
 
 (*************************************************************)
@@ -181,6 +182,7 @@ Module[{a,b,c},
 
 krancForm[expr_] := 
   expr //. {
+    KrancSign[x_] :> Sign[x],
     Scalar[x_] :> NoScalar[x], 
     pd_?CovDQ[i__][pd_?CovDQ[j__][t_]] :> pd[j, i][t],
     nd_[pd_?CovDQ[i : (_?CIndexQ ..)][t_?xTensorQ[inds___]]] :>
@@ -199,7 +201,7 @@ ExpandComponents[l_ -> r_] :=
    InfoMessage[InfoFull, "Expanding tensor expression: ", InputForm[l] -> InputForm[r]];
 
    (* Add brackets to scalars if they aren't present *)
-   {lhs, rhs} = {l, r} /. {t_?KrancScalarQ[] -> t[], t_?KrancScalarQ -> t[]};
+   {lhs, rhs} = {l, r} /. {t_?KrancScalarQ[] -> t[], t_?KrancScalarQ -> t[], Sign[t_] :> KrancSign[t]};
 
    (* Check we have a valid tensor equation *)
    (* FIXME: Maybe we should find an alternative to Quiet here *)
@@ -226,7 +228,7 @@ ExpandComponents[l_ -> r_] :=
 ExpandComponents[x_] :=
  Module[{expr},
   (* Add brackets to scalars if they aren't present *)
-  expr = x /. {t_?KrancScalarQ[] -> t[], t_?KrancScalarQ -> t[]};
+  expr = x /. {t_?KrancScalarQ[] -> t[], t_?KrancScalarQ -> t[], Sign[t_] :> KrancSign[t]};
 
   (* FIXME: Maybe we should find an alternative to Quiet here *)
   Check[Quiet[Validate[expr], Validate::unknown], ThrowError["Invalid tensor expression"]];

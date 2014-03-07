@@ -1,70 +1,15 @@
 # File produced by Kranc
 
 
-if (timelevels == 1)
-{
-  STORAGE: errors[1]
-}
-if (timelevels == 2)
-{
-  STORAGE: errors[2]
-}
-if (timelevels == 3)
-{
-  STORAGE: errors[3]
-}
+STORAGE: evolved[timelevels]
 
-if (timelevels == 1)
-{
-  STORAGE: exact[1]
-}
-if (timelevels == 2)
-{
-  STORAGE: exact[2]
-}
-if (timelevels == 3)
-{
-  STORAGE: exact[3]
-}
+STORAGE: exact[timelevels]
 
-if (timelevels == 1)
-{
-  STORAGE: norms[1]
-}
-if (timelevels == 2)
-{
-  STORAGE: norms[2]
-}
-if (timelevels == 3)
-{
-  STORAGE: norms[3]
-}
+STORAGE: errors[timelevels]
 
-if (timelevels == 1)
-{
-  STORAGE: evolved[1]
-}
-if (timelevels == 2)
-{
-  STORAGE: evolved[2]
-}
-if (timelevels == 3)
-{
-  STORAGE: evolved[3]
-}
+STORAGE: norms[timelevels]
 
-if (rhs_timelevels == 1)
-{
-  STORAGE: evolvedrhs[1]
-}
-if (rhs_timelevels == 2)
-{
-  STORAGE: evolvedrhs[2]
-}
-if (rhs_timelevels == 3)
-{
-  STORAGE: evolvedrhs[3]
-}
+STORAGE: evolvedrhs[rhs_timelevels]
 
 schedule Wave_Startup at STARTUP
 {
@@ -84,11 +29,11 @@ if (CCTK_EQUALS(initial_data, "sine"))
   schedule wave_exact_sine AT INITIAL before import_exact before import_exact
   {
     LANG: C
-    READS:    grid::x(Everywhere)
-    READS:    grid::y(Everywhere)
-    READS:    grid::z(Everywhere)
-    WRITES:   Wave::phiExact(Everywhere)
-    WRITES:   Wave::piExact(Everywhere)
+    READS: grid::x(Everywhere)
+    READS: grid::y(Everywhere)
+    READS: grid::z(Everywhere)
+    WRITES: Wave::phiExact(Everywhere)
+    WRITES: Wave::piExact(Everywhere)
   } "wave_exact_sine"
 }
 
@@ -98,11 +43,11 @@ if (CCTK_EQUALS(initial_data, "sine"))
   schedule wave_exact_sine AT POSTSTEP before calc_errors before import_exact
   {
     LANG: C
-    READS:    grid::x(Everywhere)
-    READS:    grid::y(Everywhere)
-    READS:    grid::z(Everywhere)
-    WRITES:   Wave::phiExact(Everywhere)
-    WRITES:   Wave::piExact(Everywhere)
+    READS: grid::x(Everywhere)
+    READS: grid::y(Everywhere)
+    READS: grid::z(Everywhere)
+    WRITES: Wave::phiExact(Everywhere)
+    WRITES: Wave::piExact(Everywhere)
   } "wave_exact_sine"
 }
 
@@ -112,9 +57,9 @@ if (CCTK_EQUALS(initial_data, "gaussian"))
   schedule wave_exact_gaussian AT INITIAL before import_exact before import_exact
   {
     LANG: C
-    READS:    grid::r(Everywhere)
-    WRITES:   Wave::phiExact(Everywhere)
-    WRITES:   Wave::piExact(Everywhere)
+    READS: grid::r(Everywhere)
+    WRITES: Wave::phiExact(Everywhere)
+    WRITES: Wave::piExact(Everywhere)
   } "wave_exact_gaussian"
 }
 
@@ -124,52 +69,52 @@ if (CCTK_EQUALS(initial_data, "gaussian"))
   schedule wave_exact_gaussian AT POSTSTEP before calc_errors before import_exact
   {
     LANG: C
-    READS:    grid::r(Everywhere)
-    WRITES:   Wave::phiExact(Everywhere)
-    WRITES:   Wave::piExact(Everywhere)
+    READS: grid::r(Everywhere)
+    WRITES: Wave::phiExact(Everywhere)
+    WRITES: Wave::piExact(Everywhere)
   } "wave_exact_gaussian"
 }
 
 schedule wave_import_exact at INITIAL as import_exact
 {
   LANG: C
-  READS:    Wave::phiExact(Everywhere)
-  READS:    Wave::piExact(Everywhere)
-  WRITES:   Wave::phi(Everywhere)
-  WRITES:   Wave::pi(Everywhere)
+  READS: Wave::phiExact(Everywhere)
+  READS: Wave::piExact(Everywhere)
+  WRITES: Wave::phi(Everywhere)
+  WRITES: Wave::pi(Everywhere)
 } "wave_import_exact"
 
 schedule wave_evolve in MoL_CalcRHS as evolve
 {
   LANG: C
-  READS:    Wave::phi(Everywhere)
-  READS:    Wave::pi(Everywhere)
-  WRITES:   Wave::phirhs(Interior)
-  WRITES:   Wave::pirhs(Interior)
+  READS: Wave::phi(Everywhere)
+  READS: Wave::pi(Everywhere)
+  WRITES: Wave::phirhs(Interior)
+  WRITES: Wave::pirhs(Interior)
 } "wave_evolve"
 
 schedule wave_calc_errors at ANALYSIS as calc_errors
 {
   LANG: C
-  READS:    Wave::phi(Everywhere)
-  READS:    Wave::pi(Everywhere)
-  READS:    Wave::phiExact(Everywhere)
-  READS:    Wave::piExact(Everywhere)
-  WRITES:   Wave::phiError(Everywhere)
-  WRITES:   Wave::piError(Everywhere)
+  READS: Wave::phi(Everywhere)
+  READS: Wave::pi(Everywhere)
+  READS: Wave::phiExact(Everywhere)
+  READS: Wave::piExact(Everywhere)
+  WRITES: Wave::phiError(Everywhere)
+  WRITES: Wave::piError(Everywhere)
 } "wave_calc_errors"
 
 schedule wave_calc_norm at ANALYSIS as calc_norm
 {
   LANG: C
   SYNC: norms
-  READS:    Wave::phiError(Everywhere)
-  READS:    Wave::piError(Everywhere)
-  READS:    Wave::phi(Everywhere)
-  READS:    Wave::pi(Everywhere)
-  WRITES:   Wave::EL2(Interior)
-  WRITES:   Wave::VDP(Interior)
-  WRITES:   Wave::VL2(Interior)
+  READS: Wave::phiError(Everywhere)
+  READS: Wave::piError(Everywhere)
+  READS: Wave::phi(Everywhere)
+  READS: Wave::pi(Everywhere)
+  WRITES: Wave::EL2(Interior)
+  WRITES: Wave::VDP(Interior)
+  WRITES: Wave::VL2(Interior)
 } "wave_calc_norm"
 
 
@@ -178,14 +123,14 @@ if (CCTK_EQUALS(boundary_condition, "radiative"))
   schedule wave_boundary in MoL_RHSBoundaries
   {
     LANG: C
-    READS:    grid::x(Everywhere)
-    READS:    grid::y(Everywhere)
-    READS:    grid::z(Everywhere)
-    READS:    grid::r(Everywhere)
-    READS:    Wave::phi(Everywhere)
-    READS:    Wave::pi(Everywhere)
-    WRITES:   Wave::phirhs(Boundary)
-    WRITES:   Wave::pirhs(Boundary)
+    READS: grid::x(Everywhere)
+    READS: grid::y(Everywhere)
+    READS: grid::z(Everywhere)
+    READS: grid::r(Everywhere)
+    READS: Wave::phi(Everywhere)
+    READS: Wave::pi(Everywhere)
+    WRITES: Wave::phirhs(Boundary)
+    WRITES: Wave::pirhs(Boundary)
   } "wave_boundary"
 }
 

@@ -25,13 +25,13 @@
 (* Generate Cactus Thorns from a high-level interface  *)
 (****************************************************************************)
 
-BeginPackage["KrancThorn`", {"CodeGen`", "CodeGenKranc`", "Thorn`",
+BeginPackage["KrancThorn`", {"CodeGen`", "Thorn`",
  "MapLookup`", "KrancGroups`", "Differencing`",
  "CodeGenCalculation`", "Errors`", "Helpers`", "CactusBoundary`",
  "KrancTensor`", "Param`", "Schedule`", "Interface`", "Kranc`", "Jacobian`",
  "ConservationCalculation`", "CaKernel`", "Calculation`", "ParamCheck`",
  "OpenCL`", "CodeGenConfiguration`", "CodeGenMakefile`", "CodeGenSymmetries`", "MoL`",
- "CodeGenStartup`", "CodeGenCalculation`", "Code`", "Object`"}];
+ "CodeGenStartup`", "CodeGenCalculation`", "Code`", "Object`", "OperationCount`"}];
 
 CreateKrancThorn::usage = "Construct a Kranc thorn";
 
@@ -142,14 +142,6 @@ DefFn[
       ThrowError["UseVectors -> True requires UseLoopControl -> True"]];
     SetObjectField[cIn, "Calculations", SetCalculationLoopControl[#,opts] & /@ GetObjectField[cIn, "Calculations"]]]];
 
-
-DefFn[
-  addOperationCounts[cIn_Code, opCounts_List] :=
-  Module[{c},
-    c = AppendObjectField[cIn, "Files", 
-      {Filename -> "doc/OperationCounts.txt",
-        Contents -> Join[{{"# 1:Calculation 2:flops/gp","\n\n"}}, Map[{#[[1]], "\t", #[[2]], "\n"} &, opCounts]]}];
-    c]];
 
 (* --------------------------------------------------------------------------
    Thorn generation (main entry point for non-tensorial thorns)
@@ -404,7 +396,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
         ProcessOperationCount][[2]];
 
-     c = addOperationCounts[c, Flatten[opCounts]]];
+     c = OperationCountProcessCode[c, Flatten[opCounts]]];
 
     (* ------------------------------------------------------------------------ 
        Create Makefile

@@ -135,7 +135,7 @@ point. TODO: Should be checked by someone competent!
 
 BeginPackage["Differencing`", {"CodeGen`", "CodeGenC`", "CodeGenCactus`", "CodeGenKranc`",
                                "Kranc`", "MapLookup`", 
-             (* "LinearAlgebra`MatrixManipulation`", *) "Errors`", "Code`", "Object`"}];
+             (* "LinearAlgebra`MatrixManipulation`", *) "Errors`", "Code`", "Object`", "OperationCount`"}];
 
 CreateDifferencingHeader::usage = "";
 PrecomputeDerivatives::usage = "";

@@ -20,7 +20,7 @@
 
 (* Functions for generating blocks of code specific to Kranc *)
 
-BeginPackage["CodeGenKranc`", {"Errors`", "Helpers`", "Kranc`", "CodeGenC`", "CodeGen`", "Vectorisation`"}];
+BeginPackage["CodeGenKranc`", {"Errors`", "Helpers`", "Kranc`", "CodeGenC`", "CodeGen`", "Vectorisation`", "OperationCount`"}];
 
 SetDataType::usage = "SetDataType[type] sets a string for the grid function data type (e.g. CCTK_REAL)";
 DataType::usage = "DataType[] returns a string for the grid function data type (e.g. CCTK_REAL)";
@@ -39,8 +39,6 @@ CalculationMacros;
 AssignVariableFromExpression;
 GenerateCodeFromExpression;
 FileHeader;
-CountOperations;
-ProcessOperationCount;
 
 Begin["`Private`"];
 
@@ -357,68 +355,6 @@ CalculationMacros[vectorise_:False] :=
             "QAD(x) (SQR(SQR(x)))"}]
          ]];
 
-CountOperations[_Integer] := Null;
-CountOperations[_Real] := Null;
-CountOperations[_Rational] := Null;
-CountOperations[_Symbol] := Null;
-CountOperations[_String] := Null;
-
-CountOperations[HoldPattern[operands:Times[__]]] :=
-  Module[{count},
-    count = Length[operands]-1;
-    (* Print["Times: ", count]; *)
-    Sow[Times -> count, CountOperations];
-    Scan[CountOperations, operands]];
-
-CountOperations[HoldPattern[operands:Plus[__]]] :=
-  Module[{count},
-    count = Length[operands]-1;
-    (* Print["Plus: ", count]; *)
-    Sow[Plus -> count, CountOperations];
-    Scan[CountOperations, operands]];
-
-CountOperations[HoldPattern[operands:Power[a_, b_]]] :=
-  Module[{count},
-    count = 1;
-    (* Print["Power: ", count]; *)
-    Sow[Power -> count, CountOperations];
-    Scan[CountOperations, {a, b}]];
-
-fpFn= Sin|Cos|Tan|Log;
-
-CountOperations[fpFn[e_]] :=
-  Module[{count},
-    count = 1;
-    (* Print["Trig: ", count]; *)
-    Sow[Trig -> count, CountOperations];
-    CountOperations[e]];
-  
-
-CountOperations[IfThen[cond_, a_, b_]] :=
-  (* Assume the first branch is actually taken *)
-  Scan[CountOperations, {cond, a}];
-
-CountOperations[HoldPattern[(Equal|Unequal|Less|Greater|Max|Min)[a_, b_]]] :=
-  Scan[CountOperations, {a, b}];
-
-CountOperations[(Scalar|Sign|ToReal|Abs)[e_]] :=
-  CountOperations[e];
-
-CountOperations[e_] :=
-  Module[{},
-    Sow[Missing -> e, CountOperations];
-    Print["Unsupported operations found when counting operations for ", e//InputForm]];
-
-DefFn[ProcessOperationCount[counts_List, name_String] :=
-  Module[{keys, collectKeys, opMap, flops},
-    keys = DeleteCases[Union@Flatten[Cases[counts, (a_ -> b_) -> a, Infinity]], Missing];
-    collectKeys[k_] :=
-      Total[Flatten[Cases[counts, (k -> x_)->x, Infinity]]];
-    opMap = Map[# -> collectKeys[#] &, keys];
-    (* For now, we assume that each operation is a floating point operation *)
-    flops = Total[Map[Last, opMap]];
-    Sow[name -> flops, ProcessOperationCount];
-    Print[name, " flops-per-grid-point ", flops]]];
 
 (* Return a CodeGen block which assigns dest by evaluating expr *)
 Options[AssignVariableFromExpression] = {"Const" -> False};

@@ -23,7 +23,7 @@ BeginPackage["CodeGenCalculation`", {"CodeGenCactus`", "CodeGenC`", "CodeGen`",
   "CodeGenKranc`",
   "MapLookup`", "KrancGroups`", "Differencing`", "Errors`",
   "Helpers`", "Kranc`", "Optimize`", "Jacobian`", "Profile`", "Vectorisation`",
-  "Calculation`", "DGFE`", "OpenCL`", "CalculationBoundaries`"}];
+  "Calculation`", "DGFE`", "OpenCL`", "CalculationBoundaries`", "OperationCount`"}];
 
 CreateCalculationFunction::usage = "";
 CreateSetterSource::usage = "";

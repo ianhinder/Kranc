@@ -91,12 +91,13 @@ DefineTensor[t_[inds___], opts___] :=
 ];
 
 (* Scalars *)
+KrancScalarQ[_] := False;
+
 DefineTensor[s_, opts___] :=
  Block[{$DefInfoQ = False}, Module[{t},
-  InfoMessage[InfoFull, "Defining tensor:" <> SymbolName[s]];
-  t = Symbol[SymbolName[s] <> "Scalar"];
-  DefTensor[t[], KrancManifold, PrintAs -> SymbolName[s], opts];
-  s := t[];
+  InfoMessage[InfoFull, "Defining scalar:" <> SymbolName[s]];
+  DefTensor[s[], KrancManifold, opts];
+  KrancScalarQ[s] = True;
 ]];
 
 
@@ -167,10 +168,13 @@ krancForm[expr_] :=
   };
 
 SetAttributes[ExpandComponents, Listable];
-ExpandComponents[lhs_ -> rhs_] :=
+ExpandComponents[l_ -> r_] :=
   
-  Module[{lhsC, rhsC, inds, rules},
-   InfoMessage[InfoFull, "Expanding tensor expression: ", InputForm[lhs] -> InputForm[rhs]];
+  Module[{lhs, rhs, lhsC, rhsC, inds, rules},
+   InfoMessage[InfoFull, "Expanding tensor expression: ", InputForm[l] -> InputForm[r]];
+
+   (* Add brackets to scalars if they aren't present *)
+   {lhs, rhs} = {l, r} /. {t_?KrancScalarQ[] -> t[], t_?KrancScalarQ -> t[]};
 
    (* Check we have a valid tensor equation *)
    (* FIXME: Maybe we should find an alternative to Quiet here *)
@@ -193,15 +197,19 @@ ExpandComponents[lhs_ -> rhs_] :=
    Sequence @@ rules
 ];
 
+(* FIXME: Figure out a way to avoid duplicating the code above in here *)
 ExpandComponents[x_] :=
- Module[{},
+ Module[{expr},
+  (* Add brackets to scalars if they aren't present *)
+  expr = x /. {t_?KrancScalarQ[] -> t[], t_?KrancScalarQ -> t[]};
+
   (* FIXME: Maybe we should find an alternative to Quiet here *)
-  Check[Quiet[Validate[x], Validate::unknown], ThrowError["Invalid tensor expression"]];
+  Check[Quiet[Validate[expr], Validate::unknown], ThrowError["Invalid tensor expression"]];
   Sequence @@ krancForm[
    DeleteDuplicates[
    (* FIXME: Maybe we should find an alternative to Quiet here *)
     Quiet[ToCanonical[
-     Flatten[{ComponentArray[TraceBasisDummy[x]]}, 1]], ToCanonical::noident]]]
+     Flatten[{ComponentArray[TraceBasisDummy[expr]]}, 1]], ToCanonical::noident]]]
 ];
 
 (*************************************************************)
@@ -230,6 +238,7 @@ ReflectionSymmetries[t_Symbol?xTensorQ[inds__]] :=
 ];
 
 ReflectionSymmetries[t_Symbol?xTensorQ[]] := t -> {1,1,1};
+ReflectionSymmetries[t_Symbol?KrancScalarQ] := ReflectionSymmetries[t[]];
 ReflectionSymmetries[t_] := t -> {1, 1, 1};
 ReflectionSymmetries[x___]:= ThrowError["ReflectionSymmetries error: "<>ToString[x]];
 
@@ -257,6 +266,8 @@ CreateGroupFromTensor[t_Symbol?xTensorQ[inds___]] := Module[{tCharString, nInds,
   group = CreateGroup[SymbolName[t] <> "_group", {t[inds]}, {Tags -> tags}];
   group
 ];
+
+CreateGroupFromTensor[t_Symbol?KrancScalarQ] := CreateGroupFromTensor[t[]];
 
 CreateGroupFromTensor[x___]:= ThrowError["Invalid arguments to CreateGroupFromTensor: "<>ToString[x]];
 

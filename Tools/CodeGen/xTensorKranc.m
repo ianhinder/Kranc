@@ -36,7 +36,7 @@ EucDU::usage = "EucDU[-i, j] represents the Euclidean tensor which is 1 if i=j, 
 EucDD::usage = "EucDD[-i, -j] represents the Euclidean tensor which is 1 if i=j, and 0 otherwise.";
 Eps::usage = "Eps[i, j, k] represents the Levi-Civita alternating tensor";
 
-$KrancIndices = Symbol /@ Complement[CharacterRange["a", "z"], {"h", "r", "x", "y", "z"}];
+$KrancIndices = Symbol /@ Complement[CharacterRange["a", "z"], {"h", "r", "t", "x", "y", "z"}];
 Do[
   Evaluate[Symbol["l"<>ToString[ind]]] = -ind;
   Evaluate[Symbol["u"<>ToString[ind]]] = ind;

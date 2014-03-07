@@ -34,7 +34,7 @@ Test[
   ClearAllTensors[];
   CreateKrancThornTT[
     Append[$groups,{"ode_group", {a, b}}],
-    "TestThorns", "SimpleWaveODE",
+    "TestThorns", "TestSimpleWaveODE",
     PartialDerivatives -> $derivatives,
     DeclaredGroups     -> {"evolved_group"},
     ODEGroups -> {"ode_group"},
@@ -126,7 +126,7 @@ Test[
 Test[
   ClearAllTensors[];
   CreateKrancThornTT[
-    $groups, "TestThorns", "SimpleWave",
+    $groups, "TestThorns", "TestSimpleWave",
     PartialDerivatives -> $derivatives,
     DeclaredGroups     -> {"evolved_group"},
     Calculations       -> {$initialSineCalc, $evolveCalc}]

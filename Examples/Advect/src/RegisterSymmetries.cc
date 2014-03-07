@@ -24,21 +24,6 @@ extern "C" void Advect_RegisterSymmetries(CCTK_ARGUMENTS)
   sym[0] = -1;
   sym[1] = 1;
   sym[2] = 1;
-  SetCartSymVN(cctkGH, sym, "Advect::F2rho1");
-  
-  sym[0] = 1;
-  sym[1] = -1;
-  sym[2] = 1;
-  SetCartSymVN(cctkGH, sym, "Advect::F2rho2");
-  
-  sym[0] = 1;
-  sym[1] = 1;
-  sym[2] = -1;
-  SetCartSymVN(cctkGH, sym, "Advect::F2rho3");
-  
-  sym[0] = -1;
-  sym[1] = 1;
-  sym[2] = 1;
   SetCartSymVN(cctkGH, sym, "Advect::Frho1");
   
   sym[0] = 1;
@@ -50,6 +35,21 @@ extern "C" void Advect_RegisterSymmetries(CCTK_ARGUMENTS)
   sym[1] = 1;
   sym[2] = -1;
   SetCartSymVN(cctkGH, sym, "Advect::Frho3");
+  
+  sym[0] = -1;
+  sym[1] = 1;
+  sym[2] = 1;
+  SetCartSymVN(cctkGH, sym, "Advect::F2rho1");
+  
+  sym[0] = 1;
+  sym[1] = -1;
+  sym[2] = 1;
+  SetCartSymVN(cctkGH, sym, "Advect::F2rho2");
+  
+  sym[0] = 1;
+  sym[1] = 1;
+  sym[2] = -1;
+  SetCartSymVN(cctkGH, sym, "Advect::F2rho3");
   
   sym[0] = -1;
   sym[1] = 1;

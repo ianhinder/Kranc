@@ -206,7 +206,7 @@ ReflectionSymmetries[x___]:= ThrowError["ReflectionSymmetries error: "<>ToString
 tensorCharacterString[t_Symbol?xTensorQ[]] := "Scalar";
 tensorCharacterString[t_Symbol?xTensorQ[inds___]] := StringJoin[If[UpIndexQ[#],"U","D"]&/@{inds}];
 
-CreateGroupFromTensor[t_Symbol?xTensorQ[inds__]] := Module[{tCharString, nInds, tags, group},
+CreateGroupFromTensor[t_Symbol?xTensorQ[inds___]] := Module[{tCharString, nInds, tags, group},
   InfoMessage[InfoFull, "Creating group from tensor " <> ToString[t[inds]]];
 
   (* Get a string representing the character of the tensor *)

@@ -113,19 +113,19 @@ static void advect_initial_sine_Body(const cGH* restrict const cctkGH, const int
     /* Precompute derivatives */
     
     /* Calculate temporaries and grid functions */
-    CCTK_REAL v1L CCTK_ATTRIBUTE_UNUSED = ToReal(v0);
+    CCTK_REAL V1L CCTK_ATTRIBUTE_UNUSED = ToReal(v0);
     
-    CCTK_REAL v2L CCTK_ATTRIBUTE_UNUSED = 0;
+    CCTK_REAL V2L CCTK_ATTRIBUTE_UNUSED = 0;
     
-    CCTK_REAL v3L CCTK_ATTRIBUTE_UNUSED = 0;
+    CCTK_REAL V3L CCTK_ATTRIBUTE_UNUSED = 0;
     
     CCTK_REAL rhoL CCTK_ATTRIBUTE_UNUSED = 1 + sin(2*xL*Pi)*ToReal(amp);
     
     /* Copy local copies back to grid functions */
     rho[index] = rhoL;
-    v1[index] = v1L;
-    v2[index] = v2L;
-    v3[index] = v3L;
+    V1[index] = V1L;
+    V2[index] = V2L;
+    V3[index] = V3L;
   }
   CCTK_ENDLOOP3(advect_initial_sine);
 }
@@ -149,7 +149,7 @@ extern "C" void advect_initial_sine(CCTK_ARGUMENTS)
   const char* const groups[] = {
     "grid::coordinates",
     "Advect::rho_group",
-    "Advect::v_group"};
+    "Advect::V_group"};
   GenericFD_AssertGroupStorage(cctkGH, "advect_initial_sine", 3, groups);
   
   

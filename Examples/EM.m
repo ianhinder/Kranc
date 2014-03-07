@@ -39,7 +39,7 @@ derivatives =
     StandardCenteredDifferenceOperator[1,2,j]
 };
 
-pd[t_, i_] := xTensorKranc`Private`PDKrancBasis[i][t];
+DefineDerivative[pd, PDstandard2nd];
 
 (**************************************************************************************)
 (* Tensors *)

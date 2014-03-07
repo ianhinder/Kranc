@@ -185,6 +185,8 @@ krancForm[expr_] :=
     pd_?CovDQ[i__][pd_?CovDQ[j__][t_]] :> pd[j, i][t],
     nd_[pd_?CovDQ[i : (_?CIndexQ ..)][t_?xTensorQ[inds___]]] :>
      NumericalDiscretisation[nd][krancForm[t[inds]], Sequence @@ ({i}[[All, 1]])],
+    nd_[pd_?CovDQ[i : (_?CIndexQ ..)][t_Symbol]] :>
+     NumericalDiscretisation[nd][krancForm[t], Sequence @@ ({i}[[All, 1]])],
     t_Symbol?xTensorQ[i : (_?CIndexQ ..)] :> 
      SymbolJoin[t, Sequence @@ ToString /@ {i}[[All, 1]]],
     t_Symbol?xTensorQ[] :> t

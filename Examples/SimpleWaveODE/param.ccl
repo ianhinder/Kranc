@@ -3,6 +3,7 @@
 
 shares: GenericFD
 
+USES CCTK_INT assume_stress_energy_state
 
 
 shares: MethodOfLines
@@ -17,6 +18,18 @@ CCTK_INT verbose "verbose" STEERABLE=ALWAYS
 } 0
 
 restricted:
+CCTK_INT other_timelevels "Number of active timelevels for non-evolved grid functions" STEERABLE=RECOVER
+{
+  0:3 :: ""
+} 1
+
+restricted:
+CCTK_INT tile_size "Loop tile size"
+{
+  *:* :: ""
+} -1
+
+restricted:
 CCTK_INT SimpleWaveODE_MaxNumEvolvedVars "Number of evolved variables used by this thorn" ACCUMULATOR-BASE=MethodofLines::MoL_Num_Evolved_Vars STEERABLE=RECOVER
 {
   2:2 :: "Number of evolved variables used by this thorn"
@@ -25,8 +38,8 @@ CCTK_INT SimpleWaveODE_MaxNumEvolvedVars "Number of evolved variables used by th
 restricted:
 CCTK_INT SimpleWaveODE_MaxNumArrayEvolvedVars "Number of Array evolved variables used by this thorn" ACCUMULATOR-BASE=MethodofLines::MoL_Num_ArrayEvolved_Vars STEERABLE=RECOVER
 {
-  2:2 :: "Number of Array evolved variables used by this thorn"
-} 2
+  0:0 :: "Number of Array evolved variables used by this thorn"
+} 0
 
 restricted:
 CCTK_INT timelevels "Number of active timelevels" STEERABLE=RECOVER
@@ -36,12 +49,6 @@ CCTK_INT timelevels "Number of active timelevels" STEERABLE=RECOVER
 
 restricted:
 CCTK_INT rhs_timelevels "Number of active RHS timelevels" STEERABLE=RECOVER
-{
-  0:3 :: ""
-} 1
-
-restricted:
-CCTK_INT other_timelevels "Number of active timelevels for non-evolved grid functions" STEERABLE=RECOVER
 {
   0:3 :: ""
 } 1

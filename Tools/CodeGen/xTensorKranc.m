@@ -132,8 +132,9 @@ SetAttributes[ExpandComponents, Listable];
 ExpandComponents[lhs_ -> rhs_] :=
   
   Module[{lhsB, rhsB, lhsC, rhsC, lhsCi, inds, rules},
-   (* Check we have a valid tensor equation *)
+   InfoMessage[InfoFull, "Expanding tensor expression: ", InputForm[lhs] -> InputForm[rhs]];
 
+   (* Check we have a valid tensor equation *)
    (* FIXME: Maybe we should find an alternative to Quiet here *)
    Check[Quiet[Validate[lhs + rhs], Validate::unknown],
      ThrowError["Invalid tensor equation", lhs -> rhs]];
@@ -154,6 +155,7 @@ ExpandComponents[lhs_ -> rhs_] :=
 
    (* Pick out the independent components *)
    rules = krancForm[DeleteDuplicates[Thread[lhsC -> rhsC], #1[[1]] == #2[[1]] &]];
+   InfoMessage[InfoFull, "Expanded to: ", Map[InputForm, rules, {2}]];
    Sequence @@ rules
 ];
 

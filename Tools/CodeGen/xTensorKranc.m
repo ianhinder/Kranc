@@ -72,7 +72,7 @@ Block[{$DefInfoQ = False},
 
 DefineTensor[t_[inds___], opts___] :=
  Block[{$DefInfoQ = False},
-  InfoMessage[InfoFull, "Defining tensor:" <> SymbolName[t]];
+  InfoMessage[InfoFull, "Defining tensor: " <> SymbolName[t]];
   DefTensor[t[inds], KrancManifold, opts];
   (* Automatically convert abstract and numeric indices to basis indices *)
   t[i___, j_?AbstractIndexQ, k___] := t[i, {j, KrancBasis}, k];
@@ -95,7 +95,7 @@ KrancScalarQ[_] := False;
 
 DefineTensor[s_, opts___] :=
  Block[{$DefInfoQ = False}, Module[{t},
-  InfoMessage[InfoFull, "Defining scalar:" <> SymbolName[s]];
+  InfoMessage[InfoFull, "Defining scalar: " <> SymbolName[s]];
   DefTensor[s[], KrancManifold, opts];
   KrancScalarQ[s] = True;
 ]];
@@ -112,7 +112,7 @@ DefineTensor[(t_|t_[___]), ___] /; MemberQ[$KrancIndices, t] :=
    to keep track of what the numerical discretisation should be. *)
 DefineDerivative[pd_, numderiv_] :=
  Block[{$DefInfoQ = False},
-  InfoMessage[InfoFull, "Defining derivative:" <> SymbolName[pd]];
+  InfoMessage[InfoFull, "Defining derivative: " <> SymbolName[pd]];
   Module[{nd},
     DefInertHead[nd];
     NumericalDiscretisation[nd] ^= numderiv;

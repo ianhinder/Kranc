@@ -45,12 +45,17 @@ Begin["`Private`"];
 Options[CreateKrancThornTT] = ThornOptions;
 
 CreateKrancThornTT[groups_, parentDirectory_, thornName_, opts:OptionsPattern[]] :=
-  Module[{calcs, expCalcs, expGroups, options, derivs, expDerivs, reflectionSymmetries, declaredGroups, consCalcs, expConsCalcs},
+  Module[{calcs, expCalcs, expGroups, options, derivs, expDerivs, reflectionSymmetries, declaredGroups, consCalcs, expConsCalcs, intParams, realParams},
     InfoMessage[Terse, "Creating thorn "<>thornName];
     InfoMessage[Terse, "Processing tensorial arguments"];
     calcs = lookup[{opts}, Calculations];
     consCalcs = lookupDefault[{opts}, ConservationCalculations, {}];
     derivs = lookupDefault[{opts}, PartialDerivatives, {}];
+    intParams = lookupDefault[{opts}, IntParameters, {}] /. {___, Name -> name_} :> name;
+    realParams = lookupDefault[{opts}, RealParameters, {}] /. {___, Name -> name_} :> name;
+
+    Scan[DefineParameter, intParams];
+    Scan[DefineParameter, realParams];
 
     Map[CheckCalculationTensors, calcs];
 

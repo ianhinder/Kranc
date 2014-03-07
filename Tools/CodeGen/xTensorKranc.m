@@ -23,6 +23,7 @@ BeginPackage["xTensorKranc`",
 
 DefineTensor::usage = "DefineTensor[T[a, b, ...]] defines the tensor T with indices a, b, c, ....";
 DefineDerivative::usage = "DefineDerivative[pd, nd] registers a symbol pd to be used as a derivative operator, with numerical discretisation nd.";
+DefineParameter::usage = "DefineParameter[p] registers a symbol p to be used as a constant parameter.";
 SetComponents::usage = "SetComponents[T[a, b, ...], v] defines the components of the tensor T to be the values given in the list v."
 
 CreateGroupFromTensor::usage = "CreateGroupFromTensor[T[a, b, ...]] Creates a variable group from the tensor T";
@@ -102,6 +103,16 @@ DefineTensor[s_, opts___] :=
 
 DefineTensor[(t_|t_[___]), ___] /; MemberQ[$KrancIndices, t] :=
  ThrowError["Cannot use "<>SymbolName[t]<>" as a tensor as it is already used as a tensor index."];
+
+(*************************************************************)
+(* DefineParameter *)
+(*************************************************************)
+
+DefineParameter[p_] := 
+ Block[{$DefInfoQ = False},
+  InfoMessage[InfoFull, "Defining parameter: "<> SymbolName[p]];
+  DefConstantSymbol[p];
+];
 
 (*************************************************************)
 (* DefineDerivative *)

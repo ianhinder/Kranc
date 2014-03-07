@@ -343,7 +343,8 @@ Test[
     $groups, "TestThorns", "CountOperations",
     PartialDerivatives -> $derivatives,
     DeclaredGroups     -> {"evolved_group"},
-    Calculations       -> {$initialSineCalc, $evolveCalc}]
+    Calculations       -> {$initialSineCalc, $evolveCalc},
+    CountOperations    -> True]
   ,
   Null
   ,

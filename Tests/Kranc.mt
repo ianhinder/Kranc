@@ -326,3 +326,24 @@ Test[
   ,
   TestID->"MergeFiles"
 ]
+
+Test[
+  ProcessOperationCount[{Times -> 1, Plus -> 2, {Times -> 3, Trig -> 3}}]
+  ,
+  {Plus -> 2, Times -> 4, Trig -> 3}
+  ,
+  TestID->"ProcessOperationCount"
+]
+
+Test[
+  ClearAllTensors[];
+  CreateKrancThornTT[
+    $groups, "TestThorns", "CountOperations",
+    PartialDerivatives -> $derivatives,
+    DeclaredGroups     -> {"evolved_group"},
+    Calculations       -> {$initialSineCalc, $evolveCalc}]
+  ,
+  Null
+  ,
+  TestID->"CountOperations"
+]

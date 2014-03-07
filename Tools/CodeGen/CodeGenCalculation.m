@@ -523,9 +523,11 @@ DefFn[
           gfsDifferentiatedAndOnLHS, declare, eqsReplaced,
           arraysInRHS, arraysInLHS, arraysOnlyInRHS, odeVars,
           generateEquationCode, groupedIfs, IfThenGroup, noSimplify,
-          gridName, useJacobian},
+          gridName, useJacobian, allCode, opCounts},
 
     InfoMessage[InfoFull, "Equation loop"];
+
+    {allCode, opCounts} = Reap[
 
     useJacobian = OptionValue[UseJacobian] && lookupDefault[cleancalc, UseJacobian, True];
 
@@ -724,7 +726,13 @@ DefFn[
                                   OptionValue[UseVectors], "Vectors",
                                   True, "Default"]],
 
-      If[debugInLoop, Map[InfoVariable[gridName[#]] &, gfsInLHS], ""]}, opts]}]];
+      If[debugInLoop, Map[InfoVariable[gridName[#]] &, gfsInLHS], ""]}, opts]}, 
+
+        CountOperations];
+  
+    ProcessOperationCount[opCounts, GetCalculationName[cleancalc]];
+  
+    allCode]];
 
 Options[simpleEquationLoop] = ThornOptions;
 DefFn[
@@ -732,9 +740,14 @@ DefFn[
                      where_, addToStencilWidth_,
                      opts:OptionsPattern[]] :=
   Module[
-    {functionName, eqs2, gridName},
+    {functionName, eqs2, gridName, allCode, opCounts},
     functionName = ToString@lookup[cleancalc, Name];
     eqs2 = eqs;
+
+    {allCode, opCounts} = Reap[
+
+    CountDerivativeOperations[pddefs, eqs2, OptionValue[ZeroDimensions]];
+
     eqs2 = ReplaceDerivatives[pddefs, eqs2, False, OptionValue[ZeroDimensions], 
                               lookup[cleancalc, MacroPointer]];
     gridName = lookup[cleancalc, GFAccessFunction];
@@ -748,7 +761,13 @@ DefFn[
                                        Map[Last, eqs2]],
              Map[
                AssignVariableFromExpression[FlattenBlock@gridName[#[[1]]], #[[2]], False, False, True] &, eqs2]]]
-      }, opts]]];
+      }, opts], 
+
+        CountOperations];
+  
+    ProcessOperationCount[opCounts, GetCalculationName[cleancalc]];
+  
+    allCode]];
 
 
 (* Unsorted *)

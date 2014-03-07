@@ -25,7 +25,7 @@
 (* Generate Cactus Thorns from a high-level interface  *)
 (****************************************************************************)
 
-BeginPackage["KrancThorn`", {"CodeGen`", "Thorn`",
+BeginPackage["KrancThorn`", {"CodeGen`", "CodeGenKranc`", "Thorn`",
  "MapLookup`", "KrancGroups`", "Differencing`",
  "CodeGenCalculation`", "Errors`", "Helpers`", "CactusBoundary`",
  "KrancTensor`", "Param`", "Schedule`", "Interface`", "Kranc`", "Jacobian`",
@@ -142,6 +142,14 @@ DefFn[
       ThrowError["UseVectors -> True requires UseLoopControl -> True"]];
     SetObjectField[cIn, "Calculations", SetCalculationLoopControl[#,opts] & /@ GetObjectField[cIn, "Calculations"]]]];
 
+
+DefFn[
+  addOperationCounts[cIn_Code, opCounts_List] :=
+  Module[{c},
+    c = AppendObjectField[cIn, "Files", 
+      {Filename -> "doc/OperationCounts.txt",
+        Contents -> Join[{{"# 1:Calculation 2:flops/gp","\n\n"}}, Map[{#[[1]], "\t", #[[2]], "\n"} &, opCounts]]}];
+    c]];
 
 (* --------------------------------------------------------------------------
    Thorn generation (main entry point for non-tensorial thorns)
@@ -382,6 +390,9 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     InfoMessage[Terse, "Creating calculation source files"];
 
+    Module[{opCounts},
+      opCounts=Reap[
+
     c = JoinObjectField[
       c, "Sources", 
       Join[Map[{Filename -> lookup[#, Name] <> ".cc",
@@ -389,7 +400,11 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
                Select[GetObjectField[c, "Calculations"], !CalculationOnDevice[#] &]],
            Map[{Filename -> "CaKernel__"<>lookup[#, Name] <> ".code",
                 Contents -> CaKernelCode[#,opts]} &,
-               Select[GetObjectField[c, "Calculations"], CalculationOnDevice]]]];
+               Select[GetObjectField[c, "Calculations"], CalculationOnDevice]]]],
+
+        ProcessOperationCount][[2]];
+
+     c = addOperationCounts[c, Flatten[opCounts]]];
 
     (* ------------------------------------------------------------------------ 
        Create Makefile

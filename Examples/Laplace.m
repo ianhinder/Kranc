@@ -13,7 +13,7 @@ derivatives =
     StandardCenteredDifferenceOperator[1,fdOrder/2,i] StandardCenteredDifferenceOperator[1,fdOrder/2,j]
 };
 
-PD = PDstandard;
+DefineDerivative[pd, PDstandard];
 
 initialCalc = 
 {
@@ -44,7 +44,7 @@ evolveCalc =
   Where -> Interior,
   Equations ->
   {
-    dot[phi] -> mu Euc[ui,uj] PD[phi,li,lj]
+    dot[phi] -> mu Euc[ui,uj] pd[phi,li,lj]
   }
 };
 

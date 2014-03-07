@@ -181,7 +181,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        "DefaultEvolutionTimelevels" -> lookupDefault[{opts}, DefaultEvolutionTimelevels,
                                                      OptionValue[EvolutionTimelevels]],
        "PartialDerivatives" -> OptionValue[PartialDerivatives],
-       "Sources" -> {}}];
+       "Sources" -> {},
+       "Files" -> {}}];
 
     VerifyString[GetObjectField[c, "Implementation"]];
     VerifyGroupNames[GetObjectField[c, "DeclaredGroups"]];
@@ -416,7 +417,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
                    CaKernel      -> cakernel,
                    Makefile      -> make,
                    MergeFiles    -> OptionValue[MergeFiles],
-                   Sources       -> GetObjectField[c, "Sources"]};
+                   Sources       -> GetObjectField[c, "Sources"],
+                   Files         -> GetObjectField[c, "Files"]};
       InfoMessage[Terse, "Creating thorn"];
       CreateThorn[thornspec]]];
 

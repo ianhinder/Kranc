@@ -72,9 +72,14 @@ Block[{$DefInfoQ = False},
 (* DefineTensor *)
 (*************************************************************)
 
-DefineTensor[t_[inds___], opts___] :=
- Block[{$DefInfoQ = False},
-  InfoMessage[InfoFull, "Defining tensor: " <> SymbolName[t]];
+DefineTensor[s_[inds___], opts___] :=
+ Block[{$DefInfoQ = False}, Module[{symbolName, t},
+  InfoMessage[InfoFull, "Defining tensor: " <> SymbolName[s]];
+
+  symbolName = ToString[s];
+  If[AbstractIndexQ[s], UndefAbstractIndex[s]];
+  t = Symbol[symbolName];
+
   DefTensor[t[inds], KrancManifold, opts];
   (* Automatically convert abstract and numeric indices to basis indices *)
   t[i___, j_?AbstractIndexQ, k___] := t[i, {j, KrancBasis}, k];
@@ -90,20 +95,22 @@ DefineTensor[t_[inds___], opts___] :=
     basis = slots[[Length[{i}] + 1]] /. TangentKrancManifold -> KrancBasis;
     t[i, {j, basis}, k]
   ];
-];
+]];
 
 (* Scalars *)
 KrancScalarQ[_] := False;
 
 DefineTensor[s_, opts___] :=
- Block[{$DefInfoQ = False}, Module[{t},
+ Block[{$DefInfoQ = False}, Module[{symbolName, t},
   InfoMessage[InfoFull, "Defining scalar: " <> SymbolName[s]];
-  DefTensor[s[], KrancManifold, opts];
-  KrancScalarQ[s] = True;
-]];
 
-DefineTensor[(t_|t_[___]), ___] /; MemberQ[$KrancIndices, t] :=
- ThrowError["Cannot use "<>SymbolName[t]<>" as a tensor as it is already used as a tensor index."];
+  symbolName = ToString[s];
+  If[AbstractIndexQ[s], UndefAbstractIndex[s]];
+  t = Symbol[symbolName];
+
+  DefTensor[t[], KrancManifold, opts];
+  KrancScalarQ[t] = True;
+]];
 
 (*************************************************************)
 (* DefineParameter *)

@@ -327,10 +327,12 @@ Test[
   TestID->"MergeFiles"
 ]
 
+
 Test[
-  ProcessOperationCount[{Times -> 1, Plus -> 2, {Times -> 3, Trig -> 3}}]
+  Reap[ProcessOperationCount[{Times -> 1, Plus -> 2, {Times -> 3, Trig -> 3}},
+    "ProcessOperationCountTest"], ProcessOperationCount]
   ,
-  {Plus -> 2, Times -> 4, Trig -> 3}
+  {9,{{"ProcessOperationCountTest" -> 9}}}
   ,
   TestID->"ProcessOperationCount"
 ]

@@ -22,7 +22,7 @@ BeginPackage["xTensorKranc`",
 ];
 
 DefineTensor::usage = "DefineTensor[T[a, b, ...]] defines the tensor T with indices a, b, c, ....";
-DefineDerivative::usage = "DefineDerivative[pd] registers a symbol to be used as a derivative operator.";
+DefineDerivative::usage = "DefineDerivative[pd, nd] registers a symbol pd to be used as a derivative operator, with numerical discretisation nd.";
 SetComponents::usage = "SetComponents[T[a, b, ...], v] defines the components of the tensor T to be the values given in the list v."
 
 CreateGroupFromTensor::usage = "CreateGroupFromTensor[T[a, b, ...]] Creates a variable group from the tensor T";
@@ -70,10 +70,15 @@ Block[{$DefInfoQ = False},
 DefineTensor[t_[inds___], opts___] :=
  Block[{$DefInfoQ = False}, DefTensor[t[inds], KrancManifold, opts]];
 
-DefineDerivative[pd_] :=
+DefineDerivative[pd_, numderiv_] :=
  Block[{$DefInfoQ = False},
   InfoMessage[InfoFull, "Defining derivative:", pd];
-  DefCovD[pd[-$KrancIndices[[1]]], Curvature -> False, Torsion -> False]
+  Module[{nd},
+    DefInertHead[nd];
+    NumericalDiscretisation[nd] ^= numderiv;
+    pd[i_][t_] := nd[PDKrancBasis[i][t]];
+    pd[t_, i_] := nd[PDKrancBasis[i][t]];
+  ]
 ];
 
 toBasis[x_] :=
@@ -106,8 +111,8 @@ krancForm[expr_] :=
       SymbolJoin[t, Sequence @@ ToString /@ {i}[[All, 1]]], 
     t_Symbol?xTensorQ[] :> t,
     (* FIXME: Better handling of derivatives *)
-    (* pd_?CovDQ[i : (_?CIndexQ ..)][t_?xTensorQ] :> SymbolJoin[pd, krancForm[t], i[[1]]] *)
-    PDKrancBasis[i_][t_] :> Global`PDstandard2nd[krancForm[t], i[[1]]]};
+    nd_[pd_?CovDQ[i : (_?CIndexQ ..)][t_?xTensorQ[inds__]]] :> NumericalDiscretisation[nd][krancForm[t[inds]], i[[1]]]
+  };
 
 SetAttributes[ExpandComponents, Listable];
 ExpandComponents[lhs_ -> rhs_] :=

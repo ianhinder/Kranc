@@ -65,6 +65,7 @@ Block[{$DefInfoQ = False},
   DefManifold[KrancManifold, dimension, $KrancIndices];
   DefBasis[KrancBasis, TangentKrancManifold, Range[dimension]];
   DefInertHead[dot];
+  DefScalarFunction[StepFunction];
 ];
 
 (*************************************************************)

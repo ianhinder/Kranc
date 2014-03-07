@@ -68,7 +68,23 @@ Block[{$DefInfoQ = False},
 (*************************************************************)
 
 DefineTensor[t_[inds___], opts___] :=
- Block[{$DefInfoQ = False}, DefTensor[t[inds], KrancManifold, opts]];
+ Block[{$DefInfoQ = False},
+  DefTensor[t[inds], KrancManifold, opts];
+  (* Automatically convert abstract and numeric indices to basis indices *)
+  t[i___, j_?AbstractIndexQ, k___] := t[i, {j, KrancBasis}, k];
+  t[i___, -j_?AbstractIndexQ, k___] := t[i, {-j, -KrancBasis}, k];
+  t[i___, j_Integer?Positive, k___] :=
+   Module[{slots, basis},
+    slots = SlotsOfTensor[t];
+    If[Length[{i, j, k}] != Length[slots],
+      ThrowError[
+        "Tensor " <> ToString[Unevaluated[t[i, j, k]]] <>
+        " has an incorrect number of indices"];
+    ];
+    basis = slots[[Length[{i}] + 1]] /. TangentKrancManifold -> KrancBasis;
+    t[i, {j, basis}, k]
+  ];
+];
 
 (*************************************************************)
 (* DefineDerivative *)
@@ -85,8 +101,10 @@ DefineDerivative[pd_, numderiv_] :=
     NumericalDiscretisation[nd] ^= numderiv;
 
     (* Support both prefix (xTensor) and postfix (Kranc) style derivatives *)
-    pd[i_][t_] := nd[PDKrancBasis[i][t]];
-    pd[t_, i_] := nd[PDKrancBasis[i][t]];
+    (* Automatically convert abstract and numeric indices to basis indices *)
+    pd[-i_?AbstractIndexQ][t_] := nd[PDKrancBasis[{-i, -KrancBasis}][t]];
+    pd[t_, -i_?AbstractIndexQ] := nd[PDKrancBasis[{-i, -KrancBasis}][t]];
+    pd[t_, i_Integer?Negative] := nd[PDKrancBasis[{-i, -KrancBasis}][t]];
 
     (* Distribute the nd wrapper over Plus, e.g. expand
        nd[pd[t[0],0] + pd[t[1],1]] out to nd[pd[t[0],0]] + nd[pd[t[1],1]].
@@ -95,12 +113,9 @@ DefineDerivative[pd_, numderiv_] :=
   ]
 ];
 
-toBasis[x_] :=
- ReplaceIndex[x, {ind_?UpIndexQ :> {ind, KrancBasis}, ind_?DownIndexQ :> {ind, -KrancBasis}}];
-
-SetComponents[t_?xTensorQ[i :(_?AIndexQ ...)], values_] :=
+SetComponents[t_?xTensorQ[i :(_?BIndexQ ...)], values_] :=
  Module[{},
-  AllComponentValues[toBasis[t[i]], values];
+  AllComponentValues[t[i], values];
   RuleToSet[t];
 ]
 
@@ -131,7 +146,7 @@ krancForm[expr_] :=
 SetAttributes[ExpandComponents, Listable];
 ExpandComponents[lhs_ -> rhs_] :=
   
-  Module[{lhsB, rhsB, lhsC, rhsC, lhsCi, inds, rules},
+  Module[{lhsC, rhsC, inds, rules},
    InfoMessage[InfoFull, "Expanding tensor expression: ", InputForm[lhs] -> InputForm[rhs]];
 
    (* Check we have a valid tensor equation *)
@@ -139,18 +154,14 @@ ExpandComponents[lhs_ -> rhs_] :=
    Check[Quiet[Validate[lhs + rhs], Validate::unknown],
      ThrowError["Invalid tensor equation", lhs -> rhs]];
 
-   (* Convert abstract index expressions to KrancBasis *)
-   lhsB = toBasis[lhs];
-   rhsB = toBasis[rhs];
-
    (* Find the free indices *)
-   inds = IndicesOf[Free, BIndex][lhsB];
+   inds = IndicesOf[Free, BIndex][lhs];
 
    (* Get a list of components *)
    (* FIXME: Maybe we should find an alternative to Quiet here *)
    Quiet[
-     lhsC = ToCanonical[Flatten[{ComponentArray[TraceBasisDummy[lhsB], inds]}, 1]];
-     rhsC = ToCanonical[Flatten[{ComponentArray[TraceBasisDummy[rhsB], inds]}, 1]];
+     lhsC = ToCanonical[Flatten[{ComponentArray[TraceBasisDummy[lhs], inds]}, 1]];
+     rhsC = ToCanonical[Flatten[{ComponentArray[TraceBasisDummy[rhs], inds]}, 1]];
    , ToCanonical::noident];
 
    (* Pick out the independent components *)
@@ -167,7 +178,7 @@ ExpandComponents[x_] :=
    DeleteDuplicates[
    (* FIXME: Maybe we should find an alternative to Quiet here *)
     Quiet[ToCanonical[
-     Flatten[{ComponentArray[TraceBasisDummy[toBasis[x]]]}, 1]], ToCanonical::noident]]]
+     Flatten[{ComponentArray[TraceBasisDummy[x]]}, 1]], ToCanonical::noident]]]
 ];
 
 (*************************************************************)
@@ -182,7 +193,7 @@ ReflectionSymmetries[t_Symbol?xTensorQ[inds__]] :=
     cnums = CNumbersOf[KrancBasis, VBundleOfBasis[KrancBasis]];
 
     (* Get a list of components of the tensor t in the basis b *)
-    components = DeleteDuplicates[ToCanonical[Flatten[ComponentArray[TraceBasisDummy[toBasis[t[inds]]]]]]];
+    components = DeleteDuplicates[ToCanonical[Flatten[ComponentArray[TraceBasisDummy[t[inds]]]]]];
 
     (* Get the indices of each component *)
     componentIndices = Map[IndicesOf[CIndex, KrancBasis], components];

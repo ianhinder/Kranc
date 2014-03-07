@@ -89,6 +89,16 @@ DefineTensor[t_[inds___], opts___] :=
   ];
 ];
 
+(* Scalars *)
+DefineTensor[s_, opts___] :=
+ Block[{$DefInfoQ = False}, Module[{t},
+  InfoMessage[InfoFull, "Defining tensor:" <> SymbolName[s]];
+  t = Symbol[SymbolName[s] <> "Scalar"];
+  DefTensor[t[], KrancManifold, PrintAs -> SymbolName[s], opts];
+  s := t[];
+]];
+
+
 (*************************************************************)
 (* DefineDerivative *)
 (*************************************************************)
@@ -150,7 +160,7 @@ krancForm[expr_] :=
     Scalar[x_] :> NoScalar[x], 
     t_Symbol?xTensorQ[i : (_?CIndexQ ..)] :> 
       SymbolJoin[t, Sequence @@ ToString /@ {i}[[All, 1]]], 
-    t_Symbol?xTensorQ[] :> t,
+    t_Symbol?xTensorQ[] :> PrintAs[t],
     (* FIXME: Better handling of derivatives *)
     nd_[pd_?CovDQ[i : (_?CIndexQ ..)][t_?xTensorQ[inds__]]] :> NumericalDiscretisation[nd][krancForm[t[inds]], i[[1]]]
   };
@@ -243,7 +253,7 @@ CreateGroupFromTensor[t_Symbol?xTensorQ[inds___]] := Module[{tCharString, nInds,
   (* FIXME: Add tensorspecial, cartesianreflectionparities, checkpoint and tensorparity *)
   tags = {"tensortypealias" -> tCharString, "tensorweight" -> WeightOfTensor[t]};
 
-  group = CreateGroup[SymbolName[t] <> "_group", {t[inds]}, {Tags -> tags}];
+  group = CreateGroup[PrintAs[t] <> "_group", {t[inds]}, {Tags -> tags}];
   group
 ];
 

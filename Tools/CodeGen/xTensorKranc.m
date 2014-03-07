@@ -162,7 +162,7 @@ ExpandComponents[x_] :=
 ReflectionSymmetries[t_Symbol?xTensorQ[inds__]] :=
   Module[{cnums, components, componentIndices, counts},
     (* Get the compoent indices of the basis *)
-    InfoMessage[InfoFull, "Getting symmetries of ", InputForm[t[inds]]]
+    InfoMessage[InfoFull, "Getting symmetries of ", InputForm[t[inds]]];
     cnums = CNumbersOf[KrancBasis, VBundleOfBasis[KrancBasis]];
 
     (* Get a list of components of the tensor t in the basis b *)
@@ -173,7 +173,7 @@ ReflectionSymmetries[t_Symbol?xTensorQ[inds__]] :=
 
     (* Count the number of instances of each basis index. *)
     countInds[expr_, basis_, cinds_] := Map[(Count[expr,{#,basis}]+Count[expr,{#,-basis}])&, cinds];
-    counts = Map[countInds[#, b, cnums]&, componentIndices];
+    counts = Map[countInds[#, KrancBasis, cnums]&, componentIndices];
 
     (* For each instance, multiply by -1 *)
     Thread[krancForm[components] -> (-1)^counts]
@@ -190,7 +190,7 @@ ReflectionSymmetries[x___]:= ThrowError["ReflectionSymmetries error: "<>ToString
 tensorCharacterString[t_Symbol?xTensorQ[]] := "Scalar";
 tensorCharacterString[t_Symbol?xTensorQ[inds___]] := StringJoin[If[UpIndexQ[#],"U","D"]&/@{inds}];
 
-CreateGroupFromTensor[t_Symbol?xTensorQ[inds__]] := Module[{tCharString, nInds, tags, vars, group},
+CreateGroupFromTensor[t_Symbol?xTensorQ[inds__]] := Module[{tCharString, nInds, tags, group},
   InfoMessage[InfoFull, "Creating group from tensor " <> ToString[t[inds]]];
 
   (* Get a string representing the character of the tensor *)
@@ -204,9 +204,8 @@ CreateGroupFromTensor[t_Symbol?xTensorQ[inds__]] := Module[{tCharString, nInds, 
   (* FIXME: Add tensorspecial, cartesianreflectionparities, checkpoint and tensorparity *)
   tags = {"tensortypealias" -> tCharString, "tensorweight" -> WeightOfTensor[t]};
 
-  vars = If[nInds == 0, {t}, {ExpandComponents[t[inds]]}];
-  group = CreateGroup[SymbolName[t] <> "_group", vars, {Tags -> tags}];
-  Return[group]
+  group = CreateGroup[SymbolName[t] <> "_group", {t[inds]}, {Tags -> tags}];
+  group
 ];
 
 CreateGroupFromTensor[x___]:= ThrowError["CreateGroupFromTensor error: "<>ToString[x]];

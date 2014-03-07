@@ -137,19 +137,20 @@ static void wave_exact_gaussian_Body(const cGH* restrict const cctkGH, const int
     /* Calculate temporaries and grid functions */
     CCTK_REAL rEps CCTK_ATTRIBUTE_UNUSED = pow(1.e-24 + QAD(rL),0.25);
     
-    CCTK_REAL phiExactL CCTK_ATTRIBUTE_UNUSED = (-(CUB(-rL + t + 
-      ToReal(t0))*exp(-(INV(SQR(ToReal(nSigma)))*SQR(-rL + t + ToReal(t0))))) 
-      + CUB(rL + t + ToReal(t0))*exp(-(INV(SQR(ToReal(nSigma)))*SQR(rL + t + 
-      ToReal(t0)))))*INV(rEps);
+    CCTK_REAL phiExactL CCTK_ATTRIBUTE_UNUSED = 
+      exp(-2*INV(SQR(ToReal(nSigma)))*(SQR(rL) + SQR(t + 
+      ToReal(t0))))*(CUB(rL + t + 
+      ToReal(t0))*exp(INV(SQR(ToReal(nSigma)))*SQR(-rL + t + ToReal(t0))) + 
+      CUB(rL - t - ToReal(t0))*exp(INV(SQR(ToReal(nSigma)))*SQR(rL + t + 
+      ToReal(t0))))*INV(rEps);
     
     CCTK_REAL piExactL CCTK_ATTRIBUTE_UNUSED = 
-      INV(rEps)*(INV(SQR(ToReal(nSigma)))*(2*exp(-(INV(SQR(ToReal(nSigma)))*SQR(-rL 
-      + t + ToReal(t0))))*QAD(-rL + t + ToReal(t0)) - 
-      2*exp(-(INV(SQR(ToReal(nSigma)))*SQR(rL + t + ToReal(t0))))*QAD(rL + t 
-      + ToReal(t0))) - 3*exp(-(INV(SQR(ToReal(nSigma)))*SQR(-rL + t + 
-      ToReal(t0))))*SQR(-rL + t + ToReal(t0)) + 
-      3*exp(-(INV(SQR(ToReal(nSigma)))*SQR(rL + t + ToReal(t0))))*SQR(rL + t 
-      + ToReal(t0)));
+      exp(-2*INV(SQR(ToReal(nSigma)))*(SQR(rL) + SQR(t + 
+      ToReal(t0))))*INV(rEps*SQR(ToReal(nSigma)))*(exp(INV(SQR(ToReal(nSigma)))*SQR(rL 
+      + t + ToReal(t0)))*SQR(-rL + t + ToReal(t0))*(-3*SQR(ToReal(nSigma)) + 
+      2*SQR(-rL + t + ToReal(t0))) - exp(INV(SQR(ToReal(nSigma)))*SQR(-rL + t 
+      + ToReal(t0)))*SQR(rL + t + ToReal(t0))*(-3*SQR(ToReal(nSigma)) + 
+      2*SQR(rL + t + ToReal(t0))));
     
     /* Copy local copies back to grid functions */
     phiExact[index] = phiExactL;

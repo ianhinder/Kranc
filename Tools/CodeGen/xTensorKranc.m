@@ -30,6 +30,9 @@ ReflectionSymmetries::usage = "ReflectionSymmetries[T[a, b, ...]] Produces a lis
 ExpandComponents::usage = "ExpandComponents[expr] converts an expression x containing abstract indices into one containing components instead."
 
 Euc::usage = "Euc[i, j] represents the Euclidean tensor which is 1 if i=j, and 0 otherwise.";
+EucUD::usage = "EucUD[i, -j] represents the Euclidean tensor which is 1 if i=j, and 0 otherwise.";
+EucDU::usage = "EucDU[-i, j] represents the Euclidean tensor which is 1 if i=j, and 0 otherwise.";
+EucDD::usage = "EucDD[-i, -j] represents the Euclidean tensor which is 1 if i=j, and 0 otherwise.";
 Eps::usage = "Eps[i, j, k] represents the Levi-Civita alternating tensor";
 
 $KrancIndices = Symbol /@ Complement[CharacterRange["a", "z"], {"h", "r", "x", "y", "z"}];
@@ -127,6 +130,15 @@ Module[{a,b,c},
 
   DefineTensor[Euc[a, b]];
   SetComponents[Euc[a, b], IdentityMatrix[{3,3}]];
+
+  DefineTensor[EucUD[a, -b]];
+  SetComponents[EucUD[a, -b], IdentityMatrix[{3,3}]];
+
+  DefineTensor[EucDU[-a, b]];
+  SetComponents[EucDU[-a, b], IdentityMatrix[{3,3}]];
+
+  DefineTensor[EucDD[-a, -b]];
+  SetComponents[EucDD[-a, -b], IdentityMatrix[{3,3}]];
 ];
 
 (*************************************************************)

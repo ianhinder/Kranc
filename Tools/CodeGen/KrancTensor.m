@@ -51,8 +51,8 @@ CreateKrancThornTT[groups_, parentDirectory_, thornName_, opts:OptionsPattern[]]
     calcs = lookup[{opts}, Calculations];
     consCalcs = lookupDefault[{opts}, ConservationCalculations, {}];
     derivs = lookupDefault[{opts}, PartialDerivatives, {}];
-    intParams = lookupDefault[{opts}, IntParameters, {}] /. {___, Name -> name_} :> name;
-    realParams = lookupDefault[{opts}, RealParameters, {}] /. {___, Name -> name_} :> name;
+    intParams = lookupDefault[{opts}, IntParameters, {}] /. {___, Name -> name_, ___} :> name;
+    realParams = lookupDefault[{opts}, RealParameters, {}] /. {___, Name -> name_, ___} :> name;
 
     Scan[DefineParameter, intParams];
     Scan[DefineParameter, realParams];

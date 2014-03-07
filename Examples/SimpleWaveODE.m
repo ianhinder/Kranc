@@ -8,7 +8,7 @@ derivatives =
   PDstandard2nd[i_, i_] -> StandardCenteredDifferenceOperator[2,1,i]
 };
 
-PD = PDstandard2nd;
+DefineDerivative[pd, PDstandard2nd];
 
 initialSineCalc = 
 {
@@ -30,7 +30,7 @@ evolveCalc =
   Equations ->
   {
     dot[phi] -> pi,
-    dot[pi]  -> a Euc[ui,uj] PD[phi,li,lj],
+    dot[pi]  -> a Euc[ui,uj] pd[phi,li,lj],
     dot[a] -> b,
     dot[b] -> -a
   }

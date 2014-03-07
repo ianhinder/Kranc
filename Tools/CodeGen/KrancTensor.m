@@ -47,6 +47,9 @@ Options[CreateKrancThornTT] = ThornOptions;
 CreateKrancThornTT[groups_, parentDirectory_, thornName_, opts:OptionsPattern[]] :=
   Module[{calcs, expCalcs, expGroups, options, derivs, expDerivs, reflectionSymmetries, declaredGroups, consCalcs, expConsCalcs, intParams, realParams},
     InfoMessage[Terse, "Creating thorn "<>thornName];
+    If[MemberQ[{opts}, xAct`xTensor`PD, Infinity, Heads -> True],
+      ThrowError["PD is a reserved symbol and may not be used in a calculation"];
+    ];
     InfoMessage[Terse, "Processing tensorial arguments"];
     calcs = lookup[{opts}, Calculations];
     consCalcs = lookupDefault[{opts}, ConservationCalculations, {}];

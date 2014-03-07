@@ -4,7 +4,7 @@ derivatives = {
   PDstandard2nd[i_]     -> StandardCenteredDifferenceOperator[1,1,i],
   PDstandard2nd[i_, i_] -> StandardCenteredDifferenceOperator[2,1,i]};
 
-PD = PDstandard2nd;
+DefineDerivative[pd, PDstandard2nd];
 
 groups = {{"evolved_group", {phi, pi}}};
 
@@ -24,7 +24,7 @@ evolveCalc = {
   Equations ->
   {
     dot[phi] -> pi,
-    dot[pi]  -> Euc[ui,uj] PD[phi,li,lj]
+    dot[pi]  -> Euc[ui,uj] pd[phi,li,lj]
   }};
 
 CreateKrancThornTT[

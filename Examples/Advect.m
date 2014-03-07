@@ -36,14 +36,14 @@ DefineDerivative[pd, PDstandard2nd];
 (**************************************************************************************)
 
 (* Register the tensor quantities with the TensorTools package *)
-Map[DefineTensor, {Frho[ui], F2rho[ui], V[ui], rho, dir[li]}];
+Map[DefineTensor, {Frho[ui], F2rho[ui], v[ui], rho, dir[li]}];
 
 (**************************************************************************************)
 (* Groups *)
 (**************************************************************************************)
 
 evolvedGroups = Map[CreateGroupFromTensor, {rho}];
-nonevolvedGroups = Map[CreateGroupFromTensor, {Frho[ui], F2rho[ui], V[ui]}];
+nonevolvedGroups = Map[CreateGroupFromTensor, {Frho[ui], F2rho[ui], v[ui]}];
 
 declaredGroups = Join[evolvedGroups, nonevolvedGroups];
 declaredGroupNames = Map[First, declaredGroups];
@@ -61,9 +61,9 @@ initialSineCalc =
   ConditionalOnKeyword -> {"initial_data", "sine"},
   Equations ->
   {
-    V1 -> v0,
-    V2 -> 0,
-    V3 -> 0,
+    v1 -> v0,
+    v2 -> 0,
+    v3 -> 0,
     rho -> 1 + amp Sin[2 Pi x]
   }
 };
@@ -75,9 +75,9 @@ initialShockCalc =
   ConditionalOnKeyword -> {"initial_data", "shock"},
   Equations ->
   {
-    V1 -> v0,
-    V2 -> 0,
-    V3 -> 0,
+    v1 -> v0,
+    v2 -> 0,
+    v3 -> 0,
     rho -> amp StepFunction[x-0.5]
   }
 };
@@ -106,7 +106,7 @@ fluxCalc =
   Schedule -> {"in MoL_PostStep after Advect_ApplyBCs"},
   Equations -> 
   {
-    Frho[ui] -> rho V[ui]
+    Frho[ui] -> rho v[ui]
   }
 };
 

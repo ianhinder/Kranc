@@ -730,7 +730,8 @@ DefFn[
 
         CountOperations];
   
-    ProcessOperationCount[opCounts, GetCalculationName[cleancalc]];
+    If[OptionValue[CountOperations],
+      ProcessOperationCount[opCounts, GetCalculationName[cleancalc]]];
   
     allCode]];
 

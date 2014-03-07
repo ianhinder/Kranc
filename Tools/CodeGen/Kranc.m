@@ -109,7 +109,8 @@ ThornOptions =
   ParentDirectory -> ".",
   GenerateScript -> False,
   ParameterConditions -> {},
-  MergeFiles -> None};
+  MergeFiles -> None,
+  CountOperations -> False};
 
 ExecuteOn;
 Device;

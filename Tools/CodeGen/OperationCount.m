@@ -75,11 +75,16 @@ CountOperations[(Scalar|Sign|ToReal|Abs)[e_]] :=
 
 CountOperations[e_] :=
   Module[{},
-    Sow[Missing -> e, CountOperations];
-    Print["Unsupported operations found when counting operations for ", e//InputForm]];
+    Sow[Missing -> e, CountOperations]];
 
 DefFn[ProcessOperationCount[counts_List, name_String] :=
-  Module[{keys, collectKeys, opMap, flops},
+  Module[{keys, collectKeys, opMap, flops, cantCount},
+
+    cantCount = Cases[counts, (Missing -> e_) :> e, Infinity];
+
+    Scan[Print["Unsupported operations found when counting operations for ",
+      InputForm[#]] &, cantCount];
+
     keys = DeleteCases[Union@Flatten[Cases[counts, (a_ -> b_) -> a, Infinity]], Missing];
     collectKeys[k_] :=
       Total[Flatten[Cases[counts, (k -> x_)->x, Infinity]]];
@@ -90,9 +95,11 @@ DefFn[ProcessOperationCount[counts_List, name_String] :=
     Print[name, " flops-per-grid-point ", flops];
     flops]];
 
+Options[OperationCountProcessCode] = ThornOptions;
 DefFn[
-  OperationCountProcessCode[cIn_Code, opCounts_List] :=
+  OperationCountProcessCode[cIn_Code, opCounts_List, opts:OptionsPattern[]] :=
   Module[{c},
+    If[!OptionValue[CountOperations], Return[cIn]];
     c = AppendObjectField[cIn, "Files", 
       {Filename -> "doc/OperationCounts.txt",
         Contents -> Join[{{"# 1:Calculation 2:flops/gp","\n\n"}}, Map[{#[[1]], "\t", #[[2]], "\n"} &, opCounts]]}];

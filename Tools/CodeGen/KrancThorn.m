@@ -396,7 +396,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
         ProcessOperationCount][[2]];
 
-     c = OperationCountProcessCode[c, Flatten[opCounts]]];
+      c = OperationCountProcessCode[c, Flatten[opCounts], opts]];
 
     (* ------------------------------------------------------------------------ 
        Create Makefile

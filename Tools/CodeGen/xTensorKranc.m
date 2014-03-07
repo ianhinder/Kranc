@@ -76,8 +76,8 @@ DefineDerivative[pd_] :=
   DefCovD[pd[-$KrancIndices[[1]]], Curvature -> False, Torsion -> False]
 ];
 
-toBasis[dot[x_]] := dot[toBasis[x]];
-toBasis[x_] := FixedPoint[ToBasis[KrancBasis], x];
+toBasis[x_] :=
+ ReplaceIndex[x, {ind_?UpIndexQ :> {ind, KrancBasis}, ind_?DownIndexQ :> {ind, -KrancBasis}}];
 
 SetComponents[t_?xTensorQ[i :(_?AIndexQ ...)], values_] :=
  Module[{},

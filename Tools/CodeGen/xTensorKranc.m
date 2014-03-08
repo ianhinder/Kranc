@@ -110,6 +110,8 @@ DefineTensor[s_, opts___] :=
   t = Symbol[symbolName];
 
   DefTensor[t[], KrancManifold, opts];
+  t[i__] := ThrowError["Tensor " <> ToString[SymbolName[t][i]] <>
+                       " should not have indices as it has been defined as a scalar."];
   KrancScalarQ[t] = True;
 ]];
 

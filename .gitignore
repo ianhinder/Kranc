@@ -16,4 +16,3 @@
 *.png
 *.pdf
 *__gpu_cuda__*
-Tests/TestThorns

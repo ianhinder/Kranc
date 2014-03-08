@@ -135,7 +135,7 @@ point. TODO: Should be checked by someone competent!
 
 BeginPackage["Differencing`", {"CodeGen`", "CodeGenC`", "CodeGenCactus`", "CodeGenKranc`",
                                "Kranc`", "MapLookup`", 
-             (* "LinearAlgebra`MatrixManipulation`", *) "Errors`", "Code`", "Object`"}];
+             (* "LinearAlgebra`MatrixManipulation`", *) "Errors`", "Code`", "Object`", "OperationCount`"}];
 
 CreateDifferencingHeader::usage = "";
 PrecomputeDerivatives::usage = "";
@@ -157,6 +157,9 @@ StencilSize::usage = "";
 DifferencingProcessCode;
 
 GridFunctionDerivativeToDef;
+DifferencingOperatorExpansion;
+$DifferencingMacroExpansions;
+CountDerivativeOperations;
 
 Begin["`Private`"];
 
@@ -199,10 +202,19 @@ ordergfds[_[v1_,___], _[v2_,___]] :=
 getParamName[p_List] := lookup[p,Name];
 getParamName[p_] := p;
 
+DefFn[CountDerivativeOperations[derivOps_, expr_, zeroDims_] :=
+  Module[{gfds, gfdEvaluations},
+    gfds = GridFunctionDerivativesInExpression[derivOps, expr, zeroDims];
+    gfdEvaluations = gfds /. Flatten[$DifferencingMacroExpansions];
+    Scan[CountOperations, gfdEvaluations]]];
+
 DefFn[
   PrecomputeDerivatives[derivOps_, expr_, intParams_, zeroDims_, macroPointer_] :=
   Module[{componentDerivOps, gfds, sortedgfds, opNames, intParamNames, paramsInOps,
-          paramName, opsWithParam, opNamesWithParam, replace, param},
+          paramName, opsWithParam, opNamesWithParam, replace, param, pd, u},
+
+    CountDerivativeOperations[derivOps, expr, zeroDims];
+
     gfds = GridFunctionDerivativesInExpression[derivOps, expr, zeroDims];
     sortedgfds = Sort[gfds, ordergfds];
 
@@ -453,6 +465,8 @@ DefFn[
 (*    Print[componentDerivOp, ": "];
     Print[FullForm[rhs]];
     Print[""];*)
+
+    Sow[name[u_, inds] -> rhs, DifferencingOperatorExpansion];
 
     rhs = CFormHideStrings[ProcessExpression[rhs /. spacings, vectorise]];
     (* Print["rhs=",FullForm[rhs]]; *)
@@ -810,10 +824,15 @@ DefFn[
   DifferencingProcessCode[cIn_Code, opts:OptionsPattern[]] :=
   Module[
     {diffHeader, pDefs, c = cIn},
+
     InfoMessage[Terse, "Creating differencing header file"];
-    {pDefs, diffHeader} = CreateDifferencingHeader[
+
+    (* This is the easiest way to propagate this information; the
+       differencing code will be rewritten soon, so this should go
+       away *)
+    {{pDefs, diffHeader}, $DifferencingMacroExpansions} = Reap[CreateDifferencingHeader[
       GetObjectField[c, "PartialDerivatives"], OptionValue[ZeroDimensions],
-      OptionValue[UseVectors], OptionValue[IntParameters]];
+      OptionValue[UseVectors], OptionValue[IntParameters]], DifferencingOperatorExpansion];
     c = SetObjectField[c, "Calculations", Map[Join[#, {PreDefinitions -> pDefs}] &, GetObjectField[c, "Calculations"]]];
     diffHeader = Join[
       If[OptionValue[UseVectors] && ! OptionValue[UseOpenCL],

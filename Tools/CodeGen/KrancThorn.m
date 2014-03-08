@@ -31,7 +31,7 @@ BeginPackage["KrancThorn`", {"CodeGen`", "Thorn`",
  "KrancTensor`", "Param`", "Schedule`", "Interface`", "Kranc`", "Jacobian`",
  "ConservationCalculation`", "CaKernel`", "Calculation`", "ParamCheck`",
  "OpenCL`", "CodeGenConfiguration`", "CodeGenMakefile`", "CodeGenSymmetries`", "MoL`",
- "CodeGenStartup`", "CodeGenCalculation`", "Code`", "Object`"}];
+ "CodeGenStartup`", "CodeGenCalculation`", "Code`", "Object`", "OperationCount`"}];
 
 CreateKrancThorn::usage = "Construct a Kranc thorn";
 
@@ -181,7 +181,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
        "DefaultEvolutionTimelevels" -> lookupDefault[{opts}, DefaultEvolutionTimelevels,
                                                      OptionValue[EvolutionTimelevels]],
        "PartialDerivatives" -> OptionValue[PartialDerivatives],
-       "Sources" -> {}}];
+       "Sources" -> {},
+       "Files" -> {}}];
 
     VerifyString[GetObjectField[c, "Implementation"]];
     VerifyGroupNames[GetObjectField[c, "DeclaredGroups"]];
@@ -381,6 +382,9 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
 
     InfoMessage[Terse, "Creating calculation source files"];
 
+    Module[{opCounts},
+      opCounts=Reap[
+
     c = JoinObjectField[
       c, "Sources", 
       Join[Map[{Filename -> lookup[#, Name] <> ".cc",
@@ -388,7 +392,11 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
                Select[GetObjectField[c, "Calculations"], !CalculationOnDevice[#] &]],
            Map[{Filename -> "CaKernel__"<>lookup[#, Name] <> ".code",
                 Contents -> CaKernelCode[#,opts]} &,
-               Select[GetObjectField[c, "Calculations"], CalculationOnDevice]]]];
+               Select[GetObjectField[c, "Calculations"], CalculationOnDevice]]]],
+
+        ProcessOperationCount][[2]];
+
+      c = OperationCountProcessCode[c, Flatten[opCounts], opts]];
 
     (* ------------------------------------------------------------------------ 
        Create Makefile
@@ -416,7 +424,8 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
                    CaKernel      -> cakernel,
                    Makefile      -> make,
                    MergeFiles    -> OptionValue[MergeFiles],
-                   Sources       -> GetObjectField[c, "Sources"]};
+                   Sources       -> GetObjectField[c, "Sources"],
+                   Files         -> GetObjectField[c, "Files"]};
       InfoMessage[Terse, "Creating thorn"];
       CreateThorn[thornspec]]];
 

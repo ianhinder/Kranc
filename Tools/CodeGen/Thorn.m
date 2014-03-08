@@ -22,7 +22,7 @@
 
 BeginPackage[
   "Thorn`",
-  {"CodeGen`", "MapLookup`", "Helpers`", "Errors`", "Kranc`"}];
+  {"CodeGen`", "CodeGenKranc`", "MapLookup`", "Helpers`", "Errors`", "Kranc`"}];
 
 CreateThorn::usage = "Create a general Cactus thorn from a thorn specification structure";
 
@@ -66,6 +66,10 @@ CreateThorn[thorn_] :=
     Map[GenerateFile[sourceDirectory <> "/" <> lookup[#, Filename], 
                                                lookup[#, Contents]] &,
                                                lookup[thorn, Sources]];
+
+    Map[(EnsureDirectory[FileNameDrop[thornDirectory <> "/" <> lookup[#, Filename],-1]]; GenerateFile[thornDirectory <> "/" <> lookup[#, Filename], 
+      lookup[#, Contents]]) &,
+      lookup[thorn, Files]];
 
     GenerateFile[sourceDirectory <> "/make.code.defn", lookup[thorn, Makefile]],
 

@@ -20,7 +20,7 @@
 
 (* Functions for generating blocks of code specific to Kranc *)
 
-BeginPackage["CodeGenKranc`", {"Errors`", "Helpers`", "Kranc`", "CodeGenC`", "CodeGen`", "Vectorisation`"}];
+BeginPackage["CodeGenKranc`", {"Errors`", "Helpers`", "Kranc`", "CodeGenC`", "CodeGen`", "Vectorisation`", "OperationCount`"}];
 
 SetDataType::usage = "SetDataType[type] sets a string for the grid function data type (e.g. CCTK_REAL)";
 DataType::usage = "DataType[] returns a string for the grid function data type (e.g. CCTK_REAL)";
@@ -174,9 +174,9 @@ DefFn[
             "// vec_iter_counter+=CCTK_REAL_VEC_SIZE;\n",
             "// ++vec_iter_counter;\n"],
           If[tile,
-            {"const int ti = i - kd.tile_imin[0];\n",
-             "const int tj = j - kd.tile_imin[1];\n",
-             "const int tk = k - kd.tile_imin[2];\n"},
+            {"const int ti CCTK_ATTRIBUTE_UNUSED = i - kd.tile_imin[0];\n",
+             "const int tj CCTK_ATTRIBUTE_UNUSED = j - kd.tile_imin[1];\n",
+             "const int tk CCTK_ATTRIBUTE_UNUSED = k - kd.tile_imin[2];\n"},
             {}],
          block}],
       "}\n",
@@ -355,6 +355,7 @@ CalculationMacros[vectorise_:False] :=
             "QAD(x) (SQR(SQR(x)))"}]
          ]];
 
+
 (* Return a CodeGen block which assigns dest by evaluating expr *)
 Options[AssignVariableFromExpression] = {"Const" -> False};
 AssignVariableFromExpression[dest_, expr_, declare_, vectorise_, noSimplify:Boolean : False,
@@ -362,6 +363,7 @@ AssignVariableFromExpression[dest_, expr_, declare_, vectorise_, noSimplify:Bool
   Module[{type, exprCode, code},
     type = If[StringMatchQ[ToString[dest], "dir*"], "ptrdiff_t", DataType[]];
     exprCode = GenerateCodeFromExpression[expr, vectorise, noSimplify];
+    CountOperations[expr];
     code = If[declare,
               DeclareAssignVariable[type, dest, exprCode, Const -> OptionValue[Const]],
               AssignVariable[dest, exprCode]];

@@ -22,7 +22,8 @@ Needs["KrancThorn`"];
 
 alltests = {
   "Kranc",
-  "McLachlan"
+  "McLachlan",
+  "Tiling"
 };
 
 args = Drop[$ScriptCommandLine, 1];

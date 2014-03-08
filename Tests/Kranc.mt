@@ -34,7 +34,7 @@ Test[
   ClearAllTensors[];
   CreateKrancThornTT[
     Append[$groups,{"ode_group", {a, b}}],
-    "TestThorns", "SimpleWaveODE",
+    "TestThorns", "TestSimpleWaveODE",
     PartialDerivatives -> $derivatives,
     DeclaredGroups     -> {"evolved_group"},
     ODEGroups -> {"ode_group"},
@@ -126,7 +126,7 @@ Test[
 Test[
   ClearAllTensors[];
   CreateKrancThornTT[
-    $groups, "TestThorns", "SimpleWave",
+    $groups, "TestThorns", "TestSimpleWave",
     PartialDerivatives -> $derivatives,
     DeclaredGroups     -> {"evolved_group"},
     Calculations       -> {$initialSineCalc, $evolveCalc}]
@@ -325,4 +325,28 @@ Test[
   Null
   ,
   TestID->"MergeFiles"
+]
+
+
+Test[
+  Reap[ProcessOperationCount[{Times -> 1, Plus -> 2, {Times -> 3, Trig -> 3}},
+    "ProcessOperationCountTest"], ProcessOperationCount]
+  ,
+  {9,{{"ProcessOperationCountTest" -> 9}}}
+  ,
+  TestID->"ProcessOperationCount"
+]
+
+Test[
+  ClearAllTensors[];
+  CreateKrancThornTT[
+    $groups, "TestThorns", "CountOperations",
+    PartialDerivatives -> $derivatives,
+    DeclaredGroups     -> {"evolved_group"},
+    Calculations       -> {$initialSineCalc, $evolveCalc},
+    CountOperations    -> True]
+  ,
+  Null
+  ,
+  TestID->"CountOperations"
 ]

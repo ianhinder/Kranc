@@ -1,0 +1,71 @@
+skipper = \b([ \t\n\r\b]|\#[^\n\r]*|\\[\r\n])*
+
+any = [^]
+name = (?i:[a-z_][a-z0-9_]*)
+filename = (?i:([.a-z0-9_/]|\\[^])+)
+accname = {-name}(::{-name})*
+
+num = [0-9]+
+boolraw = (?i:true|t|yes|y|false|f|no|n|1|0)
+bool = {-boolraw}|"{-boolraw}"
+
+s_arexpr =\({-arexpr}\)|[-+]{-arexpr}|({-accname}|{-num})
+mul_op = [*/]
+add_op = [+-]
+mul_arexpr = {s_arexpr}( {mul_op} {s_arexpr})*
+arexpr ={-mul_arexpr}( {add_op} {-mul_arexpr})*
+
+n = ([\ \t]|\\\r*\n)*
+np = ([\ \t]|\\\r*\n)+
+
+IMPLEMENTS = (?i:implements):{-n}{name}
+INHERITS = (?i:inherits):{-n}({name}({-n},?{-n}{name})*)?
+FRIEND = (?i:friend):{-n}({name}({-n},?{-n}{name})*)?
+HEADER = ({IMPLEMENTS} {INHERITS}? {FRIEND}?)
+
+what = (?i:SOURCE|HEADER)
+USES = (?i:USES INCLUDE {what}?: {filename}({-np}{filename})*)
+INCLUDE = (?i:INCLUDE(S)? {what}?: {filename} in {filename})
+INCLUDES = ( {USES} | {INCLUDE} )*
+
+ret_type = (?i:void|CCTK_{vtype}|{vtype})
+arg_type = (?i:CCTK_{vtype}|{vtype})
+intent = \b(?i:INOUT|IN|OUT)\b
+
+fpointer = (?i:cctk_fpointer)
+fargs = {name} \( ({arg}( , {arg})*|) \)
+array = (?i:\bARRAY\b)
+arg = {arg_type}( {fpointer} {intent} {fargs}| {array} {intent} {name}| {intent} {fpointer} {fargs}| {intent} {array}? {name})
+FUNCTION_ALIAS = (?i: {ret_type} FUNCTION | SUBROUTINE ){fargs}
+FUNCTION_PTR = (?i:CCTK_FPOINTER) {fargs}
+REQUIRES_FUN = (?i:REQUIRES FUNCTION {name})
+USES_FUN = (?i: USES FUNCTION {name} )
+PROVIDES_FUN = (?i:PROVIDES FUNCTION {name} WITH {name} LANGUAGE (?i:C|FORTRAN))
+entries = ( {HEADER} | {USES} | {INCLUDE} | {REQUIRES_FUN} | {FUNCTION_PTR} | {USES_FUN} | {PROVIDES_FUN} | {FUNCTION_ALIAS} | {access}: | {GROUP_VARS} )*
+
+access = (?i:protected|public|private)
+vtype = (?i:(CHAR|BYTE|INT[1248]?|REAL[48]?|COMPLEX([48]|16|)|POINTER_TO_CONST|POINTER|STRING))
+VARS = ({name}( ,? {name} )*) ,?
+array_size = {-arexpr}
+gtype = (?i:GF|ARRAY|SCALAR)
+dim = {-num}
+timelevels = {-num}
+size = {arexpr}( , {arexpr})*|" {arexpr}( , {arexpr} )*"
+distrib = (?i:CONSTANT|DEFAULT)
+ghostsize = {-size}
+stagger = (?i:[MCP](,[MCP])*)
+tags = {-quote}
+
+GROUP_VARS = (?i:CCTK_|){vtype} {name} (\[{array_size}\])? (?i:TYPE = {gtype} | DIM = {dim} | 
+             TIMELEVELS = {timelevels} | SIZE = {size} | DISTRIB = {distrib} | 
+             GHOSTSIZE = {ghostsize} | STAGGER = {stagger} | TAGS = {tags})* {dquote}? (
+ \{
+    {VARS}
+ \} {dquote}?
+ )?
+ 
+dquote = "(\\{-any}|[^"])*"
+squote = '(\\{-any}|[^'])*'
+quote = {dquote}|{squote}
+
+intr = ^(?i: {INCLUDES} {entries} )$

@@ -27,8 +27,6 @@ SeparatedBlock::usage = "SeparatedBlock[block] returns a version of 'block' with
   "a newline before it.";
 GenerateFile::usage = "GenerateFile[name, block] writes 'block' to a file of the " <>
   "specified 'name'.";
-AddToFile::usage = "AddToFile[name, block] appends 'block' to a file of the " <>
-    "specified 'name'.";
 SpaceSeparated::usage = "";
 NewlineSeparated::usage = "";
 InfoVariable::usage = "";
@@ -108,13 +106,6 @@ DefFn[
     CheckBlock[contents];
     WriteString[fp, FlattenBlock[contents]];
     Sow[filename, GenerateFile];
-    Close[fp]]];
-
-DefFn[
-  AddToFile[filename_String, contents:CodeGenBlock] :=
-  Module[
-    {fp = OpenAppend[filename]},
-    WriteString[fp, FlattenBlock[contents]];
     Close[fp]]];
 
 DefFn[

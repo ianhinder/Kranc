@@ -62,7 +62,10 @@ PrintError[err_] :=
 ],
         err]];
 
-
+(* Raise an error exception.  Typically, this should be called with
+one argument, the string containing the error message.  For backward
+compatibility, it can be called with several arguments.  These will be
+converted to strings in InputForm and displayed on separate lines. *)
 ThrowError[objects__] :=
   Module[{stack = CurrentStack[]},
     Throw[KrancError[{objects},stack], KrancError]];
@@ -106,7 +109,9 @@ DefFn[def:(fn_[args___] := body_)] :=
 
 reportError[k:KrancError[objects_,stack_], KrancError] :=
   Module[{},
-    Print["Error: ", Sequence@@objects];
+    If[MatchQ[objects, {_String}],
+      Print["Error: ", objects[[1]]],
+      Scan[Print, InputForm/@objects]];
     ShowStack[stack];
     $Failed];
 

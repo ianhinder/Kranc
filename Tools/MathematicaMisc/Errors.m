@@ -72,16 +72,16 @@ ThrowError[objects__] :=
 
 VerifyString[s_] := 
   If[! StringQ[s],
-   ThrowError["Not a string:", s]];
+   ThrowError["Not a string: " <> ToString[s,InputForm]]];
 
 VerifyStringList[l_, err_:None] := 
   If[! MatchQ[l, {___String}],
-   ThrowError[If[err===None,"",ToString[err]<>" - "]<>"Not a list of strings:", l]];
+   ThrowError[If[err===None,"",ToString[err]<>" - "]<>"Not a list of strings:" <> ToString[l,InputForm]]];
 
 
 VerifyList[l_] := 
   If[!Head[l] === List,
-   ThrowError["Not a list:", l]];
+   ThrowError["Not a list: "<>ToString[l,InputForm]]];
 
 
 InfoMessage[level_, message__] :=
@@ -95,7 +95,7 @@ SetDebugLevel[level_] :=
 
 ErrorDefinition[x_] :=
   x[args___] :=
-    ThrowError["Invalid arguments: ",
+    ThrowError["Invalid arguments: " <> 
       ToString[x] <> "[" <> StringJoin[Riffle[(ToString[FullForm[#]]) & /@ {args},","]] <> "]"];
 
 SetAttributes[DefFn, HoldAll];

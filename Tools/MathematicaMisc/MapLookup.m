@@ -20,12 +20,12 @@ Begin["`Private`"];
 
 VerifyRule[r_] :=
   If[! Head[r] === Rule,
-    ThrowError["Expecting a rule, but found", r]];
+    ThrowError["Expecting a rule, but found"<>ToString[r,InputForm]]];
 
 VerifyMap[m_] :=
   Module[{},
     If[!ListQ[m],
-      ThrowError["Expecting a map (list of rules) but found", m]];
+      ThrowError["Expecting a map (list of rules) but found", ToString[m,InputForm]]];
     Map[VerifyRule, m]];
 
 DefFn[
@@ -38,9 +38,9 @@ DefFn[lookup[map_List, key:(_Symbol|_String)] :=
 
     values = Select[map, First[#] === key &];
     If[values == {},
-       ThrowError["lookup failure: key " <> ToString[key] <> " not found in map " <> ToString[map,InputForm]]];
+       ThrowError["lookup failure: key " <> ToString[key] <> " not found in map " <> ToString[map,InputForm]]]; (* TODO: shorten this output *)
     If[Length[values] > 1,
-       ThrowError["lookup failure: key ", key, " found multiple times in map", map]];
+       ThrowError["lookup failure: key " <> ToString[key]<> " found multiple times in map ", ToString[map,InputForm]]];
 
     First[values][[2]]]];
 

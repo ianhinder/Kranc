@@ -19,6 +19,7 @@ Terse = 2;
 Info = 3;
 InfoFull = 4;
 DefFn;
+CatchKrancError;
 
 Begin["`Private`"];
 
@@ -104,6 +105,15 @@ DefFn[def:(fn_[args___] := body_)] :=
     {},
     ErrorDefinition[fn];
     fn[args] := (*Profile[fn,*)body(*]*)];
+
+reportError[k:KrancError[objects_,stack_], KrancError] :=
+  Module[{},
+    Print["Error: ", Sequence@@objects];
+    $Failed];
+
+SetAttributes[CatchKrancError, HoldAll];
+CatchKrancError[x_] :=
+  Catch[x, KrancError, reportError];
 
 End[];
 

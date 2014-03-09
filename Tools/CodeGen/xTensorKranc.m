@@ -26,6 +26,7 @@ DefineDerivative::usage = "DefineDerivative[pd, nd] registers a symbol pd to be 
 DefineParameter::usage = "DefineParameter[p] registers a symbol p to be used as a constant parameter.";
 SetComponents::usage = "SetComponents[T[a, b, ...], v] defines the components of the tensor T to be the values given in the list v."
 MatrixInverse::usage = "";
+MatrixOfComponents::usage = "";
 
 CreateGroupFromTensor::usage = "CreateGroupFromTensor[T[a, b, ...]] Creates a variable group from the tensor T";
 ReflectionSymmetries::usage = "ReflectionSymmetries[T[a, b, ...]] Produces a list of reflection symmetries of the tensor T.";
@@ -215,7 +216,9 @@ MatrixInverse[t_?xTensorQ] :=
 ];
 
 MatrixInverse[t_?xTensorQ[i_, j_]] := MatrixInverse[t][i, j];
- 
+
+MatrixOfComponents = ComponentArray;
+
 (*************************************************************)
 (* ExpandComponents *)
 (*************************************************************)

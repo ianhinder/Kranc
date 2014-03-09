@@ -265,7 +265,7 @@ ExpandComponents[l_ -> r_] :=
    rhsC = Flatten[{ComponentArray[TraceBasisDummy[rhs], inds]}];
 
    (* Pick out the independent components *)
-   rules = krancForm[DeleteDuplicates[Thread[lhsC -> rhsC], #1[[1]] == #2[[1]] &]];
+   rules = krancForm[DeleteDuplicates[Thread[lhsC -> rhsC], #1[[1]] == #2[[1]] &]] /. (0->0) -> Sequence[];
    InfoMessage[InfoFull, "Expanded to: ", Map[InputForm, rules, {2}]];
    Sequence @@ rules
 ];

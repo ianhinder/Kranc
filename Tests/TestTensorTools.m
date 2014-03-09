@@ -19,7 +19,7 @@ SetOptions["stdout", PageWidth -> Infinity];
 SetOptions[$Output, FormatType -> OutputForm];
 
 Print["Loading tensortools"];
-<< TensorTools`;
+<< xTensorKranc`;
 
 Print["Arguments: ", $ScriptCommandLine];
 
@@ -64,7 +64,11 @@ reportResults[] :=
 
 testsPassed = 0; testsFailed = 0;
 
-DefineTensor /@ {S, SS, T, TT, u, v, w, a, b};
+DefineTensor /@ {S[ua], SS[la], T[ua], TT[la], u[ua], v[la], A, B, S2[ua,ub], SS2[la,lb]};
+
+DefInertHead /@ {F, G};
+
+DefineDerivative[pd, nd];
 
 (* We currently only test with correct input as it is CheckTensor's
    responsibility to check that the input is correct.  This should be
@@ -77,7 +81,7 @@ Print[];
 (* makeSum *)
 (****************************************************************)
 
-makeSum = TensorTools`Private`makeSum
+makeSum = TraceBasisDummy;
 
 test[makeSum[1], 1];
 
@@ -105,21 +109,21 @@ test[makeSum[a S[ua] TT[la] + 1], a * (S[1] TT[1] + S[2] TT[2] + S[3] TT[3]) + 1
 test[makeSum[S[ua] TT[la] + u[ua] v[la]],
  S[1] TT[1] + S[2] TT[2] + S[3] TT[3] + u[1] v[1] + u[2] v[2] + u[3] v[3]];
 
-test[makeSum[a * (S[ua] TT[la] + x) + b * (u[ua] v[la] + y)],
- a * (S[1] TT[1] + S[2] TT[2] + S[3] TT[3] + x) +
-  b * (u[1] v[1] + u[2] v[2] + u[3] v[3] + y)];
+test[makeSum[A * (S[ua] TT[la] + x) + B * (u[ua] v[la] + y)],
+ A * (S[1] TT[1] + S[2] TT[2] + S[3] TT[3] + x) +
+  B * (u[1] v[1] + u[2] v[2] + u[3] v[3] + y)];
 
 test[makeSum[
   S[ua] TT[la] u[ub] v[lb]], (S[1] TT[1] + S[2] TT[2] + S[3] TT[3]) (u[1] v[1] +
     u[2] v[2] + u[3] v[3])];
 
-test[makeSum[f[SS[la]]], f[SS[la]]];
+test[makeSum[F[SS[la]]], F[SS[la]]];
 
-test[makeSum[f[SS[la] T[ua]]], f[SS[1] T[1] + SS[2] T[2] + SS[3] T[3]]];
+test[makeSum[F[SS[la] T[ua]]], F[SS[1] T[1] + SS[2] T[2] + SS[3] T[3]]];
 
-test[makeSum[f[g[SS[la] T[ua]]]], f[g[SS[1] T[1] + SS[2] T[2] + SS[3] T[3]]]];
+test[makeSum[F[G[SS[la] T[ua]]]], F[G[SS[1] T[1] + SS[2] T[2] + SS[3] T[3]]]];
 
-test[makeSum[T[ua] f[SS[la]]], T[1] f[SS[1]] + T[2] f[SS[2]] + T[3] f[SS[3]]];
+test[makeSum[T[ua] F[SS[la]]], T[1] F[SS[1]] + T[2] F[SS[2]] + T[3] F[SS[3]]];
 
 test[makeSum[Sqrt[TT[la] S[ua]]], Sqrt[S[1] TT[1] + S[2] TT[2] + S[3] TT[3]]];
 
@@ -135,12 +139,12 @@ test[makeSum[IfThen[cond, TT[la] S[ua], u[la] v[ua]]],
 (* makeSplit *)
 (****************************************************************)
 
-makeSplit = TensorTools`Private`makeSplit;
+makeSplit[x_] := Flatten[ComponentArray[x]];
 
 test[makeSplit[SS[la]], {SS[1], SS[2], SS[3]}];
 
-test[makeSplit[a[la, lb]], {a[1, 1], a[1, 2], a[1, 3], a[2, 1], a[2, 2],
-  a[2, 3], a[3, 1], a[3, 2], a[3, 3]}];
+test[makeSplit[SS2[la, lb]], {SS2[1, 1], SS2[1, 2], SS2[1, 3], SS2[2, 1], SS2[2, 2],
+  SS2[2, 3], SS2[3, 1], SS2[3, 2], SS2[3, 3]}];
 
 test[makeSplit[SS[la] TT[lb]], {SS[1] TT[1], SS[1] TT[2], SS[1] TT[3],
   SS[2] TT[1],
@@ -152,6 +156,8 @@ test[makeSplit[SS[la] -> TT[la]], {SS[1] -> TT[1], SS[2] -> TT[2],
 (****************************************************************)
 (* MakeExplicit *)
 (****************************************************************)
+
+MakeExplicit[x_] := {ExpandComponents[x]};
 
 test[MakeExplicit[SS[la] T[ua] v[lb]], (SS1 T1 + SS2 T2 + SS3 T3) {v1, v2, v3}];
 
@@ -178,26 +184,26 @@ test[MakeExplicit[Sqrt[u[ua] v[la]]], {Sqrt[u1 v1 + u2  v2 + u3 v3]}];
 (* test[FullSimplify[MakeExplicit[MatrixInverse[u[ua, ub]] u[lb, lc]]], *)
 (*  {1, 0, 0, 0, 1, 0, 0, 0, 1}]; *)
 
-test[FullSimplify[MakeExplicit[MatrixInverse[a[ua, ub]] a[lb, lc]]],
+test[FullSimplify[MakeExplicit[MatrixInverse[SS2[ua, ub]] SS2[lb, lc]]],
  {1, 0, 0, 0, 1, 0, 0, 0, 1}];
 
 (****************************************************************)
 (* Partial derivatives *)
 (****************************************************************)
 
-test[MakeExplicit[PD[u[la], lb]], {PD[u1, 1], PD[u1, 2], PD[u1, 3], PD[u2, 1],
-   PD[u2, 2], PD[u2, 3], PD[u3, 1], PD[u3, 2], PD[u3, 3]}];
+test[MakeExplicit[pd[u[la], lb]], {nd[u1, 1], nd[u1, 2], nd[u1, 3], nd[u2, 1],
+   nd[u2, 2], nd[u2, 3], nd[u3, 1], nd[u3, 2], nd[u3, 3]}];
 
-test[MakeExplicit[PD[u[ua], la]], {PD[u1, 1] + PD[u2, 2] + PD[u3, 3]}];
+test[MakeExplicit[pd[u[ua], la]], {nd[u1, 1] + nd[u2, 2] + nd[u3, 3]}];
 
-test[Simplify[MakeExplicit[PD[MatrixInverse[a[ua, ub]] a[lb, lc], ld]]], {0,
+(* test[Simplify[MakeExplicit[pd[MatrixInverse[SS2[ua, ub]] SS2[lb, lc], ld]]], {0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0}];
 
-test[FullSimplify[MakeExplicit[PD[MatrixInverse[a[ua, ub]], ld] a[lb, lc]] +
-   MakeExplicit[MatrixInverse[a[ua, ub]] PD[a[lb, lc], ld]]],
+test[FullSimplify[MakeExplicit[pd[MatrixInverse[SS2[ua, ub]], ld] SS2[lb, lc]] +
+   MakeExplicit[MatrixInverse[SS2[ua, ub]] pd[SS2[lb, lc], ld]]],
  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0}];
+  0, 0}]; *)
 
 reportResults[];
 

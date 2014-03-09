@@ -59,7 +59,7 @@ SetOptions["stdout", PageWidth -> Infinity];
 
 (* Quiet[Message[InverseFunction::ifun]]; *)
 
-exception = Catch[Catch[
+exception = Catch[CatchKrancError@Catch[
   Check[
     Block[
       {(*$RecursionLimit = Infinity*)},
@@ -70,22 +70,12 @@ exception = Catch[Catch[
         "kranc",  CreateThornFromKrancScript[script],
         _,        ThrowError["Unknown file extension for "<>script<>".  Recognised extensions are .m and .kranc."]]];
 
-    (* Put[timers, "timer-output-1.m"]; *)
-
-    (* timers = CoalesceTimers[timers]; *)
-    (* Put[timers, "timer-output-2.m"]; *)
-
-    (* timers = ThresholdTimers[timers,0.1]; *)
-    (* Put[timers, "timer-output-3.m"]; *)
-
-    (* (\* Put[timers2, "timer-output-2.m"]; *\) *)
-
-    (* PrintTimerTree[timers]; *)
-
     None,
     ThrowError["Messages were generated - aborted"]]], _];
 
-If[exception =!= None,
+(* Catch non-Kranc exceptions *)
+(* TODO: probably this should be removed *)
+If[exception =!= None && exception =!= $Failed,
   Print["Exception:"];
   PrintError[exception];
   Quit[1],

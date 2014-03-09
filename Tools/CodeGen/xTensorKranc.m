@@ -25,6 +25,7 @@ DefineTensor::usage = "DefineTensor[T[a, b, ...]] defines the tensor T with indi
 DefineDerivative::usage = "DefineDerivative[pd, nd] registers a symbol pd to be used as a derivative operator, with numerical discretisation nd.";
 DefineParameter::usage = "DefineParameter[p] registers a symbol p to be used as a constant parameter.";
 SetComponents::usage = "SetComponents[T[a, b, ...], v] defines the components of the tensor T to be the values given in the list v."
+MatrixInverse::usage = "";
 
 CreateGroupFromTensor::usage = "CreateGroupFromTensor[T[a, b, ...]] Creates a variable group from the tensor T";
 ReflectionSymmetries::usage = "ReflectionSymmetries[T[a, b, ...]] Produces a list of reflection symmetries of the tensor T.";
@@ -184,6 +185,32 @@ Module[{a,b,c},
   SetComponents[EucDD[-a, -b], IdentityMatrix[{3,3}]];
 ];
 
+(*************************************************************)
+(* MatrixInverse *)
+(*************************************************************)
+
+MatrixInverse[t_?xTensorQ] :=
+ Module[{inverse, tensorCharacter, rank, a, b},
+  inverse = SymbolJoin["MatrixInverse", t];
+
+  If[xTensorQ[inverse], Return[inverse]];
+
+  tensorCharacter = - SlotsOfTensor[t] /. TangentKrancManifold -> 1;
+  rank = Length[tensorCharacter];
+
+  If[rank =!= 2,
+    ThrowError["MatrixInverse cannot be used with a tensor of rank "<>ToString[rank]];
+  ];
+
+  {a, b} = $KrancIndices[[1;;2]] tensorCharacter;
+
+  DefineTensor[inverse[a, b]];
+  SetComponents[inverse[a, b], Inverse[ComponentArray[t[-a, -b]]]];
+  inverse
+];
+
+MatrixInverse[t_?xTensorQ[i_, j_]] := MatrixInverse[t][i, j];
+ 
 (*************************************************************)
 (* ExpandComponents *)
 (*************************************************************)

@@ -128,7 +128,7 @@ DefineTensor[s_, opts___] :=
 DefineParameter[p_] := 
  Block[{$DefInfoQ = False},
   InfoMessage[InfoFull, "Defining parameter: "<> SymbolName[p]];
-  DefConstantSymbol[p];
+  If[!ConstantSymbolQ[p], DefConstantSymbol[p]];
 ];
 
 (*************************************************************)

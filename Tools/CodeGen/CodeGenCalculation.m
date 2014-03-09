@@ -404,9 +404,11 @@ DefFn[
 
   unknownSymbols = Complement[allSymbols, knownSymbols];
 
-  If[unknownSymbols != {},
-     ThrowError["Unknown symbols in calculation.  Symbols are:", unknownSymbols,
-       "Calculation is:", cleancalc]];
+  unknownSymbols /.
+    {{} :> True,
+      {s_} :> ThrowError["Unknown symbol " <> ToString[s] <> " in calculation " <> GetCalculationName[cleancalc]],
+      ss_ :> ThrowError["Unknown symbols " <> StringJoin[Riffle[ToString/@ss,", "]] <> " in calculation " <> GetCalculationName[cleancalc]],
+    _ :> ThrowError["Internal error: unrecognised value for unknownSymbols: "<>ToString[unknownSymbols, InputForm]]};
 
   kernelCall = Switch[where,
     Everywhere,

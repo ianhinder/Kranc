@@ -40,8 +40,23 @@ IndentBlock::usage = "";
 IndentBlock2::usage = "";
 CheckBlock::usage = "";
 
-CodeGenBlock := _String | _?AtomQ | List[(_?(MatchQ[#, CodeGenBlock] &)) ...];
+(* In strict mode, codegen blocks must have head CodeBlock, indicating
+   that they were already checked for correctness.  This helps ensure
+   that blocks are checked when they are created, and errors are
+   reported earlier. Kranc does not yet conform to this new style. *)
+
+$CodeGenStrict = False;
+
+CodeGenBlock = 
+  If[$CodeGenStrict,
+    CodeBlock[_],
+     _CodeBlock | _String | _?AtomQ | List[(_?(MatchQ[#, CodeGenBlock] &)) ...]];
+
 Boolean = (True | False);
+
+CodeBlock;
+CodeBlockContents;
+MakeCodeBlock;
 
 Begin["`Private`"];
 
@@ -57,19 +72,24 @@ DefFn[
   CheckBlock[l_List] := Map[CheckBlock, l]];
 
 DefFn[
+  CheckBlock[b_CodeBlock] := CheckBlock[CodeBlockContents[b]]];
+
+DefFn[
   FlattenBlock[b_] :=
   Module[
     {flattenBlock},
     flattenBlock[x_String] := x;
     flattenBlock[l_List] := StringJoin@@Map[FlattenBlock, l];
     flattenBlock[a_?AtomQ] := ToString[a];
+    flattenBlock[x_CodeBlock] := flattenBlock[CodeBlockContents[x]];
+    flattenBlock[x_] := ThrowError["Invalid arguments to flattenBlock: ", c];
 
     CheckBlock[b];
     flattenBlock[b]]];
 
 DefFn[
   IndentBlock[block:CodeGenBlock] :=
-  StringDrop["  " <> StringReplace[FlattenBlock[block], {"\n" -> "\n  "}],-2]];
+    StringDrop["  " <> StringReplace[FlattenBlock[block], {"\n" -> "\n  "}],-2]];
 
 (* This should be used everywhere - need to tidy up the newline convention in CodeGen *)
 DefFn[
@@ -164,6 +184,14 @@ DefFn[
 DefFn[
   Quote[x:CodeGenBlock] :=
   {"\"", x, "\""}];
+
+DefFn[
+  MakeCodeBlock[x_] :=
+  CodeBlock[CheckBlock[x]]];
+
+DefFn[
+  CodeBlockContents[CodeBlock[x_]] :=
+  x];
 
 End[];
 

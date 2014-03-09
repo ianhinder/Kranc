@@ -1,5 +1,5 @@
 
-BeginPackage["Errors`", {"Profile`"}];
+BeginPackage["Errors`", {"Profile`", "Stack`"}];
 
 PrintError::usage = "";
 ThrowError::usage = "";
@@ -64,11 +64,8 @@ PrintError[err_] :=
 
 
 ThrowError[objects__] :=
-  Module[{s = Stack[_], s2},
-    
-    s2 = removeBits[s];
-    Throw[KrancError[{objects}(*,s2*)], KrancError]];
-
+  Module[{stack = CurrentStack[]},
+    Throw[KrancError[{objects},stack], KrancError]];
 
 VerifyString[s_] := 
   If[! StringQ[s],
@@ -104,11 +101,13 @@ DefFn[def:(fn_[args___] := body_)] :=
   Module[
     {},
     ErrorDefinition[fn];
-    fn[args] := (*Profile[fn,*)body(*]*)];
+    fn[args] :=
+    WithStackFrame[fn, body]];
 
 reportError[k:KrancError[objects_,stack_], KrancError] :=
   Module[{},
     Print["Error: ", Sequence@@objects];
+    ShowStack[stack];
     $Failed];
 
 SetAttributes[CatchKrancError, HoldAll];

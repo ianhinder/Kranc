@@ -21,6 +21,7 @@ Needs["KrancThorn`"];
 (* SetDebugLevel[DebugQuiet]; *)
 
 alltests = {
+  "CodeGen",
   "Kranc",
   "McLachlan",
   "Tiling"

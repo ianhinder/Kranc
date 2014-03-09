@@ -41,12 +41,12 @@ Begin["`Private`"];
    Utility functions
    -------------------------------------------------------------------------- *)
 
-cktCheckNamedArgs[l_] := 
+DefFn[cktCheckNamedArgs[l_] := 
 Module[{used, unrecognized},
     used = Map[First, l];
     unrecognized = Complement[used, Map[First, ThornOptions]];
     If[Length[unrecognized] > 0,
-      ThrowError["Unrecognized named arguments: ", unrecognized]]];
+      ThrowError["Unrecognized named arguments: ", unrecognized]]]];
 
 DefFn[
   processODEGroups[odeGroups_List, groups_List] :=
@@ -149,7 +149,7 @@ DefFn[
 
 Options[CreateKrancThorn] = ThornOptions;
 
-CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[]] :=
+DefFn[CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[]] :=
   Module[{configuration, interface, schedule, param, make, cakernel, c},
 
     InfoMessage[Terse, "Processing arguments to CreateKrancThorn"];
@@ -427,7 +427,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
                    Sources       -> GetObjectField[c, "Sources"],
                    Files         -> GetObjectField[c, "Files"]};
       InfoMessage[Terse, "Creating thorn"];
-      CreateThorn[thornspec]]];
+      CreateThorn[thornspec]]]];
 
 End[];
 EndPackage[];

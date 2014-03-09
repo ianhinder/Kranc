@@ -44,7 +44,6 @@ GridLoop::usage = "GridLoop[block] returns a block that is looped over for every
   "InitialiseGridLoopVariables.";
 ConditionalOnParameterTextual::usage = "";
 NameRoot::usage = "";
-PartitionVarList::usage = "";
 CCLBlock;
 CCLBlockCompact;
 

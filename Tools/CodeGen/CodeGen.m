@@ -139,23 +139,6 @@ DefFn[
                         "\n" -> "\\n\"\n\""] <> "\"\n"];
 
 DefFn[
-  PartitionVarList[list_List] :=
-  Module[
-    {partition, split},
-
-    partition[locallist_] :=
-    Module[
-      {cutoff},
-      cutoff = 6;
-      If[Length@locallist > cutoff, Partition[locallist, cutoff, cutoff, {1,1}, {}],
-         {locallist}]];
-
-    split = Split[list, NameRoot[#1] == NameRoot[#2] &];
-    split = Flatten[Map[partition, split], 1];
-
-    split]];
-
-DefFn[
   insertFile[name_String] :=
   Module[
     {istream_, contents_},

@@ -44,6 +44,7 @@ Do[
 
 KrancManifold;
 TangentKrancManifold;
+KrancBasis;
 
 Begin["`Private`"];
 

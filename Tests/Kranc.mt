@@ -32,7 +32,7 @@ $evolveCalc = {
 
 Test[
   ClearAllTensors[];
-  CreateKrancThornTT[
+  CatchKrancError@CreateKrancThornTT[
     Append[$groups,{"ode_group", {a, b}}],
     "TestThorns", "TestSimpleWaveODE",
     PartialDerivatives -> $derivatives,
@@ -50,13 +50,14 @@ Test[
 ]
 
 
+
 (****************************************************************)
 (* CreateThorn *)
 (****************************************************************)
 
 Test[
         ClearAllTensors[];
-	CreateKrancThornTT[{}, "TestThorns", "CreateThorn", Calculations -> {}]
+	CatchKrancError@CreateKrancThornTT[{}, "TestThorns", "CreateThorn", Calculations -> {}]
 	,
 	Null
 	,
@@ -75,7 +76,7 @@ Test[
    causes problems for the tests.  This should be cleaned up. *)
 
 Test[
-  Module[
+  CatchKrancError@Module[
     {derivatives = {
       PDstandard2nd[i_]     -> StandardCenteredDifferenceOperator[1,1,i],
       PDstandard2nd[i_, i_] -> StandardCenteredDifferenceOperator[2,1,i]},
@@ -101,7 +102,7 @@ Test[
      ClearAllTensors[];
     (* PD = PDstandard2nd *)
     
-    CreateKrancThornTT[
+    CatchKrancError@CreateKrancThornTT[
       groups, "TestThorns", 
       "IfThen", 
       PartialDerivatives -> derivatives,
@@ -125,7 +126,7 @@ Test[
 
 Test[
   ClearAllTensors[];
-  CreateKrancThornTT[
+  CatchKrancError@CreateKrancThornTT[
     $groups, "TestThorns", "TestSimpleWave",
     PartialDerivatives -> $derivatives,
     DeclaredGroups     -> {"evolved_group"},
@@ -137,7 +138,7 @@ Test[
 ]
 
 Test[
-  Module[
+  CatchKrancError@Module[
     {eulerCons, evolvedGroups, nonevolvedGroups, declaredGroups, declaredGroupNames, groups},
 
     ClearAllTensors[];
@@ -175,7 +176,7 @@ Test[
       }
     };
 
-    CreateKrancThornTT[
+    CatchKrancError@CreateKrancThornTT[
       groups, "TestThorns", "ConservationCalculation", 
       Calculations -> {},
       ConservationCalculations -> {eulerCons},
@@ -188,7 +189,7 @@ Test[
 
 Test[
   ClearAllTensors[];
-  CreateKrancThornTT[
+  CatchKrancError@CreateKrancThornTT[
     $groups, "TestThorns", "Analysis",
     PartialDerivatives -> $derivatives,
     DeclaredGroups     -> {"evolved_group"},
@@ -203,7 +204,7 @@ Test[
 
 Test[
   ClearAllTensors[];
-  CreateKrancThornTT[
+  CatchKrancError@CreateKrancThornTT[
     {{"evolved_group", {phi, pi}, Timelevels -> 3}}, "TestThorns", "Analysis-3TL",
     PartialDerivatives -> $derivatives,
     DeclaredGroups     -> {"evolved_group"},
@@ -218,7 +219,7 @@ Test[
 
 Test[
   ClearAllTensors[];
-  CreateKrancThornTT[
+  CatchKrancError@CreateKrancThornTT[
     $groups, "TestThorns", "ParamCheck",
     PartialDerivatives -> $derivatives,
     DeclaredGroups     -> {"evolved_group"},
@@ -234,7 +235,7 @@ Test[
 
 Test[
   ClearAllTensors[];
-  CreateKrancThornTT[
+  CatchKrancError@CreateKrancThornTT[
     $groups, "TestThorns", "LoopControlNone",
     PartialDerivatives -> $derivatives,
     DeclaredGroups     -> {"evolved_group"},
@@ -248,7 +249,7 @@ Test[
 
 Test[
   ClearAllTensors[];
-  CreateKrancThornTT[
+  CatchKrancError@CreateKrancThornTT[
     $groups, "TestThorns", "LoopControlAll",
     PartialDerivatives -> $derivatives,
     DeclaredGroups     -> {"evolved_group"},
@@ -262,7 +263,7 @@ Test[
 
 Test[
   ClearAllTensors[];
-  CreateKrancThornTT[
+  CatchKrancError@CreateKrancThornTT[
     $groups, "TestThorns", "LoopControlOne",
     PartialDerivatives -> $derivatives,
     DeclaredGroups     -> {"evolved_group"},
@@ -276,7 +277,7 @@ Test[
 
 
 Test[
-Module[{evolveCalc, pd},
+CatchKrancError@Module[{evolveCalc, pd},
 
   pd[u_,1,1] := (GFOffset[u,1,0,0] + GFOffset[u,-1,0,0] - 2 u)/dx^2;
   pd[u_,2,2] := (GFOffset[u,0,1,0] + GFOffset[u,0,-1,0] - 2 u)/dy^2;
@@ -301,7 +302,7 @@ Module[{evolveCalc, pd},
     dot[pi]  -> Euc[ui,uj] pdShort[phi,li,lj]
   }};
 
-  CreateKrancThornTT[
+  CatchKrancError@CreateKrancThornTT[
     $groups, "TestThorns", "GFOffset",
     PartialDerivatives -> $derivatives,
     DeclaredGroups     -> {"evolved_group"},
@@ -315,7 +316,7 @@ Module[{evolveCalc, pd},
 
 Test[
   ClearAllTensors[];
-  CreateKrancThornTT[
+  CatchKrancError@CreateKrancThornTT[
     $groups, "TestThorns", "MergeFiles",
     PartialDerivatives -> $derivatives,
     DeclaredGroups     -> {"evolved_group"},
@@ -339,7 +340,7 @@ Test[
 
 Test[
   ClearAllTensors[];
-  CreateKrancThornTT[
+  CatchKrancError@CreateKrancThornTT[
     $groups, "TestThorns", "CountOperations",
     PartialDerivatives -> $derivatives,
     DeclaredGroups     -> {"evolved_group"},

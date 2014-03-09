@@ -39,10 +39,7 @@ EucDD::usage = "EucDD[-i, -j] represents the Euclidean tensor which is 1 if i=j,
 Eps::usage = "Eps[i, j, k] represents the Levi-Civita alternating tensor";
 
 $KrancIndices = Symbol /@ Complement[CharacterRange["a", "z"], {"h", "r", "t", "x", "y", "z"}];
-Do[
-  Evaluate[Symbol["l"<>ToString[ind]]] = -ind;
-  Evaluate[Symbol["u"<>ToString[ind]]] = ind;
-  , {ind, $KrancIndices}];
+Do[{Symbol["l"<>ToString[ind]], Symbol["u"<>ToString[ind]]}, {ind, CharacterRange["a", "z"]}];
 
 KrancManifold;
 TangentKrancManifold;
@@ -70,6 +67,15 @@ Block[{$DefInfoQ = False},
   DefInertHead[dot];
   DefInertHead[KrancSign];
   DefInertHead[StepFunction];
+];
+
+Do[
+ Module[{newind},
+  newind = DummyIn[TangentKrancManifold];
+  Evaluate[Symbol["l"<>ToString[ind]]] = -newind;
+  Evaluate[Symbol["u"<>ToString[ind]]] = newind;
+ ],
+ {ind, CharacterRange["a", "z"]}
 ];
 
 (*************************************************************)

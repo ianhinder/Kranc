@@ -139,23 +139,6 @@ DefFn[
                         "\n" -> "\\n\"\n\""] <> "\"\n"];
 
 DefFn[
-  insertFile[name_String] :=
-  Module[
-    {istream_, contents_},
-    istream = OpenRead[name];
-    contents = ReadList[istream, String];
-    Close[istream];
-    contents]];
-
-DefFn[
-  NameRoot[name_Symbol] :=
-  Module[
-    {dropNumberRule, root},
-    dropNumberRule = {"1" -> "", "2" -> "", "3" -> "", "4" -> "", "5" -> "",
-                      "6" -> "", "7" -> "", "8" -> "", "9" -> "", "0" -> "", "rhs" -> ""};
-    root = StringReplace[ToString@name, dropNumberRule]]];
-
-DefFn[
   Quote[x:CodeGenBlock] :=
   {"\"", x, "\""}];
 

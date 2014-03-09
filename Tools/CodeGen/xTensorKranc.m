@@ -126,10 +126,15 @@ DefineTensor[s_, opts___] :=
 (*************************************************************)
 
 DefineParameter[p_] := 
- Block[{$DefInfoQ = False},
+ Block[{$DefInfoQ = False}, Module[{symbolName, s},
   InfoMessage[InfoFull, "Defining parameter: "<> SymbolName[p]];
-  If[!ConstantSymbolQ[p], DefConstantSymbol[p]];
-];
+
+  symbolName = ToString[p];
+  If[AbstractIndexQ[p], UndefAbstractIndex[p]];
+  s = Symbol[symbolName];
+
+  If[!ConstantSymbolQ[s], DefConstantSymbol[s]];
+]];
 
 (*************************************************************)
 (* DefineDerivative *)

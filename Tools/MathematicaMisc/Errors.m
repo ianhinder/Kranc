@@ -94,7 +94,8 @@ SetDebugLevel[level_] :=
 
 ErrorDefinition[x_] :=
   x[args___] :=
-    ThrowError["Invalid arguments to "<>ToString[x], {args}//FullForm];
+    ThrowError["Invalid arguments: ",
+      ToString[x] <> "[" <> StringJoin[Riffle[(ToString[FullForm[#]]) & /@ {args},","]] <> "]"];
 
 SetAttributes[DefFn, HoldAll];
 

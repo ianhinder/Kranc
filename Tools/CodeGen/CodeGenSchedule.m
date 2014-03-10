@@ -219,9 +219,9 @@ scheduleGroup[spec_,params_] :=
    return a CodeGen block representing a schedule.ccl file. *)
 CreateSchedule[globalStorageGroups_, scheduledGroups_, scheduledFunctions_, params_] :=
   {FileHeader["CCL"],
-   Map[SeparatedBlock[groupStorage[#]]            &, globalStorageGroups],
-   Map[SeparatedBlock[scheduleFunction[#,params]] &, scheduledFunctions],
-   Map[SeparatedBlock[scheduleGroup[#,params]]    &, scheduledGroups]};
+   NewlineSeparated[Map[groupStorage[#]             &, globalStorageGroups]],
+   NewlineSeparated[Map[scheduleFunction[#,params]  &, scheduledFunctions]],
+   NewlineSeparated[Map[scheduleGroup[#,params]     &, scheduledGroups]]};
 
 End[];
 

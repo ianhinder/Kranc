@@ -97,6 +97,7 @@ DefFn[createMoLRegistrationSource[spec_, debug_] :=
 
     tmp = {FileHeader["C"],
 
+    NewlineSeparated[{
     Map[IncludeFile, 
         {"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h"}],
 
@@ -127,7 +128,7 @@ DefFn[createMoLRegistrationSource[spec_, debug_] :=
       Map[{"ierr += MoLRegisterConstrained(CCTK_VarIndex(\"", 
            #, "\"));\n"} &,
           lookup[spec, PrimitiveGFs]]],  *)
-	"return;\n"}]};
+	"return;\n"}]}]};
 
       CodeGenC`SOURCELANGUAGE = lang;
 
@@ -379,13 +380,13 @@ DefFn[CreateMoLBoundariesSource[spec_] :=
       "/* 3. \"other\" boundary conditions, e.g. radiative */\n\n",
       "/* to simplify scheduling and testing, the 3 steps  */\n",
       "/* are currently applied in separate functions      */\n\n"},
-
+   "\n",
 
    cleanCPP@DefineCCTKFunction[lookup[spec,ThornName] <> "_CheckBoundaries",
    "void",
      {"return;\n"}],
 
-
+   "\n",
    cleanCPP@DefineCCTKFunction[lookup[spec,ThornName] <> "_SelectBoundConds", 
    "void",
      {DefineVariable["ierr",   "CCTK_INT", "0"],

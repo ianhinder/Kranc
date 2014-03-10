@@ -38,11 +38,11 @@ CreateStartupFile[thornName_, bannerText_] :=
 
   tmp = {FileHeader["C"],
 
-   IncludeFile["cctk.h"],
-   DefineFunction[thornName <> "_Startup", "extern \"C\" int", "void",
+   NewlineSeparated[{IncludeFile["cctk.h"],
+   {"extern \"C\" ", DefineFunction[thornName <> "_Startup", "int", "void",
      {DefineVariable["banner", "const char*", Quote[bannerText]],
       "CCTK_RegisterBanner(banner);\n",
-      "return 0;\n"}]};
+      "return 0;\n"}]}}]};
 
   CodeGenC`SOURCELANGUAGE = lang;
 

@@ -93,7 +93,7 @@ DefFn[
 
     tmp = {FileHeader["C"],
            
-           Map[IncludeFile, 
+           NewlineSeparated[{Map[IncludeFile, 
                {"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h", "Symmetry.h"}],
 
            DefineCCTKFunction[
@@ -103,7 +103,7 @@ DefFn[
                                 "CCTK_INT sym[3];\n\n"],
                  CommentedBlock["Register symmetries of grid functions",
                                 Map[symmetriesBlock, spec]]},
-                {}]]};
+                {}]]}]};
 
     CodeGenC`SOURCELANGUAGE = lang;
     tmp]];

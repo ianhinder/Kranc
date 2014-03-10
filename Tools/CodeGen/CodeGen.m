@@ -23,8 +23,6 @@
 BeginPackage["CodeGen`", {"Errors`", "Kranc`"}];
 
 FlattenBlock::usage = "FlattenBlock[block] converts 'block' to a string.";
-SeparatedBlock::usage = "SeparatedBlock[block] returns a version of 'block' with " <>
-  "a newline before it.";
 GenerateFile::usage = "GenerateFile[name, block] writes 'block' to a file of the " <>
   "specified 'name'.";
 SpaceSeparated::usage = "";
@@ -89,10 +87,6 @@ DefFn[
   IndentBlock2[block:CodeGenBlock] :=
   Riffle[Map[StringJoin["  ",#] &,
       StringSplit[FlattenBlock[block],"\n"]],"\n"]];
-
-DefFn[
-  SeparatedBlock[block:CodeGenBlock] := {"\n", block}];
-ErrorDefinition[SeparatedBlock];
 
 DefFn[
   GenerateFile[filename_String, contents_] :=

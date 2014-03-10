@@ -119,24 +119,21 @@ DefFn[
 
 DefFn[
   CommentedBlock[comment:CodeGenBlock, block:CodeGenBlock] :=
-  SeparatedBlock[{InsertComment[comment],
-                  block}]];
+  {InsertComment[comment],
+                  block}];
 
 (* FUNCTIONS *)
 
 DefFn[
   DefineFunction[name_String, type_String, args:CodeGenBlock, contents:CodeGenBlock] :=
-  SeparatedBlock[
-    {type, " ", name, "(", args, ")\n",
-     CBlock[contents]}]];
+  {type, " ", name, "(", args, ")\n",
+    CBlock[contents]}];
 
 (* SUBROUTINES *)
 
 DefFn[
   DefineSubroutine[name_String, args:CodeGenBlock, contents:CodeGenBlock] :=
-  SeparatedBlock[
-    {"extern \"C\" void ", name, "(", args, ")", "\n",
-      CBlock[contents]}]];
+  DefineFunction[name, "void", args, contents]];
 
 DefFn[
   switchOption[{value:(_String|_Symbol|_?NumberQ), block:CodeGenBlock}] :=

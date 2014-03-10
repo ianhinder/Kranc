@@ -83,17 +83,16 @@ DefFn[CreateSetterSource[calcs_, debug_, include_,
 
   {FileHeader["C"],
 
-   "#define KRANC_" <> ToUpperCase[CodeGenC`SOURCELANGUAGE] <> "\n\n",
+   NewlineSeparated[
+     {"#define KRANC_" <> ToUpperCase[CodeGenC`SOURCELANGUAGE] <> "\n",
 
-   If[CodeGenC`SOURCELANGUAGE == "C",
+   Join[If[CodeGenC`SOURCELANGUAGE == "C",
          {IncludeSystemFile["algorithm"],
           IncludeSystemFile["assert.h"],
           IncludeSystemFile["math.h"],
           IncludeSystemFile["stdio.h"],
           IncludeSystemFile["stdlib.h"],
-          IncludeSystemFile["string.h"]},
-         {"\n"}
-      ],
+          IncludeSystemFile["string.h"]}, {}],
 
    Map[IncludeFile, Join[{"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h",
                          (*"precomputations.h",*) "GenericFD.h", "Differencing.h"},
@@ -101,7 +100,7 @@ DefFn[CreateSetterSource[calcs_, debug_, include_,
                          If[CalculationLoopControlQ[calc], {"loopcontrol.h"},{}],
                          {"Kranc.hh"},
                          If[OptionValue[UseOpenCL], OpenCLIncludeFiles[], {}],
-                         If[OptionValue[UseVectors], VectorisationIncludeFiles[], {}]]],
+                         If[OptionValue[UseVectors], VectorisationIncludeFiles[], {}]]]],
    CalculationMacros[OptionValue[UseVectors]],
 
    (* For each function structure passed, create the function and
@@ -147,7 +146,7 @@ DefFn[CreateSetterSource[calcs_, debug_, include_,
                       InitFDVariables -> InitialiseFDVariables[OptionValue[UseVectors]],
                       MacroPointer -> True}];
 
-   CreateCalculationFunction[calc, opts]}]];
+   CreateCalculationFunction[calc, opts]}]}]];
 
 (* --------------------------------------------------------------------------
    Calculations

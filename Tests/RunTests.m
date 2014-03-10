@@ -36,3 +36,5 @@ If[Length[args] > 0,
 
 (Print["\n"]; TestRun[#<>".mt", Loggers -> {VerbosePrintLogger[]}, TestRunTitle -> #]) & /@ tests;
 Print[];
+
+(* ReportFunctionCounts[]; *)

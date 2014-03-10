@@ -44,7 +44,7 @@ DeclarePointers::usage = "DeclarePointers[names, type] returns a block of code "
   "that declares a list of pointers of given name and type.  'names' should be a list" <>
   " of strings and 'type' should be a string string.";
 DefineVariable::usage = "DefineVariable[name, type, value] returns a block of " <>
-  "code that declares and initialised a variable 'name' of type 'type' to value 'value'.";
+  "code that declares and initialises a variable 'name' of type 'type' to value 'value'.";
 AssignVariable::usage = "AssignVariable[dest_, src_] returns a block of code " <>
   "that assigns 'src' to 'dest'.";
 DeclareAssignVariable::usage = "DeclareAssignVariable[type_, dest_, src_] returns a block of code " <>

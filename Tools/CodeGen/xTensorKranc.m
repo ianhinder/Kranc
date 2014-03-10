@@ -345,12 +345,44 @@ krancForm[expr_] :=
     t_Symbol?xTensorQ[] :> t
   };
 
+(* This is very ugly, but it works *)
+toCondition[c1_] := {c1, Not[c1]};
+toCondition[c1_, c2_] := Flatten[Outer[And, {c1, Not[c1]}, toCondition[c2]]];
+toCondition[c1_List, c2_] := Flatten[Outer[And, c1, {c2, Not[c2]}]];
+toCondition[c1_, c2_, c3__] := Fold[toCondition, c1, {c2, c3}];
+expandIfThen[lhs_ -> rhs_] :=
+ Module[{conditions, allConditions, allEqs, expandedEqs, allIfs, rules},
+  If[MemberQ[lhs, IfThen, Infinity, Heads -> True],
+   ThrowError["IfThen is not supported in the left hand side of an equation"];
+  ];
+  InfoMessage[InfoFull, "Expanding branches of IfThen expression"];
+  conditions = Sort[DeleteDuplicates[Cases[{rhs}, IfThen[cond_, _, _] :> cond, Infinity]]];
+  allConditions = Reverse[toCondition @@ conditions];
+  If[Length[conditions] === 1,
+    allEqs = Thread[(lhs -> rhs) /. IfThen[_, true_, false_] :> {false, true}];,
+    allEqs = (lhs -> rhs) //.
+      Table[MapThread[(IfThen[#1, true_, false_] :> If[#2 == True, true, false]) &,
+                      {conditions, MapThread[SameQ, {(List @@@ allConditions)[[i]], conditions}]}],
+            {i, 2^Length[conditions]}];
+  ];
+  expandedEqs = {ExpandComponents[#]} & /@ allEqs;
+  allIfs = Transpose[{allConditions, #}] & /@ Transpose[expandedEqs[[All, All, 2]]];
+  rules = Thread[expandedEqs[[1, All, 1]] -> 
+               Map[Function[{ifs}, Fold[IfThen[#2[[1]], #2[[2]], #1] &, ifs[[1, 2]], ifs[[2 ;;]]]], allIfs]];
+  InfoMessage[InfoFull, "Expanded IfThen branches to: ", Map[InputForm, rules, {2}]];
+  rules
+];
+
 SetAttributes[ExpandComponents, Listable];
 ExpandComponents[l_ -> r_] :=
-  
   Module[{lhs, rhs, lhsC, rhsC, inds, rules},
    InfoMessage[InfoFull, "Expanding tensor expression: ", InputForm[l] -> InputForm[r]];
 
+   (* Special treatment for IfThen statements. FIXME: Not sure if this belongs here *)
+   If[MemberQ[l -> r, IfThen, Infinity, Heads -> True],
+     rules = expandIfThen[l -> r];
+   ,
+   
    (* Add brackets to scalars if they aren't present *)
    {lhs, rhs} = {l, r} /. {t_?KrancScalarQ[] -> t[], t_?KrancScalarQ -> t[], Sign[t_] :> KrancSign[t]};
 

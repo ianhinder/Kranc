@@ -23,6 +23,7 @@ BeginPackage["xTensorKranc`",
 
 DefineTensor::usage = "DefineTensor[T[a, b, ...]] defines the tensor T with indices a, b, c, ....";
 DefineDerivative::usage = "DefineDerivative[pd, nd] registers a symbol pd to be used as a derivative operator, with numerical discretisation nd.";
+DefineConnection::usage = "";
 DefineParameter::usage = "DefineParameter[p] registers a symbol p to be used as a constant parameter.";
 SetComponents::usage = "SetComponents[T[a, b, ...], v] defines the components of the tensor T to be the values given in the list v."
 MatrixInverse::usage = "";
@@ -170,6 +171,52 @@ DefineDerivative[pd_, numderiv_] :=
     e : nd[_Plus] := Distribute[Unevaluated[e]];
   ]
 ];
+
+(*************************************************************)
+(* DefineConnection *)
+(*************************************************************)
+
+DefineConnection[CD_, pd_, G_] :=
+ Block[{$DefInfoQ = False}, Module[{basis, christoffel, T, a, b, c},
+  InfoMessage[InfoFull, "Defining covariant derivative " <>
+              SymbolName[CD] <> " with connection " <> SymbolName[G]];
+
+  (* The connection must be a rank-3 tensor with the first index up *)
+  If[SlotsOfTensor[G] =!= {TangentKrancManifold, -TangentKrancManifold, -TangentKrancManifold},
+     ThrowError["Cannot use " <> SymbolName[G] <>
+                " as a connection as it has an incorrect tensor character."]];
+
+  (* Define the new covariant derivative operator and an associated basis *)
+  {a, b, c} = $KrancIndices[[1 ;; 3]];
+  basis = SymbolJoin[CD, KrancBasis];
+  DefBasis[basis, TangentKrancManifold, Range[DimOfVBundle[TangentKrancManifold]]];
+  DefCovD[CD[-a], TangentKrancManifold];
+
+  (* Make sure xTensor actually defines the Christoffel symbol by using CD on a tensor *)
+  DefTensor[T[a], TangentKrancManifold];
+  ToBasis[KrancBasis][CD[-{a, basis}][T[{a, basis}]]];
+
+  (* Whenever the covariant derivative is encountered, automatically convert it to
+     partial derivatives and Christoffel symbols*)
+  (* FIXME: Make this work with more than 2 derivatives *)
+  CD[t:(_?xTensorQ[___]), i : (-_?AbstractIndexQ) ..] :=
+   Module[{exprInBasis},
+    (* Convert to xTensor notation with indices in basis *)
+    exprInBasis = Fold[CD[{#2, -basis}][#1] &, t /. KrancBasis -> basis, {i}];
+    
+    (* Do the basis transformation to the Kranc basis, introducing Christoffel symbols *)
+    FixedPoint[ToBasis[KrancBasis], exprInBasis] /.
+     {CD[{-k_, -KrancBasis}][CD[{-j_, -KrancBasis}][T_[inds___]]] :> pd[T[inds], -j, -k],
+      CD[{-j_, -KrancBasis}][T_[inds___]] :> pd[T[inds], -j]}
+  ];
+
+  (* Define the components the Christoffel symbol to be given by G *)
+  christoffel = SymbolJoin["ChristoffelPD", CD, "KrancBasisPDKrancBasis"];
+
+  SetComponents[
+    christoffel[{a, KrancBasis}, -{b, KrancBasis}, -{c, KrancBasis}],
+    ComponentArray[G[a, -b, -c]]];
+]];
 
 SetComponents[t_?xTensorQ[i :(_?BIndexQ ...)], values_] :=
  Module[{},

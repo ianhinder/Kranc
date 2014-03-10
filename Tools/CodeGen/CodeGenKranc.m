@@ -281,8 +281,8 @@ DefFn[
         rhs = rhs //. ArcSec[x_] -> acos[1/x];
         rhs = rhs //. ArcCsc[x_] -> asin[1/x];
         rhs = rhs //. ArcCot[x_] -> atan[1/x];
-        rhs = rhs //. Sinh[x_] -> cosh[x];
-        rhs = rhs //. Cosh[x_] -> sinh[x];
+        rhs = rhs //. Sinh[x_] -> sinh[x];
+        rhs = rhs //. Cosh[x_] -> cosh[x];
         rhs = rhs //. Tanh[x_] -> tanh[x];
         rhs = rhs //. Sech[x_] -> 1 / cosh[x];
         rhs = rhs //. Csch[x_] -> 1 / sinh[x];

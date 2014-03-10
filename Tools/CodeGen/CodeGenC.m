@@ -22,13 +22,7 @@
 
 BeginPackage["CodeGenC`", {"Errors`", "Kranc`", "CodeGen`"}];
 
-SOURCELANGUAGE::usage = "global variable == \"C\" or \"Fortran\" determines language
-                        for code generation";
-SOURCESUFFIX::usage = "file suffix for source files";
-SetSourceLanguage::usage = "set the source language to  \"C\" or \"Fortran\"";
-
-EOL::usage = "the end of line termination string";
-
+SetSourceLanguage::usage = "DEPRECATED: set the source language to  \"C\" or \"Fortran\"";
 CommentedBlock::usage = "CommentedBlock[comment, block] returns a block consisting " <>
   "of 'comment' followed by 'block'.";
 CBlock::usage = "";
@@ -68,23 +62,8 @@ InsertComment::usage = "";
 
 Begin["`Private`"];
 
-SOURCELANGUAGE =  "C";
-SOURCESUFFIX   = ".cc";
-
-setSourceSuffix[lang_] :=
-  If[lang == "C", SOURCESUFFIX = ".cc", SOURCESUFFIX = ".F90"];
-
 SetSourceLanguage[lang_] :=
-  If[lang == "C" || lang == "Fortran",
-     SOURCELANGUAGE = lang;
-     setSourceSuffix[lang];
-     If[lang =!= "C", InfoMessage[Terse, "User set source language to " <> lang]],
-     (* else *)
-     SOURCELANGUAGE = "C";
-     setSourceSuffix[".cc"]];
-
-EOL[dummy___] :=
-  If[SOURCELANGUAGE == "C" || SOURCELANGUAGE == "C++", ";\n", "\n"];
+  Print["Warning: SetSourceLanguage is no longer necessary"];
 
 DefFn[
   IncludeFile[filename_String] :=
@@ -96,64 +75,43 @@ DefFn[
 
 DefFn[
   DeclareVariable[name:(_String|_Symbol), type_String] :=
-  If[SOURCELANGUAGE == "C",
-     {type, " ",    name, " CCTK_ATTRIBUTE_UNUSED ", " = INITVALUE" <> EOL[]},
-     {type, " :: ", name, EOL[]} (* no value init here to avoid implicit SAVE attribute *)]];
+  {type, " ",    name, " CCTK_ATTRIBUTE_UNUSED ", " = INITVALUE;\n"}];
 
 DefFn[
   DeclareVariableNoInit[name:(_String|_Symbol), type_String] :=
-  If[SOURCELANGUAGE == "C",
-     {type, " ",    name, " CCTK_ATTRIBUTE_UNUSED",EOL[]},
-     {type, " :: ", name, EOL[]} (* no value init here to avoid implicit SAVE attribute *)]];
+  {type, " ",    name, " CCTK_ATTRIBUTE_UNUSED;\n"}];
 
 DefFn[
   DeclareVariables[names_?ListQ, type_String] := 
-  If[SOURCELANGUAGE == "C",
-     {type, " ",    CommaSeparated@names, " CCTK_ATTRIBUTE_UNUSED ", EOL[]},
-     {type, " :: ", CommaSeparated@names,     EOL[]} (* no value init avoids implicit SAVE attribute *)]];
+  {type, " ",    CommaSeparated@names, " CCTK_ATTRIBUTE_UNUSED ;\n"}];
 
 DefFn[
   DeclarePointer[name:(_String|_Symbol), type_String] :=
-  If[SOURCELANGUAGE == "C",
-     {type, " *",    name, EOL[]},
-     {type, ", target :: ", name, EOL[]}]];
+  {type, " *",    name, ";\n"}];
 
 DefFn[
   DeclarePointers[names_?ListQ, type_String] :=
-  If[SOURCELANGUAGE == "C",
-     {type, " *",           CommaInitSeparated@names, EOL[]},
-     {type, ", target :: ", CommaSeparated@names,     EOL[]}]];
+  {type, " *",           CommaInitSeparated@names, ";\n"}];
 
 DefFn[
   DeclareArray[name:(_String|_Symbol), dim_Integer, type_String] :=
-  If[SOURCELANGUAGE == "C",
-     DeclareArrayC[name, dim, type],
-     DeclareArrayFortran[name, dim, type]]];
-
-DefFn[
-  DeclareArrayC[name:(_String|_Symbol), dim_Integer, type_String] :=
   {type, " ", name, "[", dim, "];","\n"}];
 
 DefFn[
-  DeclareArrayFortran[name:(_String|_Symbol), dim_Integer, type_String] :=
-  {type, " :: ", name, "(", dim, ")","\n"}];
-
-DefFn[
   DefineVariable[name:(_String|_Symbol), type_String, value:CodeGenBlock] :=
-  {type, " ", name, " CCTK_ATTRIBUTE_UNUSED", " = ", value, EOL[]}];
+  {type, " ", name, " CCTK_ATTRIBUTE_UNUSED", " = ", value, ";\n"}];
 
 DefFn[
   AssignVariable[dest:(_String|_Symbol), src:CodeGenBlock] :=
-  {dest, " = ", src, EOL[]}];
+  {dest, " = ", src, ";\n"}];
 
 Options[DeclareAssignVariable] = {"Const" -> True};
 DefFn[
   DeclareAssignVariable[type_String, dest:(_String|_Symbol), src:CodeGenBlock,
                         OptionsPattern[]] :=
   {If[OptionValue[Const], "const ", ""],
-   type, " ", dest, " CCTK_ATTRIBUTE_UNUSED", " = ", src, EOL[]}];
+   type, " ", dest, " CCTK_ATTRIBUTE_UNUSED", " = ", src, ";\n"}];
 
-(* comments are always done C-style because they are killed by cpp anyway *) 
 DefFn[
   InsertComment[text:CodeGenBlock] := {"/* ", text, " */\n"}];
 
@@ -177,49 +135,22 @@ DefFn[
 (* FUNCTIONS *)
 
 DefFn[
-  defineFunctionC[name_String, type_String, args:CodeGenBlock, contents:CodeGenBlock] :=
+  DefineFunction[name_String, type_String, args:CodeGenBlock, contents:CodeGenBlock] :=
   SeparatedBlock[
     {type, " ", name, "(", args, ")\n",
      CBlock[contents]}]];
-     
-DefFn[
-  defineFunctionF[name_String, args:CodeGenBlock, contents:CodeGenBlock] :=
-  SeparatedBlock[
-    {"FUNCTION", " ", name, "(", args, ")\n",
-     IndentBlock[contents]}]];
-
-DefFn[
-  DefineFunction[name_String, type_String, args:CodeGenBlock, contents:CodeGenBlock] :=
-  If[SOURCELANGUAGE == "C",
-     defineFunctionC[name, type, args, contents],
-     defineFunctionF[name, args, contents]]];
 
 (* SUBROUTINES *)
 
 DefFn[
   DefineSubroutine[name_String, args:CodeGenBlock, contents:CodeGenBlock] :=
-  If[SOURCELANGUAGE == "C",
-     DefineSubroutineC[name, args, contents],
-     DefineSubroutineF[name, args, contents]]];
-
-DefFn[
-  DefineSubroutineC[name_String, args:CodeGenBlock, contents:CodeGenBlock] :=
   SeparatedBlock[
     {"extern \"C\" void ", name, "(", args, ")", "\n",
-     CBlock[contents]}]];
-
-DefFn[
-  DefineSubroutineF[name_String, args:CodeGenBlock, contents:CodeGenBlock] :=
-  SeparatedBlock[
-    {"subroutine ", name, "(", args, ")", "\n",
-     "\nimplicit none\n\n",
-     contents,
-     "end subroutine\n"}]];
+      CBlock[contents]}]];
 
 DefFn[
   switchOption[{value:(_String|_Symbol|_?NumberQ), block:CodeGenBlock}] :=
   {"case ", value, ":\n", CBlock[{block,"break;\n"}]}];
-(* Outer list unnecessary? *)
 
 DefFn[
   SwitchStatement[var:(_String|_Symbol), pairs__] :=

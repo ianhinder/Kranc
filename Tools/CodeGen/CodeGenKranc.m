@@ -63,7 +63,7 @@ DefFn[
 DefFn[
   AssignVariableInLoop[dest:(_String|_Symbol), src:CodeGenBlock,
                        vectorise : False : False] :=
-  {dest, " = ", src, EOL[]}];
+  {dest, " = ", src, ";\n"}];
 
 DefFn[
   AssignVariableInLoop[dest:(_String|_Symbol), src:CodeGenBlock,
@@ -80,8 +80,8 @@ DefFn[
   Module[
     {loadVariable = If[vectorise, VectorisationLoadVariable, LoadVariable]},
     If[mmaCond,
-       {type, " ", dest, " CCTK_ATTRIBUTE_UNUSED = (", codeCond, ") ? ", loadVariable[src], " : ToReal(0.0)", EOL[]},
-       {type, " ", dest, " CCTK_ATTRIBUTE_UNUSED = ", loadVariable[src], EOL[]}]]];
+       {type, " ", dest, " CCTK_ATTRIBUTE_UNUSED = (", codeCond, ") ? ", loadVariable[src], " : ToReal(0.0)", ";\n"},
+       {type, " ", dest, " CCTK_ATTRIBUTE_UNUSED = ", loadVariable[src], ";\n"}]]];
 
 DefFn[
   TestForNaN[expr:CodeGenBlock] :=

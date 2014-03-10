@@ -147,17 +147,6 @@ DefFn[
       "const int imax0=imax[0];\n",
       "const int imax1=imax[1];\n",
       "const int imax2=imax[2];\n",
-      (* "// #undef VEC_COUNT\n", *)
-      (* "// #define VEC_COUNT(x) x\n", *)
-      (* "// double vec_iter_timer;\n", *)
-      (* "// {\n", *)
-      (* "//   timeval tv;\n", *)
-      (* "//   gettimeofday(&tv, NULL);\n", *)
-      (* "//   vec_iter_timer = -(tv.tv_sec + 1.0e-6 * tv.tv_usec);\n", *)
-      (* "// }\n", *)
-      (* "// ptrdiff_t vec_iter_counter = 0;\n", *)
-      (* "// ptrdiff_t vec_op_counter = 0;\n", *)
-      (* "// ptrdiff_t vec_mem_counter = 0;\n", *)
       "#pragma omp parallel // reduction(+: vec_iter_counter, vec_op_counter, vec_mem_counter)\n",
       If[OptionValue[UseVectors], "CCTK_LOOP3STR", "CCTK_LOOP3"],
       "(", functionName, ",\n",
@@ -167,9 +156,7 @@ DefFn[
       ")\n",
       "{\n",
       IndentBlock[
-        {(* DeclareVariable["index", "// int"], *)
-         (* DefineConstant["index", "int", "CCTK_GFINDEX3D(cctkGH,i,j,k)"], *)
-         DefineConstant["index", "ptrdiff_t", "di*i + dj*j + dk*k"],
+        {DefineConstant["index", "ptrdiff_t", "di*i + dj*j + dk*k"],
          If[OptionValue[UseVectors],
             "// vec_iter_counter+=CCTK_REAL_VEC_SIZE;\n",
             "// ++vec_iter_counter;\n"],
@@ -182,15 +169,7 @@ DefFn[
       "}\n",
       If[OptionValue[UseVectors], "CCTK_ENDLOOP3STR", "CCTK_ENDLOOP3"] <>
       "(", functionName, ");\n" 
-      (* ,
-         "// {\n",
-         "//   timeval tv;\n",
-         "//   gettimeofday(&tv, NULL);\n",
-         "//   vec_iter_timer += tv.tv_sec + 1.0e-6 * tv.tv_usec;\n",
-         "// }\n",
-         "// CCTK_VInfo(CCTK_THORNSTRING, \"function="<>functionName<>" time=%g points=%td fp_ops=%td mem_ops=%td\", vec_iter_timer, vec_iter_counter, vec_op_counter, vec_mem_counter);\n",
-         "// #undef VEC_COUNT\n",
-         "// #define VEC_COUNT(x)\n" *) }]];
+       }]];
 
 DefFn[
   onceInGridLoop[block:CodeGenBlock] :=

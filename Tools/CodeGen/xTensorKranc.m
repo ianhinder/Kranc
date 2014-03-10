@@ -270,7 +270,8 @@ ExpandComponents[l_ -> r_] :=
    ];
 
    (* Pick out the independent components *)
-   rules = krancForm[DeleteDuplicates[Thread[lhsC -> rhsC], #1[[1]] == #2[[1]] &]] /. (0->0) -> Sequence[];
+   rules = Thread[lhsC -> rhsC] /. {(0 -> _) -> Sequence[], (- _ -> _) -> Sequence[]};
+   rules = krancForm[DeleteDuplicates[rules, #1[[1]] == #2[[1]] &]];
    InfoMessage[InfoFull, "Expanded to: ", Map[InputForm, rules, {2}]];
    Sequence @@ rules
 ];
@@ -285,7 +286,7 @@ ExpandComponents[x_] :=
   Check[Quiet[Validate[expr], Validate::unknown], ThrowError["Invalid tensor expression"]];
   Sequence @@ krancForm[
    DeleteDuplicates[
-   Flatten[{ComponentArray[TraceBasisDummy[expr]]}]]]
+   Flatten[{ComponentArray[TraceBasisDummy[expr]]}] /. {-t_?xTensorQ[i___] :> t[i], 0 -> Sequence[]}]]
 ];
 
 (*************************************************************)

@@ -254,15 +254,20 @@ ExpandComponents[l_ -> r_] :=
 
    (* Check we have a valid tensor equation *)
    (* FIXME: Maybe we should find an alternative to Quiet here *)
-   Check[Quiet[Validate[lhs + rhs], Validate::unknown],
+   Check[Quiet[Validate[{lhs, rhs}], Validate::unknown],
      ThrowError["Invalid tensor equation", lhs -> rhs]];
 
    (* Find the free indices *)
    inds = IndicesOf[Free, BIndex][lhs];
+   If[(inds =!= IndicesOf[Free, BIndex][rhs]) && !(NumericQ[rhs] || ConstantSymbolQ[rhs]),
+     ThrowError["Free indices of left hand side do not match right hand side in ", lhs -> rhs]];
 
    (* Get a list of components *)
    lhsC = Flatten[{ComponentArray[TraceBasisDummy[lhs], inds]}];
-   rhsC = Flatten[{ComponentArray[TraceBasisDummy[rhs], inds]}];
+   If[NumericQ[rhs] || ConstantSymbolQ[rhs],
+     rhsC = ConstantArray[rhs, Length[lhsC]];,
+     rhsC = Flatten[{ComponentArray[TraceBasisDummy[rhs], inds]}];
+   ];
 
    (* Pick out the independent components *)
    rules = krancForm[DeleteDuplicates[Thread[lhsC -> rhsC], #1[[1]] == #2[[1]] &]] /. (0->0) -> Sequence[];

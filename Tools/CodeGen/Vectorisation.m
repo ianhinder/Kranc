@@ -29,6 +29,7 @@ VectorisationLoadVariable;
 VectorisationConfigurationCCL;
 VectorisationType;
 VectorisationIncludeFiles;
+VectorisationMacros;
 
 Begin["`Private`"];
 
@@ -246,6 +247,17 @@ DefFn[
     expr = undoSomeVect[expr];
     
     Return[expr]]];
+
+DefFn[VectorisationMacros[] :=
+  {"ScalarINV(x) ((CCTK_REAL)1.0 / (x))",
+            "ScalarSQR(x) ((x) * (x))",
+            "ScalarCUB(x) ((x) * ScalarSQR(x))",
+            "ScalarQAD(x) (ScalarSQR(ScalarSQR(x)))",
+            "INV(x) (kdiv(ToReal(1.0),x))",
+            "SQR(x) (kmul(x,x))",
+            "CUB(x) (kmul(x,SQR(x)))",
+            "QAD(x) (SQR(SQR(x)))"}];
+
 
 (* Code generation: The following functions are called when vectorising. *)
 

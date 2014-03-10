@@ -29,6 +29,9 @@ SetComponents::usage = "SetComponents[T[a, b, ...], v] defines the components of
 MatrixInverse::usage = "";
 MatrixOfComponents::usage = "";
 
+SetTensorAttribute::usage = "";
+HasTensorAttribute::usage = "";
+GetTensorAttribute::usage = "";
 CreateGroupFromTensor::usage = "CreateGroupFromTensor[T[a, b, ...]] Creates a variable group from the tensor T";
 ReflectionSymmetries::usage = "ReflectionSymmetries[T[a, b, ...]] Produces a list of reflection symmetries of the tensor T.";
 ExpandComponents::usage = "ExpandComponents[expr] converts an expression x containing abstract indices into one containing components instead."
@@ -130,6 +133,22 @@ DefineTensor[s_, opts___] :=
 ]];
 
 (*************************************************************)
+(* SetTensorAttribute *)
+(*************************************************************)
+
+SetTensorAttribute[t_, attr_, val_] :=
+  t /: KrancTensorAttribute[t, attr] = val;
+
+HasTensorAttribute[t_, attr_] :=
+  ValueQ[KrancTensorAttribute[t, attr]];
+
+GetTensorAttribute[t_, attr_] :=
+ Module[{},
+  If[!HasTensorAttribute[t, attr],
+    ThrowError["Tensor " <> ToString[t] <> " does not have a " <> ToString[attr] <> " attribute."];
+  ];
+  KrancTensorAttribute[t, attr]
+];
 (* DefineParameter *)
 (*************************************************************)
 

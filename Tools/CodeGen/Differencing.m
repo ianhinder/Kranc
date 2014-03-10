@@ -97,12 +97,6 @@ PrecomputeDerivatives[derivOps_, expr_]
 Return a CodeGen block which precomputes all the derivatives needed in
 expr.
 
-DeclareDerivatives[derivOps_, expr_]
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Return a CodeGen block which precomputes all the derivatives needed in
-expr.
-
 GridFunctionDerivativesInExpression[derivOps_, expr_]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -139,7 +133,6 @@ BeginPackage["Differencing`", {"CodeGen`", "CodeGenC`", "CodeGenCactus`", "CodeG
 
 CreateDifferencingHeader::usage = "";
 PrecomputeDerivatives::usage = "";
-DeclareDerivatives::usage = "";
 ReplaceDerivatives::usage = "";
 StandardCenteredDifferenceOperator::usage = "";
 StandardUpwindDifferenceOperator::usage = "";
@@ -244,15 +237,6 @@ DefFn[
                          {value, lookup[param, AllowedValues]}]]}]]];
 
 DefFn[
-  DeclareDerivatives[derivOps_, expr_] :=
-  Module[{componentDerivOps, gfds, sortedgfds},
-    Map[DerivativeOperatorVerify, derivOps];
-    gfds = GridFunctionDerivativesInExpression[derivOps, expr];
-    sortedgfds = Sort[gfds, ordergfds];
-    {"/* Declare derivatives */\n",
-     Map[DeclareDerivative, sortedgfds]}]];
-
-DefFn[
   ReplaceDerivatives[derivOps_, expr_, precompute_, zeroDims_, macroPointer_] :=
   Module[{componentDerivOps, gfds},
     Map[DerivativeOperatorVerify, derivOps];
@@ -349,10 +333,6 @@ DefFn[
        Return[ToString[macroName] <> "(&" <> ToString[gf] <> "[index])"],
        Return[ToString[macroName] <> "(" <> ToString[gf] <> ")"]]
   ]];
-
-DeclareDerivative[d:pd_[gf_, inds___]] :=
-  DeclareVariable[GridFunctionDerivativeName[d], "// CCTK_REAL_VEC"];
-
 
 (*************************************************************)
 (* GridFunctionDerivative *)

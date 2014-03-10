@@ -130,7 +130,7 @@ reportError[k:KrancError[objects_,stack_], KrancError] :=
   Module[{},
     If[MatchQ[objects, {_String}],
       Print["Error: ", objects[[1]]],
-      Scan[Print, InputForm/@objects]];
+      Scan[Print, Join[{"Error: "}, InputForm/@objects]]];
     If[$EnableBacktrace, Print["in ", Sequence@@Riffle[stack,"/"]]];
     $Failed];
 

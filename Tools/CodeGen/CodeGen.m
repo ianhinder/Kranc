@@ -60,20 +60,15 @@ Begin["`Private`"];
 
 (* Code generation utilities; not specific to any language *)
 
-DefFn[
-  CheckBlock[s_String] := s];
+CheckBlock[s_String] := s;
 
-DefFn[
-  CheckBlock[a_?AtomQ] := a];
+CheckBlock[a_?AtomQ] := a;
 
-DefFn[
-  CheckBlock[l_List] := Map[CheckBlock, l]];
+CheckBlock[l_List] := Map[CheckBlock, l];
 
-DefFn[
-  CheckBlock[b_CodeBlock] := CheckBlock[CodeBlockContents[b]]];
+CheckBlock[b_CodeBlock] := CheckBlock[CodeBlockContents[b]];
 
-DefFn[
-  FlattenBlock[b_] :=
+FlattenBlock[b_] :=
   Module[
     {flattenBlock},
     flattenBlock[x_String] := x;
@@ -83,7 +78,7 @@ DefFn[
     flattenBlock[x_] := ThrowError["Invalid arguments to flattenBlock: ", c];
 
     CheckBlock[b];
-    flattenBlock[b]]];
+    flattenBlock[b]];
 
 DefFn[
   IndentBlock[block:CodeGenBlock] :=

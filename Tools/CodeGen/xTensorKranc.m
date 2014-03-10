@@ -33,6 +33,8 @@ SetTensorAttribute::usage = "";
 HasTensorAttribute::usage = "";
 GetTensorAttribute::usage = "";
 AntiSymmetrize;
+AssertSymmetricDecreasing;
+AssertSymmetricIncreasing;
 CreateGroupFromTensor::usage = "CreateGroupFromTensor[T[a, b, ...]] Creates a variable group from the tensor T";
 ReflectionSymmetries::usage = "ReflectionSymmetries[T[a, b, ...]] Produces a list of reflection symmetries of the tensor T.";
 ExpandComponents::usage = "ExpandComponents[expr] converts an expression x containing abstract indices into one containing components instead."
@@ -157,6 +159,27 @@ GetTensorAttribute[t_, attr_] :=
 
 AntiSymmetrize[expr_, a_, b_] := Antisymmetrize[expr, {a, b}];
 
+(*************************************************************)
+(* AssertSymmetricIncreasing / AssertSymmetricDecreasing *)
+(*************************************************************)
+
+AssertSymmetricIncreasing[t_?xTensorQ[inds__], syminds__] := 
+ Module[{ainds, asymInds, symSlots},
+  {ainds, asyminds} = {{inds}, {syminds}} /. {i_, (KrancBasis | -KrancBasis)} :> i;
+  symSlots = Position[ainds, #][[1, 1]] & /@ asyminds;
+  SymmetryGroupOfTensor[t] ^= Symmetric[symSlots, Cycles];
+
+  (* Define components which are related by symmetries *)
+  SetComponents[t[inds], ToCanonical[ComponentArray[t[inds]]]];
+];
+
+AssertSymmetricIncreasing[t_?xTensorQ[inds__]] := 
+  AssertSymmetricIncreasing[t[inds], inds];
+
+AssertSymmetricDecreasing := 
+  ThrowError["AssertSymmetricDecreasing is no longer supported"];
+
+(*************************************************************)
 (* DefineParameter *)
 (*************************************************************)
 

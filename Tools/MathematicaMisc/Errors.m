@@ -20,6 +20,9 @@ Info = 3;
 InfoFull = 4;
 DefFn;
 CatchKrancError;
+ReportFunctionCounts;
+
+$EnableBacktrace = False;
 
 Begin["`Private`"];
 
@@ -100,24 +103,43 @@ ErrorDefinition[x_] :=
 
 SetAttributes[DefFn, HoldAll];
 
+count[_] = 0;
+
+incrementCount[fn_] :=
+  count[fn] = count[fn]+1;
+
+Print[$EnableBacktrace];
+
+If[$EnableBacktrace, 
 DefFn[def:(fn_[args___] := body_)] :=
   Module[
     {},
     ErrorDefinition[fn];
     fn[args] :=
-    WithStackFrame[fn, body]];
+    (incrementCount[fn];WithStackFrame[fn, body])],
+(* else *)
+DefFn[def:(fn_[args___] := body_)] :=
+  Module[
+    {},
+    ErrorDefinition[fn];
+    fn[args] :=
+    (incrementCount[fn];body)]];
 
 reportError[k:KrancError[objects_,stack_], KrancError] :=
   Module[{},
     If[MatchQ[objects, {_String}],
       Print["Error: ", objects[[1]]],
       Scan[Print, InputForm/@objects]];
-    ShowStack[stack];
+    If[$EnableBacktrace, ShowStack[stack]];
     $Failed];
 
 SetAttributes[CatchKrancError, HoldAll];
 CatchKrancError[x_] :=
   Catch[x, KrancError, reportError];
+
+ReportFunctionCounts[] :=
+  Module[{},
+    Scan[Print, SortBy[DownValues[count],#[[2]]&]]];
 
 End[];
 

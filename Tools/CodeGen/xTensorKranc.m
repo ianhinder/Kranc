@@ -32,6 +32,11 @@ MatrixOfComponents::usage = "";
 SetTensorAttribute::usage = "";
 HasTensorAttribute::usage = "";
 GetTensorAttribute::usage = "";
+TensorParity;
+TensorWeight;
+TensorSpecial;
+TensorManualCartesianParities;
+Checkpoint;
 AntiSymmetrize;
 AssertSymmetricDecreasing;
 AssertSymmetricIncreasing;
@@ -391,6 +396,13 @@ ExpandComponents[x_] :=
 (*************************************************************)
 (* FIXME: Add support for ManualCartesian attribute *)
 
+ReflectionSymmetries[t_Symbol?xTensorQ[inds___]] /;
+ HasTensorAttribute[t, TensorParity] := t -> {1, 1, 1} GetTensorAttribute[t, TensorParity];
+
+ReflectionSymmetries[t_Symbol?xTensorQ[inds___]] /;
+ HasTensorAttribute[t, TensorManualCartesianParities] :=
+  t -> {1, 1, 1} GetTensorAttribute[t, TensorManualCartesianParities];
+
 ReflectionSymmetries[t_Symbol?xTensorQ[inds__]] :=
   Module[{cnums, components, componentIndices, counts},
     (* Get the compoent indices of the basis *)
@@ -420,8 +432,22 @@ ReflectionSymmetries[x___]:= ThrowError["ReflectionSymmetries error: "<>ToString
 (* CreateGroupFromTensor *)
 (*************************************************************)
 
+tensorCharacterString[t_Symbol?xTensorQ[___]] /;
+  HasTensorAttribute[t, TensorManualCartesianParities] := "ManualCartesian";
 tensorCharacterString[t_Symbol?xTensorQ[]] := "Scalar";
 tensorCharacterString[t_Symbol?xTensorQ[inds___]] := StringJoin[If[UpIndexQ[#],"U","D"]&/@{inds}];
+
+manualCartesianParity[t_] :=
+ Module[{p},
+  p = GetTensorAttribute[t, TensorManualCartesianParities];
+  If[!MatchQ[p, {Repeated[(-1 | 1), {3}]}],
+    ThrowError["Expecting a list of three parities for TensorManualCartesianParities, must be 1 or -1"];
+  ];
+  StringJoin @@ (p /. {-1 -> "-", +1 -> "+"})
+];
+
+tensorWeight[t_Symbol?xTensorQ] :=
+  If[HasTensorAttribute[t, TensorWeight], GetTensorAttribute[t, TensorWeight], WeightOfTensor[t]];
 
 CreateGroupFromTensor[t_Symbol?xTensorQ[inds___]] := Module[{tCharString, nInds, tags, group},
   InfoMessage[InfoFull, "Creating group from tensor " <> ToString[t[inds]]];
@@ -434,8 +460,19 @@ CreateGroupFromTensor[t_Symbol?xTensorQ[inds___]] := Module[{tCharString, nInds,
   If[SymmetryGroupOfTensor[t] == StrongGenSet[Range[nInds],GenSet[Cycles[Range[nInds]]]], 
         tCharString = tCharString <> "_sym"];
 
-  (* FIXME: Add tensorspecial, cartesianreflectionparities, checkpoint and tensorparity *)
-  tags = {"tensortypealias" -> tCharString, "tensorweight" -> WeightOfTensor[t]};
+  tags = {"tensortypealias" -> tCharString, "tensorweight" -> tensorWeight[t]};
+
+  If[HasTensorAttribute[t, TensorSpecial],
+    AppendTo[tags, "tensorspecial" -> GetTensorAttribute[t, TensorSpecial]]];
+
+  If[HasTensorAttribute[t, TensorManualCartesianParities],
+    AppendTo[tags, "cartesianreflectionparities" -> manualCartesianParity[t]]];
+
+  If[HasTensorAttribute[t, TensorParity],
+    AppendTo[tags, "tensorparity" -> GetTensorAttribute[t, TensorParity]]];
+
+  If[HasTensorAttribute[t, Checkpoint],
+    AppendTo[tags, "checkpoint" -> GetTensorAttribute[t, Checkpoint]]];
 
   group = CreateGroup[SymbolName[t] <> "_group", {t[inds]}, {Tags -> tags}];
   group

@@ -32,6 +32,7 @@ MatrixOfComponents::usage = "";
 SetTensorAttribute::usage = "";
 HasTensorAttribute::usage = "";
 GetTensorAttribute::usage = "";
+AntiSymmetrize;
 CreateGroupFromTensor::usage = "CreateGroupFromTensor[T[a, b, ...]] Creates a variable group from the tensor T";
 ReflectionSymmetries::usage = "ReflectionSymmetries[T[a, b, ...]] Produces a list of reflection symmetries of the tensor T.";
 ExpandComponents::usage = "ExpandComponents[expr] converts an expression x containing abstract indices into one containing components instead."
@@ -149,6 +150,13 @@ GetTensorAttribute[t_, attr_] :=
   ];
   KrancTensorAttribute[t, attr]
 ];
+
+(*************************************************************)
+(* AntiSymmetrize *)
+(*************************************************************)
+
+AntiSymmetrize[expr_, a_, b_] := Antisymmetrize[expr, {a, b}];
+
 (* DefineParameter *)
 (*************************************************************)
 

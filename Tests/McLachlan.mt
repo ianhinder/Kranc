@@ -1446,16 +1446,17 @@ CreateKrancThornTT [groups, "TestThorns", thorn,
 
 Test[
   ClearAllTensors[];
-  createCode[4, False, True , 3, 1, "BSSN", True, False];
+  CatchKrancError@createCode[4, False, True , 3, 1, "BSSN", True, False];
   ,
   Null
   ,
   TestID->"McLachlanVec"
 ]
 
+
 Test[
   ClearAllTensors[];
-  createCode[4, False, True , 3, 1, "BSSN", False, False];
+  CatchKrancError@createCode[4, False, True , 3, 1, "BSSN", False, False];
   ,
   Null
   ,
@@ -1464,7 +1465,7 @@ Test[
 
 Test[
   ClearAllTensors[];
-  createCode[4, False, True , 3, 1, "BSSN", True, True];
+  CatchKrancError@createCode[4, False, True , 3, 1, "BSSN", True, True];
   ,
   Null
   ,
@@ -1473,7 +1474,7 @@ Test[
 
 Test[
   ClearAllTensors[];
-  createCode[4, False, True , 3, 1, "BSSN", True, False, DGFE -> True];
+  CatchKrancError@createCode[4, False, True , 3, 1, "BSSN", True, False, DGFE -> True];
   ,
   Null
   ,
@@ -1482,7 +1483,7 @@ Test[
 
 Test[
   ClearAllTensors[];
-  createCode[4, False, True , 3, 1, "BSSN", True, False, CaKernel -> True];
+  CatchKrancError@createCode[4, False, True , 3, 1, "BSSN", True, False, CaKernel -> True];
   ,
   Null
   ,

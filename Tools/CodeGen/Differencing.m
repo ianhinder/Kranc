@@ -678,7 +678,9 @@ DerivativeOperatorRHSVerify[expr_] :=
     symbols = Cases[allAtoms, x_Symbol];
     True];
 
-
+If[DeleteDuplicates[{1,1}] === {1},
+  RemoveDuplicates = DeleteDuplicates,
+(* else *)
 DefFn[
   RemoveDuplicates[l_] :=
   Module[{this,next,rest,positions},
@@ -691,7 +693,7 @@ DefFn[
 
        positions = Position[rest, this];
        next = Delete[rest, positions];
-       Prepend[RemoveDuplicates[next], this]]]];
+       Prepend[RemoveDuplicates[next], this]]]]];
 
 RemoveDuplicateRules[l_] :=
   Module[{lhs,lhs2,rhs2,result},

@@ -190,8 +190,10 @@ DefFn[definePreDefinitions[pDefs_] :=
    Equations
    -------------------------------------------------------------------------- *)
 
-DefFn[equationUsesShorthand[eq_, shorthand_] :=
-  Length[Cases[{Last[eq]}, shorthand, Infinity]] != 0];
+(* Not using DefFn here because the function is called a very large
+   number of times *)
+equationUsesShorthand[eq_, shorthand_] :=
+  Length[Cases[{Last[eq]}, shorthand, Infinity]] != 0;
 
 (* Check that the given list of equations assigns things in the
    correct order.  Specifically, shorthands must not be used before

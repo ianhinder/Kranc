@@ -95,7 +95,7 @@ DefFn[CreateSetterSource[calcs_, debug_, include_,
           IncludeSystemFile["string.h"]}, {}],
 
    Map[IncludeFile, Join[{"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h",
-                         (*"precomputations.h",*) "GenericFD.h", "Differencing.h"},
+                         (*"precomputations.h",*) "Differencing.h"},
                          include,
                          If[CalculationLoopControlQ[calc], {"loopcontrol.h"},{}],
                          {"Kranc.hh"},
@@ -160,7 +160,7 @@ DefFn[CheckGroupStorage[groupNames_, calcName_] :=
     {"\nconst char* const groups[] = {\n  ",
     Riffle[Map[Quote,groupNames2], ",\n  "],
     "};\n",
-    "GenericFD_AssertGroupStorage(cctkGH, ", Quote[calcName],", ", Length[groupNames2], ", groups);\n"}]];
+    "AssertGroupStorage(cctkGH, ", Quote[calcName],", ", Length[groupNames2], ", groups);\n"}]];
 
 (* --------------------------------------------------------------------------
    Variables
@@ -414,16 +414,16 @@ DefFn[
   kernelCall = Switch[where,
     Everywhere,
     If[TileCalculationQ[cleancalc],
-      lookup[cleancalc,ThornName]<>"_TiledLoopOverEverything(cctkGH, " <> bodyFunctionName <> ");\n",
-      "GenericFD_LoopOverEverything(cctkGH, " <> bodyFunctionName <> ");\n"],
+      "TiledLoopOverEverything(cctkGH, " <> bodyFunctionName <> ");\n",
+      "LoopOverEverything(cctkGH, " <> bodyFunctionName <> ");\n"],
     Interior | InteriorNoSync,
     If[TileCalculationQ[cleancalc],
-      lookup[cleancalc,ThornName]<>"_TiledLoopOverInterior(cctkGH, " <> bodyFunctionName <> ");\n",
-      "GenericFD_LoopOverInterior(cctkGH, " <> bodyFunctionName <> ");\n"],
+      "TiledLoopOverInterior(cctkGH, " <> bodyFunctionName <> ");\n",
+      "LoopOverInterior(cctkGH, " <> bodyFunctionName <> ");\n"],
     Boundary | BoundaryNoSync,
-      "GenericFD_LoopOverBoundary(cctkGH, " <> bodyFunctionName <> ");\n",
+      "LoopOverBoundary(cctkGH, " <> bodyFunctionName <> ");\n",
     BoundaryWithGhosts,
-      "GenericFD_LoopOverBoundaryWithGhosts(cctkGH, " <> bodyFunctionName <> ");\n",
+      "LoopOverBoundaryWithGhosts(cctkGH, " <> bodyFunctionName <> ");\n",
     _,
       ThrowError["Unknown 'Where' entry in calculation " <>
         functionName <> ": " <> ToString[where]]];

@@ -88,7 +88,6 @@ DefFn[
   genericFDProcessCode[cIn_Code, opts___] :=
   Module[
     {c = cIn, krancSource, krancHeader},
-    c = AppendObjectField[c, "IncludeFiles", "GenericFD.h"];
     c = AppendObjectField[c, "InheritedImplementations", "GenericFD"];
 
     krancSource =

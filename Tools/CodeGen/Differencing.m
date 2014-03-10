@@ -258,7 +258,7 @@ DefFn[
     If[Length[rgzList] === 0, Return[{}]];
     rgz = Map[Max, Transpose[rgzList]];
     If[Max[rgz] == 0, {},
-    {"GenericFD_EnsureStencilFits(cctkGH, ", Quote@name, ", ", Riffle[rgz,", "], ");\n"}]]];
+    {"EnsureStencilFits(cctkGH, ", Quote@name, ", ", Riffle[rgz,", "], ");\n"}]]];
 
 parametersUsedInOps[derivOps_, intParams_] :=
   Union@Flatten[Map[Cases[derivOps, getParamName[#] -> #, Infinity] &,

@@ -78,6 +78,7 @@ Block[{$DefInfoQ = False},
   DefBasis[KrancBasis, TangentKrancManifold, Range[dimension]];
   DefInertHead[dot];
   DefInertHead[KrancSign];
+  DefInertHead[KrancAbs];
   DefInertHead[StepFunction];
 ];
 
@@ -333,7 +334,6 @@ MatrixOfComponents = ComponentArray;
 
 krancForm[expr_] := 
   expr //. {
-    KrancSign[x_] :> Sign[x],
     Scalar[x_] :> NoScalar[x], 
     pd_?CovDQ[i__][pd_?CovDQ[j__][t_]] :> pd[j, i][t],
     nd_[pd_?CovDQ[i : (_?CIndexQ ..)][t_?xTensorQ[inds___]]] :>
@@ -384,7 +384,10 @@ ExpandComponents[l_ -> r_] :=
    ,
    
    (* Add brackets to scalars if they aren't present *)
-   {lhs, rhs} = {l, r} /. {t_?KrancScalarQ[] -> t[], t_?KrancScalarQ -> t[], Sign[t_] :> KrancSign[t]};
+   {lhs, rhs} = {l, r} /. {t_?KrancScalarQ[] -> t[], t_?KrancScalarQ -> t[]};
+
+   (* Replace some Mathematica functions with inert head versions *)
+   {lhs, rhs} = {lhs, rhs} /. {Sign -> KrancSign, Abs -> KrancAbs, Switch -> KrancSwitch};
 
    (* Check we have a valid tensor equation *)
    (* FIXME: Maybe we should find an alternative to Quiet here *)
@@ -406,6 +409,8 @@ ExpandComponents[l_ -> r_] :=
    (* Pick out the independent components *)
    rules = Thread[lhsC -> rhsC] /. {(0 -> _) -> Sequence[], (- _ -> _) -> Sequence[]};
    rules = krancForm[DeleteDuplicates[rules, #1[[1]] == #2[[1]] &]];
+   rules = rules /. {KrancSign -> Sign, KrancAbs -> Abs, KrancSwitch -> Switch};
+   ];
    InfoMessage[InfoFull, "Expanded to: ", Map[InputForm, rules, {2}]];
    Sequence @@ rules
 ];

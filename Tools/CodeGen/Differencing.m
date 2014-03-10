@@ -321,7 +321,7 @@ DefFn[
   PrecomputeDerivative[d:pd_[gf_, inds___], vargfd_, macroPointer_] :=
   Module[{},
     If[vargfd === Automatic,
-      DeclareAssignVariable[DataType[], GridFunctionDerivativeName[d], evaluateDerivative[d,macroPointer]],
+      DefineConstant[GridFunctionDerivativeName[d], DataType[], evaluateDerivative[d,macroPointer]],
       AssignVariable[GridFunctionDerivativeName[vargfd], evaluateDerivative[d,macroPointer]]]]];
 
 DefFn[

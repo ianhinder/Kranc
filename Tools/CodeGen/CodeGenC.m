@@ -45,10 +45,10 @@ DeclarePointers::usage = "DeclarePointers[names, type] returns a block of code "
   " of strings and 'type' should be a string string.";
 DefineVariable::usage = "DefineVariable[name, type, value] returns a block of " <>
   "code that declares and initialises a variable 'name' of type 'type' to value 'value'.";
+DefineConstant::usage = "DefineConstant[name, type, value] returns a block of " <>
+  "code that declares and initialises a constant 'name' of type 'type' to value 'value'.";
 AssignVariable::usage = "AssignVariable[dest_, src_] returns a block of code " <>
   "that assigns 'src' to 'dest'.";
-DeclareAssignVariable::usage = "DeclareAssignVariable[type_, dest_, src_] returns a block of code " <>
-  "that declares and sets a constant variable of given name and type.";
 DeclareArray::usage = "";
 DefineFunction::usage = "";
 DefineSubroutine::usage = "";
@@ -95,15 +95,12 @@ DefFn[
   {type, " ", name, " CCTK_ATTRIBUTE_UNUSED", " = ", value, ";\n"}];
 
 DefFn[
+  DefineConstant[name:(_String|_Symbol), type_String, value:CodeGenBlock] :=
+  {"const ", type, " ", name, " CCTK_ATTRIBUTE_UNUSED", " = ", value, ";\n"}];
+
+DefFn[
   AssignVariable[dest:(_String|_Symbol), src:CodeGenBlock] :=
   {dest, " = ", src, ";\n"}];
-
-Options[DeclareAssignVariable] = {"Const" -> True};
-DefFn[
-  DeclareAssignVariable[type_String, dest:(_String|_Symbol), src:CodeGenBlock,
-                        OptionsPattern[]] :=
-  {If[OptionValue[Const], "const ", ""],
-   type, " ", dest, " CCTK_ATTRIBUTE_UNUSED", " = ", src, ";\n"}];
 
 DefFn[
   InsertComment[text:CodeGenBlock] := {"/* ", text, " */\n"}];

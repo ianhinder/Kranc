@@ -184,7 +184,7 @@ DefFn[localName[x_] :=
 
 DefFn[definePreDefinitions[pDefs_] :=
   CommentedBlock["Initialize predefined quantities",
-    Map[DeclareAssignVariable[DataType[], #[[1]], #[[2]]] &, pDefs]]];
+    Map[DefineConstant[#[[1]], DataType[], #[[2]]] &, pDefs]]];
 
 (* --------------------------------------------------------------------------
    Equations

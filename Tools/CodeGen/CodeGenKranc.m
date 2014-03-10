@@ -107,23 +107,23 @@ DefFn[
          AssignVariableFromExpression.  This requires a richer
          expression language with type information so that
          scalars/vectors can be handled automatically. *)
-      Apply[DeclareAssignVariable,
-            {{"ptrdiff_t", "di", "1"},
-             {"ptrdiff_t", "dj", "CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0)"},
-             {"ptrdiff_t", "dk", "CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0)"},
-             {"ptrdiff_t", "cdi", "sizeof(CCTK_REAL) * di"},
-             {"ptrdiff_t", "cdj", "sizeof(CCTK_REAL) * dj"},
-             {"ptrdiff_t", "cdk", "sizeof(CCTK_REAL) * dk"},
-             {DataType[], "dx", "ToReal(CCTK_DELTA_SPACE(0))"},
-             {DataType[], "dy", "ToReal(CCTK_DELTA_SPACE(1))"},
-             {DataType[], "dz", "ToReal(CCTK_DELTA_SPACE(2))"},
-             {DataType[], "dt", "ToReal(CCTK_DELTA_TIME)"},
-             {DataType[], "t", "ToReal(cctk_time)"},
+      Apply[DefineConstant,
+            {{"di", "ptrdiff_t", "1"},
+             {"dj", "ptrdiff_t", "CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0)"},
+             {"dk", "ptrdiff_t", "CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0)"},
+             {"cdi", "ptrdiff_t", "sizeof(CCTK_REAL) * di"},
+             {"cdj", "ptrdiff_t", "sizeof(CCTK_REAL) * dj"},
+             {"cdk", "ptrdiff_t", "sizeof(CCTK_REAL) * dk"},
+             {"dx", DataType[], "ToReal(CCTK_DELTA_SPACE(0))"},
+             {"dy", DataType[], "ToReal(CCTK_DELTA_SPACE(1))"},
+             {"dz", DataType[], "ToReal(CCTK_DELTA_SPACE(2))"},
+             {"dt", DataType[], "ToReal(CCTK_DELTA_TIME)"},
+             {"t", DataType[], "ToReal(cctk_time)"},
 
              (* Note that dx is already a vector, so should not be wrapped in ToReal *)
-             {DataType[], "dxi", "INV(dx)"},
-             {DataType[], "dyi", "INV(dy)"},
-             {DataType[], "dzi", "INV(dz)"}},
+             {"dxi", DataType[], "INV(dx)"},
+             {"dyi", DataType[], "INV(dy)"},
+             {"dzi", DataType[], "INV(dz)"}},
             {1}],
 
       AssignVariableFromExpression["khalf", 0.5, True, vectorise, Const -> True],
@@ -168,8 +168,8 @@ DefFn[
       "{\n",
       IndentBlock[
         {(* DeclareVariable["index", "// int"], *)
-         (* DeclareAssignVariable["int", "index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"], *)
-         DeclareAssignVariable["ptrdiff_t", "index", "di*i + dj*j + dk*k"],
+         (* DefineConstant["index", "int", "CCTK_GFINDEX3D(cctkGH,i,j,k)"], *)
+         DefineConstant["index", "ptrdiff_t", "di*i + dj*j + dk*k"],
          If[OptionValue[UseVectors],
             "// vec_iter_counter+=CCTK_REAL_VEC_SIZE;\n",
             "// ++vec_iter_counter;\n"],
@@ -365,7 +365,7 @@ AssignVariableFromExpression[dest_, expr_, declare_, vectorise_, noSimplify:Bool
     exprCode = GenerateCodeFromExpression[expr, vectorise, noSimplify];
     CountOperations[expr];
     code = If[declare,
-              DeclareAssignVariable[type, dest, exprCode, Const -> OptionValue[Const]],
+              If[OptionValue[Const],DefineConstant,DefineVariable][dest, type, exprCode],
               AssignVariable[dest, exprCode]];
     code = LineBreak[FlattenBlock[code], 70] <> "\n";
     {code}];

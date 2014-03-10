@@ -147,7 +147,7 @@ DefFn[
       "const int imax0=imax[0];\n",
       "const int imax1=imax[1];\n",
       "const int imax2=imax[2];\n",
-      "#pragma omp parallel // reduction(+: vec_iter_counter, vec_op_counter, vec_mem_counter)\n",
+      "#pragma omp parallel\n",
       If[OptionValue[UseVectors], "CCTK_LOOP3STR", "CCTK_LOOP3"],
       "(", functionName, ",\n",
       "  i,j,k, imin0,imin1,imin2, imax0,imax1,imax2,\n",
@@ -157,9 +157,6 @@ DefFn[
       "{\n",
       IndentBlock[
         {DefineConstant["index", "ptrdiff_t", "di*i + dj*j + dk*k"],
-         If[OptionValue[UseVectors],
-            "// vec_iter_counter+=CCTK_REAL_VEC_SIZE;\n",
-            "// ++vec_iter_counter;\n"],
           If[tile,
             {"const int ti CCTK_ATTRIBUTE_UNUSED = i - kd.tile_imin[0];\n",
              "const int tj CCTK_ATTRIBUTE_UNUSED = j - kd.tile_imin[1];\n",

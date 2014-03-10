@@ -31,7 +31,7 @@ IncludeFile::usage = "IncludeFile[name] returns a block of code" <>
   "that includes a header file (i.e '#include \"name\"').";
 IncludeSystemFile::usage = "IncludeFile[name] returns a block of code" <>
   "that includes a system header file (i.e '#include <name>').";
-DeclareVariableNoInit::usage = "DeclareVariableNoInit[name, type] returns a block of code " <>
+DeclareVariable::usage = "DeclareVariable[name, type] returns a block of code " <>
   "that declares a variable of given name and type without initialising it.  'name' and 'type' should be " <>
   "strings.";
 DeclareVariables::usage = "DeclareVariables[names, type] returns a block of code " <>
@@ -71,7 +71,7 @@ DefFn[
   {"#include <", filename, ">\n"}];
 
 DefFn[
-  DeclareVariableNoInit[name:(_String|_Symbol), type_String] :=
+  DeclareVariable[name:(_String|_Symbol), type_String] :=
   {type, " ",    name, " CCTK_ATTRIBUTE_UNUSED;\n"}];
 
 DefFn[

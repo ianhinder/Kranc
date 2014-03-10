@@ -634,7 +634,7 @@ DefFn[
           vars = eq2[[2,All,1]];
           cond = eq2[[1]];
           preDeclare = Pick[vars, declare2];
-          ret = {Map[DeclareVariableNoInit[#, DataType[]] &, Complement[Union[preDeclare], localName/@gfsInRHS]], {"\n"},
+          ret = {Map[DeclareVariable[#, DataType[]] &, Complement[Union[preDeclare], localName/@gfsInRHS]], {"\n"},
                  Conditional[GenerateCodeFromExpression[Scalar[cond], False],
                   Riffle[AssignVariableFromExpression[#[[1]], #[[2]], False, OptionValue[UseVectors], noSimplify]& /@ eq2[[2]], "\n"],
                   Riffle[AssignVariableFromExpression[#[[1]], #[[2]], False, OptionValue[UseVectors], noSimplify]& /@ eq2[[3]], "\n"]]};,

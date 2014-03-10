@@ -230,7 +230,7 @@ DefFn[
         Map[(# -> combineOpNameWithParameter[#, paramName, value]) &, opNamesWithParam];
 
       param = Select[intParams, getParamName[#] === paramName &][[1]];
-      {Map[DeclareVariableNoInit[GridFunctionDerivativeName[#],DataType[]] &, sortedgfds],
+      {Map[DeclareVariable[GridFunctionDerivativeName[#],DataType[]] &, sortedgfds],
        "\n",
        SwitchStatement[paramName,
          Sequence@@Table[{value, Map[PrecomputeDerivative[# /. replace[value],#,macroPointer] &, sortedgfds]}, 

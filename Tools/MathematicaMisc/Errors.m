@@ -22,7 +22,7 @@ DefFn;
 CatchKrancError;
 ReportFunctionCounts;
 
-$EnableBacktrace = False;
+$EnableBacktrace = True;
 
 Begin["`Private`"];
 
@@ -70,8 +70,7 @@ one argument, the string containing the error message.  For backward
 compatibility, it can be called with several arguments.  These will be
 converted to strings in InputForm and displayed on separate lines. *)
 ThrowError[objects__] :=
-  Module[{stack = CurrentStack[]},
-    Throw[KrancError[{objects},stack], KrancError]];
+  Throw[KrancError[{objects},StackRead[$stack]], KrancError];
 
 VerifyString[s_] := 
   If[! StringQ[s],
@@ -108,29 +107,31 @@ count[_] = 0;
 incrementCount[fn_] :=
   count[fn] = count[fn]+1;
 
-Print[$EnableBacktrace];
+$stack = {};
 
-If[$EnableBacktrace, 
-DefFn[def:(fn_[args___] := body_)] :=
-  Module[
-    {},
+If[$EnableBacktrace,
+  DefFn[def:(fn_[args___] := body_)] :=
+  Module[{},
     ErrorDefinition[fn];
     fn[args] :=
-    (incrementCount[fn];WithStackFrame[fn, body])],
-(* else *)
-DefFn[def:(fn_[args___] := body_)] :=
-  Module[
-    {},
+    (* This construction using Part avoids introducing an explicit
+       temporary with Module which causes a big performance hit. *)
+    (incrementCount[fn]; {StackPush[$stack,fn], Catch[body,_, (StackPop[$stack]; Throw[#1,#2]) &], StackPop[$stack]}[[2]])],
+
+  (* else *)
+
+  DefFn[def:(fn_[args___] := body_)] :=
+  Module[{},
     ErrorDefinition[fn];
     fn[args] :=
-    (incrementCount[fn];body)]];
+    (incrementCount[fn]; body)]];
 
 reportError[k:KrancError[objects_,stack_], KrancError] :=
   Module[{},
     If[MatchQ[objects, {_String}],
       Print["Error: ", objects[[1]]],
       Scan[Print, InputForm/@objects]];
-    If[$EnableBacktrace, ShowStack[stack]];
+    If[$EnableBacktrace, Print["in ", Sequence@@Riffle[stack,"/"]]];
     $Failed];
 
 SetAttributes[CatchKrancError, HoldAll];

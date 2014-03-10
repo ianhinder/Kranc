@@ -1,4 +1,5 @@
-(* Copyright 2010-2012 Ian Hinder and Barry Wardell
+
+(* Copyright 2010-2012 Ian Hinder
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -16,74 +17,34 @@
 
 BeginPackage["Stack`"];
 
-WithStackFrame(*::usage = "WithStackFrame[sf,expr] evaluates expr and adds the stack frame sf to the evaluation stack."*);
-ShowStack(*::usage = "ShowStack[] returns a representation of the evaluation stack in a form suitable for display."*);
-CurrentStack(*::usage = "CurrentStack[] returns the current evaluation stack."*);
-ClearStack(*::usage = "ClearStack[] clears the current evaluation stack."*);
-CurrentStackFrame;
-StackStringList;
+StackPush;
+StackPop;
+StackPeek;
+StackRead;
 
 Begin["`Private`"];
 
-(* A stack is a list of stack frames.  A stack frame is an expression
-   of the form Hold[fn[args...]]. *)
+$stackSize[_] = 0;
 
-stack = {};
+SetAttributes[StackPush, HoldFirst];
+StackPush[stack_,elem_] :=
+  ((* $stackSize[stack] = $stackSize[stack]+1; *)
+    stack = {elem,stack});
 
-SetAttributes[WithStackFrame, HoldAll];
-WithStackFrame[sf_, expr_] := 
-  Module[{r, head, oldStack, locFn},
-   oldStack = stack;
-   stack = Append[oldStack, Hold[sf]];
-   head = Hold[sf][[1,0]];
+SetAttributes[StackPop,HoldFirst];
+StackPop[{}] := Null;
+StackPop[stack_] :=
+  With[{elem = First[stack]},
+    (* $stackSize[stack] = $stackSize[stack]-1; *)
+    stack = Last[stack]; elem];
 
-   locFn := expr; (* This is necessary in case expr contains a Return
-                     statement.  Return exits the nearest-enclosing
-                     "control structure", which unless we use this
-                     construct, might be WithStackFrame! *)
+(* SetAttributes[StackPeek,HoldFirst]; *)
+(* StackPeek[{}] := Null; *)
+(* StackPeek[stack_] := *)
+(*   First[stack]; *)
 
-   CheckAbort[Catch[r = locFn, _, 
-                    Function[{value,tag},
-                             (* Print["Resetting stack due to exception during ",Short[Hold[sf]/.Hold->HoldForm]]; *)
-                             (* Print["Exception occured in ", Short[stack[[-1]]/.Hold->HoldForm]]; *)
-
-                             If[Length[stack] =!= Length[oldStack]+1,
-                                Print["Error: Stack length changed during ", head,
-                                      "; current top of stack is ", Short[stack[[-1]]/.Hold->HoldForm]]];
-
-
-                             stack = oldStack;
-                             Throw[value,tag]]],
-              (* Print["Resetting stack due to Abort"]; *)
-              stack = oldStack;
-              Abort[]];
-
-   If[Length[stack] =!= Length[oldStack]+1,
-      Print["Error: Stack length changed during ", Short[Hold[sf]/.Hold->HoldForm],
-            "; current top of stack is ", Short[stack[[-1]]/.Hold->HoldForm]]];
-   
-   stack = oldStack;
-   r];
-
-(* Options[ShowStack] = {"IncludeArguments" -> False}; *)
-ShowStack[s_:Automatic] :=
-  Scan[
-    Print["in ", Short[#]] &,
-    Reverse@If[s===Automatic, stack, s]/.Hold->HoldForm];
-
-StackStringList[s_:Automatic] :=
-  Map[
-    StringJoin["in ", ToString@Short[#]] &,
-    Reverse@If[s===Automatic, stack, s]/.Hold->HoldForm];
-
-CurrentStack[] :=
-  stack;
-
-ClearStack[] :=
-  stack = {};
-
-CurrentStackFrame[] :=
-  Short[stack[[-1]]/.Hold->HoldForm];
+StackRead[stack_] :=
+  Flatten[Reverse[stack]];
 
 End[];
 

@@ -460,7 +460,7 @@ void LoopOverInterior(cGH const * restrict const cctkGH, Kranc_Calculation const
  *********************************************************************/
 
 void AssertGroupStorage(cGH const * restrict const cctkGH, const char *calc,
-                                  int ngroups, const char *const group_names[ngroups])
+                                  int ngroups, const char *const group_names[])
 {
   for (int i = 0; i < ngroups; i++)
   {

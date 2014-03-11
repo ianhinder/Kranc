@@ -72,7 +72,7 @@ DefFn[VerifyListContent[l_, type_, while_] :=
 
 Options[CreateSetterSource] = ThornOptions;
 
-DefFn[CreateSetterSource[calcs_, debug_, include_,
+DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
   opts:OptionsPattern[]] :=
   Module[{calc = First[calcs],bodyFunction,tiledBodyFunction},
 
@@ -95,10 +95,11 @@ DefFn[CreateSetterSource[calcs_, debug_, include_,
           IncludeSystemFile["string.h"]}, {}],
 
    Map[IncludeFile, Join[{"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h",
+                         "Kranc.hh", (* This has to be before anything which includes
+                                        vectors.h (including Differencing.h) *)
                          (*"precomputations.h",*) "Differencing.h"},
                          include,
                          If[CalculationLoopControlQ[calc], {"loopcontrol.h"},{}],
-                         {"Kranc.hh"},
                          If[OptionValue[UseOpenCL], OpenCLIncludeFiles[], {}],
                          If[OptionValue[UseVectors], VectorisationIncludeFiles[], {}]]]],
    CalculationMacros[OptionValue[UseVectors]],
@@ -106,7 +107,8 @@ DefFn[CreateSetterSource[calcs_, debug_, include_,
    (* For each function structure passed, create the function and
       insert it *)
 
-   CalculationBoundariesFunction[First[calcs]],
+   WithNamespace[thornName, NewlineSeparated[
+     {CalculationBoundariesFunction[First[calcs]],
 
    bodyFunction = DefineFunction[lookup[calc,Name]<>"_Body", "static void", "const cGH* restrict const cctkGH, const int dir, const int face, const CCTK_REAL normal[3], const CCTK_REAL tangentA[3], const CCTK_REAL tangentB[3], const int imin[3], const int imax[3], const int n_subblock_gfs, CCTK_REAL* restrict const subblock_gfs[]",
   {
@@ -146,7 +148,7 @@ DefFn[CreateSetterSource[calcs_, debug_, include_,
                       InitFDVariables -> InitialiseFDVariables[OptionValue[UseVectors]],
                       MacroPointer -> True}];
 
-   CreateCalculationFunction[calc, opts]}]}]];
+   CreateCalculationFunction[calc, opts]}]]}]}]];
 
 (* --------------------------------------------------------------------------
    Calculations

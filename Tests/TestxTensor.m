@@ -157,8 +157,8 @@ test[MakeExplicit[SS[la] T[ua] v[lb]], (SS1 T1 + SS2 T2 + SS3 T3) {v1, v2, v3}];
 test[MakeExplicit[SS[la] -> v[la]], {SS1 -> v1, SS2 -> v2, SS3 -> v3}];
 
 test[MakeExplicit[
-  SS[la] IfThen[1, T[ua], v[ua]]], {SS1 IfThen[1, T1, v1] +
-   SS2 IfThen[1, T2, v2] + SS3 IfThen[1, T3, v3]}];
+  A -> SS[la] IfThen[1, T[ua], v[ua]]],
+  {A -> IfThen[1, SS1 T1 + SS2 T2 + SS3 T3, SS1 v1 + SS2 v2 + SS3 v3]}];
 
 test[MakeExplicit[Sqrt[S[ua] TT[la]]], {Sqrt[S1 TT1 + S2 TT2 + S3 TT3]}];
 

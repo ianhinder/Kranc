@@ -377,7 +377,6 @@ expandIfThen[lhs_ -> rhs_] :=
   rules
 ];
 
-SetAttributes[ExpandComponents, Listable];
 ExpandComponents[l_ -> r_] :=
   Module[{lhs, rhs, lhsC, rhsC, inds, rules},
    InfoMessage[InfoFull, "Expanding tensor expression: ", InputForm[l] -> InputForm[r]];
@@ -420,7 +419,7 @@ ExpandComponents[l_ -> r_] :=
 ];
 
 (* FIXME: Figure out a way to avoid duplicating the code above in here *)
-ExpandComponents[x_] :=
+ExpandComponents[x_] /; Head[x] =!= List :=
  Module[{expr, inds, exprC},
   InfoMessage[InfoFull, "Expanding tensor expression: ", x];
   If[MemberQ[expr, IfThen, Infinity, Heads -> True],
@@ -435,6 +434,14 @@ ExpandComponents[x_] :=
   InfoMessage[InfoFull, "Expanded to: ", Map[InputForm, rules]];
   Sequence @@ rules
 ];
+
+ExpandComponents[l:{}] := {};
+ExpandComponents[l:{(_ -> _)..}] := ExpandComponents /@ l;
+
+(* FIXME: This is the form used by Shorthands - I think it should be handled elsewhere *)
+ExpandComponents[l:{(_?xTensorQ[___] | _ ? AtomQ | dot[_])..}] :=
+  DeleteDuplicates[Flatten[ExpandComponents /@ l] /.  {-s_ :> s, 0 -> Sequence[]}];
+
 
 (*************************************************************)
 (* ReflectionSymmetries *)

@@ -24,7 +24,7 @@
 (* Wrapper providing tensor support to Kranc (from TensorTools or xTensor)  *)
 (****************************************************************************)
 
-If[!ValueQ[$KrancTensorPackage],
+If[!ValueQ[KrancTensor`$KrancTensorPackage],
   KrancTensor`$KrancTensorPackage = "TensorTools";
   KrancTensor`$KrancTensorNeeds = Sequence["TensorToolsKranc`", "TensorTools`"];,
   KrancTensor`$KrancTensorNeeds = "xTensorKranc`";

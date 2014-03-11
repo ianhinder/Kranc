@@ -56,6 +56,7 @@ Conditional::usage = "";
 SwitchStatement::usage = "";
 CFormHideStrings::usage = "";
 InsertComment::usage = "";
+WithNamespace;
 
 Begin["`Private`"];
 
@@ -160,6 +161,13 @@ DefFn[
 DefFn[
   CFormHideStrings[x_, opts___] :=
   StringReplace[ToString[CForm[x,opts]], "\"" -> ""]];
+
+DefFn[
+  WithNamespace[ns_String, block:CodeGenBlock] :=
+  MakeCodeBlock[
+    {"namespace ", ns, " {\n\n",
+      block,
+      "\n} // namespace ", ns, "\n"}]];
 
 End[];
 

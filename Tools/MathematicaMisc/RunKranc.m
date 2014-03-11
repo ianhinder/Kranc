@@ -62,6 +62,18 @@ SetOptions["stdout", PageWidth -> Infinity];
 
 (* Quiet[Message[InverseFunction::ifun]]; *)
 
+Kranc`Private`get[package_] :=
+ Module[{contents},
+  contents = Import[package, "HeldExpressions"];
+
+  (* Warn about and replace PD *)
+  If[MemberQ[contents, PD, Infinity, Heads -> True],
+    InfoMessage[DebugQuiet, "PD is a reserved symbol and its use in a calculation is deprecated"];
+    contents = contents /. PD -> KrancPD;
+  ];
+  ReleaseHold[contents]
+]
+
 exception = Catch[Catch[
   Check[
     Block[
@@ -69,7 +81,7 @@ exception = Catch[Catch[
 
       Switch[
         FileExtension[script],
-        "m",      (*{result,timers} =  GetTimers[ *) Get[script](*]*),
+        "m",      Kranc`Private`get[script](*]*),
         "kranc",  CreateThornFromKrancScript[script],
         _,        ThrowError["Unknown file extension for "<>script<>".  Recognised extensions are .m and .kranc."]]];
 

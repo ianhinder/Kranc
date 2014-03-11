@@ -102,6 +102,7 @@ DefineTensor[s_[inds___], opts___] :=
   symbolName = ToString[s];
   If[AbstractIndexQ[s], UndefAbstractIndex[s]];
   t = Symbol[symbolName];
+  s = t;
 
   DefTensor[t[inds], KrancManifold, opts];
 
@@ -134,6 +135,7 @@ DefineTensor[s_, opts___] :=
   symbolName = ToString[s];
   If[AbstractIndexQ[s], UndefAbstractIndex[s]];
   t = Symbol[symbolName];
+  s = t;
 
   DefTensor[t[], KrancManifold, opts];
   t[i__] := ThrowError["Tensor " <> ToString[SymbolName[t][i]] <>
@@ -196,6 +198,7 @@ DefineParameter[p_] :=
   symbolName = ToString[p];
   If[AbstractIndexQ[p], UndefAbstractIndex[p]];
   s = Symbol[symbolName];
+  p = s;
 
   If[!ConstantSymbolQ[s], DefConstantSymbol[s]];
 ]];

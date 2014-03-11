@@ -147,6 +147,8 @@ Checkpoint;
 IsTensor;
 toggleIndex;
 replaceConflicting;
+Symmetric;
+RiemannSymmetric;
 
 (* This is for compatibility with MathTensor notation *)
 (*OD = PD;*)
@@ -260,6 +262,23 @@ charactersMatch[c1_,c2_] :=
 (* -------------------------------------------------------------------------- 
    Tensor
    -------------------------------------------------------------------------- *)
+
+DefineTensor[T_[inds__], Symmetric[{symInds__}]] :=
+ Module[{},
+  DefineTensor[T];
+  AssertSymetricIncreasing[T[inds], symInds];
+]
+
+DefineTensor[T_[_, _, _, _], RiemannSymmetric[{_, _, _, _}]] :=
+ Module[{},
+  DefineTensor[T];
+  Tensor[T, i_, j_, k_, l_] /; i > j := -T[j, i, k, l];
+  Tensor[T, i_, j_, k_, l_] /; i == j := 0;
+  Tensor[T, i_, j_, k_, l_] /; k > l := -T[i, j, l, k];
+  Tensor[T, i_, j_, k_, l_] /; k == l := 0;
+  Tensor[T, i_, j_, k_, l_] /; i > k := T[k, l, i, j];
+  Tensor[T, i_, j_, k_, l_] /; i == k && j > l := T[k, l, i, j];
+]
 
 DefineTensor[T_[__]] := DefineTensor[T];
 

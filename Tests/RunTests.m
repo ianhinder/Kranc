@@ -10,6 +10,8 @@ SetOptions[ $Output, FormatType -> OutputForm ];
 
 Kranc`KrancDirectory = FileNameJoin[{Directory[],".."}];
 
+$TestThornDirectory = "TestThorns/thorns";
+
 $Path = Join[$Path,
   {Kranc`KrancDirectory <> "/Tools/CodeGen",
    Kranc`KrancDirectory <> "/Tools/MathematicaMisc",

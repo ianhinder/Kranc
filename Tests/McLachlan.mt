@@ -1401,7 +1401,7 @@ Join[
 
 calculations = Map[Append[#, NoSimplify -> True] &, calculations];
 
-CreateKrancThornTT [groups, "TestThorns", thorn,
+CreateKrancThornTT [groups, $TestThornDirectory, thorn,
   Calculations -> calculations,
   DeclaredGroups -> declaredGroupNames,
   PartialDerivatives -> derivatives,

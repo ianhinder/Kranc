@@ -1,8 +1,6 @@
 
 (* Mathematica Test File *)
 
-thornDir = "TestThorns/thorns";
-
 $derivatives = {
   PDstandard2nd[i_]     -> StandardCenteredDifferenceOperator[1,1,i],
   PDstandard2nd[i_, i_] -> StandardCenteredDifferenceOperator[2,1,i]};
@@ -57,7 +55,7 @@ Test[
   Module[{thornName = "TestSimpleWaveODE"},
   CatchKrancError@CreateKrancThornTT[
     Append[$groups,{"ode_group", {a, b}}],
-    thornDir, "TestSimpleWaveODE",
+    $TestThornDirectory, "TestSimpleWaveODE",
     PartialDerivatives -> $derivatives,
     DeclaredGroups     -> {"evolved_group"},
     ODEGroups -> {"ode_group"},
@@ -80,7 +78,7 @@ Test[
 
 Test[
         ClearAllTensors[];
-	CatchKrancError@CreateKrancThornTT[{}, thornDir, "CreateThorn", Calculations -> {}]
+	CatchKrancError@CreateKrancThornTT[{}, $TestThornDirectory, "CreateThorn", Calculations -> {}]
 	,
 	Null
 	,
@@ -126,16 +124,16 @@ Test[
     (* PD = PDstandard2nd *)
     
     CatchKrancError@CreateKrancThornTT[
-      groups, thornDir, 
+      groups, $TestThornDirectory, 
       "IfThen", 
       PartialDerivatives -> derivatives,
       RealParameters     -> {alpha},
       DeclaredGroups     -> {"evolved_group"},
       Calculations       -> {initialSineCalc, evolveCalc}]];
 
-  {StringMatchQ[Import[thornDir<>"/IfThen/src/calc_rhs.cc","Text"],
+  {StringMatchQ[Import[$TestThornDirectory<>"/IfThen/src/calc_rhs.cc","Text"],
                  __~~"if (alpha > 0)"~~__],
-   StringMatchQ[Import[thornDir<>"/IfThen/src/initial_sine.cc","Text"],
+   StringMatchQ[Import[$TestThornDirectory<>"/IfThen/src/initial_sine.cc","Text"],
                 __~~"IfThen(xL"~~Whitespace~~">"~~Whitespace~~"0"~~__]}
   ,
   {True, True}
@@ -151,7 +149,7 @@ Test[
   Module[{thornName = "TestSimpleWave"},
   ClearAllTensors[];
   CatchKrancError@CreateKrancThornTT[
-    $groups, thornDir, thornName,
+    $groups, $TestThornDirectory, thornName,
     PartialDerivatives -> $derivatives,
     DeclaredGroups     -> {"evolved_group"},
     Calculations       -> {initialSineCalc[thornName], evolveCalc[thornName]},
@@ -202,7 +200,7 @@ Test[
     };
 
     CatchKrancError@CreateKrancThornTT[
-      groups, thornDir, "ConservationCalculation", 
+      groups, $TestThornDirectory, "ConservationCalculation", 
       Calculations -> {},
       ConservationCalculations -> {eulerCons},
       RealParameters -> {gamma},
@@ -215,7 +213,7 @@ Test[
 Test[
   ClearAllTensors[];
   CatchKrancError@CreateKrancThornTT[
-    $groups, thornDir, "Analysis",
+    $groups, $TestThornDirectory, "Analysis",
     PartialDerivatives -> $derivatives,
     DeclaredGroups     -> {"evolved_group"},
     Calculations       -> {$initialSineCalc /.
@@ -230,7 +228,7 @@ Test[
 Test[
   ClearAllTensors[];
   CatchKrancError@CreateKrancThornTT[
-    {{"evolved_group", {phi, pi}, Timelevels -> 3}}, thornDir, "Analysis-3TL",
+    {{"evolved_group", {phi, pi}, Timelevels -> 3}}, $TestThornDirectory, "Analysis-3TL",
     PartialDerivatives -> $derivatives,
     DeclaredGroups     -> {"evolved_group"},
     Calculations       -> {$initialSineCalc /.
@@ -245,7 +243,7 @@ Test[
 Test[
   ClearAllTensors[];
   CatchKrancError@CreateKrancThornTT[
-    $groups, thornDir, "ParamCheck",
+    $groups, $TestThornDirectory, "ParamCheck",
     PartialDerivatives -> $derivatives,
     DeclaredGroups     -> {"evolved_group"},
     Calculations       -> {$initialSineCalc, $evolveCalc},
@@ -261,7 +259,7 @@ Test[
 Test[
   ClearAllTensors[];
   CatchKrancError@CreateKrancThornTT[
-    $groups, thornDir, "LoopControlNone",
+    $groups, $TestThornDirectory, "LoopControlNone",
     PartialDerivatives -> $derivatives,
     DeclaredGroups     -> {"evolved_group"},
     Calculations       -> {$initialSineCalc, $evolveCalc},
@@ -275,7 +273,7 @@ Test[
 Test[
   ClearAllTensors[];
   CatchKrancError@CreateKrancThornTT[
-    $groups, thornDir, "LoopControlAll",
+    $groups, $TestThornDirectory, "LoopControlAll",
     PartialDerivatives -> $derivatives,
     DeclaredGroups     -> {"evolved_group"},
     Calculations       -> {$initialSineCalc, $evolveCalc},
@@ -289,7 +287,7 @@ Test[
 Test[
   ClearAllTensors[];
   CatchKrancError@CreateKrancThornTT[
-    $groups, thornDir, "LoopControlOne",
+    $groups, $TestThornDirectory, "LoopControlOne",
     PartialDerivatives -> $derivatives,
     DeclaredGroups     -> {"evolved_group"},
     Calculations       -> {$initialSineCalc, Append[$evolveCalc,UseLoopControl->False]},
@@ -328,7 +326,7 @@ CatchKrancError@Module[{evolveCalc, pd},
   }};
 
   CatchKrancError@CreateKrancThornTT[
-    $groups, thornDir, "GFOffset",
+    $groups, $TestThornDirectory, "GFOffset",
     PartialDerivatives -> $derivatives,
     DeclaredGroups     -> {"evolved_group"},
     Calculations       -> {$initialSineCalc, evolveCalc},
@@ -343,7 +341,7 @@ CatchKrancError@Module[{evolveCalc, pd},
 Test[
   ClearAllTensors[];
   CatchKrancError@CreateKrancThornTT[
-    $groups, thornDir, "MergeFiles",
+    $groups, $TestThornDirectory, "MergeFiles",
     PartialDerivatives -> $derivatives,
     DeclaredGroups     -> {"evolved_group"},
     Calculations       -> {$initialSineCalc, $evolveCalc},
@@ -367,7 +365,7 @@ Test[
 Test[
   ClearAllTensors[];
   CatchKrancError@CreateKrancThornTT[
-    $groups, thornDir, "CountOperations",
+    $groups, $TestThornDirectory, "CountOperations",
     PartialDerivatives -> $derivatives,
     DeclaredGroups     -> {"evolved_group"},
     Calculations       -> {$initialSineCalc, $evolveCalc},

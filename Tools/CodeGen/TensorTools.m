@@ -261,6 +261,8 @@ charactersMatch[c1_,c2_] :=
    Tensor
    -------------------------------------------------------------------------- *)
 
+DefineTensor[T_[__]] := DefineTensor[T];
+
 DefineTensor[T_] :=
   Module[{},
     Format[Tensor[T, is:((TensorIndex[_,_] | _Integer) ..) ], StandardForm] :=

@@ -35,11 +35,11 @@ static int idiv(int x, int y)
   // round down manually if the result is negative
   return (x^y) >= 0 ? x/y : (x-y+1)/y;
 }
-// Modulo, rounding to minus infinity
-static int imod(int x, int y)
-{
-  return (x^y) >= 0 ? x%y : (x-y+1)%y + y-1;
-}
+// // Modulo, rounding to minus infinity
+// static int imod(int x, int y)
+// {
+//   return (x^y) >= 0 ? x%y : (x-y+1)%y + y-1;
+// }
 // Align x to a multiple of y
 static int ialign(int x, int y)
 {

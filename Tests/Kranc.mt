@@ -11,7 +11,27 @@ PD = PDstandard2nd;
 
 $groups = {{"evolved_group", {phi, pi}}};
 
-$initialSineCalc = {
+initialSineCalc[thornName_String] := {
+  Name      -> thornName <> "_InitialSine",
+  Schedule  -> {"AT initial"},
+  Equations ->
+  {
+    phi -> Sin[2 Pi (x - t)],
+    pi  -> -2 Pi Cos[2 Pi (x - t)]
+  }};
+
+evolveCalc[thornName_String] := {
+  Name      -> thornName <> "_CalcRHS",
+  Schedule  -> {"IN MoL_CalcRHS"},
+  Where     -> Interior,
+  Equations ->
+  {
+    dot[phi] -> pi,
+    dot[pi]  -> Euc[ui,uj] PD[phi,li,lj]
+  }};
+
+
+$initialSineCalc := {
   Name      -> "initial_sine",
   Schedule  -> {"AT initial"},
   Equations ->
@@ -20,7 +40,7 @@ $initialSineCalc = {
     pi  -> -2 Pi Cos[2 Pi (x - t)]
   }};
 
-$evolveCalc = {
+$evolveCalc := {
   Name      -> "calc_rhs",
   Schedule  -> {"IN MoL_CalcRHS"},
   Where     -> Interior,
@@ -34,6 +54,7 @@ $evolveCalc = {
 
 Test[
   ClearAllTensors[];
+  Module[{thornName = "TestSimpleWaveODE"},
   CatchKrancError@CreateKrancThornTT[
     Append[$groups,{"ode_group", {a, b}}],
     thornDir, "TestSimpleWaveODE",
@@ -41,10 +62,10 @@ Test[
     DeclaredGroups     -> {"evolved_group"},
     ODEGroups -> {"ode_group"},
     Calculations       -> {
-      $initialSineCalc /. ((Equations -> l) :>
+      initialSineCalc[thornName] /. ((Equations -> l) :>
                            (Equations -> Join[l, {a->0,b->1}])),
-      $evolveCalc /. ((Equations -> l) :>
-                      (Equations -> Join[l, {dot[a] -> b, dot[b] -> -a}]))}]
+      evolveCalc[thornName] /. ((Equations -> l) :>
+                      (Equations -> Join[l, {dot[a] -> b, dot[b] -> -a}]))}]]
   ,
   Null
   ,
@@ -127,13 +148,14 @@ Test[
 (****************************************************************)
 
 Test[
+  Module[{thornName = "TestSimpleWave"},
   ClearAllTensors[];
   CatchKrancError@CreateKrancThornTT[
-    $groups, thornDir, "TestSimpleWave",
+    $groups, thornDir, thornName,
     PartialDerivatives -> $derivatives,
     DeclaredGroups     -> {"evolved_group"},
-    Calculations       -> {$initialSineCalc, $evolveCalc},
-    MergeFiles         -> "TestThorns/tests/TestSimpleWave"]
+    Calculations       -> {initialSineCalc[thornName], evolveCalc[thornName]},
+    MergeFiles         -> "TestThorns/tests/TestSimpleWave"]]
   ,
   Null
   ,
@@ -309,7 +331,8 @@ CatchKrancError@Module[{evolveCalc, pd},
     $groups, thornDir, "GFOffset",
     PartialDerivatives -> $derivatives,
     DeclaredGroups     -> {"evolved_group"},
-    Calculations       -> {$initialSineCalc, evolveCalc}]]
+    Calculations       -> {$initialSineCalc, evolveCalc},
+    MergeFiles         -> "TestThorns/tests/GFOffset"]]
   ,
   Null
   ,

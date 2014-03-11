@@ -292,6 +292,8 @@ DefineTensor[T_] :=
     TensorAttributes[T] = {TensorWeight -> 0, Symmetries -> {}};
     T];
 
+DefineDerivative[pd_, nd_] := (pd = nd; DefineDerivative[nd]);
+
 DefineDerivative[pd_Symbol] :=
   If[!DerivativeOperatorQ[pd], AppendTo[$Derivatives, pd]];
 

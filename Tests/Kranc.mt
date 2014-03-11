@@ -50,6 +50,10 @@ $evolveCalc := {
 
 
 
+(****************************************************************)
+(* TestSimpleWaveODE *)
+(****************************************************************)
+
 Test[
   ClearAllTensors[];
   Module[{thornName = "TestSimpleWaveODE"},
@@ -160,6 +164,10 @@ Test[
   TestID->"SimpleWave"
 ]
 
+(****************************************************************)
+(* ConservationCalculation *)
+(****************************************************************)
+
 Test[
   CatchKrancError@Module[
     {eulerCons, evolvedGroups, nonevolvedGroups, declaredGroups, declaredGroupNames, groups},
@@ -210,6 +218,10 @@ Test[
   ,
   TestID->"ConservationCalculation"];
 
+(****************************************************************)
+(* Analysis *)
+(****************************************************************)
+
 Test[
   ClearAllTensors[];
   CatchKrancError@CreateKrancThornTT[
@@ -225,6 +237,10 @@ Test[
   TestID->"Analysis"
 ]
 
+(****************************************************************)
+(* Analysis-3TL *)
+(****************************************************************)
+
 Test[
   ClearAllTensors[];
   CatchKrancError@CreateKrancThornTT[
@@ -239,6 +255,10 @@ Test[
   ,
   TestID->"Analysis-3TL"
 ]
+
+(****************************************************************)
+(* ParamCheck *)
+(****************************************************************)
 
 Test[
   ClearAllTensors[];
@@ -256,6 +276,10 @@ Test[
 ]
 
 
+(****************************************************************)
+(* LoopControlNone *)
+(****************************************************************)
+
 Test[
   ClearAllTensors[];
   CatchKrancError@CreateKrancThornTT[
@@ -269,6 +293,10 @@ Test[
   ,
   TestID->"LoopControlNone"
 ]
+
+(****************************************************************)
+(* LoopControlAll *)
+(****************************************************************)
 
 Test[
   ClearAllTensors[];
@@ -284,6 +312,10 @@ Test[
   TestID->"LoopControlAll"
 ]
 
+(****************************************************************)
+(* LoopControlOne *)
+(****************************************************************)
+
 Test[
   ClearAllTensors[];
   CatchKrancError@CreateKrancThornTT[
@@ -298,6 +330,10 @@ Test[
   TestID->"LoopControlNone"
 ]
 
+
+(****************************************************************)
+(* GFOffset *)
+(****************************************************************)
 
 Test[
 CatchKrancError@Module[{evolveCalc, pd},
@@ -337,6 +373,9 @@ CatchKrancError@Module[{evolveCalc, pd},
   TestID->"GFOffset"
 ]
 
+(****************************************************************)
+(* MergeFiles *)
+(****************************************************************)
 
 Test[
   ClearAllTensors[];
@@ -353,6 +392,10 @@ Test[
 ]
 
 
+(****************************************************************)
+(* ProcessOperationCount *)
+(****************************************************************)
+
 Test[
   Reap[ProcessOperationCount[{Times -> 1, Plus -> 2, {Times -> 3, Trig -> 3}},
     "ProcessOperationCountTest"], ProcessOperationCount]
@@ -361,6 +404,10 @@ Test[
   ,
   TestID->"ProcessOperationCount"
 ]
+
+(****************************************************************)
+(* CountOperations *)
+(****************************************************************)
 
 Test[
   ClearAllTensors[];

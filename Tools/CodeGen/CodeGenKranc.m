@@ -188,133 +188,116 @@ DefFn[
      "CCTK_INFO(buffer);\n"}]];
 
 (* Take an expression x and replace occurrences of Powers with the C
-  macros SQR, CUB, QAD *)
+   macros SQR, CUB, QAD *)
 DefFn[
   ProcessExpression[expr_, vectorise:Boolean, noSimplify:Boolean : False] :=
   Module[
     {rhs},
     rhs = expr /. Power[xx_, -1] -> INV[xx];
-       {rhs = rhs //. Power[xx_,  2  ] -> SQR[xx];
-        rhs = rhs //. Power[xx_,  3  ] -> CUB[xx];
-        rhs = rhs //. Power[xx_,  4  ] -> QAD[xx];
-        rhs = rhs //. Power[xx_, -2  ] -> INV[SQR[xx]];
-        rhs = rhs //. Power[xx_, -3  ] -> INV[CUB[xx]];
-        rhs = rhs //. Power[xx_, -4  ] -> INV[QAD[xx]];
-        rhs = rhs //. Power[xx_,  1/2] -> sqrt[xx];
-        rhs = rhs //. Power[xx_, -1/2] -> INV[sqrt[xx]];
-        rhs = rhs //. Power[xx_,  0.5] -> sqrt[xx];
-        rhs = rhs //. Power[xx_, -0.5] -> INV[sqrt[xx]];
-        rhs = rhs //. SQR[x_] SQR[y_] -> SQR[x y];
-        rhs = rhs //. CUB[x_] CUB[y_] -> CUB[x y];
-        rhs = rhs //. QAD[x_] QAD[y_] -> QAD[x y];
-        rhs = rhs //. INV[x_] INV[y_] -> INV[x y];
-        rhs = rhs //. sqrt[x_] sqrt[y_] -> sqrt[x y];
-        rhs = rhs //. INV[sqrt[x_]] sqrt[y_] -> sqrt[INV[x] y];
-        
-        (*
-           rhs = rhs /.  1/2 ->  khalf
-           rhs = rhs /. -1/2 -> -khalf;
-           
-           rhs = rhs /.  1/3 ->  kthird;
-           rhs = rhs /. -1/3 -> -kthird;
-           
-           rhs = rhs /.  2/3 ->  ktwothird;
-           rhs = rhs /. -2/3 -> -ktwothird;
-           
-           rhs = rhs /.  4/3 ->  kfourthird;
-           rhs = rhs /. -4/3 -> -kfourthird;
-           
-           rhs = rhs /.  8/3 ->  keightthird;
-           rhs = rhs /. -8/3 -> -keightthird;
-           *)
+    rhs = rhs //. Power[xx_,  2  ] -> SQR[xx];
+    rhs = rhs //. Power[xx_,  3  ] -> CUB[xx];
+    rhs = rhs //. Power[xx_,  4  ] -> QAD[xx];
+    rhs = rhs //. Power[xx_, -2  ] -> INV[SQR[xx]];
+    rhs = rhs //. Power[xx_, -3  ] -> INV[CUB[xx]];
+    rhs = rhs //. Power[xx_, -4  ] -> INV[QAD[xx]];
+    rhs = rhs //. Power[xx_,  1/2] -> sqrt[xx];
+    rhs = rhs //. Power[xx_, -1/2] -> INV[sqrt[xx]];
+    rhs = rhs //. Power[xx_,  0.5] -> sqrt[xx];
+    rhs = rhs //. Power[xx_, -0.5] -> INV[sqrt[xx]];
+    rhs = rhs //. SQR[x_] SQR[y_] -> SQR[x y];
+    rhs = rhs //. CUB[x_] CUB[y_] -> CUB[x y];
+    rhs = rhs //. QAD[x_] QAD[y_] -> QAD[x y];
+    rhs = rhs //. INV[x_] INV[y_] -> INV[x y];
+    rhs = rhs //. sqrt[x_] sqrt[y_] -> sqrt[x y];
+    rhs = rhs //. INV[sqrt[x_]] sqrt[y_] -> sqrt[INV[x] y];
+    
+    (* Handle Piecewise function *)
+    rhs = rhs /. Piecewise -> piecewise1
+    //. piecewise1[pairs_List, val_:0] :>
+    If[pairs==={}, val,
+      IfThen[First[pairs][[2]],
+        First[pairs][[1]],
+        piecewise1[Rest[pairs], val]]];
+    
+    (* Remove parentheses *)
+    rhs = rhs //. Parenthesis[xx_] -> xx;
 
-        (* Handle Piecewise function *)
-        rhs = rhs /. Piecewise -> piecewise1
-                  //. piecewise1[pairs_List, val_:0] :>
-                         If[pairs==={}, val,
-                            IfThen[First[pairs][[2]],
-                                   First[pairs][[1]],
-                                   piecewise1[Rest[pairs], val]]];
-        
-        (* Remove parentheses *)
-        rhs = rhs //. Parenthesis[xx_] -> xx;
+    (* Avoid rational numbers *)
+    rhs = rhs /. xx_Rational :> N[xx, 30];
+    (* Avoid integers *)
+    (* rhs = rhs /. xx_Integer :> 1.0*xx; *)
 
-        (* Avoid rational numbers *)
-        rhs = rhs /. xx_Rational :> N[xx, 30];
-        (* Avoid integers *)
-        (* rhs = rhs /. xx_Integer :> 1.0*xx; *)
+    (* Simple optimisations *)
+    rhs = rhs /. IfThen[_, aa_, aa_] -> aa;
+    rhs = rhs /. IfThen[xx_Integer, aa_, bb_] /; xx!=0 :> aa;
+    rhs = rhs /. IfThen[xx_Integer, aa_, bb_] /; xx==0 :> bb;
+    rhs = rhs /. IfThen[True , aa_, bb_] -> aa;
+    rhs = rhs /. IfThen[False, aa_, bb_] -> bb;
 
-        (* Simple optimisations *)
-        rhs = rhs /. IfThen[_, aa_, aa_] -> aa;
-        rhs = rhs /. IfThen[xx_Integer, aa_, bb_] /; xx!=0 :> aa;
-        rhs = rhs /. IfThen[xx_Integer, aa_, bb_] /; xx==0 :> bb;
-        rhs = rhs /. IfThen[True , aa_, bb_] -> aa;
-        rhs = rhs /. IfThen[False, aa_, bb_] -> bb;
+    (* Complex optimisations *)
+    rhs = rhs //.      IfThen[cond1_,xx1_,yy1_] +      IfThen[cond2_,xx2_,yy2_] /; cond1==cond2 :> IfThen[cond1, Simplify[    xx1 +     xx2], Simplify[    yy1 +     yy2]];
+    rhs = rhs //. ff1_ IfThen[cond1_,xx1_,yy1_] +      IfThen[cond2_,xx2_,yy2_] /; cond1==cond2 :> IfThen[cond1, Simplify[ff1 xx1 +     xx2], Simplify[ff1 yy1 +     yy2]];
+    rhs = rhs //.      IfThen[cond1_,xx1_,yy1_] + ff2_ IfThen[cond2_,xx2_,yy2_] /; cond1==cond2 :> IfThen[cond1, Simplify[    xx1 + ff2 xx2], Simplify[    yy1 + ff2 yy2]];
+    rhs = rhs //. ff1_ IfThen[cond1_,xx1_,yy1_] + ff2_ IfThen[cond2_,xx2_,yy2_] /; cond1==cond2 :> IfThen[cond1, Simplify[ff1 xx1 + ff2 xx2], Simplify[ff1 yy1 + ff2 yy2]];
 
-        (* Complex optimisations *)
-        rhs = rhs //.      IfThen[cond1_,xx1_,yy1_] +      IfThen[cond2_,xx2_,yy2_] /; cond1==cond2 :> IfThen[cond1, Simplify[    xx1 +     xx2], Simplify[    yy1 +     yy2]];
-        rhs = rhs //. ff1_ IfThen[cond1_,xx1_,yy1_] +      IfThen[cond2_,xx2_,yy2_] /; cond1==cond2 :> IfThen[cond1, Simplify[ff1 xx1 +     xx2], Simplify[ff1 yy1 +     yy2]];
-        rhs = rhs //.      IfThen[cond1_,xx1_,yy1_] + ff2_ IfThen[cond2_,xx2_,yy2_] /; cond1==cond2 :> IfThen[cond1, Simplify[    xx1 + ff2 xx2], Simplify[    yy1 + ff2 yy2]];
-        rhs = rhs //. ff1_ IfThen[cond1_,xx1_,yy1_] + ff2_ IfThen[cond2_,xx2_,yy2_] /; cond1==cond2 :> IfThen[cond1, Simplify[ff1 xx1 + ff2 xx2], Simplify[ff1 yy1 + ff2 yy2]];
+    (* Is this still a good idea when FMA instructions are used? *)
+    If[!noSimplify,
+      rhs = rhs //. xx_ yy_ + xx_ zz_ -> xx (yy+zz);
+      rhs = rhs //. xx_ yy_ - xx_ zz_ -> xx (yy-zz)];
 
-        (* Is this still a good idea when FMA instructions are used? *)
-        If[!noSimplify,
-           rhs = rhs //. xx_ yy_ + xx_ zz_ -> xx (yy+zz);
-           rhs = rhs //. xx_ yy_ - xx_ zz_ -> xx (yy-zz)];
+    (* Mathematica converts between Cosh and Sech automatically.
+       This is unfortunate, because cosh exists in C, while sech
+       doesn't. We therefore replace Cosh etc. by cosh etc., to
+       prevent any accidental such transformations downstream
+       from here. *)
+    rhs = rhs //. Power[E, power_] -> exp[power];
+    rhs = rhs //. Log[x_] -> log[x];
+    (* rhs = rhs //. Power[x_, n_Integer] -> pown[x,n]; *)
+    rhs = rhs //. Power[x_, power_] -> pow[x,power];
+    rhs = rhs //. Sin[x_] -> sin[x];
+    rhs = rhs //. Cos[x_] -> cos[x];
+    rhs = rhs //. Tan[x_] -> tan[x];
+    rhs = rhs //. Sec[x_] -> 1 / cos[x];
+    rhs = rhs //. Csc[x_] -> 1 / sin[x];
+    rhs = rhs //. Cot[x_] -> 1 / tan[x];
+    rhs = rhs //. ArcSin[x_] -> asin[x];
+    rhs = rhs //. ArcCos[x_] -> acos[x];
+    rhs = rhs //. ArcTan[x_] -> atan[x];
+    rhs = rhs //. ArcTan[x_, y_] -> atan2[y,x];
+    rhs = rhs //. ArcSec[x_] -> acos[1/x];
+    rhs = rhs //. ArcCsc[x_] -> asin[1/x];
+    rhs = rhs //. ArcCot[x_] -> atan[1/x];
+    rhs = rhs //. Sinh[x_] -> sinh[x];
+    rhs = rhs //. Cosh[x_] -> cosh[x];
+    rhs = rhs //. Tanh[x_] -> tanh[x];
+    rhs = rhs //. Sech[x_] -> 1 / cosh[x];
+    rhs = rhs //. Csch[x_] -> 1 / sinh[x];
+    rhs = rhs //. Coth[x_] -> 1 / tanh[x];
+    rhs = rhs //. ArcSinh[x_] -> asinh[x];
+    rhs = rhs //. ArcCosh[x_] -> acosh[x];
+    rhs = rhs //. ArcTanh[x_] -> atahn[x];
+    rhs = rhs //. ArcSech[x_] -> acosh[1/x];
+    rhs = rhs //. ArcCsch[x_] -> asinh[1/x];
+    rhs = rhs //. ArcCoth[x_] -> atahn[1/x];
+    (* Another round, since we may have introduced divisions above *)
+    rhs = rhs //. 1 / x_ -> INV[x];
+    rhs = rhs //. INV[INV[x_]] -> x;
 
-        (* Mathematica converts between Cosh and Sech automatically.
-           This is unfortunate, because cosh exists in C, while sech
-           doesn't. We therefore replace Cosh etc. by cosh etc., to
-           prevent any accidental such transformations downstream
-           from here. *)
-        rhs = rhs //. Power[E, power_] -> exp[power];
-        rhs = rhs //. Log[x_] -> log[x];
-        (* rhs = rhs //. Power[x_, n_Integer] -> pown[x,n]; *)
-        rhs = rhs //. Power[x_, power_] -> pow[x,power];
-        rhs = rhs //. Sin[x_] -> sin[x];
-        rhs = rhs //. Cos[x_] -> cos[x];
-        rhs = rhs //. Tan[x_] -> tan[x];
-        rhs = rhs //. Sec[x_] -> 1 / cos[x];
-        rhs = rhs //. Csc[x_] -> 1 / sin[x];
-        rhs = rhs //. Cot[x_] -> 1 / tan[x];
-        rhs = rhs //. ArcSin[x_] -> asin[x];
-        rhs = rhs //. ArcCos[x_] -> acos[x];
-        rhs = rhs //. ArcTan[x_] -> atan[x];
-        rhs = rhs //. ArcTan[x_, y_] -> atan2[y,x];
-        rhs = rhs //. ArcSec[x_] -> acos[1/x];
-        rhs = rhs //. ArcCsc[x_] -> asin[1/x];
-        rhs = rhs //. ArcCot[x_] -> atan[1/x];
-        rhs = rhs //. Sinh[x_] -> sinh[x];
-        rhs = rhs //. Cosh[x_] -> cosh[x];
-        rhs = rhs //. Tanh[x_] -> tanh[x];
-        rhs = rhs //. Sech[x_] -> 1 / cosh[x];
-        rhs = rhs //. Csch[x_] -> 1 / sinh[x];
-        rhs = rhs //. Coth[x_] -> 1 / tanh[x];
-        rhs = rhs //. ArcSinh[x_] -> asinh[x];
-        rhs = rhs //. ArcCosh[x_] -> acosh[x];
-        rhs = rhs //. ArcTanh[x_] -> atahn[x];
-        rhs = rhs //. ArcSech[x_] -> acosh[1/x];
-        rhs = rhs //. ArcCsch[x_] -> asinh[1/x];
-        rhs = rhs //. ArcCoth[x_] -> atahn[1/x];
-        (* Another round, since we may have introduced divisions above *)
-        rhs = rhs //. 1 / x_ -> INV[x];
-        rhs = rhs //. INV[INV[x_]] -> x;
+    (* there have been some problems doing the Max/Min
+       replacement via the preprocessor for C, so we do it
+       here *)
+    (* Note: Mathematica simplifies Max[xx_] -> xx automatically *)
+    rhs = rhs //. Max[xx_, yy__] :> fmax[xx, Max[yy]];
+    rhs = rhs //. Min[xx_, yy__] :> fmin[xx, Min[yy]];
+    rhs = rhs //. Abs[x_] -> fabs[x];
+    rhs = rhs //. Sign[x_] -> isgn[x];
+    rhs = rhs //. IntAbs[x_] -> abs[x];
 
-        (* there have been some problems doing the Max/Min
-           replacement via the preprocessor for C, so we do it
-           here *)
-        (* Note: Mathematica simplifies Max[xx_] -> xx automatically *)
-        rhs = rhs //. Max[xx_, yy__] :> fmax[xx, Max[yy]];
-        rhs = rhs //. Min[xx_, yy__] :> fmin[xx, Min[yy]];
-        rhs = rhs //. Abs[x_] -> fabs[x];
-        rhs = rhs //. Sign[x_] -> isgn[x];
-        rhs = rhs //. IntAbs[x_] -> abs[x];
+    If[vectorise === True,
+      rhs = VectoriseExpression[rhs]];
 
-        If[vectorise === True,
-           rhs = VectoriseExpression[rhs]];
-
-        (* Remove KrancScalar[] after vectorising *)
-        rhs = rhs /. KrancScalar[xx_] -> xx};
+    (* Remove KrancScalar[] after vectorising *)
+    rhs = rhs /. KrancScalar[xx_] -> xx;
     (*       Print[rhs//FullForm];*)
     rhs]];
 

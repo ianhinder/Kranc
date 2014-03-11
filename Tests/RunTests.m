@@ -1,6 +1,7 @@
 #!/usr/bin/env MathematicaScript -script
 
 SetOptions[ $Output, FormatType -> OutputForm ];
+SetOptions["stdout", PageWidth -> Infinity];
 
 << MUnitRunner`;
 

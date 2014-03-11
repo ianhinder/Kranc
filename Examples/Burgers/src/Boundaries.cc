@@ -30,7 +30,7 @@ extern "C" void Burgers_SelectBoundConds(CCTK_ARGUMENTS)
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  CCTK_INT ierr CCTK_ATTRIBUTE_UNUSED  = 0;
+  CCTK_INT ierr CCTK_ATTRIBUTE_UNUSED = 0;
   
   if (CCTK_EQUALS(u_group_bound, "none"  ) ||
       CCTK_EQUALS(u_group_bound, "static") ||
@@ -57,7 +57,7 @@ extern "C" void Burgers_SelectBoundConds(CCTK_ARGUMENTS)
   if (CCTK_EQUALS(u_group_bound, "radiative"))
   {
    /* select radiation boundary condition */
-    static CCTK_INT handle_u_group_bound CCTK_ATTRIBUTE_UNUSED  = -1;
+    static CCTK_INT handle_u_group_bound CCTK_ATTRIBUTE_UNUSED = -1;
     if (handle_u_group_bound < 0) handle_u_group_bound = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);
     if (handle_u_group_bound < 0) CCTK_WARN(0, "could not create table!");
     if (Util_TableSetReal(handle_u_group_bound , u_group_bound_limit, "LIMIT") < 0)
@@ -76,7 +76,7 @@ extern "C" void Burgers_SelectBoundConds(CCTK_ARGUMENTS)
   if (CCTK_EQUALS(u_bound, "radiative"))
   {
    /* select radiation boundary condition */
-    static CCTK_INT handle_u_bound CCTK_ATTRIBUTE_UNUSED  = -1;
+    static CCTK_INT handle_u_bound CCTK_ATTRIBUTE_UNUSED = -1;
     if (handle_u_bound < 0) handle_u_bound = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);
     if (handle_u_bound < 0) CCTK_WARN(0, "could not create table!");
     if (Util_TableSetReal(handle_u_bound , u_bound_limit, "LIMIT") < 0)
@@ -95,7 +95,7 @@ extern "C" void Burgers_SelectBoundConds(CCTK_ARGUMENTS)
   if (CCTK_EQUALS(u_group_bound, "scalar"))
   {
    /* select scalar boundary condition */
-    static CCTK_INT handle_u_group_bound CCTK_ATTRIBUTE_UNUSED  = -1;
+    static CCTK_INT handle_u_group_bound CCTK_ATTRIBUTE_UNUSED = -1;
     if (handle_u_group_bound < 0) handle_u_group_bound = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);
     if (handle_u_group_bound < 0) CCTK_WARN(0, "could not create table!");
     if (Util_TableSetReal(handle_u_group_bound ,u_group_bound_scalar, "SCALAR") < 0)
@@ -112,7 +112,7 @@ extern "C" void Burgers_SelectBoundConds(CCTK_ARGUMENTS)
   if (CCTK_EQUALS(u_bound, "scalar"))
   {
    /* select scalar boundary condition */
-    static CCTK_INT handle_u_bound CCTK_ATTRIBUTE_UNUSED  = -1;
+    static CCTK_INT handle_u_bound CCTK_ATTRIBUTE_UNUSED = -1;
     if (handle_u_bound < 0) handle_u_bound = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);
     if (handle_u_bound < 0) CCTK_WARN(0, "could not create table!");
     if (Util_TableSetReal(handle_u_bound ,u_bound_scalar, "SCALAR") < 0)

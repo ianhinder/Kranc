@@ -239,7 +239,7 @@ DefFn[
     undoSomeVect[expr_] := (
       expr
       /. ToReal[a_] :> ToReal[undoVect[a]]
-      /. Scalar[a_] :> Scalar[undoVect[a]]
+      /. KrancScalar[a_] :> KrancScalar[undoVect[a]]
       /. (IfThen[a_,x_,y_] :> 
           IfThen[undoVect[a], undoSomeVect[x], undoSomeVect[y]])
       /. kpow[x_,a_] :> kpow[undoSomeVect[x], undoVect[a]]);

@@ -36,7 +36,7 @@ Begin["`Private`"];
   (represents the fact that we want to allocate storage for a Cactus
   variable group with the given number of timelevels)
 
-  {Group -> "admbase::metric", Timelevels -> 3, 
+  {KrancGroup -> "admbase::metric", Timelevels -> 3,
    Conditional -> {Parameter -> "", Value -> ""},
    Conditionals -> {{Parameter -> "", Value -> ""}},
    Conditional -> {Textual -> "CCTK_EQUALS(name,value)"}}
@@ -49,7 +49,7 @@ Begin["`Private`"];
    Language -> "C", Comment -> "", 
    (optional) SynchronizedGroups -> {ADM_BSSN_gamma, ...}, 
    (optional) Options -> {"meta", "level", ...},
-   (optional) StorageGroups -> {Group -> "mygroup", Timelevels -> 1},
+   (optional) StorageGroups -> {KrancGroup -> "mygroup", Timelevels -> 1},
    (optional) Conditional -> {Parameter -> "", Value -> ""},
    (optional) Conditionals -> {{Parameter -> "", Value -> ""}}}
 
@@ -65,7 +65,7 @@ Begin["`Private`"];
 groupStorage[spec_] :=
   Module[
     {tls = lookup[spec,Timelevels],
-     group = lookup[spec, Group]},
+     group = lookup[spec, KrancGroup]},
     Which[
       IntegerQ[tls],
       {"STORAGE: ", group, "[", tls, "]\n"},

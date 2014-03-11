@@ -29,22 +29,22 @@ extern "C" void Wave_RegisterSymmetries(CCTK_ARGUMENTS)
   sym[0] = 1;
   sym[1] = 1;
   sym[2] = 1;
-  SetCartSymVN(cctkGH, sym, "Wave::phiError");
-  
-  sym[0] = 1;
-  sym[1] = 1;
-  sym[2] = 1;
-  SetCartSymVN(cctkGH, sym, "Wave::piError");
-  
-  sym[0] = 1;
-  sym[1] = 1;
-  sym[2] = 1;
   SetCartSymVN(cctkGH, sym, "Wave::phiExact");
   
   sym[0] = 1;
   sym[1] = 1;
   sym[2] = 1;
   SetCartSymVN(cctkGH, sym, "Wave::piExact");
+  
+  sym[0] = 1;
+  sym[1] = 1;
+  sym[2] = 1;
+  SetCartSymVN(cctkGH, sym, "Wave::phiError");
+  
+  sym[0] = 1;
+  sym[1] = 1;
+  sym[2] = 1;
+  SetCartSymVN(cctkGH, sym, "Wave::piError");
   
   sym[0] = 1;
   sym[1] = 1;

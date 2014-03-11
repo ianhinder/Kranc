@@ -22,13 +22,7 @@
 
 BeginPackage["CodeGenC`", {"Errors`", "Kranc`", "CodeGen`"}];
 
-SOURCELANGUAGE::usage = "global variable == \"C\" or \"Fortran\" determines language
-                        for code generation";
-SOURCESUFFIX::usage = "file suffix for source files";
-SetSourceLanguage::usage = "set the source language to  \"C\" or \"Fortran\"";
-
-EOL::usage = "the end of line termination string";
-
+SetSourceLanguage::usage = "DEPRECATED: set the source language to  \"C\" or \"Fortran\"";
 CommentedBlock::usage = "CommentedBlock[comment, block] returns a block consisting " <>
   "of 'comment' followed by 'block'.";
 CBlock::usage = "";
@@ -38,9 +32,6 @@ IncludeFile::usage = "IncludeFile[name] returns a block of code" <>
 IncludeSystemFile::usage = "IncludeFile[name] returns a block of code" <>
   "that includes a system header file (i.e '#include <name>').";
 DeclareVariable::usage = "DeclareVariable[name, type] returns a block of code " <>
-  "that declares a variable of given name and type.  'name' and 'type' should be " <>
-  "strings.";
-DeclareVariableNoInit::usage = "DeclareVariableNoInit[name, type] returns a block of code " <>
   "that declares a variable of given name and type without initialising it.  'name' and 'type' should be " <>
   "strings.";
 DeclareVariables::usage = "DeclareVariables[names, type] returns a block of code " <>
@@ -53,11 +44,11 @@ DeclarePointers::usage = "DeclarePointers[names, type] returns a block of code "
   "that declares a list of pointers of given name and type.  'names' should be a list" <>
   " of strings and 'type' should be a string string.";
 DefineVariable::usage = "DefineVariable[name, type, value] returns a block of " <>
-  "code that declares and initialised a variable 'name' of type 'type' to value 'value'.";
+  "code that declares and initialises a variable 'name' of type 'type' to value 'value'.";
+DefineConstant::usage = "DefineConstant[name, type, value] returns a block of " <>
+  "code that declares and initialises a constant 'name' of type 'type' to value 'value'.";
 AssignVariable::usage = "AssignVariable[dest_, src_] returns a block of code " <>
   "that assigns 'src' to 'dest'.";
-DeclareAssignVariable::usage = "DeclareAssignVariable[type_, dest_, src_] returns a block of code " <>
-  "that declares and sets a constant variable of given name and type.";
 DeclareArray::usage = "";
 DefineFunction::usage = "";
 DefineSubroutine::usage = "";
@@ -65,26 +56,12 @@ Conditional::usage = "";
 SwitchStatement::usage = "";
 CFormHideStrings::usage = "";
 InsertComment::usage = "";
+WithNamespace;
 
 Begin["`Private`"];
 
-SOURCELANGUAGE =  "C";
-SOURCESUFFIX   = ".cc";
-
-setSourceSuffix[lang_] :=
-  If[lang == "C", SOURCESUFFIX = ".cc", SOURCESUFFIX = ".F90"];
-
 SetSourceLanguage[lang_] :=
-  If[lang == "C" || lang == "Fortran",
-     SOURCELANGUAGE = lang;
-     setSourceSuffix[lang];
-     If[lang =!= "C", InfoMessage[Terse, "User set source language to " <> lang]],
-     (* else *)
-     SOURCELANGUAGE = "C";
-     setSourceSuffix[".cc"]];
-
-EOL[dummy___] :=
-  If[SOURCELANGUAGE == "C" || SOURCELANGUAGE == "C++", ";\n", "\n"];
+  Print["Warning: SetSourceLanguage is no longer necessary"];
 
 DefFn[
   IncludeFile[filename_String] :=
@@ -96,64 +73,36 @@ DefFn[
 
 DefFn[
   DeclareVariable[name:(_String|_Symbol), type_String] :=
-  If[SOURCELANGUAGE == "C",
-     {type, " ",    name, " CCTK_ATTRIBUTE_UNUSED ", " = INITVALUE" <> EOL[]},
-     {type, " :: ", name, EOL[]} (* no value init here to avoid implicit SAVE attribute *)]];
-
-DefFn[
-  DeclareVariableNoInit[name:(_String|_Symbol), type_String] :=
-  If[SOURCELANGUAGE == "C",
-     {type, " ",    name, " CCTK_ATTRIBUTE_UNUSED",EOL[]},
-     {type, " :: ", name, EOL[]} (* no value init here to avoid implicit SAVE attribute *)]];
+  {type, " ",    name, " CCTK_ATTRIBUTE_UNUSED;\n"}];
 
 DefFn[
   DeclareVariables[names_?ListQ, type_String] := 
-  If[SOURCELANGUAGE == "C",
-     {type, " ",    CommaSeparated@names, " CCTK_ATTRIBUTE_UNUSED ", EOL[]},
-     {type, " :: ", CommaSeparated@names,     EOL[]} (* no value init avoids implicit SAVE attribute *)]];
+  {type, " ",    CommaSeparated@names, " CCTK_ATTRIBUTE_UNUSED ;\n"}];
 
 DefFn[
   DeclarePointer[name:(_String|_Symbol), type_String] :=
-  If[SOURCELANGUAGE == "C",
-     {type, " *",    name, EOL[]},
-     {type, ", target :: ", name, EOL[]}]];
+  {type, " *",    name, ";\n"}];
 
 DefFn[
   DeclarePointers[names_?ListQ, type_String] :=
-  If[SOURCELANGUAGE == "C",
-     {type, " *",           CommaInitSeparated@names, EOL[]},
-     {type, ", target :: ", CommaSeparated@names,     EOL[]}]];
+  {type, " *",           CommaInitSeparated@names, ";\n"}];
 
 DefFn[
   DeclareArray[name:(_String|_Symbol), dim_Integer, type_String] :=
-  If[SOURCELANGUAGE == "C",
-     DeclareArrayC[name, dim, type],
-     DeclareArrayFortran[name, dim, type]]];
-
-DefFn[
-  DeclareArrayC[name:(_String|_Symbol), dim_Integer, type_String] :=
   {type, " ", name, "[", dim, "];","\n"}];
 
 DefFn[
-  DeclareArrayFortran[name:(_String|_Symbol), dim_Integer, type_String] :=
-  {type, " :: ", name, "(", dim, ")","\n"}];
+  DefineVariable[name:(_String|_Symbol), type_String, value:CodeGenBlock] :=
+  {type, " ", name, " CCTK_ATTRIBUTE_UNUSED", " = ", value, ";\n"}];
 
 DefFn[
-  DefineVariable[name:(_String|_Symbol), type_String, value:CodeGenBlock] :=
-  {type, " ", name, " CCTK_ATTRIBUTE_UNUSED", " = ", value, EOL[]}];
+  DefineConstant[name:(_String|_Symbol), type_String, value:CodeGenBlock] :=
+  {"const ", type, " ", name, " CCTK_ATTRIBUTE_UNUSED", " = ", value, ";\n"}];
 
 DefFn[
   AssignVariable[dest:(_String|_Symbol), src:CodeGenBlock] :=
-  {dest, " = ", src, EOL[]}];
+  {dest, " = ", src, ";\n"}];
 
-Options[DeclareAssignVariable] = {"Const" -> True};
-DefFn[
-  DeclareAssignVariable[type_String, dest:(_String|_Symbol), src:CodeGenBlock,
-                        OptionsPattern[]] :=
-  {If[OptionValue[Const], "const ", ""],
-   type, " ", dest, " CCTK_ATTRIBUTE_UNUSED", " = ", src, EOL[]}];
-
-(* comments are always done C-style because they are killed by cpp anyway *) 
 DefFn[
   InsertComment[text:CodeGenBlock] := {"/* ", text, " */\n"}];
 
@@ -171,55 +120,25 @@ DefFn[
 
 DefFn[
   CommentedBlock[comment:CodeGenBlock, block:CodeGenBlock] :=
-  SeparatedBlock[{InsertComment[comment],
-                  block}]];
+  {InsertComment[comment],
+                  block}];
 
 (* FUNCTIONS *)
 
 DefFn[
-  defineFunctionC[name_String, type_String, args:CodeGenBlock, contents:CodeGenBlock] :=
-  SeparatedBlock[
-    {type, " ", name, "(", args, ")\n",
-     CBlock[contents]}]];
-     
-DefFn[
-  defineFunctionF[name_String, args:CodeGenBlock, contents:CodeGenBlock] :=
-  SeparatedBlock[
-    {"FUNCTION", " ", name, "(", args, ")\n",
-     IndentBlock[contents]}]];
-
-DefFn[
   DefineFunction[name_String, type_String, args:CodeGenBlock, contents:CodeGenBlock] :=
-  If[SOURCELANGUAGE == "C",
-     defineFunctionC[name, type, args, contents],
-     defineFunctionF[name, args, contents]]];
+  {type, " ", name, "(", args, ")\n",
+    CBlock[contents]}];
 
 (* SUBROUTINES *)
 
 DefFn[
   DefineSubroutine[name_String, args:CodeGenBlock, contents:CodeGenBlock] :=
-  If[SOURCELANGUAGE == "C",
-     DefineSubroutineC[name, args, contents],
-     DefineSubroutineF[name, args, contents]]];
-
-DefFn[
-  DefineSubroutineC[name_String, args:CodeGenBlock, contents:CodeGenBlock] :=
-  SeparatedBlock[
-    {"extern \"C\" void ", name, "(", args, ")", "\n",
-     CBlock[contents]}]];
-
-DefFn[
-  DefineSubroutineF[name_String, args:CodeGenBlock, contents:CodeGenBlock] :=
-  SeparatedBlock[
-    {"subroutine ", name, "(", args, ")", "\n",
-     "\nimplicit none\n\n",
-     contents,
-     "end subroutine\n"}]];
+  DefineFunction[name, "void", args, contents]];
 
 DefFn[
   switchOption[{value:(_String|_Symbol|_?NumberQ), block:CodeGenBlock}] :=
   {"case ", value, ":\n", CBlock[{block,"break;\n"}]}];
-(* Outer list unnecessary? *)
 
 DefFn[
   SwitchStatement[var:(_String|_Symbol), pairs__] :=
@@ -242,6 +161,13 @@ DefFn[
 DefFn[
   CFormHideStrings[x_, opts___] :=
   StringReplace[ToString[CForm[x,opts]], "\"" -> ""]];
+
+DefFn[
+  WithNamespace[ns_String, block:CodeGenBlock] :=
+  MakeCodeBlock[
+    {"namespace ", ns, " {\n\n",
+      block,
+      "\n} // namespace ", ns, "\n"}]];
 
 End[];
 

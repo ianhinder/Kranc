@@ -41,12 +41,12 @@ Begin["`Private`"];
    Utility functions
    -------------------------------------------------------------------------- *)
 
-cktCheckNamedArgs[l_] := 
+DefFn[cktCheckNamedArgs[l_] := 
 Module[{used, unrecognized},
     used = Map[First, l];
     unrecognized = Complement[used, Map[First, ThornOptions]];
     If[Length[unrecognized] > 0,
-      ThrowError["Unrecognized named arguments: ", unrecognized]]];
+      ThrowError["Unrecognized named arguments: ", unrecognized]]]];
 
 DefFn[
   processODEGroups[odeGroups_List, groups_List] :=
@@ -88,7 +88,6 @@ DefFn[
   genericFDProcessCode[cIn_Code, opts___] :=
   Module[
     {c = cIn, krancSource, krancHeader},
-    c = AppendObjectField[c, "IncludeFiles", "GenericFD.h"];
     c = AppendObjectField[c, "InheritedImplementations", "GenericFD"];
 
     krancSource =
@@ -149,7 +148,7 @@ DefFn[
 
 Options[CreateKrancThorn] = ThornOptions;
 
-CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[]] :=
+DefFn[CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[]] :=
   Module[{configuration, interface, schedule, param, make, cakernel, c},
 
     InfoMessage[Terse, "Processing arguments to CreateKrancThorn"];
@@ -388,7 +387,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
     c = JoinObjectField[
       c, "Sources", 
       Join[Map[{Filename -> lookup[#, Name] <> ".cc",
-                Contents -> CreateSetterSource[{#}, False, {}, opts]} &,
+                Contents -> CreateSetterSource[{#}, False, {}, thornName, opts]} &,
                Select[GetObjectField[c, "Calculations"], !CalculationOnDevice[#] &]],
            Map[{Filename -> "CaKernel__"<>lookup[#, Name] <> ".code",
                 Contents -> CaKernelCode[#,opts]} &,
@@ -427,7 +426,7 @@ CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[
                    Sources       -> GetObjectField[c, "Sources"],
                    Files         -> GetObjectField[c, "Files"]};
       InfoMessage[Terse, "Creating thorn"];
-      CreateThorn[thornspec]]];
+      CreateThorn[thornspec]]]];
 
 End[];
 EndPackage[];

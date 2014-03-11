@@ -63,7 +63,7 @@ DefFn[
 DefFn[
   AssignVariableInLoop[dest:(_String|_Symbol), src:CodeGenBlock,
                        vectorise : False : False] :=
-  {dest, " = ", src, EOL[]}];
+  {dest, " = ", src, ";\n"}];
 
 DefFn[
   AssignVariableInLoop[dest:(_String|_Symbol), src:CodeGenBlock,
@@ -80,8 +80,8 @@ DefFn[
   Module[
     {loadVariable = If[vectorise, VectorisationLoadVariable, LoadVariable]},
     If[mmaCond,
-       {type, " ", dest, " CCTK_ATTRIBUTE_UNUSED = (", codeCond, ") ? ", loadVariable[src], " : ToReal(0.0)", EOL[]},
-       {type, " ", dest, " CCTK_ATTRIBUTE_UNUSED = ", loadVariable[src], EOL[]}]]];
+       {type, " ", dest, " CCTK_ATTRIBUTE_UNUSED = (", codeCond, ") ? ", loadVariable[src], " : ToReal(0.0)", ";\n"},
+       {type, " ", dest, " CCTK_ATTRIBUTE_UNUSED = ", loadVariable[src], ";\n"}]]];
 
 DefFn[
   TestForNaN[expr:CodeGenBlock] :=
@@ -107,23 +107,23 @@ DefFn[
          AssignVariableFromExpression.  This requires a richer
          expression language with type information so that
          scalars/vectors can be handled automatically. *)
-      Apply[DeclareAssignVariable,
-            {{"ptrdiff_t", "di", "1"},
-             {"ptrdiff_t", "dj", "CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0)"},
-             {"ptrdiff_t", "dk", "CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0)"},
-             {"ptrdiff_t", "cdi", "sizeof(CCTK_REAL) * di"},
-             {"ptrdiff_t", "cdj", "sizeof(CCTK_REAL) * dj"},
-             {"ptrdiff_t", "cdk", "sizeof(CCTK_REAL) * dk"},
-             {DataType[], "dx", "ToReal(CCTK_DELTA_SPACE(0))"},
-             {DataType[], "dy", "ToReal(CCTK_DELTA_SPACE(1))"},
-             {DataType[], "dz", "ToReal(CCTK_DELTA_SPACE(2))"},
-             {DataType[], "dt", "ToReal(CCTK_DELTA_TIME)"},
-             {DataType[], "t", "ToReal(cctk_time)"},
+      Apply[DefineConstant,
+            {{"di", "ptrdiff_t", "1"},
+             {"dj", "ptrdiff_t", "CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0)"},
+             {"dk", "ptrdiff_t", "CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0)"},
+             {"cdi", "ptrdiff_t", "sizeof(CCTK_REAL) * di"},
+             {"cdj", "ptrdiff_t", "sizeof(CCTK_REAL) * dj"},
+             {"cdk", "ptrdiff_t", "sizeof(CCTK_REAL) * dk"},
+             {"dx", DataType[], "ToReal(CCTK_DELTA_SPACE(0))"},
+             {"dy", DataType[], "ToReal(CCTK_DELTA_SPACE(1))"},
+             {"dz", DataType[], "ToReal(CCTK_DELTA_SPACE(2))"},
+             {"dt", DataType[], "ToReal(CCTK_DELTA_TIME)"},
+             {"t", DataType[], "ToReal(cctk_time)"},
 
              (* Note that dx is already a vector, so should not be wrapped in ToReal *)
-             {DataType[], "dxi", "INV(dx)"},
-             {DataType[], "dyi", "INV(dy)"},
-             {DataType[], "dzi", "INV(dz)"}},
+             {"dxi", DataType[], "INV(dx)"},
+             {"dyi", DataType[], "INV(dy)"},
+             {"dzi", DataType[], "INV(dz)"}},
             {1}],
 
       AssignVariableFromExpression["khalf", 0.5, True, vectorise, Const -> True],
@@ -147,18 +147,7 @@ DefFn[
       "const int imax0=imax[0];\n",
       "const int imax1=imax[1];\n",
       "const int imax2=imax[2];\n",
-      (* "// #undef VEC_COUNT\n", *)
-      (* "// #define VEC_COUNT(x) x\n", *)
-      (* "// double vec_iter_timer;\n", *)
-      (* "// {\n", *)
-      (* "//   timeval tv;\n", *)
-      (* "//   gettimeofday(&tv, NULL);\n", *)
-      (* "//   vec_iter_timer = -(tv.tv_sec + 1.0e-6 * tv.tv_usec);\n", *)
-      (* "// }\n", *)
-      (* "// ptrdiff_t vec_iter_counter = 0;\n", *)
-      (* "// ptrdiff_t vec_op_counter = 0;\n", *)
-      (* "// ptrdiff_t vec_mem_counter = 0;\n", *)
-      "#pragma omp parallel // reduction(+: vec_iter_counter, vec_op_counter, vec_mem_counter)\n",
+      "#pragma omp parallel\n",
       If[OptionValue[UseVectors], "CCTK_LOOP3STR", "CCTK_LOOP3"],
       "(", functionName, ",\n",
       "  i,j,k, imin0,imin1,imin2, imax0,imax1,imax2,\n",
@@ -167,12 +156,7 @@ DefFn[
       ")\n",
       "{\n",
       IndentBlock[
-        {(* DeclareVariable["index", "// int"], *)
-         (* DeclareAssignVariable["int", "index", "CCTK_GFINDEX3D(cctkGH,i,j,k)"], *)
-         DeclareAssignVariable["ptrdiff_t", "index", "di*i + dj*j + dk*k"],
-         If[OptionValue[UseVectors],
-            "// vec_iter_counter+=CCTK_REAL_VEC_SIZE;\n",
-            "// ++vec_iter_counter;\n"],
+        {DefineConstant["index", "ptrdiff_t", "di*i + dj*j + dk*k"],
           If[tile,
             {"const int ti CCTK_ATTRIBUTE_UNUSED = i - kd.tile_imin[0];\n",
              "const int tj CCTK_ATTRIBUTE_UNUSED = j - kd.tile_imin[1];\n",
@@ -182,15 +166,7 @@ DefFn[
       "}\n",
       If[OptionValue[UseVectors], "CCTK_ENDLOOP3STR", "CCTK_ENDLOOP3"] <>
       "(", functionName, ");\n" 
-      (* ,
-         "// {\n",
-         "//   timeval tv;\n",
-         "//   gettimeofday(&tv, NULL);\n",
-         "//   vec_iter_timer += tv.tv_sec + 1.0e-6 * tv.tv_usec;\n",
-         "// }\n",
-         "// CCTK_VInfo(CCTK_THORNSTRING, \"function="<>functionName<>" time=%g points=%td fp_ops=%td mem_ops=%td\", vec_iter_timer, vec_iter_counter, vec_op_counter, vec_mem_counter);\n",
-         "// #undef VEC_COUNT\n",
-         "// #define VEC_COUNT(x)\n" *) }]];
+       }]];
 
 DefFn[
   onceInGridLoop[block:CodeGenBlock] :=
@@ -302,8 +278,8 @@ DefFn[
         rhs = rhs //. ArcSec[x_] -> acos[1/x];
         rhs = rhs //. ArcCsc[x_] -> asin[1/x];
         rhs = rhs //. ArcCot[x_] -> atan[1/x];
-        rhs = rhs //. Sinh[x_] -> cosh[x];
-        rhs = rhs //. Cosh[x_] -> sinh[x];
+        rhs = rhs //. Sinh[x_] -> sinh[x];
+        rhs = rhs //. Cosh[x_] -> cosh[x];
         rhs = rhs //. Tanh[x_] -> tanh[x];
         rhs = rhs //. Sech[x_] -> 1 / cosh[x];
         rhs = rhs //. Csch[x_] -> 1 / sinh[x];
@@ -341,14 +317,7 @@ CalculationMacros[vectorise_:False] :=
       Map[{"#define ", #, "\n"} &,
          {"INITVALUE (42)"} ~Join~
           If[vectorise,
-           {"ScalarINV(x) ((CCTK_REAL)1.0 / (x))",
-            "ScalarSQR(x) ((x) * (x))",
-            "ScalarCUB(x) ((x) * ScalarSQR(x))",
-            "ScalarQAD(x) (ScalarSQR(ScalarSQR(x)))",
-            "INV(x) (kdiv(ToReal(1.0),x))",
-            "SQR(x) (kmul(x,x))",
-            "CUB(x) (kmul(x,SQR(x)))",
-            "QAD(x) (SQR(SQR(x)))"},
+           VectorisationMacros[],
            {"INV(x) ((CCTK_REAL)1.0 / (x))",
             "SQR(x) ((x) * (x))",
             "CUB(x) ((x) * SQR(x))",
@@ -365,7 +334,7 @@ AssignVariableFromExpression[dest_, expr_, declare_, vectorise_, noSimplify:Bool
     exprCode = GenerateCodeFromExpression[expr, vectorise, noSimplify];
     CountOperations[expr];
     code = If[declare,
-              DeclareAssignVariable[type, dest, exprCode, Const -> OptionValue[Const]],
+              If[OptionValue[Const],DefineConstant,DefineVariable][dest, type, exprCode],
               AssignVariable[dest, exprCode]];
     code = LineBreak[FlattenBlock[code], 70] <> "\n";
     {code}];

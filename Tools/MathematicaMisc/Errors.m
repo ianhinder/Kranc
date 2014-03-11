@@ -1,5 +1,5 @@
 
-BeginPackage["Errors`", {"Profile`"}];
+BeginPackage["Errors`", {"Profile`", "Stack`"}];
 
 PrintError::usage = "";
 ThrowError::usage = "";
@@ -19,6 +19,10 @@ Terse = 2;
 Info = 3;
 InfoFull = 4;
 DefFn;
+CatchKrancError;
+ReportFunctionCounts;
+
+$EnableBacktrace = True;
 
 Begin["`Private`"];
 
@@ -61,26 +65,25 @@ PrintError[err_] :=
 ],
         err]];
 
-
+(* Raise an error exception.  Typically, this should be called with
+one argument, the string containing the error message.  For backward
+compatibility, it can be called with several arguments.  These will be
+converted to strings in InputForm and displayed on separate lines. *)
 ThrowError[objects__] :=
-  Module[{s = Stack[_], s2},
-    
-    s2 = removeBits[s];
-    Throw[KrancError[{objects}(*,s2*)], KrancError]];
-
+  Throw[KrancError[{objects},StackRead[$stack]], KrancError];
 
 VerifyString[s_] := 
   If[! StringQ[s],
-   ThrowError["Not a string:", s]];
+   ThrowError["Not a string: " <> ToString[s,InputForm]]];
 
 VerifyStringList[l_, err_:None] := 
   If[! MatchQ[l, {___String}],
-   ThrowError[If[err===None,"",ToString[err]<>" - "]<>"Not a list of strings:", l]];
+   ThrowError[If[err===None,"",ToString[err]<>" - "]<>"Not a list of strings:" <> ToString[l,InputForm]]];
 
 
 VerifyList[l_] := 
   If[!Head[l] === List,
-   ThrowError["Not a list:", l]];
+   ThrowError["Not a list: "<>ToString[l,InputForm]]];
 
 
 InfoMessage[level_, message__] :=
@@ -92,17 +95,64 @@ InfoMessage[level_, message__] :=
 SetDebugLevel[level_] :=
   debugLevel = level;
 
+candidateFunction[f_, pats_List] :=
+  ToString[f]<>"["<>StringJoin[Riffle[pats, ","]]<>"]\n";
+
 ErrorDefinition[x_] :=
   x[args___] :=
-    ThrowError["Invalid arguments to "<>ToString[x], {args}//FullForm];
+    Module[{used,candidateExprs,candidateStrings},
+      used = ToString[x] <> "[" <> StringJoin@@Riffle[(ToString[Blank[Head[#]]]) & /@ {args},","] <> "]";
+      (* The following has some problem, probably due to early evaluation *)
+      (* candidateExprs = DownValues[x][[All, 1]] /. x[pats__] :> {pats} /. HoldPattern->Identity; *)
+      (* candidateStrings = StringJoin[candidateFunction[x,#] & /@ candidateExprs]; *)
+
+      (* Print["used = ", InputForm[used]]; *)
+      (* Print["candidateExprs = ", InputForm[candidateExprs]]; *)
+      (* Print["candidateStrings = ", InputForm[candidateStrings]]; *)
+
+      ThrowError["Invalid arguments: " <> used <>"\n"(* <>"Candidates are:\n"<> candidateStrings *)]];
 
 SetAttributes[DefFn, HoldAll];
 
-DefFn[def:(fn_[args___] := body_)] :=
-  Module[
-    {},
+count[_] = 0;
+
+incrementCount[fn_] :=
+  count[fn] = count[fn]+1;
+
+$stack = {};
+
+If[$EnableBacktrace,
+  DefFn[def:(fn_[args___] := body_)] :=
+  Module[{},
     ErrorDefinition[fn];
-    fn[args] := (*Profile[fn,*)body(*]*)];
+    fn[args] :=
+    (* This construction using Part avoids introducing an explicit
+       temporary with Module which causes a big performance hit. *)
+    (incrementCount[fn]; {StackPush[$stack,fn], Catch[body,_, (StackPop[$stack]; Throw[#1,#2]) &], StackPop[$stack]}[[2]])],
+
+  (* else *)
+
+  DefFn[def:(fn_[args___] := body_)] :=
+  Module[{},
+    ErrorDefinition[fn];
+    fn[args] :=
+    (incrementCount[fn]; body)]];
+
+reportError[k:KrancError[objects_,stack_], KrancError] :=
+  Module[{},
+    If[MatchQ[objects, {_String}],
+      Print["Error: ", objects[[1]]],
+      Scan[Print, Join[{"Error: "}, InputForm/@objects]]];
+    If[$EnableBacktrace, Print["in ", Sequence@@Riffle[stack,"/"]]];
+    $Failed];
+
+SetAttributes[CatchKrancError, HoldAll];
+CatchKrancError[x_] :=
+  Catch[x, KrancError, reportError];
+
+ReportFunctionCounts[] :=
+  Module[{},
+    Scan[Print, SortBy[DownValues[count],#[[2]]&]]];
 
 End[];
 

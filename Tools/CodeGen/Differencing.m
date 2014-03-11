@@ -97,12 +97,6 @@ PrecomputeDerivatives[derivOps_, expr_]
 Return a CodeGen block which precomputes all the derivatives needed in
 expr.
 
-DeclareDerivatives[derivOps_, expr_]
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Return a CodeGen block which precomputes all the derivatives needed in
-expr.
-
 GridFunctionDerivativesInExpression[derivOps_, expr_]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -139,7 +133,6 @@ BeginPackage["Differencing`", {"CodeGen`", "CodeGenC`", "CodeGenCactus`", "CodeG
 
 CreateDifferencingHeader::usage = "";
 PrecomputeDerivatives::usage = "";
-DeclareDerivatives::usage = "";
 ReplaceDerivatives::usage = "";
 StandardCenteredDifferenceOperator::usage = "";
 StandardUpwindDifferenceOperator::usage = "";
@@ -237,20 +230,11 @@ DefFn[
         Map[(# -> combineOpNameWithParameter[#, paramName, value]) &, opNamesWithParam];
 
       param = Select[intParams, getParamName[#] === paramName &][[1]];
-      {Map[DeclareVariableNoInit[GridFunctionDerivativeName[#],DataType[]] &, sortedgfds],
+      {Map[DeclareVariable[GridFunctionDerivativeName[#],DataType[]] &, sortedgfds],
        "\n",
        SwitchStatement[paramName,
          Sequence@@Table[{value, Map[PrecomputeDerivative[# /. replace[value],#,macroPointer] &, sortedgfds]}, 
                          {value, lookup[param, AllowedValues]}]]}]]];
-
-DefFn[
-  DeclareDerivatives[derivOps_, expr_] :=
-  Module[{componentDerivOps, gfds, sortedgfds},
-    Map[DerivativeOperatorVerify, derivOps];
-    gfds = GridFunctionDerivativesInExpression[derivOps, expr];
-    sortedgfds = Sort[gfds, ordergfds];
-    {"/* Declare derivatives */\n",
-     Map[DeclareDerivative, sortedgfds]}]];
 
 DefFn[
   ReplaceDerivatives[derivOps_, expr_, precompute_, zeroDims_, macroPointer_] :=
@@ -274,7 +258,7 @@ DefFn[
     If[Length[rgzList] === 0, Return[{}]];
     rgz = Map[Max, Transpose[rgzList]];
     If[Max[rgz] == 0, {},
-    {"GenericFD_EnsureStencilFits(cctkGH, ", Quote@name, ", ", Riffle[rgz,", "], ");\n"}]]];
+    {"EnsureStencilFits(cctkGH, ", Quote@name, ", ", Riffle[rgz,", "], ");\n"}]]];
 
 parametersUsedInOps[derivOps_, intParams_] :=
   Union@Flatten[Map[Cases[derivOps, getParamName[#] -> #, Infinity] &,
@@ -337,7 +321,7 @@ DefFn[
   PrecomputeDerivative[d:pd_[gf_, inds___], vargfd_, macroPointer_] :=
   Module[{},
     If[vargfd === Automatic,
-      DeclareAssignVariable[DataType[], GridFunctionDerivativeName[d], evaluateDerivative[d,macroPointer]],
+      DefineConstant[GridFunctionDerivativeName[d], DataType[], evaluateDerivative[d,macroPointer]],
       AssignVariable[GridFunctionDerivativeName[vargfd], evaluateDerivative[d,macroPointer]]]]];
 
 DefFn[
@@ -349,10 +333,6 @@ DefFn[
        Return[ToString[macroName] <> "(&" <> ToString[gf] <> "[index])"],
        Return[ToString[macroName] <> "(" <> ToString[gf] <> ")"]]
   ]];
-
-DeclareDerivative[d:pd_[gf_, inds___]] :=
-  DeclareVariable[GridFunctionDerivativeName[d], "// CCTK_REAL_VEC"];
-
 
 (*************************************************************)
 (* GridFunctionDerivative *)
@@ -678,7 +658,9 @@ DerivativeOperatorRHSVerify[expr_] :=
     symbols = Cases[allAtoms, x_Symbol];
     True];
 
-
+If[DeleteDuplicates[{1,1}] === {1},
+  RemoveDuplicates = DeleteDuplicates,
+(* else *)
 DefFn[
   RemoveDuplicates[l_] :=
   Module[{this,next,rest,positions},
@@ -691,7 +673,7 @@ DefFn[
 
        positions = Position[rest, this];
        next = Delete[rest, positions];
-       Prepend[RemoveDuplicates[next], this]]]];
+       Prepend[RemoveDuplicates[next], this]]]]];
 
 RemoveDuplicateRules[l_] :=
   Module[{lhs,lhs2,rhs2,result},

@@ -1,6 +1,7 @@
 #!/usr/bin/env MathematicaScript -script
 
 SetOptions[ $Output, FormatType -> OutputForm ];
+SetOptions["stdout", PageWidth -> Infinity];
 
 << MUnitRunner`;
 
@@ -9,6 +10,8 @@ SetOptions[ $Output, FormatType -> OutputForm ];
 (****************************************************************)
 
 Kranc`KrancDirectory = FileNameJoin[{Directory[],".."}];
+
+$TestThornDirectory = "TestThorns/thorns";
 
 $Path = Join[$Path,
   {Kranc`KrancDirectory <> "/Tools/CodeGen",
@@ -21,6 +24,7 @@ Needs["KrancThorn`"];
 (* SetDebugLevel[DebugQuiet]; *)
 
 alltests = {
+  "CodeGen",
   "Kranc",
   "McLachlan",
   "Tiling"
@@ -35,3 +39,5 @@ If[Length[args] > 0,
 
 (Print["\n"]; TestRun[#<>".mt", Loggers -> {VerbosePrintLogger[]}, TestRunTitle -> #]) & /@ tests;
 Print[];
+
+(* ReportFunctionCounts[]; *)

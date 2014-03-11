@@ -38,7 +38,7 @@ $evolveCalc = {
 Test[
   ClearAllTensors[];
   CreateKrancThornTT[
-    $groups, "TestThorns", "TilingTest",
+    $groups, $TestThornDirectory, "TilingTest",
     PartialDerivatives -> $derivatives,
     Tile               -> True,
     DeclaredGroups     -> {"evolved_group"},

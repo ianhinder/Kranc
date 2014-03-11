@@ -142,24 +142,24 @@ DefFn[
   CommentedBlock[
     "Initialise finite differencing variables",
     {
-      DeclareAssignVariable[DataType[], "dx", "params.cagh_dx"],
-      DeclareAssignVariable[DataType[], "dy", "params.cagh_dy"],
-      DeclareAssignVariable[DataType[], "dz", "params.cagh_dz"],
-      DeclareAssignVariable[DataType[], "dt", "params.cagh_dt"],
-      DeclareAssignVariable[DataType[], "t",  "params.cagh_time"],
+      DefineConstant["dx", DataType[], "params.cagh_dx"],
+      DefineConstant["dy", DataType[], "params.cagh_dy"],
+      DefineConstant["dz", DataType[], "params.cagh_dz"],
+      DefineConstant["dt", DataType[], "params.cagh_dt"],
+      DefineConstant["t", DataType[],  "params.cagh_time"],
 
-      DeclareAssignVariable[DataType[], "dxi", "INV(dx)"],
-      DeclareAssignVariable[DataType[], "dyi", "INV(dy)"],
-      DeclareAssignVariable[DataType[], "dzi", "INV(dz)"],
+      DefineConstant["dxi", DataType[], "INV(dx)"],
+      DefineConstant["dyi", DataType[], "INV(dy)"],
+      DefineConstant["dzi", DataType[], "INV(dz)"],
       
-      DeclareAssignVariable[DataType[], "khalf", "0.5"],
-      DeclareAssignVariable[DataType[], "kthird", "1/3.0"],
-      DeclareAssignVariable[DataType[], "ktwothird", "2.0/3.0"],
-      DeclareAssignVariable[DataType[], "kfourthird", "4.0/3.0"],
-      DeclareAssignVariable[DataType[], "keightthird", "8.0/3.0"],
-      DeclareAssignVariable[DataType[], "hdxi", "0.5 * dxi"],
-      DeclareAssignVariable[DataType[], "hdyi", "0.5 * dyi"],
-      DeclareAssignVariable[DataType[], "hdzi", "0.5 * dzi"]}]];
+      DefineConstant["khalf", DataType[], "0.5"],
+      DefineConstant["kthird", DataType[], "1/3.0"],
+      DefineConstant["ktwothird", DataType[], "2.0/3.0"],
+      DefineConstant["kfourthird", DataType[], "4.0/3.0"],
+      DefineConstant["keightthird", DataType[], "8.0/3.0"],
+      DefineConstant["hdxi", DataType[], "0.5 * dxi"],
+      DefineConstant["hdyi", DataType[], "0.5 * dyi"],
+      DefineConstant["hdzi", DataType[], "0.5 * dzi"]}]];
 
 cakernelLoopFunctionInt[b_, opts___] :=
   codeBlock[LoopName /. {opts}, b];
@@ -194,7 +194,7 @@ DefFn[CaKernelCode[calc_List,opts___] :=
 
     {"#undef KRANC_DIFF_FUNCTIONS\n",
      "#define KRANC_" <> ToUpperCase[CodeGenC`SOURCELANGUAGE] <> "\n",
-     Map[IncludeFile, {"Differencing.h", "GenericFD.h"}],
+     Map[IncludeFile, {"Differencing.h", "Kranc.hh"}],
 
      "\n",
      "#undef KRANC_GFOFFSET3D\n",

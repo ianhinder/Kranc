@@ -40,7 +40,7 @@ debugInLoop = False;
    General Utility Functions (could be moved outside this package)
    -------------------------------------------------------------------------- *)
 
-VerifyListContent[l_, type_, while_] :=
+DefFn[VerifyListContent[l_, type_, while_] :=
   Module[{types},
     If[!(Head[l] === List),
       ThrowError["Expecting a list of ", type,
@@ -49,7 +49,7 @@ VerifyListContent[l_, type_, while_] :=
     If [!(types === {type}) && !(types === {}),
       ThrowError["Expecting a list of ", type ,
         " objects, but found the following types of object: ",
-      ToString[types], " in ", l, while]]];
+      ToString[types], " in ", l, while]]]];
 
 (* ------------------------------------------------------------------------ 
    Setter
@@ -72,7 +72,7 @@ VerifyListContent[l_, type_, while_] :=
 
 Options[CreateSetterSource] = ThornOptions;
 
-CreateSetterSource[calcs_, debug_, include_,
+DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
   opts:OptionsPattern[]] :=
   Module[{calc = First[calcs],bodyFunction,tiledBodyFunction},
 
@@ -83,31 +83,32 @@ CreateSetterSource[calcs_, debug_, include_,
 
   {FileHeader["C"],
 
-   "#define KRANC_" <> ToUpperCase[CodeGenC`SOURCELANGUAGE] <> "\n\n",
+   NewlineSeparated[
+     {"#define KRANC_" <> ToUpperCase[CodeGenC`SOURCELANGUAGE] <> "\n",
 
-   If[CodeGenC`SOURCELANGUAGE == "C",
+   Join[If[CodeGenC`SOURCELANGUAGE == "C",
          {IncludeSystemFile["algorithm"],
           IncludeSystemFile["assert.h"],
           IncludeSystemFile["math.h"],
           IncludeSystemFile["stdio.h"],
           IncludeSystemFile["stdlib.h"],
-          IncludeSystemFile["string.h"]},
-         {"\n"}
-      ],
+          IncludeSystemFile["string.h"]}, {}],
 
    Map[IncludeFile, Join[{"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h",
-                         (*"precomputations.h",*) "GenericFD.h", "Differencing.h"},
+                         "Kranc.hh", (* This has to be before anything which includes
+                                        vectors.h (including Differencing.h) *)
+                         (*"precomputations.h",*) "Differencing.h"},
                          include,
                          If[CalculationLoopControlQ[calc], {"loopcontrol.h"},{}],
-                         {"Kranc.hh"},
                          If[OptionValue[UseOpenCL], OpenCLIncludeFiles[], {}],
-                         If[OptionValue[UseVectors], VectorisationIncludeFiles[], {}]]],
+                         If[OptionValue[UseVectors], VectorisationIncludeFiles[], {}]]]],
    CalculationMacros[OptionValue[UseVectors]],
 
    (* For each function structure passed, create the function and
       insert it *)
 
-   CalculationBoundariesFunction[First[calcs]],
+   WithNamespace[thornName, NewlineSeparated[
+     {CalculationBoundariesFunction[First[calcs]],
 
    bodyFunction = DefineFunction[lookup[calc,Name]<>"_Body", "static void", "const cGH* restrict const cctkGH, const int dir, const int face, const CCTK_REAL normal[3], const CCTK_REAL tangentA[3], const CCTK_REAL tangentB[3], const int imin[3], const int imax[3], const int n_subblock_gfs, CCTK_REAL* restrict const subblock_gfs[]",
   {
@@ -147,13 +148,13 @@ CreateSetterSource[calcs_, debug_, include_,
                       InitFDVariables -> InitialiseFDVariables[OptionValue[UseVectors]],
                       MacroPointer -> True}];
 
-   CreateCalculationFunction[calc, opts]}];
+   CreateCalculationFunction[calc, opts]}]]}]}]];
 
 (* --------------------------------------------------------------------------
    Calculations
    -------------------------------------------------------------------------- *)
 
-CheckGroupStorage[groupNames_, calcName_] :=
+DefFn[CheckGroupStorage[groupNames_, calcName_] :=
   Module[{ignoreGroups, groupsNames2},
     ignoreGroups = {"TmunuBase::stress_energy_scalar", "TmunuBase::stress_energy_vector",
       "TmunuBase::stress_energy_tensor"};
@@ -161,46 +162,48 @@ CheckGroupStorage[groupNames_, calcName_] :=
     {"\nconst char* const groups[] = {\n  ",
     Riffle[Map[Quote,groupNames2], ",\n  "],
     "};\n",
-    "GenericFD_AssertGroupStorage(cctkGH, ", Quote[calcName],", ", Length[groupNames2], ", groups);\n"}];
+    "AssertGroupStorage(cctkGH, ", Quote[calcName],", ", Length[groupNames2], ", groups);\n"}]];
 
 (* --------------------------------------------------------------------------
    Variables
    -------------------------------------------------------------------------- *)
 
-removeRHS[x_] :=
+DefFn[removeRHS[x_] :=
   Module[{string = ToString[x]},
     If[StringMatchQ[string, "*rhs"],
        ToExpression@StringDrop[string, -3],
-       x]];
+       x]]];
 
 (* Take a grid function name and return a name suitable for use in a local
    computation *)
-localName[x_] :=
-  ToString[x] <> "L";
+DefFn[localName[x_] :=
+  ToString[x] <> "L"];
 
 (* --------------------------------------------------------------------------
    Predefinitions
    -------------------------------------------------------------------------- *)
 
-definePreDefinitions[pDefs_] :=
+DefFn[definePreDefinitions[pDefs_] :=
   CommentedBlock["Initialize predefined quantities",
-    Map[DeclareAssignVariable[DataType[], #[[1]], #[[2]]] &, pDefs]];
+    Map[DefineConstant[#[[1]], DataType[], #[[2]]] &, pDefs]]];
 
 (* --------------------------------------------------------------------------
    Equations
    -------------------------------------------------------------------------- *)
 
+(* Not using DefFn here because the function is called a very large
+   number of times *)
 equationUsesShorthand[eq_, shorthand_] :=
   Length[Cases[{Last[eq]}, shorthand, Infinity]] != 0;
 
 (* Check that the given list of equations assigns things in the
    correct order.  Specifically, shorthands must not be used before
    they are assigned.  *)
-checkEquationAssignmentOrder[eqs_, shorthands_] :=
+DefFn[checkEquationAssignmentOrder[eqs_, shorthands_] :=
   Module[{},
-    Map[checkShorthandAssignmentOrder[eqs,#] &, shorthands]];
+    Map[checkShorthandAssignmentOrder[eqs,#] &, shorthands]]];
 
-printEq[eq_] :=
+DefFn[printEq[eq_] :=
   Module[{lhs, rhs, rhsSplit, split, rhsString},
     lhs = First@eq;
     rhs = Last@eq;
@@ -209,10 +212,10 @@ printEq[eq_] :=
     split[ x_       ] := { x, ""};
     rhsSplit = split[Expand@ProcessExpression[rhs,False]];
     rhsString = ToString@CForm[rhsSplit[[1]]] <> rhsSplit[[2]];
-    InfoMessage[InfoFull, " " <> ToString@lhs <> " -> " <> rhsString]];
+    InfoMessage[InfoFull, " " <> ToString@lhs <> " -> " <> rhsString]]];
 
 (* Collect and simplify terms *)
-simpCollect[collectList_, eqrhs_, localvar_, debug_] :=
+DefFn[simpCollect[collectList_, eqrhs_, localvar_, debug_] :=
   Module[{rhs, collectCoeff, all, localCollectList},
     InfoMessage[InfoFull, localvar];
 
@@ -229,20 +232,20 @@ simpCollect[collectList_, eqrhs_, localvar_, debug_] :=
     all = Profile["Collect/Simplify", Collect[rhs, localCollectList, Simplify]];
     InfoMessage[InfoFull, "ByteCount[simplified rhs]: ", ByteCount@all];
 
-    all];
+    all]];
 
 
 (* --------------------------------------------------------------------------
    Shorthands
    -------------------------------------------------------------------------- *)
 
-defContainsShorthand[def_, shorthands_] :=
+DefFn[defContainsShorthand[def_, shorthands_] :=
 Module[{allAtoms, c},
   allAtoms = Union[Level[def, {-1}]];
   c = Intersection[shorthands, allAtoms];
-  c != {}];
+  c != {}]];
 
-checkShorthandAssignmentOrder[eqs_, shorthand_] :=
+DefFn[checkShorthandAssignmentOrder[eqs_, shorthand_] :=
   Module[{useBooleans, uses, firstUse, lhss, assignments},
 
   (* Make a list of booleans describing, for each equation, whether it
@@ -271,7 +274,7 @@ checkShorthandAssignmentOrder[eqs_, shorthand_] :=
 
   If[assignments[[1]] >= firstUse,
     ThrowError["Shorthand", shorthand,
-      "is used before it is defined in this equation list", eqs]]];
+      "is used before it is defined in this equation list", eqs]]]];
 
 (* --------------------------------------------------------------------------
    Partial derivatives
@@ -279,20 +282,20 @@ checkShorthandAssignmentOrder[eqs_, shorthand_] :=
 
 (* Split the list of partial derivative definitions into those
    containing shorthands, and those that do not.  *)
-splitPDDefsWithShorthands[pddefs_, shorthands_] :=
+DefFn[splitPDDefsWithShorthands[pddefs_, shorthands_] :=
   Module[{defsWithShorts, defsWithoutShorts},
     defsWithShorts = Select[pddefs, defContainsShorthand[#, shorthands] &];
     defsWithoutShorts = Select[pddefs, ! defContainsShorthand[#, shorthands] &];
-    Return[{defsWithoutShorts, defsWithShorts}]];
+    Return[{defsWithoutShorts, defsWithShorts}]]];
 
-pdCanonicalOrdering[name_[inds___] -> x_] :=
+DefFn[pdCanonicalOrdering[name_[inds___] -> x_] :=
   Module[{is},
     is = {inds};
     If[Length[is] == 2,
       Return[{name[f_,2,1] -> name[f,1,2],
               name[f_,3,1] -> name[f,1,3],
               name[f_,3,2] -> name[f,2,3]}],
-      {}]];
+      {}]]];
 
 (* --------------------------------------------------------------------------
    Calculation function generation
@@ -404,23 +407,25 @@ DefFn[
 
   unknownSymbols = Complement[allSymbols, knownSymbols];
 
-  If[unknownSymbols != {},
-     ThrowError["Unknown symbols in calculation.  Symbols are:", unknownSymbols,
-       "Calculation is:", cleancalc]];
+  unknownSymbols /.
+    {{} :> True,
+      {s_} :> ThrowError["Unknown symbol " <> ToString[s] <> " in calculation " <> GetCalculationName[cleancalc]],
+      ss_ :> ThrowError["Unknown symbols " <> StringJoin[Riffle[ToString/@ss,", "]] <> " in calculation " <> GetCalculationName[cleancalc]],
+    _ :> ThrowError["Internal error: unrecognised value for unknownSymbols: "<>ToString[unknownSymbols, InputForm]]};
 
   kernelCall = Switch[where,
     Everywhere,
     If[TileCalculationQ[cleancalc],
-      lookup[cleancalc,ThornName]<>"_TiledLoopOverEverything(cctkGH, " <> bodyFunctionName <> ");\n",
-      "GenericFD_LoopOverEverything(cctkGH, " <> bodyFunctionName <> ");\n"],
+      "TiledLoopOverEverything(cctkGH, " <> bodyFunctionName <> ");\n",
+      "LoopOverEverything(cctkGH, " <> bodyFunctionName <> ");\n"],
     Interior | InteriorNoSync,
     If[TileCalculationQ[cleancalc],
-      lookup[cleancalc,ThornName]<>"_TiledLoopOverInterior(cctkGH, " <> bodyFunctionName <> ");\n",
-      "GenericFD_LoopOverInterior(cctkGH, " <> bodyFunctionName <> ");\n"],
+      "TiledLoopOverInterior(cctkGH, " <> bodyFunctionName <> ");\n",
+      "LoopOverInterior(cctkGH, " <> bodyFunctionName <> ");\n"],
     Boundary | BoundaryNoSync,
-      "GenericFD_LoopOverBoundary(cctkGH, " <> bodyFunctionName <> ");\n",
+      "LoopOverBoundary(cctkGH, " <> bodyFunctionName <> ");\n",
     BoundaryWithGhosts,
-      "GenericFD_LoopOverBoundaryWithGhosts(cctkGH, " <> bodyFunctionName <> ");\n",
+      "LoopOverBoundaryWithGhosts(cctkGH, " <> bodyFunctionName <> ");\n",
     _,
       ThrowError["Unknown 'Where' entry in calculation " <>
         functionName <> ": " <> ToString[where]]];
@@ -630,7 +635,7 @@ DefFn[
           vars = eq2[[2,All,1]];
           cond = eq2[[1]];
           preDeclare = Pick[vars, declare2];
-          ret = {Map[DeclareVariableNoInit[#, DataType[]] &, Complement[Union[preDeclare], localName/@gfsInRHS]], {"\n"},
+          ret = {Map[DeclareVariable[#, DataType[]] &, Complement[Union[preDeclare], localName/@gfsInRHS]], {"\n"},
                  Conditional[GenerateCodeFromExpression[KrancScalar[cond], False],
                   Riffle[AssignVariableFromExpression[#[[1]], #[[2]], False, OptionValue[UseVectors], noSimplify]& /@ eq2[[2]], "\n"],
                   Riffle[AssignVariableFromExpression[#[[1]], #[[2]], False, OptionValue[UseVectors], noSimplify]& /@ eq2[[3]], "\n"]]};,
@@ -698,8 +703,6 @@ DefFn[
 
     lookup[cleancalc,LoopFunction][
     {
-      (* DeclareDerivatives[defsWithoutShorts, eqsOrdered], *)
-
       (* TODO: Only make local copies for variables that are actually
          used later on; see e.g. variablesReadInCalc for how to make the
          distinction *)
@@ -773,8 +776,8 @@ DefFn[
 
 (* Unsorted *)
 
-GridFunctionsInExpression[x_, groups_] :=
-  Union[Cases[x, _ ? (MemberQ[allGroupVariables[groups],#] &), Infinity]];
+DefFn[GridFunctionsInExpression[x_, groups_] :=
+  Union[Cases[x, _ ? (MemberQ[allGroupVariables[groups],#] &), Infinity]]];
 
 (* Copy local variables back to their grid functions *)
 

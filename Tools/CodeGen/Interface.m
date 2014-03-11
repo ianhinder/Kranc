@@ -49,7 +49,9 @@ DefFn[CreateKrancInterface[declaredGroups:{_String...}, groups_List,
   implementation_String, inheritedImplementations:{_String...},
   includeFiles:{_String...}, opts:OptionsPattern[]] :=
 
-  Module[{diffCoeff, getMap, declaredGroupStructures, interface},
+  Module[{diffCoeff, getMap, getBbox, getBoundarySpecification,
+    multipatchGetBoundarySpecification, symTabHdl, declaredGroupStructures,
+    interface},
     (* These are the aliased functions that are USED by this thorn from other thorns *)
 
     diffCoeff = 
@@ -66,6 +68,34 @@ DefFn[CreateKrancInterface[declaredGroups:{_String...}, groups_List,
       ArgString -> "CCTK_POINTER_TO_CONST IN cctkGH"
     };
 
+    getBbox = 
+    {
+      Name -> "MultiPatch_GetBbox",
+      Type -> "CCTK_INT",
+      ArgString -> "CCTK_POINTER_TO_CONST IN cctkGH, CCTK_INT IN size, CCTK_INT OUT ARRAY bbox"
+    };
+
+    getBoundarySpecification = 
+    {
+      Name -> "GetBoundarySpecification",
+      Type -> "CCTK_INT",
+      ArgString -> "CCTK_INT IN size, CCTK_INT OUT ARRAY nboundaryzones, CCTK_INT OUT ARRAY is_internal, CCTK_INT OUT ARRAY is_staggered, CCTK_INT OUT ARRAY shiftout"
+    };
+
+    multipatchGetBoundarySpecification = 
+    {
+      Name -> "MultiPatch_GetBoundarySpecification",
+      Type -> "CCTK_INT",
+      ArgString -> "CCTK_INT IN map, CCTK_INT IN size, CCTK_INT OUT ARRAY nboundaryzones, CCTK_INT OUT ARRAY is_internal, CCTK_INT OUT ARRAY is_staggered, CCTK_INT OUT ARRAY shiftout"
+    };
+
+    symTabHdl = 
+    {
+      Name -> "SymmetryTableHandleForGrid",
+      Type -> "CCTK_INT",
+      ArgString -> "CCTK_POINTER_TO_CONST IN cctkGH"
+    };
+
     declaredGroupStructures = 
       Map[declaredGroupInterfaceStructure[groupFromName[#, groups]] &, 
           declaredGroups];
@@ -77,7 +107,9 @@ DefFn[CreateKrancInterface[declaredGroups:{_String...}, groups_List,
            If[OptionValue[UseVectors], {"vectors.h"}, {}]],
       declaredGroupStructures,
       UsesFunctions ->
-        Join[MoLUsedFunctions[], {diffCoeff, getMap}, 
+        Join[MoLUsedFunctions[],
+          {diffCoeff, getMap, getBbox, getBoundarySpecification,
+            multipatchGetBoundarySpecification,symTabHdl}, 
              CactusBoundary`GetUsedFunctions[]]],
    {If[OptionValue[UseCaKernel], CaKernelInterfaceCLL[], {}]}];
 

@@ -29,6 +29,7 @@ VectorisationLoadVariable;
 VectorisationConfigurationCCL;
 VectorisationType;
 VectorisationIncludeFiles;
+VectorisationMacros;
 
 Begin["`Private`"];
 
@@ -247,12 +248,23 @@ DefFn[
     
     Return[expr]]];
 
+DefFn[VectorisationMacros[] :=
+  {"ScalarINV(x) ((CCTK_REAL)1.0 / (x))",
+            "ScalarSQR(x) ((x) * (x))",
+            "ScalarCUB(x) ((x) * ScalarSQR(x))",
+            "ScalarQAD(x) (ScalarSQR(ScalarSQR(x)))",
+            "INV(x) (kdiv(ToReal(1.0),x))",
+            "SQR(x) (kmul(x,x))",
+            "CUB(x) (kmul(x,SQR(x)))",
+            "QAD(x) (SQR(SQR(x)))"}];
+
+
 (* Code generation: The following functions are called when vectorising. *)
 
 (* Return a block of code that assigns 'src' to 'dest' *)
 DefFn[
   storeVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol)] :=
-  {"vec_store_nta(", dest, ",", src, ")", EOL[]}];
+  {"vec_store_nta(", dest, ",", src, ")", ";\n"}];
 
 (* Return a block of code that defines some variables for a series of
    calls to StorePartialVariableInLoop *)
@@ -260,12 +272,12 @@ DefFn[
   prepareStorePartialVariableInLoop[i:(_String|_Symbol),
                                     ilo:(_String|_Symbol),
                                     ihi:(_String|_Symbol)] :=
-  {"vec_store_partial_prepare(", i, ",", ilo, ",", ihi, ")", EOL[]}];
+  {"vec_store_partial_prepare(", i, ",", ilo, ",", ihi, ")", ";\n"}];
 
 (* Return a block of code that assigns 'src' to 'dest' *)
 DefFn[
   storePartialVariableInLoop[dest:(_String|_Symbol), src:(_String|_Symbol)] :=
-  {"vec_store_nta_partial(", dest, ",", src, ")", EOL[]}];
+  {"vec_store_nta_partial(", dest, ",", src, ")", ";\n"}];
 
 DefFn[
   VectorisationLocalsToGridFunctions[gridNames_List, localNames_List] :=
@@ -288,7 +300,7 @@ DefFn[
 
 DefFn[
   VectorisationAssignVariableInLoop[dest:(_String|_Symbol), src:CodeGenBlock] :=
-  {dest, " = ", VectorisationLoadVariable[src], EOL[]}];
+  {dest, " = ", VectorisationLoadVariable[src], ";\n"}];
 
 DefFn[
   VectorisationConfigurationCCL[] :=

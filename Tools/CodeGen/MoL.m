@@ -48,14 +48,14 @@ Begin["`Private`"];
 (* FIXME: This is still not quite right.  We only want to have those variables that
    we set as constrained, but I don't think this can hurt.*)
 
-getConstrainedVariables[evolvedGroupNames_, groups_] :=
+DefFn[getConstrainedVariables[evolvedGroupNames_, groups_] :=
   Module[{evolvedGFs, allVariables, constrainedVariables},
     evolvedGFs = variablesFromGroups[evolvedGroupNames, groups];
     allVariables = Flatten[Map[groupVariables, groups],1];
     constrainedVariables = Complement[allVariables, Join[evolvedGFs, Map[Symbol[addrhs[#]] &, evolvedGFs]]];
-    constrainedVariables];
+    constrainedVariables]];
 
-CreateKrancMoLRegister[evolvedGroupNames_, nonevolvedGroupNames_, evolvedODEGroupNames_, nonevolvedODEGroupNames_, groups_, implementation_, thornName_] :=
+DefFn[CreateKrancMoLRegister[evolvedGroupNames_, nonevolvedGroupNames_, evolvedODEGroupNames_, nonevolvedODEGroupNames_, groups_, implementation_, thornName_] :=
   Module[{molspec, evolvedGFs, evolvedArrays, constrainedVariables},
     evolvedGFs = variablesFromGroups[evolvedGroupNames, groups];
     evolvedArrays = variablesFromGroups[evolvedODEGroupNames, groups];
@@ -73,7 +73,7 @@ CreateKrancMoLRegister[evolvedGroupNames_, nonevolvedGroupNames_, evolvedODEGrou
       ThornName -> thornName
     };
     molregister = createMoLRegistrationSource[molspec, False];
-    Return[molregister]];
+    Return[molregister]]];
 
 (* MoL registration = {EvolvedGFs -> {h11, ...}, PrimitiveGFs -> {trK, ...}, 
                        BaseImplementation -> "ADMBase", ThornName -> "ADMMoL"} *)
@@ -81,7 +81,7 @@ CreateKrancMoLRegister[evolvedGroupNames_, nonevolvedGroupNames_, evolvedODEGrou
 (* Given a MoL registration structure as defined above, return a
    CodeGen structure of a source file which will register the
    variables given with MoL. *)
-createMoLRegistrationSource[spec_, debug_] :=
+DefFn[createMoLRegistrationSource[spec_, debug_] :=
 
   Module[{tmp, lang},
 
@@ -97,6 +97,7 @@ createMoLRegistrationSource[spec_, debug_] :=
 
     tmp = {FileHeader["C"],
 
+    NewlineSeparated[{
     Map[IncludeFile, 
         {"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h"}],
 
@@ -127,12 +128,12 @@ createMoLRegistrationSource[spec_, debug_] :=
       Map[{"ierr += MoLRegisterConstrained(CCTK_VarIndex(\"", 
            #, "\"));\n"} &,
           lookup[spec, PrimitiveGFs]]],  *)
-	"return;\n"}]};
+	"return;\n"}]}]};
 
       CodeGenC`SOURCELANGUAGE = lang;
 
 tmp
-];
+]];
 
 (* ------------------------------------------------------------------------
    MoL Boundaries
@@ -152,11 +153,11 @@ To simplify scheduling, testing, etc. the 3 steps are currently applied in separ
 should be more efficient, but sometimes there will be a GF-dependent parameter,
 e.g. for radiation BCs *)
 
-cleanCPP[x_] := Map[StringReplace[FlattenBlock[#],  "  #" -> "#"]&, x];
+DefFn[cleanCPP[x_] := Map[StringReplace[FlattenBlock[#],  "  #" -> "#"]&, x]];
 
 (* Given a BC registration structure as defined above, return a
    CodeGen structure of a source file which does nothing yet! *)
-CreateMoLBoundariesSource[spec_] :=
+DefFn[CreateMoLBoundariesSource[spec_] :=
 
   Module[{gfs, groups, unqualifiedGroups, tmp, lang},
 
@@ -379,13 +380,13 @@ CreateMoLBoundariesSource[spec_] :=
       "/* 3. \"other\" boundary conditions, e.g. radiative */\n\n",
       "/* to simplify scheduling and testing, the 3 steps  */\n",
       "/* are currently applied in separate functions      */\n\n"},
-
+   "\n",
 
    cleanCPP@DefineCCTKFunction[lookup[spec,ThornName] <> "_CheckBoundaries",
    "void",
      {"return;\n"}],
 
-
+   "\n",
    cleanCPP@DefineCCTKFunction[lookup[spec,ThornName] <> "_SelectBoundConds", 
    "void",
      {DefineVariable["ierr",   "CCTK_INT", "0"],
@@ -415,9 +416,9 @@ CreateMoLBoundariesSource[spec_] :=
 
 	 CodeGenC`SOURCELANGUAGE = lang;
 tmp
-];
+]];
 
-CreateMoLExcisionSource[spec_] :=
+DefFn[CreateMoLExcisionSource[spec_] :=
 
   Module[{gfs, currentlang, body, excisionExtrap},
 
@@ -513,18 +514,18 @@ CreateMoLExcisionSource[spec_] :=
 CodeGenC`SOURCELANGUAGE = currentlang;
 
 body
-];
+]];
 
 DefFn[MoLReplaceDots[x_] := 
   x /. (dot[y_] :> Symbol[ToString[y] <> "rhs"])];
 
-EvolvedVariables[calc_] :=
+DefFn[EvolvedVariables[calc_] :=
   Module[{eqs, evolved, lhss},
     VerifyNewCalculation[calc];
     eqs = GetEquations[calc];
     lhss = Map[First, eqs];
     evolved = Cases[lhss, dot[v_] -> v];
-    Return[evolved]];
+    Return[evolved]]];
 
 DefFn[MoLEvolvedGroups[declaredGroups_, calcs_, groups_] :=
   Module[{evolvedVars, evolvedGroups},
@@ -558,7 +559,7 @@ DefFn[MoLNonevolvedGroups[declaredGroups_, calcs_, groups_] :=
 
 addrhs[x_] := ToString[x] <> "rhs";
 
-EvolvedGroupToRHSGroup[name_, groups_] := 
+DefFn[EvolvedGroupToRHSGroup[name_, groups_] := 
   Module[{names, group},
     names = Map[groupName, groups];
     If[!MemberQ[names, name], ThrowError["evolvedGroupToRHSGroup: Group \"" <> groupName <> "\" not found in groups structure:", groups]];
@@ -575,7 +576,7 @@ EvolvedGroupToRHSGroup[name_, groups_] :=
     group = group /. (ScheduleTimelevels -> _) :> (ScheduleTimelevels -> "rhs_timelevels");
     group = AddGroupExtra[group, MoLRHS -> "True"];
          
-    Return[group]];
+    Return[group]]];
 
 DefFn[
   MoLRHSGroupDefinitions[groups_List, evolvedGroups_List] :=

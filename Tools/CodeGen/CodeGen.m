@@ -23,12 +23,8 @@
 BeginPackage["CodeGen`", {"Errors`", "Kranc`"}];
 
 FlattenBlock::usage = "FlattenBlock[block] converts 'block' to a string.";
-SeparatedBlock::usage = "SeparatedBlock[block] returns a version of 'block' with " <>
-  "a newline before it.";
 GenerateFile::usage = "GenerateFile[name, block] writes 'block' to a file of the " <>
   "specified 'name'.";
-AddToFile::usage = "AddToFile[name, block] appends 'block' to a file of the " <>
-    "specified 'name'.";
 SpaceSeparated::usage = "";
 NewlineSeparated::usage = "";
 InfoVariable::usage = "";
@@ -40,36 +36,51 @@ IndentBlock::usage = "";
 IndentBlock2::usage = "";
 CheckBlock::usage = "";
 
-CodeGenBlock := _String | _?AtomQ | List[(_?(MatchQ[#, CodeGenBlock] &)) ...];
+(* In strict mode, codegen blocks must have head CodeBlock, indicating
+   that they were already checked for correctness.  This helps ensure
+   that blocks are checked when they are created, and errors are
+   reported earlier. Kranc does not yet conform to this new style. *)
+
+$CodeGenStrict = False;
+
+CodeGenBlock = 
+  If[$CodeGenStrict,
+    CodeBlock[_],
+     _CodeBlock | _String | _?AtomQ | List[(_?(MatchQ[#, CodeGenBlock] &)) ...]];
+
 Boolean = (True | False);
+
+CodeBlock;
+CodeBlockContents;
+MakeCodeBlock;
 
 Begin["`Private`"];
 
 (* Code generation utilities; not specific to any language *)
 
-DefFn[
-  CheckBlock[s_String] := s];
+CheckBlock[s_String] := s;
 
-DefFn[
-  CheckBlock[a_?AtomQ] := a];
+CheckBlock[a_?AtomQ] := a;
 
-DefFn[
-  CheckBlock[l_List] := Map[CheckBlock, l]];
+CheckBlock[l_List] := Map[CheckBlock, l];
 
-DefFn[
-  FlattenBlock[b_] :=
+CheckBlock[b_CodeBlock] := CheckBlock[CodeBlockContents[b]];
+
+FlattenBlock[b_] :=
   Module[
     {flattenBlock},
     flattenBlock[x_String] := x;
     flattenBlock[l_List] := StringJoin@@Map[FlattenBlock, l];
     flattenBlock[a_?AtomQ] := ToString[a];
+    flattenBlock[x_CodeBlock] := flattenBlock[CodeBlockContents[x]];
+    flattenBlock[x_] := ThrowError["Invalid arguments to flattenBlock: ", c];
 
     CheckBlock[b];
-    flattenBlock[b]]];
+    flattenBlock[b]];
 
 DefFn[
   IndentBlock[block:CodeGenBlock] :=
-  StringDrop["  " <> StringReplace[FlattenBlock[block], {"\n" -> "\n  "}],-2]];
+    StringDrop["  " <> StringReplace[FlattenBlock[block], {"\n" -> "\n  "}],-2]];
 
 (* This should be used everywhere - need to tidy up the newline convention in CodeGen *)
 DefFn[
@@ -78,23 +89,12 @@ DefFn[
       StringSplit[FlattenBlock[block],"\n"]],"\n"]];
 
 DefFn[
-  SeparatedBlock[block:CodeGenBlock] := {"\n", block}];
-ErrorDefinition[SeparatedBlock];
-
-DefFn[
   GenerateFile[filename_String, contents_] :=
   Module[
     {fp = OpenWrite[filename]},
     CheckBlock[contents];
     WriteString[fp, FlattenBlock[contents]];
     Sow[filename, GenerateFile];
-    Close[fp]]];
-
-DefFn[
-  AddToFile[filename_String, contents:CodeGenBlock] :=
-  Module[
-    {fp = OpenAppend[filename]},
-    WriteString[fp, FlattenBlock[contents]];
     Close[fp]]];
 
 DefFn[
@@ -128,42 +128,16 @@ DefFn[
                         "\n" -> "\\n\"\n\""] <> "\"\n"];
 
 DefFn[
-  PartitionVarList[list_List] :=
-  Module[
-    {partition, split},
-
-    partition[locallist_] :=
-    Module[
-      {cutoff},
-      cutoff = 6;
-      If[Length@locallist > cutoff, Partition[locallist, cutoff, cutoff, {1,1}, {}],
-         {locallist}]];
-
-    split = Split[list, NameRoot[#1] == NameRoot[#2] &];
-    split = Flatten[Map[partition, split], 1];
-
-    split]];
-
-DefFn[
-  insertFile[name_String] :=
-  Module[
-    {istream_, contents_},
-    istream = OpenRead[name];
-    contents = ReadList[istream, String];
-    Close[istream];
-    contents]];
-
-DefFn[
-  NameRoot[name_Symbol] :=
-  Module[
-    {dropNumberRule, root},
-    dropNumberRule = {"1" -> "", "2" -> "", "3" -> "", "4" -> "", "5" -> "",
-                      "6" -> "", "7" -> "", "8" -> "", "9" -> "", "0" -> "", "rhs" -> ""};
-    root = StringReplace[ToString@name, dropNumberRule]]];
-
-DefFn[
   Quote[x:CodeGenBlock] :=
   {"\"", x, "\""}];
+
+DefFn[
+  MakeCodeBlock[x_] :=
+  CodeBlock[CheckBlock[x]]];
+
+DefFn[
+  CodeBlockContents[CodeBlock[x_]] :=
+  x];
 
 End[];
 

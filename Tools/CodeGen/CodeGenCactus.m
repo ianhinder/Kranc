@@ -44,7 +44,6 @@ GridLoop::usage = "GridLoop[block] returns a block that is looped over for every
   "InitialiseGridLoopVariables.";
 ConditionalOnParameterTextual::usage = "";
 NameRoot::usage = "";
-PartitionVarList::usage = "";
 CCLBlock;
 CCLBlockCompact;
 
@@ -53,24 +52,24 @@ Begin["`Private`"];
 (* This is a Cactus-callable function *)
 DefFn[
   DefineCCTKFunction[name_String, type_String, contents:CodeGenBlock] :=
-  DefineFunction[
-    name, "extern \"C\" " <> type, "CCTK_ARGUMENTS", 
+  {"extern \"C\" ", DefineFunction[
+    name, type, "CCTK_ARGUMENTS", 
     {
       "DECLARE_CCTK_ARGUMENTS;\n",
       "DECLARE_CCTK_PARAMETERS;\n\n",
       contents
-    }]];
+    }]}];
 
 (* This is a Cactus-callable subroutine *)
 DefFn[
   DefineCCTKSubroutine[name_String, contents:CodeGenBlock] :=
-  DefineSubroutine[
+  {"extern \"C\" ", DefineSubroutine[
     name, "CCTK_ARGUMENTS", 
     {
       "DECLARE_CCTK_ARGUMENTS;\n",
       "DECLARE_CCTK_PARAMETERS;\n\n",
       contents
-    }]];
+    }]}];
 
 (* Access an element of an array; syntax is different between C and
    Fortran.  Always give this function a C-style array index. *)
@@ -94,19 +93,17 @@ DefFn[
 
 DefFn[
   ConditionalOnParameter[name_String, value_String, block:CodeGenBlock] :=
-  SeparatedBlock[
     {"if (CCTK_EQUALS(", name, ", \"", value, "\"))\n",
      "{\n",
      IndentBlock[block],
-     "}\n"}]];
+     "}\n"}];
 
 DefFn[
   ConditionalOnParameterTextual[text:CodeGenBlock, block:CodeGenBlock] :=
-  SeparatedBlock[
     {"if (", text, ")\n",
      "{\n",
      IndentBlock[block],
-     "}\n"}]];
+     "}\n"}];
 
 (* Code generation for Cactus .par files *)
 

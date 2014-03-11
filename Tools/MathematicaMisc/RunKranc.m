@@ -63,15 +63,61 @@ SetOptions["stdout", PageWidth -> Infinity];
 (* Quiet[Message[InverseFunction::ifun]]; *)
 
 Kranc`Private`get[package_] :=
- Module[{contents},
+ Module[{contents, tensors, tensorsWithIndices, replacements},
   contents = Import[package, "HeldExpressions"];
 
   (* Warn about and replace PD *)
-  If[KrancTensor`$KrancTensorPackage === "xTensor" && MemberQ[contents, PD, Infinity, Heads -> True],
+  If[MemberQ[contents, PD, Infinity, Heads -> True],
     InfoMessage[DebugQuiet, "PD is a reserved symbol and its use in a calculation is deprecated"];
     contents = contents /. PD -> KrancPD;
   ];
-  ReleaseHold[contents]
+
+  (* Replace DefineTensor *)
+  
+  (* Find all cases where DefineTensor is used. Ignore cases where a second argument is given
+     as the second argument would include indices. *)
+  tensors = Cases[contents, HoldPattern[DefineTensor[t_]] :> t, Infinity, Heads -> True];
+  AppendTo[tensors, Cases[contents, HoldPattern[Map[DefineTensor, l_]] :> l, Infinity, Heads -> True]];
+  (* AppendTo[tensors, Cases[contents, HoldPattern[Map[DefineTensor[#, __] &, l_]] :> l, Infinity, Heads -> True]]; *)
+  tensors = Flatten[tensors];
+  
+  (* We only care about cases where indices were not explicitly included *)
+  tensors = Map[(# /. t_[___] :> Sequence[] )&, tensors];
+  
+  (* Build up a list of replacement rules to replace a tensor without indices with one with
+     the appropriate indices. We look at the rest of the script to determine the appropriate
+     indices *)
+  tensorsWithIndices =
+    Map[Function[{t}, Module[{res},
+          res = Cases[contents /. MatrixInverse[t[i_, j_]] :> t[-j,-i], t[i__] :> {i}, Infinity];
+          res = res /. {- _?AbstractIndexQ -> - TangentKrancManifold, _?AbstractIndexQ -> TangentKrancManifold};
+          res = DeleteDuplicates[res];
+          t @@@ res]],
+        tensors];
+  tensorsWithIndices = Map[
+    Function[{l}, Module[{ret},
+      Which[
+        Length[l] === 0, ret = {};,
+        Length[l] > 1,
+          ThrowError["Unable to determine indices of tensor defined without indices, " <>
+                     "possible candidates are: ", l];,
+        True, ret = First[l];
+      ];
+      ret
+    ]], tensorsWithIndices];
+
+  replacements = MapThread[Rule, {tensors, tensorsWithIndices}] /. (_ -> {}) -> Sequence[];
+  replacements = replacements /. {-TangentKrancManifold :> DummyIn[-TangentKrancManifold], TangentKrancManifold :> DummyIn[TangentKrancManifold]};
+
+  InfoMessage[DebugQuiet, "Found tensors in DefineTensor without their indices specified. " <>
+                          "Assuming they are given by: ", replacements];
+  ReleaseHold[contents /.
+    {
+     HoldPattern[DefineTensor[t_]] :> DefineTensor[t /. replacements],
+     HoldPattern[Map[DefineTensor, l_]] :> Map[DefineTensor, l /. replacements]
+     (* HoldPattern[Map[DefineTensor[#, x__]&, l_]] :> Map[DefineTensor[#, x]&, l /. replacements] *)
+    }
+  ]
 ]
 
 exception = Catch[CatchKrancError@Catch[
@@ -81,7 +127,9 @@ exception = Catch[CatchKrancError@Catch[
 
       Switch[
         FileExtension[script],
-        "m",      Kranc`Private`get[script],
+        "m",      If[KrancTensor`$KrancTensorPackage === "xTensor",
+                     Kranc`Private`get[script],
+                     Get[script]],
         "kranc",  CreateThornFromKrancScript[script],
         _,        ThrowError["Unknown file extension for "<>script<>".  Recognised extensions are .m and .kranc."]]];
 

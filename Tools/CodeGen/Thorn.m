@@ -75,7 +75,7 @@ CreateThorn[thorn_] :=
 
       GenerateFile];
 
-    mergeFiles[lookup[thorn,MergeFiles], thornDirectory, generatedFiles];
+    mergeFiles[thorn, lookup[thorn,MergeFiles], thornDirectory, generatedFiles];
 
     (* Update thorn directory timestamp so that it can be used in makefiles *)
     GenerateFile[thornDirectory <> "/temp", {}];
@@ -84,16 +84,18 @@ CreateThorn[thorn_] :=
     Print["Thorn ", thornDirectory, " created successfully"];
 ];
 
-DefFn[mergeFiles[from_, to_String, generatedFiles_List] :=
+DefFn[mergeFiles[thorn_, from_, to_String, generatedFiles_List] :=
   If[from === None, 
     None,
     (* else *)
     Module[{allFiles},
       allFiles = FileNameDrop[#,FileNameDepth[from]]& /@ FileNames["*", from, Infinity];
-      Map[mergeFile[from, to, #, generatedFiles] &, allFiles]]]];
+      Map[mergeFile[thorn, from, to, #, generatedFiles] &, allFiles]]]];
 
-DefFn[mergeFile[from_String, to_String, path_String, generatedFiles_List] :=
-  Module[{fromPath, toPath},
+DefFn[mergeFile[thorn_,
+                from_String, to_String, path_String, generatedFiles_List] :=
+  Module[{thornName, fromPath, toPath},
+    thornName = lookup[thorn, Name];
     fromPath = FileNameJoin[{from,path}];
     toPath = FileNameJoin[{to,path}];
 
@@ -103,10 +105,14 @@ DefFn[mergeFile[from_String, to_String, path_String, generatedFiles_List] :=
       (* else *)
       If[MemberQ[generatedFiles, toPath],
         Module[{orig = Import[toPath,"Text"], new = Import[fromPath,"Text"]},
-          Export[toPath, orig<>"\n"<>new, "Text"]],
+          new = StringReplace[new, "@THORN_NAME@" -> thornName];
+          Export[toPath, orig<>"\n"<>new<>"\n", "Text"]],
         (* else *)
         If[FileExistsQ[toPath], DeleteFile[toPath]];
-        CopyFile[fromPath,toPath]]]]];
+        (* CopyFile[fromPath,toPath] *)
+        new = Import[fromPath,"Text"];
+        new = StringReplace[new, "@THORN_NAME@" -> thornName];
+        Export[toPath, new<>"\n", "Text"]]]]];
 
 End[];
 

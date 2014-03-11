@@ -127,13 +127,6 @@ test[makeSum[T[ua] F[SS[la]]], T[1] F[SS[1]] + T[2] F[SS[2]] + T[3] F[SS[3]]];
 
 test[makeSum[Sqrt[TT[la] S[ua]]], Sqrt[S[1] TT[1] + S[2] TT[2] + S[3] TT[3]]];
 
-test[makeSum[IfThen[cond, TT[la] S[ua], 0]],
- IfThen[cond, S[1] TT[1] + S[2] TT[2] + S[3] TT[3], 0]];
-
-test[makeSum[IfThen[cond, TT[la] S[ua], u[la] v[ua]]],
- IfThen[cond, S[1] TT[1] + S[2] TT[2] + S[3] TT[3],
-  u[1] v[1] + u[2] v[2] + u[3] v[3]]];
-
 
 (****************************************************************)
 (* makeSplit *)

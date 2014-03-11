@@ -418,15 +418,19 @@ ExpandComponents[l_ -> r_] :=
 
 (* FIXME: Figure out a way to avoid duplicating the code above in here *)
 ExpandComponents[x_] :=
- Module[{expr},
-  (* Add brackets to scalars if they aren't present *)
-  expr = x /. {t_?KrancScalarQ[] -> t[], t_?KrancScalarQ -> t[], Sign[t_] :> KrancSign[t]};
-
-  (* FIXME: Maybe we should find an alternative to Quiet here *)
-  Check[Quiet[Validate[expr], Validate::unknown], ThrowError["Invalid tensor expression"]];
-  Sequence @@ krancForm[
-   DeleteDuplicates[
-   Flatten[{ComponentArray[TraceBasisDummy[expr]]}] /. {-t_?xTensorQ[i___] :> t[i], 0 -> Sequence[]}]]
+ Module[{expr, inds, exprC},
+  InfoMessage[InfoFull, "Expanding tensor expression: ", x];
+  If[MemberQ[expr, IfThen, Infinity, Heads -> True],
+    ThrowError["IfThen is only supported in the right hand side of equations"];
+  ];
+  expr = x /. {t_?KrancScalarQ[] -> t[], t_?KrancScalarQ -> t[]};
+  expr = expr /. {Sign -> KrancSign, Abs -> KrancAbs, Switch -> KrancSwitch};
+  Check[Quiet[Validate[expr], Validate::unknown], ThrowError["Invalid tensor expression", expr]];
+  inds = IndicesOf[Free, BIndex][expr];
+  exprC = Flatten[{ComponentArray[TraceBasisDummy[expr], inds]}];
+  rules = krancForm[DeleteDuplicates[exprC /. {0 -> Sequence[]}]];
+  InfoMessage[InfoFull, "Expanded to: ", Map[InputForm, rules]];
+  Sequence @@ rules
 ];
 
 (*************************************************************)

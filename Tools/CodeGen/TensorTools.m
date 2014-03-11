@@ -112,6 +112,9 @@ Zero3::usage = "Zero3[i,j,k] is zero.";
 
 Euc::usage = "Euc[i,j] is the Euclidian metric.  It can be given
 tensorial or numerical indices.";
+EucDD;
+EucDU;
+EucUD;
 
 SetEnhancedTimes::usage = "SetEnhancedTime[boolean] enables or
 disabled automatic checking and relabelling of products for duplicated

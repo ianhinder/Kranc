@@ -23,6 +23,8 @@ BeginPackage["KrancScript`", {"Errors`", "Helpers`", "Kranc`", "JLink`",
 
 CreateThornFromKrancScript;
 
+If[$KrancTensorPackage === "TensorTools", Needs["TensorTools`"]];
+
 Begin["`Private`"];
 
 DefFn[

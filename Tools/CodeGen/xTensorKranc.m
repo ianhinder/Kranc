@@ -305,12 +305,12 @@ Module[{a,b,c},
 (*************************************************************)
 
 MatrixInverse[t_?xTensorQ] :=
- Module[{inverse, tensorCharacter, rank, a, b},
+ Module[{inverse, tensorCharacter, rank, a, b, kba, kbb},
   inverse = SymbolJoin["MatrixInverse", t];
 
   If[xTensorQ[inverse], Return[inverse]];
 
-  tensorCharacter = - SlotsOfTensor[t] /. TangentKrancManifold -> 1;
+  tensorCharacter = SlotsOfTensor[t] /. TangentKrancManifold -> 1;
   rank = Length[tensorCharacter];
 
   If[rank =!= 2,
@@ -318,9 +318,10 @@ MatrixInverse[t_?xTensorQ] :=
   ];
 
   {a, b} = $KrancIndices[[1;;2]] tensorCharacter;
+  {kba, kbb} = {KrancBasis, KrancBasis} tensorCharacter;
 
-  DefineTensor[inverse[a, b]];
-  SetComponents[inverse[a, b], Inverse[ComponentArray[t[-a, -b]]]];
+  DefineTensor[inverse[-b, -a]];
+  SetComponents[inverse[-b, -a], Inverse[ComponentArray[t[a, b], IndexList[{b, kbb}, {a, kba}]]]];
   inverse
 ];
 

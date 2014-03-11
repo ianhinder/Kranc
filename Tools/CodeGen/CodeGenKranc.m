@@ -114,11 +114,14 @@ DefFn[
              {"ptrdiff_t", "cdi", "sizeof(CCTK_REAL) * di"},
              {"ptrdiff_t", "cdj", "sizeof(CCTK_REAL) * dj"},
              {"ptrdiff_t", "cdk", "sizeof(CCTK_REAL) * dk"},
+             {DataType[], "t", "ToReal(cctk_time)"},
+             {DataType[], "x0", "ToReal(CCTK_ORIGIN_SPACE(0))"},
+             {DataType[], "y0", "ToReal(CCTK_ORIGIN_SPACE(1))"},
+             {DataType[], "z0", "ToReal(CCTK_ORIGIN_SPACE(2))"},
+             {DataType[], "dt", "ToReal(CCTK_DELTA_TIME)"},
              {DataType[], "dx", "ToReal(CCTK_DELTA_SPACE(0))"},
              {DataType[], "dy", "ToReal(CCTK_DELTA_SPACE(1))"},
              {DataType[], "dz", "ToReal(CCTK_DELTA_SPACE(2))"},
-             {DataType[], "dt", "ToReal(CCTK_DELTA_TIME)"},
-             {DataType[], "t", "ToReal(cctk_time)"},
 
              (* Note that dx is already a vector, so should not be wrapped in ToReal *)
              {DataType[], "dxi", "INV(dx)"},

@@ -29,7 +29,7 @@ BeginPackage["Kranc`"];
  kmadd, kmsub, knmadd, knmsub, kpos, kneg, kadd, ksub, kmul, kdiv,
  kacos, kacosh, kasin, kasinh, katan, katanh, kcopysign, kcos, kcosh, kfabs,
  kfmax, kfmin, kisgn, ksqrt, kexp, klog, kpow, ksgn, ksin, ksinh, ktan, ktanh,
- dir1, dir2, dir3, dt, dx, dy, dz,
+ dir1, dir2, dir3, t, x0, y0, z0, dt, dx, dy, dz,
  usejacobian,
  khalf, kthird, ktwothird, kfourthird, keightthird};
 
@@ -43,7 +43,8 @@ dummy;
 LoopPreIncludes, GroupImplementations, PartialDerivatives, NoSimplify,
 Boundary, Interior, InteriorNoSync, Where, AddToStencilWidth,
 Everywhere, normal1, normal2, normal3, INV, SQR, CUB, QAD, dot, pow,
-exp, dt, dx, dy, dz, idx, idy, idz, t, MinMod, VanLeer, BodyFunction,
+exp, t, x0, y0, z0, dt, dx, dy, dz, idx, idy, idz,
+MinMod, VanLeer, BodyFunction,
 CallerFunction, LoopFunction, GFAccessFunction, InitFDVariables,
 MacroPointer, CachedVariables, SplitBy, SeparatedDerivatives,
 SeparatedDerivatives2,GFOffset}

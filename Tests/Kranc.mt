@@ -80,6 +80,26 @@ Test[
 ]
 
 (****************************************************************)
+(* SimpleWaveVectors *)
+(****************************************************************)
+
+Test[
+  Module[{thornName = "TestSimpleWaveVectors"},
+  ClearAllTensors[];
+  CatchKrancError@CreateKrancThornTT[
+    $groups, $TestThornDirectory, thornName,
+    PartialDerivatives -> $derivatives,
+    DeclaredGroups     -> {"evolved_group"},
+    Calculations       -> {initialSineCalc[thornName], evolveCalc[thornName]},
+    UseVectors         -> True,
+    MergeFiles         -> "TestThorns/tests/"<>thornName]]
+  ,
+  Null
+  ,
+  TestID->"SimpleWaveVectors"
+]
+
+(****************************************************************)
 (* TestSimpleWaveODE *)
 (****************************************************************)
 

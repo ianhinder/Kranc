@@ -73,4 +73,5 @@ ExternalLibraries/MPI
 CactusUtils/TimerReport
 
 KrancTest/TestSimpleWave
+KrancTest/TestSimpleWaveVectors
 KrancTest/GFOffset

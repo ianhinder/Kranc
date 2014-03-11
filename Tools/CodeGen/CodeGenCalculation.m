@@ -401,7 +401,7 @@ DefFn[
   (* Check that there are no unknown symbols in the calculation *)
   allSymbols = CalculationSymbols[cleancalc];
   knownSymbols = Join[lookupDefault[cleancalc, AllowedSymbols, {}], gfs, shorts, parameters,
-    {dx,dy,dz,dt,idx,idy,idz,t, usejacobian, Pi, E, Symbol["i"], Symbol["j"], Symbol["k"], Symbol["ti"], Symbol["tj"], Symbol["tk"], normal1, normal2,
+    {t,cctkOriginSpace1,cctkOriginSpace2,cctkOriginSpace3,dx,dy,dz,dt,idx,idy,idz, usejacobian, Pi, E, cctkLbnd1, cctkLbnd2, cctkLbnd3, Symbol["i"], Symbol["j"], Symbol["k"], Symbol["ti"], Symbol["tj"], Symbol["tk"], normal1, normal2,
     normal3, tangentA1, tangentA2, tangentA3, tangentB1, tangentB2, tangentB3},
     If[useJacobian, JacobianSymbols[], {}]];
 

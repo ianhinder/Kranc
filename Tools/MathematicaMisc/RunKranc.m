@@ -67,7 +67,7 @@ Kranc`Private`get[package_] :=
   contents = Import[package, "HeldExpressions"];
 
   (* Warn about and replace PD *)
-  If[MemberQ[contents, PD, Infinity, Heads -> True],
+  If[KrancTensor`$KrancTensorPackage === "xTensor" && MemberQ[contents, PD, Infinity, Heads -> True],
     InfoMessage[DebugQuiet, "PD is a reserved symbol and its use in a calculation is deprecated"];
     contents = contents /. PD -> KrancPD;
   ];

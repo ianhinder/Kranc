@@ -29,8 +29,8 @@ BeginPackage["Kranc`"];
  kmadd, kmsub, knmadd, knmsub, kpos, kneg, kadd, ksub, kmul, kdiv,
  kacos, kacosh, kasin, kasinh, katan, katanh, kcopysign, kcos, kcosh, kfabs,
  kfmax, kfmin, kisgn, ksqrt, kexp, klog, kpow, ksgn, ksin, ksinh, ktan, ktanh,
- dir1, dir2, dir3, dt, dx, dy, dz,
- usejacobian,
+ dir1, dir2, dir3, t, cctkOriginSpace1, cctkOriginSpace2, cctkOriginSpace3,
+ dt, dx, dy, dz, cctkLbnd1, cctkLbnd2, cctkLbnd3, usejacobian,
  khalf, kthird, ktwothird, kfourthird, keightthird};
 
 (* Helpers.m *)
@@ -43,7 +43,9 @@ dummy;
 LoopPreIncludes, GroupImplementations, PartialDerivatives, NoSimplify,
 Boundary, Interior, InteriorNoSync, Where, AddToStencilWidth,
 Everywhere, normal1, normal2, normal3, INV, SQR, CUB, QAD, dot, pow,
-exp, dt, dx, dy, dz, idx, idy, idz, t, MinMod, VanLeer, BodyFunction,
+exp, t, cctkOriginSpace1, cctkOriginSpace2, cctkOriginSpace3,
+dt, dx, dy, dz, idx, idy, idz, cctkLbnd1, cctkLbnd2, cctkLbnd3,
+MinMod, VanLeer, BodyFunction,
 CallerFunction, LoopFunction, GFAccessFunction, InitFDVariables,
 MacroPointer, CachedVariables, SplitBy, SeparatedDerivatives,
 SeparatedDerivatives2,GFOffset}

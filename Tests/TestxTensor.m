@@ -64,7 +64,8 @@ reportResults[] :=
 
 testsPassed = 0; testsFailed = 0;
 
-DefineTensor /@ {S[ua], SS[la], T[ua], TT[la], u[ua], v[la], A, B, S2[ua,ub], SS2[la,lb]};
+DefineTensor /@ {S[ua], SS[la], T[ua], TT[la], u[ua], v[la], A, B, S2[ua,ub], SS2[la,lb],
+   Tuu[ua,ub], Tud[ua,lb], Tdu[la,ub], Tdd[la,lb]};
 
 DefInertHead /@ {F, G};
 
@@ -164,20 +165,28 @@ test[MakeExplicit[Sqrt[S[ua] TT[la]]], {Sqrt[S1 TT1 + S2 TT2 + S3 TT3]}];
 
 test[MakeExplicit[Sqrt[u[ua] v[la]]], {Sqrt[u1 v1 + u2  v2 + u3 v3]}];
 
-(* This fails with 
+test[FullSimplify[MakeExplicit[MatrixInverse[Tuu[la, lb]] Tuu[ub, uc]]],
+ {1, 0, 0, 0, 1, 0, 0, 0, 1}];
 
-   StringJoin::string: String expected at position 1 in StringJoin[1].
+test[FullSimplify[MakeExplicit[MatrixInverse[Tuu[lb, la]] Tuu[uc, ub]]],
+ {1, 0, 0, 0, 1, 0, 0, 0, 1}];
 
-   which is probably an error in the error-detection or formatting
-   code, since the input is not valid according to TensorTools (the
-   tensor u has not been declared with two lower indices).
+test[FullSimplify[MakeExplicit[MatrixInverse[Tud[ua, lb]] Tud[ub, lc]]],
+ {1, 0, 0, 0, 1, 0, 0, 0, 1}];
 
- *)
+test[FullSimplify[MakeExplicit[MatrixInverse[Tud[ub, la]] Tud[uc, lb]]],
+ {1, 0, 0, 0, 1, 0, 0, 0, 1}];
 
-(* test[FullSimplify[MakeExplicit[MatrixInverse[u[ua, ub]] u[lb, lc]]], *)
-(*  {1, 0, 0, 0, 1, 0, 0, 0, 1}]; *)
+test[FullSimplify[MakeExplicit[MatrixInverse[Tdu[la, ub]] Tdu[lb, uc]]],
+ {1, 0, 0, 0, 1, 0, 0, 0, 1}];
 
-test[FullSimplify[MakeExplicit[MatrixInverse[SS2[ua, ub]] SS2[lb, lc]]],
+test[FullSimplify[MakeExplicit[MatrixInverse[Tdu[lb, ua]] Tdu[lc, ub]]],
+ {1, 0, 0, 0, 1, 0, 0, 0, 1}];
+
+test[FullSimplify[MakeExplicit[MatrixInverse[Tdd[ua, ub]] Tdd[lb, lc]]],
+ {1, 0, 0, 0, 1, 0, 0, 0, 1}];
+
+test[FullSimplify[MakeExplicit[MatrixInverse[Tdd[ub, ua]] Tdd[lc, lb]]],
  {1, 0, 0, 0, 1, 0, 0, 0, 1}];
 
 (****************************************************************)

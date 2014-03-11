@@ -95,10 +95,22 @@ InfoMessage[level_, message__] :=
 SetDebugLevel[level_] :=
   debugLevel = level;
 
+candidateFunction[f_, pats_List] :=
+  ToString[f]<>"["<>StringJoin[Riffle[pats, ","]]<>"]\n";
+
 ErrorDefinition[x_] :=
   x[args___] :=
-    ThrowError["Invalid arguments: " <> 
-      ToString[x] <> "[" <> StringJoin[Riffle[(ToString[FullForm[#]]) & /@ {args},","]] <> "]"];
+    Module[{used,candidateExprs,candidateStrings},
+      used = ToString[x] <> "[" <> StringJoin@@Riffle[(ToString[Blank[Head[#]]]) & /@ {args},","] <> "]";
+      (* The following has some problem, probably due to early evaluation *)
+      (* candidateExprs = DownValues[x][[All, 1]] /. x[pats__] :> {pats} /. HoldPattern->Identity; *)
+      (* candidateStrings = StringJoin[candidateFunction[x,#] & /@ candidateExprs]; *)
+
+      (* Print["used = ", InputForm[used]]; *)
+      (* Print["candidateExprs = ", InputForm[candidateExprs]]; *)
+      (* Print["candidateStrings = ", InputForm[candidateStrings]]; *)
+
+      ThrowError["Invalid arguments: " <> used <>"\n"(* <>"Candidates are:\n"<> candidateStrings *)]];
 
 SetAttributes[DefFn, HoldAll];
 

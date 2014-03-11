@@ -18,7 +18,7 @@ $Path = Join[{"../Tools/CodeGen", "../Tools/MathematicaMisc"}, $Path];
 SetOptions["stdout", PageWidth -> Infinity];
 SetOptions[$Output, FormatType -> OutputForm];
 
-Print["Loading tensortools"];
+Print["Loading Kranc"];
 << xTensorKranc`;
 
 Print["Arguments: ", $ScriptCommandLine];

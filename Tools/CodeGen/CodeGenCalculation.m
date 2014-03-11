@@ -625,13 +625,13 @@ DefFn[
         Which[
         SameQ[Head[eq2[[2]]], IfThen],
           ret = AssignVariableFromExpression[eq2[[1]],
-            eq2[[2]] /. IfThen[cond_, x__]:> IfThen[Scalar[cond], x], declare2, OptionValue[UseVectors], noSimplify];,
+            eq2[[2]] /. IfThen[cond_, x__]:> IfThen[KrancScalar[cond], x], declare2, OptionValue[UseVectors], noSimplify];,
         SameQ[Head[eq2], IfThenGroup],
           vars = eq2[[2,All,1]];
           cond = eq2[[1]];
           preDeclare = Pick[vars, declare2];
           ret = {Map[DeclareVariableNoInit[#, DataType[]] &, Complement[Union[preDeclare], localName/@gfsInRHS]], {"\n"},
-                 Conditional[GenerateCodeFromExpression[Scalar[cond], False],
+                 Conditional[GenerateCodeFromExpression[KrancScalar[cond], False],
                   Riffle[AssignVariableFromExpression[#[[1]], #[[2]], False, OptionValue[UseVectors], noSimplify]& /@ eq2[[2]], "\n"],
                   Riffle[AssignVariableFromExpression[#[[1]], #[[2]], False, OptionValue[UseVectors], noSimplify]& /@ eq2[[3]], "\n"]]};,
         True,

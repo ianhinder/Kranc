@@ -2,6 +2,7 @@
 
 #define KRANC_C
 
+#include <algorithm>
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
@@ -12,8 +13,8 @@
 #include "cctk_Parameters.h"
 #include "GenericFD.h"
 #include "Differencing.h"
-#include "cctk_Loop.h"
 #include "loopcontrol.h"
+#include "Kranc.hh"
 
 /* Define macros used in calculations */
 #define INITVALUE (42)
@@ -27,7 +28,9 @@ extern "C" void burgers_reconstruct_1_SelectBCs(CCTK_ARGUMENTS)
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  CCTK_INT ierr CCTK_ATTRIBUTE_UNUSED  = 0;
+  if (cctk_iteration % burgers_reconstruct_1_calc_every != burgers_reconstruct_1_calc_offset)
+    return;
+  CCTK_INT ierr CCTK_ATTRIBUTE_UNUSED = 0;
   ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, GenericFD_GetBoundaryWidth(cctkGH), -1 /* no table */, "Burgers::uLeft_group","flat");
   if (ierr < 0)
     CCTK_WARN(1, "Failed to register flat BC for Burgers::uLeft_group.");
@@ -37,7 +40,7 @@ extern "C" void burgers_reconstruct_1_SelectBCs(CCTK_ARGUMENTS)
   return;
 }
 
-static void burgers_reconstruct_1_Body(cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const imin[3], int const imax[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[])
+static void burgers_reconstruct_1_Body(const cGH* restrict const cctkGH, const int dir, const int face, const CCTK_REAL normal[3], const CCTK_REAL tangentA[3], const CCTK_REAL tangentB[3], const int imin[3], const int imax[3], const int n_subblock_gfs, CCTK_REAL* restrict const subblock_gfs[])
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
@@ -46,34 +49,36 @@ static void burgers_reconstruct_1_Body(cGH const * restrict const cctkGH, int co
   /* Include user-supplied include files */
   
   /* Initialise finite differencing variables */
-  ptrdiff_t /*const*/ di CCTK_ATTRIBUTE_UNUSED  = 1;
-  ptrdiff_t /*const*/ dj CCTK_ATTRIBUTE_UNUSED  = CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0);
-  ptrdiff_t /*const*/ dk CCTK_ATTRIBUTE_UNUSED  = CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0);
-  ptrdiff_t /*const*/ cdi CCTK_ATTRIBUTE_UNUSED  = sizeof(CCTK_REAL) * di;
-  ptrdiff_t /*const*/ cdj CCTK_ATTRIBUTE_UNUSED  = sizeof(CCTK_REAL) * dj;
-  ptrdiff_t /*const*/ cdk CCTK_ATTRIBUTE_UNUSED  = sizeof(CCTK_REAL) * dk;
-  CCTK_REAL /*const*/ dx CCTK_ATTRIBUTE_UNUSED  = ToReal(CCTK_DELTA_SPACE(0));
-  CCTK_REAL /*const*/ dy CCTK_ATTRIBUTE_UNUSED  = ToReal(CCTK_DELTA_SPACE(1));
-  CCTK_REAL /*const*/ dz CCTK_ATTRIBUTE_UNUSED  = ToReal(CCTK_DELTA_SPACE(2));
-  CCTK_REAL /*const*/ dt CCTK_ATTRIBUTE_UNUSED  = ToReal(CCTK_DELTA_TIME);
-  CCTK_REAL /*const*/ t CCTK_ATTRIBUTE_UNUSED  = ToReal(cctk_time);
-  CCTK_REAL /*const*/ dxi CCTK_ATTRIBUTE_UNUSED  = INV(dx);
-  CCTK_REAL /*const*/ dyi CCTK_ATTRIBUTE_UNUSED  = INV(dy);
-  CCTK_REAL /*const*/ dzi CCTK_ATTRIBUTE_UNUSED  = INV(dz);
-  CCTK_REAL /*const*/ khalf CCTK_ATTRIBUTE_UNUSED  = 0.5;
-  CCTK_REAL /*const*/ kthird CCTK_ATTRIBUTE_UNUSED  = 1/3.0;
-  CCTK_REAL /*const*/ ktwothird CCTK_ATTRIBUTE_UNUSED  = 2.0/3.0;
-  CCTK_REAL /*const*/ kfourthird CCTK_ATTRIBUTE_UNUSED  = 4.0/3.0;
-  CCTK_REAL /*const*/ keightthird CCTK_ATTRIBUTE_UNUSED  = 8.0/3.0;
-  CCTK_REAL /*const*/ hdxi CCTK_ATTRIBUTE_UNUSED  = 0.5 * dxi;
-  CCTK_REAL /*const*/ hdyi CCTK_ATTRIBUTE_UNUSED  = 0.5 * dyi;
-  CCTK_REAL /*const*/ hdzi CCTK_ATTRIBUTE_UNUSED  = 0.5 * dzi;
+  const ptrdiff_t di CCTK_ATTRIBUTE_UNUSED = 1;
+  const ptrdiff_t dj CCTK_ATTRIBUTE_UNUSED = CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0);
+  const ptrdiff_t dk CCTK_ATTRIBUTE_UNUSED = CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0);
+  const ptrdiff_t cdi CCTK_ATTRIBUTE_UNUSED = sizeof(CCTK_REAL) * di;
+  const ptrdiff_t cdj CCTK_ATTRIBUTE_UNUSED = sizeof(CCTK_REAL) * dj;
+  const ptrdiff_t cdk CCTK_ATTRIBUTE_UNUSED = sizeof(CCTK_REAL) * dk;
+  const CCTK_REAL dx CCTK_ATTRIBUTE_UNUSED = ToReal(CCTK_DELTA_SPACE(0));
+  const CCTK_REAL dy CCTK_ATTRIBUTE_UNUSED = ToReal(CCTK_DELTA_SPACE(1));
+  const CCTK_REAL dz CCTK_ATTRIBUTE_UNUSED = ToReal(CCTK_DELTA_SPACE(2));
+  const CCTK_REAL dt CCTK_ATTRIBUTE_UNUSED = ToReal(CCTK_DELTA_TIME);
+  const CCTK_REAL t CCTK_ATTRIBUTE_UNUSED = ToReal(cctk_time);
+  const CCTK_REAL dxi CCTK_ATTRIBUTE_UNUSED = INV(dx);
+  const CCTK_REAL dyi CCTK_ATTRIBUTE_UNUSED = INV(dy);
+  const CCTK_REAL dzi CCTK_ATTRIBUTE_UNUSED = INV(dz);
+  const CCTK_REAL khalf CCTK_ATTRIBUTE_UNUSED = 0.5;
+  const CCTK_REAL kthird CCTK_ATTRIBUTE_UNUSED = 
+    0.333333333333333333333333333333;
+  const CCTK_REAL ktwothird CCTK_ATTRIBUTE_UNUSED = 
+    0.666666666666666666666666666667;
+  const CCTK_REAL kfourthird CCTK_ATTRIBUTE_UNUSED = 
+    1.33333333333333333333333333333;
+  const CCTK_REAL hdxi CCTK_ATTRIBUTE_UNUSED = 0.5*dxi;
+  const CCTK_REAL hdyi CCTK_ATTRIBUTE_UNUSED = 0.5*dyi;
+  const CCTK_REAL hdzi CCTK_ATTRIBUTE_UNUSED = 0.5*dzi;
   
   /* Initialize predefined quantities */
-  CCTK_REAL /*const*/ p1o1 CCTK_ATTRIBUTE_UNUSED  = 1.;
-  CCTK_REAL /*const*/ p1odx CCTK_ATTRIBUTE_UNUSED  = INV(dx);
-  CCTK_REAL /*const*/ p1ody CCTK_ATTRIBUTE_UNUSED  = INV(dy);
-  CCTK_REAL /*const*/ p1odz CCTK_ATTRIBUTE_UNUSED  = INV(dz);
+  const CCTK_REAL p1o1 CCTK_ATTRIBUTE_UNUSED = 1;
+  const CCTK_REAL p1odx CCTK_ATTRIBUTE_UNUSED = INV(dx);
+  const CCTK_REAL p1ody CCTK_ATTRIBUTE_UNUSED = INV(dy);
+  const CCTK_REAL p1odz CCTK_ATTRIBUTE_UNUSED = INV(dz);
   
   /* Assign local copies of arrays functions */
   
@@ -84,12 +89,19 @@ static void burgers_reconstruct_1_Body(cGH const * restrict const cctkGH, int co
   /* Copy local copies back to grid functions */
   
   /* Loop over the grid points */
-  #pragma omp parallel
+  const int imin0=imin[0];
+  const int imin1=imin[1];
+  const int imin2=imin[2];
+  const int imax0=imax[0];
+  const int imax1=imax[1];
+  const int imax2=imax[2];
+  #pragma omp parallel // reduction(+: vec_iter_counter, vec_op_counter, vec_mem_counter)
   CCTK_LOOP3(burgers_reconstruct_1,
-    i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
+    i,j,k, imin0,imin1,imin2, imax0,imax1,imax2,
     cctk_ash[0],cctk_ash[1],cctk_ash[2])
   {
-    ptrdiff_t /*const*/ index CCTK_ATTRIBUTE_UNUSED  = di*i + dj*j + dk*k;
+    const ptrdiff_t index CCTK_ATTRIBUTE_UNUSED = di*i + dj*j + dk*k;
+    // ++vec_iter_counter;
     
     /* Assign local copies of grid functions */
     
@@ -99,20 +111,20 @@ static void burgers_reconstruct_1_Body(cGH const * restrict const cctkGH, int co
     /* Include user supplied include files */
     
     /* Precompute derivatives */
-    CCTK_REAL /*const*/ DiffPlus1u CCTK_ATTRIBUTE_UNUSED  = DiffPlus1(&u[index]);
-    CCTK_REAL /*const*/ DiffMinus1u CCTK_ATTRIBUTE_UNUSED  = DiffMinus1(&u[index]);
+    const CCTK_REAL DiffPlus1u CCTK_ATTRIBUTE_UNUSED = DiffPlus1(&u[index]);
+    const CCTK_REAL DiffMinus1u CCTK_ATTRIBUTE_UNUSED = DiffMinus1(&u[index]);
     
     /* Calculate temporaries and grid functions */
-    CCTK_REAL CCTK_ATTRIBUTE_UNUSED slopeL = DiffMinus1u;
+    CCTK_REAL slopeL CCTK_ATTRIBUTE_UNUSED = DiffMinus1u;
     
-    CCTK_REAL CCTK_ATTRIBUTE_UNUSED slopeR = DiffPlus1u;
+    CCTK_REAL slopeR CCTK_ATTRIBUTE_UNUSED = DiffPlus1u;
     
-    CCTK_REAL CCTK_ATTRIBUTE_UNUSED slope = IfThen(slopeL*slopeR < 
-      0.,0.,IfThen(fabs(slopeL) < fabs(slopeR),slopeL,slopeR));
+    CCTK_REAL slope CCTK_ATTRIBUTE_UNUSED = IfThen(slopeL*slopeR < 
+      0,0,IfThen(fabs(slopeL) < fabs(slopeR),slopeL,slopeR));
     
-    CCTK_REAL CCTK_ATTRIBUTE_UNUSED uLeftL = uL - 0.5*slope;
+    CCTK_REAL uLeftL CCTK_ATTRIBUTE_UNUSED = uL - 0.5*slope;
     
-    CCTK_REAL CCTK_ATTRIBUTE_UNUSED uRL = uL + 0.5*slope;
+    CCTK_REAL uRL CCTK_ATTRIBUTE_UNUSED = uL + 0.5*slope;
     
     /* Copy local copies back to grid functions */
     uLeft[index] = uLeftL;
@@ -137,7 +149,7 @@ extern "C" void burgers_reconstruct_1(CCTK_ARGUMENTS)
     return;
   }
   
-  const char *const groups[] = {
+  const char* const groups[] = {
     "Burgers::u_group",
     "Burgers::uLeft_group",
     "Burgers::uR_group"};

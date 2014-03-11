@@ -39,14 +39,14 @@ derivatives =
     StandardCenteredDifferenceOperator[1,2,j]
 };
 
-PD = PDstandard2nd;
+DefineDerivative[pd, PDstandard2nd];
 
 (**************************************************************************************)
 (* Tensors *)
 (**************************************************************************************)
 
 (* Register the tensor quantities with the TensorTools package *)
-Map[DefineTensor, {El,B}];
+Map[DefineTensor, {El[la], B[la]}];
 
 (**************************************************************************************)
 (* Groups *)
@@ -93,8 +93,8 @@ evolCalc =
   Where -> Interior,
   Equations -> 
   {
-    dot[El[la]] -> (Eps[la,lb,lc] Euc[ub,ue] Euc[uc,uf] PD[B[lf],le]),
-    dot[B[la]]  -> -(Eps[la,lb,lc] Euc[ub,ue] Euc[uc,uf] PD[El[lf],le])
+    dot[El[la]] -> (Eps[la,lb,lc] Euc[ub,ue] Euc[uc,uf] pd[B[lf],le]),
+    dot[B[la]]  -> -(Eps[la,lb,lc] Euc[ub,ue] Euc[uc,uf] pd[El[lf],le])
   }
 }
 
@@ -108,7 +108,7 @@ constraintsCalc =
   Where -> Interior,
   Equations -> 
   {
-    CEl -> PD[El[la],lb] Euc[ua,ub], CB -> PD[B[la],lb] Euc[ua,ub]
+    CEl -> pd[El[la],lb] Euc[ua,ub], CB -> pd[B[la],lb] Euc[ua,ub]
   }
 }
 

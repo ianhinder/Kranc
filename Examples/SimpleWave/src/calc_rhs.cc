@@ -2,6 +2,7 @@
 
 #define KRANC_C
 
+#include <algorithm>
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
@@ -12,7 +13,6 @@
 #include "cctk_Parameters.h"
 #include "GenericFD.h"
 #include "Differencing.h"
-#include "cctk_Loop.h"
 #include "loopcontrol.h"
 #include "Kranc.hh"
 

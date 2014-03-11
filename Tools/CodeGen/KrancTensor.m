@@ -24,11 +24,15 @@
 (* Wrapper providing tensor support to Kranc (from TensorTools or xTensor)  *)
 (****************************************************************************)
 
-$KrancTensorPackage = "TensorToolsKranc`";
+If[!ValueQ[$KrancTensorPackage],
+  KrancTensor`$KrancTensorPackage = "TensorTools";
+  KrancTensor`$KrancTensorNeeds = Sequence["TensorToolsKranc`", "TensorTools`"];,
+  KrancTensor`$KrancTensorNeeds = "xTensorKranc`";
+];
 
 BeginPackage["KrancTensor`", {"Errors`", "KrancThorn`", "MapLookup`", "KrancGroups`",
-                              "Kranc`", $KrancTensorPackage, "ConservationCalculation`",
-                              "TensorTools`", "KrancGroups`", "Differencing`",
+                              "Kranc`", KrancTensor`$KrancTensorNeeds, "ConservationCalculation`",
+                              "KrancGroups`", "Differencing`",
                               "Piraha`", "ScriptOutput`"}];
 
 CreateKrancThornTT::usage = "Construct a Kranc thorn using tensor expressions.";
@@ -47,15 +51,27 @@ Begin["`Private`"];
 Options[CreateKrancThornTT] = ThornOptions;
 
 CreateKrancThornTT[groups_, parentDirectory_, thornName_, opts:OptionsPattern[]] :=
-  Module[{calcs, expCalcs, expGroups, options, derivs, expDerivs, reflectionSymmetries, declaredGroups, consCalcs, expConsCalcs, pds},
+  Module[{calcs, expCalcs, expGroups, options, derivs, expDerivs, reflectionSymmetries, declaredGroups, consCalcs, expConsCalcs, intParams, realParams},
     InfoMessage[Terse, "Creating thorn "<>thornName];
+    If[$KrancTensorPackage === "xTensor" && MemberQ[{opts}, xAct`xTensor`PD, Infinity, Heads -> True],
+      ThrowError["PD is a reserved symbol and may not be used in a calculation"];
+    ];
     InfoMessage[Terse, "Processing tensorial arguments"];
     calcs = lookup[{opts}, Calculations];
     consCalcs = lookupDefault[{opts}, ConservationCalculations, {}];
     derivs = lookupDefault[{opts}, PartialDerivatives, {}];
 
-    pds = Union[derivs[[All,1,0]]];
-    Map[DefineDerivative, pds];
+    If[$KrancTensorPackage === "xTensor",
+      intParams = lookupDefault[{opts}, IntParameters, {}] /. {___, Name -> name_, ___} :> name;
+      realParams = lookupDefault[{opts}, RealParameters, {}] /. {___, Name -> name_, ___} :> name;
+      Scan[DefineParameter, intParams];
+      Scan[DefineParameter, realParams];
+    ]
+
+    If[$KrancTensorPackage === "TensorTools",
+      pds = Union[derivs[[All,1,0]]];
+      Map[DefineDerivative, pds];
+    ];
 
     Map[CheckCalculationTensors, calcs];
 

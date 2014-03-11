@@ -23,7 +23,7 @@ BeginPackage["Kranc`"];
 (* CodeGen.m *)
 
 {INV, SQR, CUB, QAD, ScalarINV, ScalarSQR, ScalarCUB, ScalarQAD,
- IfThen, Parenthesis, Scalar, ToReal,
+ IfThen, Parenthesis, KrancScalar, ToReal,
  sqrt, exp, log, pow, atan2, cos, sin, tan, acos, asin, atan,
  cosh, sinh, tanh, acosh, asinh, atanh, fmax, fmin, fabs, isgn, sgn,
  kmadd, kmsub, knmadd, knmsub, kpos, kneg, kadd, ksub, kmul, kdiv,
@@ -120,7 +120,7 @@ LocalGroups;
 (* Thorn.m *)
 
 {AccumulatorBase, ThornImplementation, Name, Type, Extend, Default,
-Comment, Range, Implementation, Group, SchedulePoint, Language,
+Comment, Range, Implementation, KrancGroup, SchedulePoint, Language,
 RequiredGroups, RequiredRegion, ProvidedGroups, ProvidedRegion,
 SynchronizedGroups, StorageGroups, Timelevels, TimelevelsParameter,
 VariableType, GridType, Dim, Size,
@@ -138,7 +138,7 @@ Steerable, Never, Always, Recover, Primitives, CaKernel, ScheduleGroups, Files};
 
 (* TensorTools.m *)
 
-{D1, D2, D3, D11, D22, D33, D21, D31, D32, D12, D13, D23, dot, Eps, Zero3}
+{D1, D2, D3, D11, D22, D33, D21, D31, D32, D12, D13, D23, dot, Eps, Zero3, StepFunction}
 
 (* ConservationCalculation.m *)
 {flux, slopeL, slopeR, slope};

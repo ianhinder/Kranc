@@ -2,15 +2,14 @@
 
 implements: SimpleWaveODE
 
-inherits:   Grid GenericFD Boundary
+inherits:   Boundary GenericFD Grid
 
 
 
 USES INCLUDE: GenericFD.h
-USES INCLUDE: Symmetry.h
-USES INCLUDE: sbp_calc_coeffs.h
-USES INCLUDE: Boundary.h
 USES INCLUDE: loopcontrol.h
+USES INCLUDE: Symmetry.h
+USES INCLUDE: Boundary.h
 
 CCTK_INT FUNCTION MoLRegisterEvolved(CCTK_INT IN EvolvedIndex, CCTK_INT IN RHSIndex)
 USES FUNCTION MoLRegisterEvolved
@@ -42,14 +41,14 @@ CCTK_REAL evolved_grouprhs type=GF timelevels=3 tags='Prolongation="None"'
 } "evolved_grouprhs"
 
 public:
-CCTK_REAL ode_group type=array timelevels=3 tags='' dim=1 size=1
+CCTK_REAL ode_group type=array timelevels=1 tags='' dim=1 size=1
 {
   a,
   b
 } "ode_group"
 
 public:
-CCTK_REAL ode_grouprhs type=array timelevels=3 tags='Prolongation="None"' dim=1 size=1
+CCTK_REAL ode_grouprhs type=array timelevels=1 tags='Prolongation="None"' dim=1 size=1
 {
   arhs,
   brhs

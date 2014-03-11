@@ -2,15 +2,14 @@
 
 implements: Advect
 
-inherits:   Grid GenericFD Boundary
+inherits:   Boundary GenericFD Grid
 
 
 
 USES INCLUDE: GenericFD.h
-USES INCLUDE: Symmetry.h
-USES INCLUDE: sbp_calc_coeffs.h
-USES INCLUDE: Boundary.h
 USES INCLUDE: loopcontrol.h
+USES INCLUDE: Symmetry.h
+USES INCLUDE: Boundary.h
 
 CCTK_INT FUNCTION MoLRegisterEvolved(CCTK_INT IN EvolvedIndex, CCTK_INT IN RHSIndex)
 USES FUNCTION MoLRegisterEvolved
@@ -28,12 +27,10 @@ CCTK_INT FUNCTION Boundary_SelectVarForBC(CCTK_POINTER_TO_CONST IN GH, CCTK_INT 
 USES FUNCTION Boundary_SelectVarForBC
 
 public:
-CCTK_REAL F2rho_group type=GF timelevels=1 tags='tensortypealias="U" tensorweight=0'
+CCTK_REAL rho_group type=GF timelevels=3 tags='tensortypealias="Scalar" tensorweight=0'
 {
-  F2rho1,
-  F2rho2,
-  F2rho3
-} "F2rho_group"
+  rho
+} "rho_group"
 
 public:
 CCTK_REAL Frho_group type=GF timelevels=1 tags='tensortypealias="U" tensorweight=0'
@@ -44,18 +41,20 @@ CCTK_REAL Frho_group type=GF timelevels=1 tags='tensortypealias="U" tensorweight
 } "Frho_group"
 
 public:
+CCTK_REAL F2rho_group type=GF timelevels=1 tags='tensortypealias="U" tensorweight=0'
+{
+  F2rho1,
+  F2rho2,
+  F2rho3
+} "F2rho_group"
+
+public:
 CCTK_REAL v_group type=GF timelevels=1 tags='tensortypealias="U" tensorweight=0'
 {
   v1,
   v2,
   v3
 } "v_group"
-
-public:
-CCTK_REAL rho_group type=GF timelevels=3 tags='tensortypealias="Scalar" tensorweight=0'
-{
-  rho
-} "rho_group"
 
 public:
 CCTK_REAL rho_grouprhs type=GF timelevels=3 tags='tensortypealias="Scalar" tensorweight=0 Prolongation="None"'

@@ -17,113 +17,512 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307
 *)
 
-BeginPackage["xTensorKranc`", {"Differencing`", "Kranc`", "KrancGroups`", "xAct`xTensor`", "xAct`xCore`", "xAct`xCoba`"}];
+BeginPackage["xTensorKranc`",
+  {"Differencing`", "Errors`", "Kranc`", "KrancGroups`"}
+];
 
-CreateGroupFromTensor::usage = "";
-ReflectionSymmetries::usage = "Produce a list of reflection symmetries of a tensor.";
+DefineTensor::usage = "DefineTensor[T[a, b, ...]] defines the tensor T with indices a, b, c, ....";
+DefineDerivative::usage = "DefineDerivative[pd, nd] registers a symbol pd to be used as a derivative operator, with numerical discretisation nd.";
+DefineConnection::usage = "";
+DefineParameter::usage = "DefineParameter[p] registers a symbol p to be used as a constant parameter.";
+SetComponents::usage = "SetComponents[T[a, b, ...], v] defines the components of the tensor T to be the values given in the list v."
+MatrixInverse::usage = "";
+MatrixOfComponents::usage = "";
+
+SetTensorAttribute::usage = "";
+HasTensorAttribute::usage = "";
+GetTensorAttribute::usage = "";
+TensorParity;
+TensorWeight;
+TensorSpecial;
+TensorManualCartesianParities;
+Checkpoint;
+AntiSymmetrize;
+AssertSymmetricDecreasing;
+AssertSymmetricIncreasing;
+CreateGroupFromTensor::usage = "CreateGroupFromTensor[T[a, b, ...]] Creates a variable group from the tensor T";
+ReflectionSymmetries::usage = "ReflectionSymmetries[T[a, b, ...]] Produces a list of reflection symmetries of the tensor T.";
 ExpandComponents::usage = "ExpandComponents[expr] converts an expression x containing abstract indices into one containing components instead."
-IncludeCharacter::usage = "IncludeCharacter is an option for makeExplicit which specifies whether the character should also be included in the generated variable names."
-TensorCharacterString::usage = "TensorCharacterString[tensor[inds]] returns a string consisting of a sequence of U's and D's representing the character of tensor."
+
+Euc::usage = "Euc[i, j] represents the Euclidean tensor which is 1 if i=j, and 0 otherwise.";
+EucUD::usage = "EucUD[i, -j] represents the Euclidean tensor which is 1 if i=j, and 0 otherwise.";
+EucDU::usage = "EucDU[-i, j] represents the Euclidean tensor which is 1 if i=j, and 0 otherwise.";
+EucDD::usage = "EucDD[-i, -j] represents the Euclidean tensor which is 1 if i=j, and 0 otherwise.";
+Eps::usage = "Eps[i, j, k] represents the Levi-Civita alternating tensor";
+
+$KrancIndices = Symbol /@ Complement[CharacterRange["a", "z"], {"h", "r", "t", "x", "y", "z"}];
+Do[{Symbol["l"<>ToString[ind]], Symbol["u"<>ToString[ind]]}, {ind, CharacterRange["a", "z"]}];
+
+KrancManifold;
+TangentKrancManifold;
+KrancBasis;
 
 Begin["`Private`"];
 
-(* FIXME: Add support for ManualCartesian attribute *)
-TensorCharacterString[t_Symbol?xTensorQ[]] := "Scalar";
-TensorCharacterString[t_Symbol?xTensorQ[inds___]] := StringJoin[If[UpIndexQ[#],"U","D"]&/@{inds}];
+(*************************************************************)
+(* Set up xTensor *)
+(*************************************************************)
+contexts = $ContextPath;
+Block[{Print},
+  Needs["xAct`xTensor`"];
+  Needs["xAct`xCore`"];
+  Needs["xAct`xCoba`"];
+];
+newContexts = Complement[$ContextPath, contexts];
+Protect[$KrancIndices];
 
-Options[makeExplicit] = {IncludeCharacter -> False};
-SetAttributes[makeExplicit, Listable];
-e : makeExplicit[_Plus, opts:OptionsPattern[]] := Distribute[Unevaluated[e]];
-makeExplicit[x_Times, opts:OptionsPattern[]] := Map[makeExplicit[#, opts]&, x];
-makeExplicit[Power[x_,p_], opts:OptionsPattern[]] := Power[makeExplicit[x, opts],p];
-makeExplicit[x_?NumericQ, opts:OptionsPattern[]] := x;
-makeExplicit[x_, {}, opts:OptionsPattern[]] := makeExplicit[x];
-makeExplicit[t_Symbol?xTensorQ[inds___], opts:OptionsPattern[]] := Module[{indexNumbers,character,indexString},
-  indexNumbers=First/@{inds};
-  
-  If[OptionValue[IncludeCharacter],
-    character = TensorCharacterString[t[inds]];
-    indexString = StringJoin[character,ToString/@indexNumbers],
-    indexString = StringJoin[ToString/@indexNumbers]
+dimension = 3;
+$CVVerbose = False;
+Block[{$DefInfoQ = False},
+  DefManifold[KrancManifold, dimension, $KrancIndices];
+  DefBasis[KrancBasis, TangentKrancManifold, Range[dimension]];
+  DefInertHead[dot];
+  DefInertHead[KrancSign];
+  DefInertHead[KrancAbs];
+  DefInertHead[StepFunction];
+];
+
+Do[
+ Module[{newind},
+  newind = DummyIn[TangentKrancManifold];
+  Evaluate[Symbol["l"<>ToString[ind]]] = -newind;
+  Evaluate[Symbol["u"<>ToString[ind]]] = newind;
+ ],
+ {ind, CharacterRange["a", "z"]}
+];
+
+(*************************************************************)
+(* DefineTensor *)
+(*************************************************************)
+
+DefineTensor[s_[inds___], opts___] :=
+ Block[{$DefInfoQ = False}, Module[{symbolName, t},
+  InfoMessage[InfoFull, "Defining tensor: " <> SymbolName[s]];
+
+  symbolName = ToString[s];
+  If[AbstractIndexQ[s], UndefAbstractIndex[s]];
+  t = Symbol[symbolName];
+
+  DefTensor[t[inds], KrancManifold, opts];
+
+  (* Automatically convert abstract and numeric indices to basis indices *)
+  t[i___, j_?AbstractIndexQ, k___] := t[i, {j, KrancBasis}, k];
+  t[i___, -j_?AbstractIndexQ, k___] := t[i, {-j, -KrancBasis}, k];
+  t[i___, j_Integer?Positive, k___] :=
+   Module[{slots, basis},
+    slots = SlotsOfTensor[t];
+    If[Length[{i, j, k}] != Length[slots],
+      ThrowError[
+        "Tensor " <> ToString[Unevaluated[t[i, j, k]]] <>
+        " has an incorrect number of indices"];
+    ];
+    basis = slots[[Length[{i}] + 1]] /. TangentKrancManifold -> KrancBasis;
+    t[i, {j, basis}, k]
   ];
-  SymbolJoin[PrintAs[t],Sequence@@indexString]
+
+  (* Define components which are related by symmetries *)
+  SetComponents[t[inds], ToCanonical[ComponentArray[t[inds]]]];
+]];
+
+(* Scalars *)
+KrancScalarQ[_] := False;
+
+DefineTensor[s_, opts___] :=
+ Block[{$DefInfoQ = False}, Module[{symbolName, t},
+  InfoMessage[InfoFull, "Defining scalar: " <> SymbolName[s]];
+
+  symbolName = ToString[s];
+  If[AbstractIndexQ[s], UndefAbstractIndex[s]];
+  t = Symbol[symbolName];
+
+  DefTensor[t[], KrancManifold, opts];
+  t[i__] := ThrowError["Tensor " <> ToString[SymbolName[t][i]] <>
+                       " should not have indices as it has been defined as a scalar."];
+  KrancScalarQ[t] = True;
+]];
+
+(*************************************************************)
+(* SetTensorAttribute *)
+(*************************************************************)
+
+SetTensorAttribute[t_, attr_, val_] :=
+  t /: KrancTensorAttribute[t, attr] = val;
+
+HasTensorAttribute[t_, attr_] :=
+  ValueQ[KrancTensorAttribute[t, attr]];
+
+GetTensorAttribute[t_, attr_] :=
+ Module[{},
+  If[!HasTensorAttribute[t, attr],
+    ThrowError["Tensor " <> ToString[t] <> " does not have a " <> ToString[attr] <> " attribute."];
+  ];
+  KrancTensorAttribute[t, attr]
 ];
 
-makeExplicit[x_, opts:OptionsPattern[]] := x;
+(*************************************************************)
+(* AntiSymmetrize *)
+(*************************************************************)
 
-makeExplicit[(cd_?CovDQ)[ind_][expr_], opts:OptionsPattern[]] := Module[{indexNumbers},
-  indexNumbers=First/@{ind};
+AntiSymmetrize[expr_, a_, b_] := Antisymmetrize[expr, {a, b}];
 
-  Global`PDstandard2nd[makeExplicit[expr, opts], Sequence@@indexNumbers]
+(*************************************************************)
+(* AssertSymmetricIncreasing / AssertSymmetricDecreasing *)
+(*************************************************************)
+
+AssertSymmetricIncreasing[t_?xTensorQ[inds__], syminds__] := 
+ Module[{ainds, asymInds, symSlots},
+  {ainds, asyminds} = {{inds}, {syminds}} /. {i_, (KrancBasis | -KrancBasis)} :> i;
+  symSlots = Position[ainds, #][[1, 1]] & /@ asyminds;
+  SymmetryGroupOfTensor[t] ^= Symmetric[symSlots, Cycles];
+
+  (* Define components which are related by symmetries *)
+  SetComponents[t[inds], ToCanonical[ComponentArray[t[inds]]]];
 ];
 
-Options[ExpandComponents] = Options[ExpandComponents];
+AssertSymmetricIncreasing[t_?xTensorQ[inds__]] := 
+  AssertSymmetricIncreasing[t[inds], inds];
 
-ExpandComponents[x_Rule, opts:OptionsPattern[makeExplicit]] := Thread[ExpandComponents[x[[1]], opts] -> ExpandComponents[x[[2]], opts]];
-ExpandComponents[dot[x_], opts:OptionsPattern[makeExplicit]] := dot/@ExpandComponents[x, opts];
-ExpandComponents[x_List, opts:OptionsPattern[makeExplicit]] := Flatten[Map[ExpandComponents[#, opts]&, x], 1];
-ExpandComponents[x_, opts:OptionsPattern[makeExplicit]] :=
-  Module[{eqs, options},
+AssertSymmetricDecreasing := 
+  ThrowError["AssertSymmetricDecreasing is no longer supported"];
 
-  eqs = ComponentArray[TraceBasisDummy[x]];
-  options = Evaluate[FilterRules[{opts}, Options[makeExplicit]]];
-  If[Length[options]==0,
-    makeExplicit[eqs],
-    makeExplicit[eqs, options]
+(*************************************************************)
+(* DefineParameter *)
+(*************************************************************)
+
+DefineParameter[p_] := 
+ Block[{$DefInfoQ = False}, Module[{symbolName, s},
+  InfoMessage[InfoFull, "Defining parameter: "<> SymbolName[p]];
+
+  symbolName = ToString[p];
+  If[AbstractIndexQ[p], UndefAbstractIndex[p]];
+  s = Symbol[symbolName];
+
+  If[!ConstantSymbolQ[s], DefConstantSymbol[s]];
+]];
+
+(*************************************************************)
+(* DefineDerivative *)
+(*************************************************************)
+
+(* Define a new derivative operator. This is defined in terms of
+   xTensor's partial derivative operator wrapped in an inert head
+   to keep track of what the numerical discretisation should be. *)
+DefineDerivative[pd_, numderiv_] :=
+ Block[{$DefInfoQ = False},
+  InfoMessage[InfoFull, "Defining derivative: " <> SymbolName[pd]];
+  Module[{nd},
+    DefInertHead[nd];
+    NumericalDiscretisation[nd] ^= numderiv;
+
+    (* Support both prefix (xTensor) and postfix (Kranc) style derivatives *)
+    (* Automatically convert abstract and numeric indices to basis indices *)
+    pd[t_, i : (-_?AbstractIndexQ) ..] := nd[Fold[PDKrancBasis[{#2, -KrancBasis}][#1] &, t, {i}]];
+    pd[-i_?AbstractIndexQ][t_] := nd[PDKrancBasis[{-i, -KrancBasis}][t]];
+    pd[t_, i_Integer?Negative] := nd[PDKrancBasis[{-i, -KrancBasis}][t]];
+    pd[t_, i_Integer?Positive] := nd[PDKrancBasis[{i, -KrancBasis}][t]];
+
+    (* Distribute the nd wrapper over Plus, e.g. expand
+       nd[pd[t[0],0] + pd[t[1],1]] out to nd[pd[t[0],0]] + nd[pd[t[1],1]].
+       This is important for xTensor's canonicalizer to work reliably. *)
+    e : nd[_Plus] := Distribute[Unevaluated[e]];
   ]
 ];
 
+(*************************************************************)
+(* DefineConnection *)
+(*************************************************************)
 
-(* Compute the reflection symmetries of a tensor *)
+DefineConnection[CD_, pd_, G_] :=
+ Block[{$DefInfoQ = False}, Module[{basis, christoffel, T, a, b, c},
+  InfoMessage[InfoFull, "Defining covariant derivative " <>
+              SymbolName[CD] <> " with connection " <> SymbolName[G]];
+
+  (* The connection must be a rank-3 tensor with the first index up *)
+  If[SlotsOfTensor[G] =!= {TangentKrancManifold, -TangentKrancManifold, -TangentKrancManifold},
+     ThrowError["Cannot use " <> SymbolName[G] <>
+                " as a connection as it has an incorrect tensor character."]];
+
+  (* Define the new covariant derivative operator and an associated basis *)
+  {a, b, c} = $KrancIndices[[1 ;; 3]];
+  basis = SymbolJoin[CD, KrancBasis];
+  DefBasis[basis, TangentKrancManifold, Range[DimOfVBundle[TangentKrancManifold]]];
+  DefCovD[CD[-a], TangentKrancManifold];
+
+  (* Make sure xTensor actually defines the Christoffel symbol by using CD on a tensor *)
+  DefTensor[T[a], TangentKrancManifold];
+  ToBasis[KrancBasis][CD[-{a, basis}][T[{a, basis}]]];
+
+  (* Whenever the covariant derivative is encountered, automatically convert it to
+     partial derivatives and Christoffel symbols*)
+  (* FIXME: Make this work with more than 2 derivatives *)
+  CD[t:(_?xTensorQ[___]), i : (-_?AbstractIndexQ) ..] :=
+   Module[{exprInBasis},
+    (* Convert to xTensor notation with indices in basis *)
+    exprInBasis = Fold[CD[{#2, -basis}][#1] &, t /. KrancBasis -> basis, {i}];
+    
+    (* Do the basis transformation to the Kranc basis, introducing Christoffel symbols *)
+    FixedPoint[ToBasis[KrancBasis], exprInBasis] /.
+     {CD[{-k_, -KrancBasis}][CD[{-j_, -KrancBasis}][T_[inds___]]] :> pd[T[inds], -j, -k],
+      CD[{-j_, -KrancBasis}][T_[inds___]] :> pd[T[inds], -j]}
+  ];
+
+  (* Define the components the Christoffel symbol to be given by G *)
+  christoffel = SymbolJoin["ChristoffelPD", CD, "KrancBasisPDKrancBasis"];
+
+  SetComponents[
+    christoffel[{a, KrancBasis}, -{b, KrancBasis}, -{c, KrancBasis}],
+    ComponentArray[G[a, -b, -c]]];
+]];
+
+SetComponents[t_?xTensorQ[i :(_?BIndexQ ...)], values_] :=
+ Module[{},
+  SetToRule[t];
+  AllComponentValues[t[i], values];
+  RuleToSet[t];
+]
+
+(* FIXME: I'm not sure if we really should be encouraging the use of these *)
+Module[{a,b,c},
+  {a, b, c} = $KrancIndices[[1;;3]];
+  DefineTensor[Eps[-a, -b, -c]];
+  SetComponents[Eps[-a, -b, -c], Array[Signature[{##}] &, {3, 3, 3}]];
+
+  DefineTensor[Euc[a, b]];
+  SetComponents[Euc[a, b], IdentityMatrix[{3,3}]];
+
+  DefineTensor[EucUD[a, -b]];
+  SetComponents[EucUD[a, -b], IdentityMatrix[{3,3}]];
+
+  DefineTensor[EucDU[-a, b]];
+  SetComponents[EucDU[-a, b], IdentityMatrix[{3,3}]];
+
+  DefineTensor[EucDD[-a, -b]];
+  SetComponents[EucDD[-a, -b], IdentityMatrix[{3,3}]];
+];
+
+(*************************************************************)
+(* MatrixInverse *)
+(*************************************************************)
+
+MatrixInverse[t_?xTensorQ] :=
+ Module[{inverse, tensorCharacter, rank, a, b},
+  inverse = SymbolJoin["MatrixInverse", t];
+
+  If[xTensorQ[inverse], Return[inverse]];
+
+  tensorCharacter = - SlotsOfTensor[t] /. TangentKrancManifold -> 1;
+  rank = Length[tensorCharacter];
+
+  If[rank =!= 2,
+    ThrowError["MatrixInverse cannot be used with a tensor of rank "<>ToString[rank]];
+  ];
+
+  {a, b} = $KrancIndices[[1;;2]] tensorCharacter;
+
+  DefineTensor[inverse[a, b]];
+  SetComponents[inverse[a, b], Inverse[ComponentArray[t[-a, -b]]]];
+  inverse
+];
+
+MatrixInverse[t_?xTensorQ[i_, j_]] := MatrixInverse[t][i, j];
+
+MatrixOfComponents = ComponentArray;
+
+(*************************************************************)
+(* ExpandComponents *)
+(*************************************************************)
+
+krancForm[expr_] := 
+  expr //. {
+    Scalar[x_] :> NoScalar[x], 
+    pd_?CovDQ[i__][pd_?CovDQ[j__][t_]] :> pd[j, i][t],
+    nd_[pd_?CovDQ[i : (_?CIndexQ ..)][t_?xTensorQ[inds___]]] :>
+     NumericalDiscretisation[nd][krancForm[t[inds]], Sequence @@ ({i}[[All, 1]])],
+    nd_[pd_?CovDQ[i : (_?CIndexQ ..)][t_Symbol]] :>
+     NumericalDiscretisation[nd][krancForm[t], Sequence @@ ({i}[[All, 1]])],
+    t_Symbol?xTensorQ[i : (_?CIndexQ ..)] :> 
+     SymbolJoin[t, Sequence @@ ToString /@ {i}[[All, 1]]],
+    t_Symbol?xTensorQ[] :> t
+  };
+
+(* This is very ugly, but it works *)
+toCondition[c1_] := {c1, Not[c1]};
+toCondition[c1_, c2_] := Flatten[Outer[And, {c1, Not[c1]}, toCondition[c2]]];
+toCondition[c1_List, c2_] := Flatten[Outer[And, c1, {c2, Not[c2]}]];
+toCondition[c1_, c2_, c3__] := Fold[toCondition, c1, {c2, c3}];
+expandIfThen[lhs_ -> rhs_] :=
+ Module[{conditions, allConditions, allEqs, expandedEqs, allIfs, rules},
+  If[MemberQ[lhs, IfThen, Infinity, Heads -> True],
+   ThrowError["IfThen is not supported in the left hand side of an equation"];
+  ];
+  InfoMessage[InfoFull, "Expanding branches of IfThen expression"];
+  conditions = Sort[DeleteDuplicates[Cases[{rhs}, IfThen[cond_, _, _] :> cond, Infinity]]];
+  allConditions = Reverse[toCondition @@ conditions];
+  If[Length[conditions] === 1,
+    allEqs = Thread[(lhs -> rhs) /. IfThen[_, true_, false_] :> {false, true}];,
+    allEqs = (lhs -> rhs) //.
+      Table[MapThread[(IfThen[#1, true_, false_] :> If[#2 == True, true, false]) &,
+                      {conditions, MapThread[SameQ, {(List @@@ allConditions)[[i]], conditions}]}],
+            {i, 2^Length[conditions]}];
+  ];
+  expandedEqs = {ExpandComponents[#]} & /@ allEqs;
+  allIfs = Transpose[{allConditions, #}] & /@ Transpose[expandedEqs[[All, All, 2]]];
+  rules = Thread[expandedEqs[[1, All, 1]] -> 
+               Map[Function[{ifs}, Fold[IfThen[#2[[1]], #2[[2]], #1] &, ifs[[1, 2]], ifs[[2 ;;]]]], allIfs]];
+  InfoMessage[InfoFull, "Expanded IfThen branches to: ", Map[InputForm, rules, {2}]];
+  rules
+];
+
+SetAttributes[ExpandComponents, Listable];
+ExpandComponents[l_ -> r_] :=
+  Module[{lhs, rhs, lhsC, rhsC, inds, rules},
+   InfoMessage[InfoFull, "Expanding tensor expression: ", InputForm[l] -> InputForm[r]];
+
+   (* Special treatment for IfThen statements. FIXME: Not sure if this belongs here *)
+   If[MemberQ[l -> r, IfThen, Infinity, Heads -> True],
+     rules = expandIfThen[l -> r];
+   ,
+   
+   (* Add brackets to scalars if they aren't present *)
+   {lhs, rhs} = {l, r} /. {t_?KrancScalarQ[] -> t[], t_?KrancScalarQ -> t[]};
+
+   (* Replace some Mathematica functions with inert head versions *)
+   {lhs, rhs} = {lhs, rhs} /. {Sign -> KrancSign, Abs -> KrancAbs, Switch -> KrancSwitch};
+
+   (* Check we have a valid tensor equation *)
+   (* FIXME: Maybe we should find an alternative to Quiet here *)
+   Check[Quiet[Validate[{lhs, rhs}], Validate::unknown],
+     ThrowError["Invalid tensor equation", lhs -> rhs]];
+
+   (* Find the free indices *)
+   inds = IndicesOf[Free, BIndex][lhs];
+   If[(inds =!= IndicesOf[Free, BIndex][rhs]) && !(NumericQ[rhs] || ConstantSymbolQ[rhs]),
+     ThrowError["Free indices of left hand side do not match right hand side in ", lhs -> rhs]];
+
+   (* Get a list of components *)
+   lhsC = Flatten[{ComponentArray[TraceBasisDummy[lhs], inds]}];
+   If[NumericQ[rhs] || ConstantSymbolQ[rhs],
+     rhsC = ConstantArray[rhs, Length[lhsC]];,
+     rhsC = Flatten[{ComponentArray[TraceBasisDummy[rhs], inds]}];
+   ];
+
+   (* Pick out the independent components *)
+   rules = Thread[lhsC -> rhsC] /. {(0 -> _) -> Sequence[], (- _ -> _) -> Sequence[]};
+   rules = krancForm[DeleteDuplicates[rules, #1[[1]] == #2[[1]] &]];
+   rules = rules /. {KrancSign -> Sign, KrancAbs -> Abs, KrancSwitch -> Switch};
+   ];
+   InfoMessage[InfoFull, "Expanded to: ", Map[InputForm, rules, {2}]];
+   Sequence @@ rules
+];
+
+(* FIXME: Figure out a way to avoid duplicating the code above in here *)
+ExpandComponents[x_] :=
+ Module[{expr},
+  (* Add brackets to scalars if they aren't present *)
+  expr = x /. {t_?KrancScalarQ[] -> t[], t_?KrancScalarQ -> t[], Sign[t_] :> KrancSign[t]};
+
+  (* FIXME: Maybe we should find an alternative to Quiet here *)
+  Check[Quiet[Validate[expr], Validate::unknown], ThrowError["Invalid tensor expression"]];
+  Sequence @@ krancForm[
+   DeleteDuplicates[
+   Flatten[{ComponentArray[TraceBasisDummy[expr]]}] /. {-t_?xTensorQ[i___] :> t[i], 0 -> Sequence[]}]]
+];
+
+(*************************************************************)
+(* ReflectionSymmetries *)
+(*************************************************************)
+(* FIXME: Add support for ManualCartesian attribute *)
+
+ReflectionSymmetries[t_Symbol?xTensorQ[inds___]] /;
+ HasTensorAttribute[t, TensorParity] := t -> {1, 1, 1} GetTensorAttribute[t, TensorParity];
+
+ReflectionSymmetries[t_Symbol?xTensorQ[inds___]] /;
+ HasTensorAttribute[t, TensorManualCartesianParities] :=
+  t -> {1, 1, 1} GetTensorAttribute[t, TensorManualCartesianParities];
+
 ReflectionSymmetries[t_Symbol?xTensorQ[inds__]] :=
-  Module[{b=Global`Euclidean, cnums, components, componentIndices, counts},
+  Module[{cnums, components, componentIndices, counts},
     (* Get the compoent indices of the basis *)
-    cnums = CNumbersOf[b, VBundleOfBasis[b]];
+    InfoMessage[InfoFull, "Getting symmetries of ", InputForm[t[inds]]];
+    cnums = CNumbersOf[KrancBasis, VBundleOfBasis[KrancBasis]];
 
     (* Get a list of components of the tensor t in the basis b *)
-    components = Flatten[ComponentArray[ToBasis[b][t[inds]]]];
+    components = DeleteDuplicates[Flatten[ComponentArray[TraceBasisDummy[t[inds]]]]];
 
     (* Get the indices of each component *)
-    componentIndices = Map[IndicesOf[b], components];
+    componentIndices = Map[IndicesOf[CIndex, KrancBasis], components];
 
     (* Count the number of instances of each basis index. *)
     countInds[expr_, basis_, cinds_] := Map[(Count[expr,{#,basis}]+Count[expr,{#,-basis}])&, cinds];
-    counts = Map[countInds[#, b, cnums]&, componentIndices];
+    counts = Map[countInds[#, KrancBasis, cnums]&, componentIndices];
 
     (* For each instance, multiply by -1 *)
-    Thread[ExpandComponents[t[inds]] -> (-1)^counts]
+    Thread[krancForm[components] -> (-1)^counts]
 ];
 
 ReflectionSymmetries[t_Symbol?xTensorQ[]] := t -> {1,1,1};
+ReflectionSymmetries[t_Symbol?KrancScalarQ] := ReflectionSymmetries[t[]];
 ReflectionSymmetries[t_] := t -> {1, 1, 1};
+ReflectionSymmetries[x___]:= ThrowError["ReflectionSymmetries error: "<>ToString[x]];
 
-(* FIXME: Implement this fully *)
-GetTensorAttribute[t_Symbol?xTensorQ, TensorWeight] := WeightOfTensor[t];
+(*************************************************************)
+(* CreateGroupFromTensor *)
+(*************************************************************)
 
-CreateGroupFromTensor[t_Symbol?xTensorQ[inds__]] := Module[{tCharString, nInds, tags, vars, group},
-  InfoMessage[InfoFull, "Creating group from tensor with kernel " <> SymbolName[t] <> " and indices " <> ToString[{inds}]];
+tensorCharacterString[t_Symbol?xTensorQ[___]] /;
+  HasTensorAttribute[t, TensorManualCartesianParities] := "ManualCartesian";
+tensorCharacterString[t_Symbol?xTensorQ[]] := "Scalar";
+tensorCharacterString[t_Symbol?xTensorQ[inds___]] := StringJoin[If[UpIndexQ[#],"U","D"]&/@{inds}];
+
+manualCartesianParity[t_] :=
+ Module[{p},
+  p = GetTensorAttribute[t, TensorManualCartesianParities];
+  If[!MatchQ[p, {Repeated[(-1 | 1), {3}]}],
+    ThrowError["Expecting a list of three parities for TensorManualCartesianParities, must be 1 or -1"];
+  ];
+  StringJoin @@ (p /. {-1 -> "-", +1 -> "+"})
+];
+
+tensorWeight[t_Symbol?xTensorQ] :=
+  If[HasTensorAttribute[t, TensorWeight], GetTensorAttribute[t, TensorWeight], WeightOfTensor[t]];
+
+CreateGroupFromTensor[t_Symbol?xTensorQ[inds___]] := Module[{tCharString, nInds, tags, group},
+  InfoMessage[InfoFull, "Creating group from tensor " <> ToString[t[inds]]];
 
   (* Get a string representing the character of the tensor *)
-  tCharString = TensorCharacterString[t[inds]];
-  InfoMessage[InfoFull, "Tensor character string: ", tCharString];
+  tCharString = tensorCharacterString[t[inds]];
 
   (* Check if the tensor is symmetric *)
   nInds = Length[SlotsOfTensor[t]];
   If[SymmetryGroupOfTensor[t] == StrongGenSet[Range[nInds],GenSet[Cycles[Range[nInds]]]], 
         tCharString = tCharString <> "_sym"];
 
-  (* FIXME: Add tensorspecial, cartesianreflectionparities  and tensorparity *)
-  tags = {"tensortypealias" -> tCharString, "tensorweight" -> GetTensorAttribute[t, TensorWeight]};
+  tags = {"tensortypealias" -> tCharString, "tensorweight" -> tensorWeight[t]};
 
-  vars = If[nInds == 0, {t}, {t[inds]}];
-  group = CreateGroup[SymbolName[t] <> "_group", vars, {Tags -> tags}];
-  Return[group]
+  If[HasTensorAttribute[t, TensorSpecial],
+    AppendTo[tags, "tensorspecial" -> GetTensorAttribute[t, TensorSpecial]]];
+
+  If[HasTensorAttribute[t, TensorManualCartesianParities],
+    AppendTo[tags, "cartesianreflectionparities" -> manualCartesianParity[t]]];
+
+  If[HasTensorAttribute[t, TensorParity],
+    AppendTo[tags, "tensorparity" -> GetTensorAttribute[t, TensorParity]]];
+
+  If[HasTensorAttribute[t, Checkpoint],
+    AppendTo[tags, "checkpoint" -> GetTensorAttribute[t, Checkpoint]]];
+
+  group = CreateGroup[SymbolName[t] <> "_group", {t[inds]}, {Tags -> tags}];
+  group
 ];
 
-ReflectionSymmetries[x___]:= ThrowError["ReflectionSymmetries error: "<>ToString[x]];
-CreateGroupFromTensor[x___]:= ThrowError["CreateGroupFromTensor error: "<>ToString[x]];
+CreateGroupFromTensor[t_Symbol?KrancScalarQ] := CreateGroupFromTensor[t[]];
 
-CheckTensors[expr_] := Validate[expr];
+CreateGroupFromTensor[x___]:= ThrowError["Invalid arguments to CreateGroupFromTensor: "<>ToString[x]];
 
 End[];
 EndPackage[];
+
+(* Add xAct packages to $ContextPath *)
+Do[
+  If[!MemberQ[$ContextPath, package], AppendTo[$ContextPath, package]],
+  {package, xTensorKranc`Private`newContexts}];

@@ -112,6 +112,9 @@ Zero3::usage = "Zero3[i,j,k] is zero.";
 
 Euc::usage = "Euc[i,j] is the Euclidian metric.  It can be given
 tensorial or numerical indices.";
+EucDD;
+EucDU;
+EucUD;
 
 SetEnhancedTimes::usage = "SetEnhancedTime[boolean] enables or
 disabled automatic checking and relabelling of products for duplicated
@@ -258,6 +261,8 @@ charactersMatch[c1_,c2_] :=
    Tensor
    -------------------------------------------------------------------------- *)
 
+DefineTensor[T_[__]] := DefineTensor[T];
+
 DefineTensor[T_] :=
   Module[{},
     Format[Tensor[T, is:((TensorIndex[_,_] | _Integer) ..) ], StandardForm] :=
@@ -286,6 +291,8 @@ DefineTensor[T_] :=
 
     TensorAttributes[T] = {TensorWeight -> 0, Symmetries -> {}};
     T];
+
+DefineDerivative[pd_, nd_] := (pd = nd; DefineDerivative[nd]);
 
 DefineDerivative[pd_Symbol] :=
   If[!DerivativeOperatorQ[pd], AppendTo[$Derivatives, pd]];
@@ -1185,6 +1192,7 @@ EpsilonRule := Eps[x__] :> Signature[Map[Abs, {x}]];
    -------------------------------------------------------------------------- *)
 
 Euc[a_,b_] := If[a == b, 1, 0];
+EucDD = EucDU = EucUD = Euc;
 
 (* -------------------------------------------------------------------------- 
    Zero3

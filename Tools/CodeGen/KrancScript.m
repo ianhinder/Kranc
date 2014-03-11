@@ -18,10 +18,12 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-BeginPackage["KrancScript`", {"Errors`", "Helpers`", "Kranc`", "JLink`", "TensorTools`",
+BeginPackage["KrancScript`", {"Errors`", "Helpers`", "Kranc`", "JLink`",
                               "KrancTensor`", "Piraha`", "MapLookup`"}];
 
 CreateThornFromKrancScript;
+
+If[$KrancTensorPackage === "TensorTools", Needs["TensorTools`"]];
 
 Begin["`Private`"];
 

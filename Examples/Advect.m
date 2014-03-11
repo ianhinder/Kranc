@@ -29,15 +29,14 @@ derivatives =
   (* ShiftMinus[i_] -> EMinus *)
 };
 
-(* PD = PDstandard2nd; *)
-PD = PDplus;
+DefineDerivative[pd, PDstandard2nd];
 
 (**************************************************************************************)
 (* Tensors *)
 (**************************************************************************************)
 
 (* Register the tensor quantities with the TensorTools package *)
-Map[DefineTensor, {Frho, F2rho, rho, v, dir}];
+Map[DefineTensor, {Frho[ui], F2rho[ui], v[ui], rho, dir[li]}];
 
 (**************************************************************************************)
 (* Groups *)
@@ -96,7 +95,7 @@ evolCalc =
   Equations -> 
   {
     (* dot[rho]   -> PDplus[F2rho[ui], li] *)
-    dot[rho]   -> PDstandard2nd[Frho[ui],li]
+    dot[rho]   -> pd[Frho[ui],li]
                   (* alpha PDstandard2nd[rho,li,lj] Euc[ui,uj] *)
   }
 };

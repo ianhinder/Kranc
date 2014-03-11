@@ -32,7 +32,10 @@ derivatives =
 };
 
 (* PD = PDstandard2nd; *)
-PD = PDplus;
+DefineDerivative[pd, PDplus];
+DefineDerivative[dp, DiffPlus];
+DefineDerivative[dm, DiffMinus];
+DefineDerivative[sm, ShiftMinus];
 
 (**************************************************************************************)
 (* Tensors *)
@@ -110,8 +113,8 @@ reconstructCalc[i_] :=
   ApplyBCs -> True,
   Equations -> 
   {
-    slopeL -> DiffMinus[u, i],
-    slopeR -> DiffPlus[u, i],
+    slopeL -> dm[u, i],
+    slopeR -> dp[u, i],
     slope -> IfThen[slopeL slopeR < 0, 0, IfThen[Abs[slopeL] < Abs[slopeR], slopeL, slopeR]],
     uLeft -> u - 0.5 slope,
     uR -> u + 0.5 slope
@@ -126,7 +129,7 @@ fluxCalc[f_, i_] :=
   Schedule -> {"in MoL_CalcRHS after burgers_reconstruct_" <> ToString[i]},
   Equations -> 
   {
-    uF -> 1/2 (f[uLeft] + f[ShiftMinus[uR,i]] + alpha (ShiftMinus[uR,i] - uLeft))
+    uF -> 1/2 (f[uLeft] + f[sm[uR,i]] + alpha (sm[uR,i] - uLeft))
   }
 };
 
@@ -137,7 +140,7 @@ rhs[i_] :=
   Where -> Interior,
   Equations -> 
   {
-    dot[u] -> dot[u] - PDplus[uF, i]
+    dot[u] -> dot[u] - pd[uF, i]
   }
 };
 

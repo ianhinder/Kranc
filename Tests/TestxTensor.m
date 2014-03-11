@@ -198,14 +198,14 @@ test[MakeExplicit[pd[Ud[la], lb]], {nd[Ud1, 1], nd[Ud1, 2], nd[Ud1, 3], nd[Ud2, 
 
 test[MakeExplicit[pd[Uu[ua], la]], {nd[Uu1, 1] + nd[Uu2, 2] + nd[Uu3, 3]}];
 
-(* test[Simplify[MakeExplicit[pd[MatrixInverse[Tdd[ua, ub]] Tdd[lb, lc], ld]]], {0,
+test[Simplify[MakeExplicit[pd[MatrixInverse[Tdd[ua, ub]] Tdd[lb, lc], ld] /. nd_?(! xTensorQ[#] &)[x_] :> x]], {0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0}];
 
-test[FullSimplify[MakeExplicit[pd[MatrixInverse[Tdd[ua, ub]], ld] Tdd[lb, lc]] +
-   MakeExplicit[MatrixInverse[Tdd[ua, ub]] pd[Tdd[lb, lc], ld]]],
+test[FullSimplify[MakeExplicit[pd[MatrixInverse[Tdd[ua, ub]], ld] Tdd[lb, lc] /. nd_?(! xTensorQ[#] &)[x_] :> x] +
+   MakeExplicit[MatrixInverse[Tdd[ua, ub]] pd[Tdd[lb, lc], ld] /. nd_?(! xTensorQ[#] &)[x_] :> x]],
  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0}]; *)
+  0, 0}];
 
 reportResults[];
 

@@ -42,7 +42,7 @@ JacobianQ[opts:OptionsPattern[]] :=
 jacobianShorthand[d:(deriv_[var_, i_])] :=
   Module[{},
      derivToJacDeriv[d] ->
-      IfThen["use_jacobian", Sum[Symbol["J"<>ToString[j]<>ToString[i]] deriv[var, j], {j, 1 3}], deriv[var, i]]
+      IfThen["usejacobian", Sum[Symbol["J"<>ToString[j]<>ToString[i]] deriv[var, j], {j, 1 3}], deriv[var, i]]
   ];
 
 (* Assign a shorthand containing the Jacobian multiplied by the passed
@@ -51,7 +51,7 @@ jacobianShorthand[d:(deriv_[var_, i_,j_])] :=
   Module[{ip,jp},
      {ip,jp} = Sort[{i,j}]; (* dJ is symmetric in the last two indices *)
      derivToJacDeriv[d] ->
-      IfThen["use_jacobian", Sum[Symbol["dJ"<>ToString[a]<>ToString[ip]<>ToString[jp]] deriv[var, a], {a, 1 3}] + 
+      IfThen["usejacobian", Sum[Symbol["dJ"<>ToString[a]<>ToString[ip]<>ToString[jp]] deriv[var, a], {a, 1 3}] + 
       Sum[Symbol["J"<>ToString[a]<>ToString[i]] Symbol["J"<>ToString[b]<>ToString[j]] deriv[var, a, b], {a, 1 3}, {b, 1, 3}],
       deriv[var, i, j]]
   ];
@@ -118,38 +118,37 @@ InsertJacobian[calc_List, opts:OptionsPattern[]] :=
    derivatives groups *)
 CreateJacobianVariables[] :=
 CommentedBlock["Jacobian variable pointers",
-  {"const bool use_jacobian1 = (!CCTK_IsFunctionAliased(\"MultiPatch_GetMap\") || MultiPatch_GetMap(cctkGH) != jacobian_identity_map)\n",
+  {"const bool usejacobian1 = (!CCTK_IsFunctionAliased(\"MultiPatch_GetMap\") || MultiPatch_GetMap(cctkGH) != jacobian_identity_map)\n",
    "                      && strlen(jacobian_group) > 0;\n",
-   "const bool use_jacobian = assume_use_jacobian>=0 ? assume_use_jacobian : use_jacobian1;\n",
-   "const bool usejacobian CCTK_ATTRIBUTE_UNUSED = use_jacobian;\n",
-   "if (use_jacobian && (" (*, "strlen(jacobian_determinant_group) == 0) || strlen(jacobian_inverse_group) == 0 || " *), "strlen(jacobian_derivative_group) == 0))\n",
+   "const bool usejacobian = assume_use_jacobian>=0 ? assume_use_jacobian : usejacobian1;\n",
+   "if (usejacobian && (" (*, "strlen(jacobian_determinant_group) == 0) || strlen(jacobian_inverse_group) == 0 || " *), "strlen(jacobian_derivative_group) == 0))\n",
    "{\n",
    "  CCTK_WARN(1, \"GenericFD::jacobian_group " (*<> ", GenericFD::jacobian_determinant_group, GenericFD::jacobian_inverse_group, " *) , "and GenericFD::jacobian_derivative_group must both be set to valid group names\");\n",
    "}\n\n",
    "const CCTK_REAL* restrict jacobian_ptrs[9];\n",
-   "if (use_jacobian) GroupDataPointers(cctkGH, jacobian_group,\n",
+   "if (usejacobian) GroupDataPointers(cctkGH, jacobian_group,\n",
    "                                              9, jacobian_ptrs);\n",
     "\n",
-    Table[{"const CCTK_REAL* restrict const J",i,j," CCTK_ATTRIBUTE_UNUSED = use_jacobian ? jacobian_ptrs[",(i-1)*3+j-1,"] : 0;\n"},{i,1,3},{j,1,3}],
+    Table[{"const CCTK_REAL* restrict const J",i,j," CCTK_ATTRIBUTE_UNUSED = usejacobian ? jacobian_ptrs[",(i-1)*3+j-1,"] : 0;\n"},{i,1,3},{j,1,3}],
     "\n",
    "const CCTK_REAL* restrict jacobian_determinant_ptrs[1] CCTK_ATTRIBUTE_UNUSED;\n",
-   "if (use_jacobian && strlen(jacobian_determinant_group) > 0) GroupDataPointers(cctkGH, jacobian_determinant_group,\n",
+   "if (usejacobian && strlen(jacobian_determinant_group) > 0) GroupDataPointers(cctkGH, jacobian_determinant_group,\n",
    "                                              1, jacobian_determinant_ptrs);\n",
     "\n",
-    {"const CCTK_REAL* restrict const detJ CCTK_ATTRIBUTE_UNUSED = use_jacobian ? jacobian_determinant_ptrs[0] : 0;\n"},
+    {"const CCTK_REAL* restrict const detJ CCTK_ATTRIBUTE_UNUSED = usejacobian ? jacobian_determinant_ptrs[0] : 0;\n"},
     "\n",
    "const CCTK_REAL* restrict jacobian_inverse_ptrs[9] CCTK_ATTRIBUTE_UNUSED;\n",
-   "if (use_jacobian && strlen(jacobian_inverse_group) > 0) GroupDataPointers(cctkGH, jacobian_inverse_group,\n",
+   "if (usejacobian && strlen(jacobian_inverse_group) > 0) GroupDataPointers(cctkGH, jacobian_inverse_group,\n",
    "                                              9, jacobian_inverse_ptrs);\n",
     "\n",
-    Table[{"const CCTK_REAL* restrict const iJ",i,j," CCTK_ATTRIBUTE_UNUSED = use_jacobian ? jacobian_inverse_ptrs[",(i-1)*3+j-1,"] : 0;\n"},{i,1,3},{j,1,3}],
+    Table[{"const CCTK_REAL* restrict const iJ",i,j," CCTK_ATTRIBUTE_UNUSED = usejacobian ? jacobian_inverse_ptrs[",(i-1)*3+j-1,"] : 0;\n"},{i,1,3},{j,1,3}],
    "\n",
    "const CCTK_REAL* restrict jacobian_derivative_ptrs[18] CCTK_ATTRIBUTE_UNUSED;\n",
-   "if (use_jacobian) GroupDataPointers(cctkGH, jacobian_derivative_group,\n",
+   "if (usejacobian) GroupDataPointers(cctkGH, jacobian_derivative_group,\n",
    "                                    18, jacobian_derivative_ptrs);\n",
     "\n",
     Module[{syms = Flatten[Table[{"dJ",i,j,k},{i,1,3},{j,1,3},{k,j,3}],2]},
-      MapIndexed[{"const CCTK_REAL* restrict const ", #1, " CCTK_ATTRIBUTE_UNUSED = use_jacobian ? jacobian_derivative_ptrs[", #2-1, "] : 0;\n"} &, syms]]}];
+      MapIndexed[{"const CCTK_REAL* restrict const ", #1, " CCTK_ATTRIBUTE_UNUSED = usejacobian ? jacobian_derivative_ptrs[", #2-1, "] : 0;\n"} &, syms]]}];
 
 (* List of symbols which should be allowed in a calculation *)
 JacobianSymbols[] :=
@@ -186,13 +185,13 @@ JacobianCheckGroups[groups_] :=
     If[int =!= {},
       ThrowError["Error: Some group variables conflict with reserved Jacobian variable names: " <> ToString[int]]]];
 
-(* These gridfunctions are only given local variable copies if the use_jacobian variable is true *)
+(* These gridfunctions are only given local variable copies if the usejacobian variable is true *)
 JacobianConditionalGridFunctions[] :=
   {("J" ~~ DigitCharacter ~~ DigitCharacter) |
    ("detJ") |
    ("iJ" ~~ DigitCharacter ~~ DigitCharacter) |
    ("dJ" ~~ DigitCharacter ~~ DigitCharacter ~~ DigitCharacter),
-   "use_jacobian",
+   "usejacobian",
    None};
 
 Options[JacobianProcessCode] = ThornOptions;

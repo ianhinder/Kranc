@@ -165,7 +165,8 @@ GetTensorAttribute[t_, attr_] :=
 (* AntiSymmetrize *)
 (*************************************************************)
 
-AntiSymmetrize[expr_, a_, b_] := Antisymmetrize[expr, {a, b}];
+AntiSymmetrize[expr_, a_, b_] /; Quiet[Check[(Validate[expr]; True), False, Validate::unknown]] :=
+ Antisymmetrize[expr, {a, b}];
 
 (*************************************************************)
 (* AssertSymmetricIncreasing / AssertSymmetricDecreasing *)

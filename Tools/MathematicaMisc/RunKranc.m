@@ -68,7 +68,7 @@ Kranc`Private`get[package_] :=
 
   (* Warn about and replace PD *)
   If[MemberQ[contents, PD, Infinity, Heads -> True],
-    InfoMessage[DebugQuiet, "PD is a reserved symbol and its use in a calculation is deprecated"];
+    InfoMessage[Warnings, "PD is a reserved symbol and its use in a calculation is deprecated"];
     contents = contents /. PD -> KrancPD;
   ];
 
@@ -109,8 +109,10 @@ Kranc`Private`get[package_] :=
   replacements = MapThread[Rule, {tensors, tensorsWithIndices}] /. (_ -> {}) -> Sequence[];
   replacements = replacements /. {-TangentKrancManifold :> DummyIn[-TangentKrancManifold], TangentKrancManifold :> DummyIn[TangentKrancManifold]};
 
-  InfoMessage[DebugQuiet, "Found tensors in DefineTensor without their indices specified. " <>
-                          "Assuming they are given by: ", replacements];
+  If[replacements =!= {},
+    InfoMessage[Warnings, "Found tensors in DefineTensor without their indices specified explicitly."];
+    InfoMessage[Info, "Assuming they are given by: ", replacements];
+  ];
   ReleaseHold[contents /.
     {
      HoldPattern[DefineTensor[t_]] :> DefineTensor[t /. replacements],

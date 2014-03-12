@@ -122,26 +122,22 @@ Kranc`Private`get[package_] :=
   ]
 ]
 
-exception = Catch[CatchKrancError@Catch[
-  Check[
-    Block[
-      {(*$RecursionLimit = Infinity*)},
-
-      Switch[
-        FileExtension[script],
-        "m",      If[KrancTensor`$KrancTensorPackage === "xTensor",
+Kranc`Private`loadKrancInput[script_] :=
+  Switch[
+    FileExtension[script],
+    "m",      If[KrancTensor`$KrancTensorPackage === "xTensor",
                      Kranc`Private`get[script],
                      Get[script]],
-        "kranc",  CreateThornFromKrancScript[script],
-        _,        ThrowError["Unknown file extension for "<>script<>".  Recognised extensions are .m and .kranc."]]];
+    "kranc",  CreateThornFromKrancScript[script],
+    _,        ThrowError["Unknown file extension for "<>script<>
+      ".  Recognised extensions are .m and .kranc."]];
 
-    None,
-    ThrowError["Messages were generated - aborted"]]], _];
+exception =
+  CatchKrancError[
+    Check[
+      Kranc`Private`loadKrancInput[script]; None,
+      ThrowError["Messages were generated"]]];
 
-(* Catch non-Kranc exceptions *)
-(* TODO: probably this should be removed *)
-If[exception =!= None && exception =!= $Failed,
-  Print["Exception:"];
-  PrintError[exception];
+If[exception =!= None,
   Quit[1],
-  Quit[]];
+  Quit[0]];

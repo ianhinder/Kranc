@@ -143,7 +143,7 @@ reportError[k:KrancError[objects_,stack_], KrancError] :=
     If[MatchQ[objects, {_String}],
       Print["Error: ", objects[[1]]],
       Scan[Print, Join[{"Error: "}, InputForm/@objects]]];
-    If[$EnableBacktrace, Print["in ", Sequence@@Riffle[stack,"/"]]];
+    If[$EnableBacktrace && Length[stack] =!= 0, Print["in ", Sequence@@Riffle[stack,"/"]]];
     $Failed];
 
 SetAttributes[CatchKrancError, HoldAll];

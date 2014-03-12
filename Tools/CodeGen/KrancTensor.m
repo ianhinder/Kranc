@@ -51,7 +51,7 @@ Begin["`Private`"];
 Options[CreateKrancThornTT] = ThornOptions;
 
 CreateKrancThornTT[groups_, parentDirectory_, thornName_, opts:OptionsPattern[]] :=
-  Module[{calcs, expCalcs, expGroups, options, derivs, expDerivs, reflectionSymmetries, declaredGroups, consCalcs, expConsCalcs, intParams, realParams},
+  Module[{calcs, expCalcs, expGroups, options, derivs, expDerivs, reflectionSymmetries, declaredGroups, consCalcs, expConsCalcs, intParams, realParams, pds, nds},
     InfoMessage[Terse, "Creating thorn "<>thornName];
     InfoMessage[Terse, "Processing tensorial arguments"];
     calcs = lookup[{opts}, Calculations];
@@ -63,11 +63,16 @@ CreateKrancThornTT[groups_, parentDirectory_, thornName_, opts:OptionsPattern[]]
       realParams = lookupDefault[{opts}, RealParameters, {}] /. {___, Name -> name_, ___} :> name;
       Scan[DefineParameter, intParams];
       Scan[DefineParameter, realParams];
-    ]
+    ];
 
-    If[$KrancTensorPackage === "TensorTools",
-      pds = Union[derivs[[All,1,0]]];
-      Map[DefineDerivative, pds];
+    nds = Union[derivs[[All,1,0]]];
+    Which[
+    $KrancTensorPackage === "TensorTools",
+      Map[DefineDerivative, nds];,
+    $KrancTensorPackage === "xTensor",
+      pds = Unique /@ nds;
+      MapThread[DefineDerivative, {pds, nds}];
+      {calcs, consCalcs} = {calcs, consCalcs} /. Thread[nds -> pds];
     ];
 
     Map[CheckCalculationTensors, calcs];

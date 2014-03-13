@@ -195,6 +195,9 @@ DefFn[CaKernelCode[calc_List,opts___] :=
     {"#undef KRANC_DIFF_FUNCTIONS\n",
      "#define KRANC_" <> ToUpperCase[CodeGenC`SOURCELANGUAGE] <> "\n",
      Map[IncludeFile, {"Differencing.h", "Kranc.hh"}],
+     (* TODO: Instead of using this namespace,
+        put everything into this namespace *)
+     "using namespace CCTK_THORN;\n",
 
      "\n",
      "#undef KRANC_GFOFFSET3D\n",

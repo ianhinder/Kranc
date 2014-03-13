@@ -30,8 +30,9 @@ Begin["`Private`"];
 DefFn[
   DGFEDefinitions[cleancalc_, eqs_, gfs_] :=
   Module[
-    {name, lhss, gfsInLHS, vars},
+    {thorn, name, lhss, gfsInLHS, vars},
     InfoMessage[InfoFull, "Generating DGFE boilerplate"];
+    thorn = "CCTK_THORN"; (* TODO: get actual thorn name *)
     name = lookup[cleancalc, Name];
     lhss = Map[#[[1]] &, eqs];
     gfsInLHS = Union[Cases[lhss, _ ? (MemberQ[gfs,#] &), Infinity]];
@@ -43,12 +44,7 @@ DefFn[
     vars = Map[Symbol[StringReplace[ToString[#], "rhs"->""]] &, vars];
     InfoMessage[InfoFull, "DGFE variables:" <> Map[" "<>ToString[#] &, vars]];
     {
-      "",
-      "",
-      "",
       "/* DGFE Definitions */",
-      "",
-      "#include <hrscc.hh>",
       "",
       "#define config_sdg_order      5", (* TODO: make this a parameter *)
       "#define config_riemann_solver hrscc::LaxFriedrichsRS<DGFE_"<>name<>", false>",
@@ -70,7 +66,9 @@ DefFn[
       "",
       "class DGFE_"<>name<>";",
       "",
+      "} // namespace "<>thorn,
       "namespace hrscc {",
+      "  using namespace "<>thorn<>";",
       "  template<>",
       "  struct traits<DGFE_"<>name<>"> {",
       "    // All state vector variables",
@@ -80,7 +78,8 @@ DefFn[
       "    enum {nbitmasks = 0};",
       "    static const bool pure = false;",
       "  };",
-      "} // namespace",
+      "} // namespace hrscc",
+      "namespace "<>thorn<>" {",
       "",
       "",
       "",
@@ -132,13 +131,16 @@ DefFn[
       "",
       "",
       "",
+      "} // namespace "<>thorn,
       "namespace hrscc {",
+      "  using namespace "<>thorn<>";",
       "  template<> int CLaw<DGFE_"<>name<>">::conserved_idx[DGFE_"<>name<>"::nvars] = {};",
       "  template<> int CLaw<DGFE_"<>name<>">::primitive_idx[DGFE_"<>name<>"::nvars] = {};",
       "  template<> int CLaw<DGFE_"<>name<>">::rhs_idx[DGFE_"<>name<>"::nvars] = {};",
       "  template<> int CLaw<DGFE_"<>name<>">::field_idx[3*DGFE_"<>name<>"::nvars] = {};",
       "  template<> int CLaw<DGFE_"<>name<>">::bitmask_idx[0] = {};",
       "} // namespace hrscc",
+      "namespace "<>thorn<>" {",
       "",
       "",
       "",

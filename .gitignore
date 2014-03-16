@@ -16,3 +16,4 @@
 *.png
 *.pdf
 *__gpu_cuda__*
+Examples/make.thorns

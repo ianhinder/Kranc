@@ -192,23 +192,7 @@ DefFn[
   ProcessExpression[expr_, vectorise:Boolean, noSimplify:Boolean : False] :=
   Module[
     {rhs},
-    rhs = expr (*/. Power[xx_, -1] -> INV[xx];
-    rhs = rhs //. Power[xx_,  2  ] -> SQR[xx];
-    rhs = rhs //. Power[xx_,  3  ] -> CUB[xx];
-    rhs = rhs //. Power[xx_,  4  ] -> QAD[xx];
-    rhs = rhs //. Power[xx_, -2  ] -> INV[SQR[xx]];
-    rhs = rhs //. Power[xx_, -3  ] -> INV[CUB[xx]];
-    rhs = rhs //. Power[xx_, -4  ] -> INV[QAD[xx]];
-    rhs = rhs //. Power[xx_,  1/2] -> sqrt[xx];
-    rhs = rhs //. Power[xx_, -1/2] -> INV[sqrt[xx]];
-    rhs = rhs //. Power[xx_,  0.5] -> sqrt[xx];
-    rhs = rhs //. Power[xx_, -0.5] -> INV[sqrt[xx]];
-    rhs = rhs //. SQR[x_] SQR[y_] -> SQR[x y];
-    rhs = rhs //. CUB[x_] CUB[y_] -> CUB[x y];
-    rhs = rhs //. QAD[x_] QAD[y_] -> QAD[x y];
-    rhs = rhs //. INV[x_] INV[y_] -> INV[x y];
-    rhs = rhs //. sqrt[x_] sqrt[y_] -> sqrt[x y];
-    rhs = rhs //. INV[sqrt[x_]] sqrt[y_] -> sqrt[INV[x] y] *);
+    rhs = expr;
     
     (* Handle Piecewise function *)
     rhs = rhs /. Piecewise -> piecewise1
@@ -278,9 +262,6 @@ DefFn[
     rhs = rhs //. ArcSech[x_] -> acosh[1/x];
     rhs = rhs //. ArcCsch[x_] -> asinh[1/x];
     rhs = rhs //. ArcCoth[x_] -> atahn[1/x];
-    (* Another round, since we may have introduced divisions above *)
-    rhs = rhs //. 1 / x_ -> INV[x];
-    rhs = rhs //. INV[INV[x_]] -> x;
 
     (* there have been some problems doing the Max/Min
        replacement via the preprocessor for C, so we do it
@@ -305,10 +286,7 @@ CalculationMacros[vectorise_:False] :=
          {"INITVALUE (42)"} ~Join~
           If[vectorise,
            VectorisationMacros[],
-           {"INV(x) ((CCTK_REAL)1.0 / (x))",
-            "SQR(x) ((x) * (x))",
-            "CUB(x) ((x) * SQR(x))",
-            "QAD(x) (SQR(SQR(x)))"}]
+           {}]
          ]];
 
 

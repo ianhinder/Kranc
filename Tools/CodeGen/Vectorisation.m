@@ -38,13 +38,6 @@ DefFn[
   Module[
     {expr, vectoriseRules, scalarRules},
     expr = exprp;
-    
-    (* Remove SQR etc. *)
-    expr = expr //. {ToReal[x_] -> ToReal[x],
-      SQR[x_] -> x^2,
-      CUB[x_] -> x^3,
-      QAD[x_] -> x^4,
-      INV[x_] -> 1/x};
 
     expr = expr //. Power[x_,y_] -> pow[x,y];
     
@@ -109,6 +102,9 @@ DefFn[
 
       kmul[x_,kpow[y_,-1]] -> kdiv[x,y],
       kmul[x_,kpow[y_,-2]] -> kdiv[x,kmul[y,y]],
+
+      kpow[x_,(1/2)|0.5]     -> ksqrt[x],
+      kpow[x_,(-1/2)|(-0.5)] -> kdiv[ToReal[1],ksqrt[x]],
 
       kneg[ToReal[a_]]      -> ToReal[-a],
       kmul[ToReal[-1],x_]   -> kneg[x],

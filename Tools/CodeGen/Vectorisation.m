@@ -57,6 +57,8 @@ DefFn[
       pow[x_,y_]  :> kpow[x//.vectoriseRules,y],
       kpow[x_,y_]  :> kpow[x,y],
 
+      Parameter[x_] -> ToReal[x],
+
       x_Integer  -> ToReal[x],
       x_Rational -> ToReal[x],
       x_Real     -> ToReal[x],
@@ -93,10 +95,10 @@ DefFn[
       sgn[x_]     -> ksgn[x],
       sqrt[x_]    -> ksqrt[x]};
 
-    Print[];
-    Print["before vec expr = ", expr];
+    (* Print[]; *)
+    (* Print["before vec expr = ", expr]; *)
     expr = expr //. vectoriseRules;
-    Print["after vec expr = ", FullForm@expr];
+    (* Print["after vec expr = ", FullForm@expr]; *)
 
     (* Optimise *)
     expr = expr //. {
@@ -171,7 +173,7 @@ DefFn[
       kdiv[x_,kneg[y_]]              -> kneg[kdiv[x,y]],
       kdiv[x_,x_]                    -> ToReal[1],
       kmul[ToReal[a_],ToReal[b_]]    -> ToReal[a b],
-      kdev[ToReal[a_],ToReal[b_]]    -> ToReal[a/b],
+      (* kdiv[ToReal[a_],ToReal[b_]]    -> ToReal[a/b], *)
       kmul[x:Except[_ToReal],ToReal[a_]] -> kmul[ToReal[a],x],
       kdiv[x:Except[_ToReal],ToReal[y_]] -> kmul[ToReal[1/y],x],
       kmul[kmul[ToReal[a_],x_],y_]   -> kmul[ToReal[a],kmul[x,y]],
@@ -197,7 +199,7 @@ DefFn[
       kneg[kfabs[xx_]]           -> kfnabs[xx],
       kneg[kfnabs[xx_]]          -> kfabs[xx]};
 
-    Print["after opt expr = ", expr];
+    (* Print["after opt expr = ", expr]; *)
 
     (* FMA (fused multiply-add) *)
     (* kmadd (x,y,z) =   xy+z

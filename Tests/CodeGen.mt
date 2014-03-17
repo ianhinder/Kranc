@@ -97,6 +97,17 @@ Test[
   TestID->"ProcessExpression-vec-kpowdiv"
 ]
 
+Test[
+  VectoriseExpression[fmin[1,exp[Subtract[1,rL*pow[ToReal[SpatialShiftGammaCoeffRadius],-1]]]]]
+  ,
+  Null
+  ,
+  TestID->"ProcessExpression-vec-param"
+]
+
+
+
+
 
 (*
 

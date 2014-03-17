@@ -296,8 +296,7 @@ DefFn[
     If[vectorise === True,
       rhs = VectoriseExpression[rhs]];
 
-    (* Remove KrancScalar[] after vectorising *)
-    rhs = rhs /. KrancScalar[xx_] -> xx;
+    rhs = rhs //. {KrancScalar[xx_] -> xx, Parameter[xx_] -> xx};
     (*       Print[rhs//FullForm];*)
     rhs]];
 

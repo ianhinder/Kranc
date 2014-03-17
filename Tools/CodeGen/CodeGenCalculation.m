@@ -103,7 +103,6 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
                          If[OptionValue[UseDGFE], {"hrscc.hh"}, {}],
                          If[OptionValue[UseOpenCL], OpenCLIncludeFiles[], {}],
                          If[OptionValue[UseVectors], VectorisationIncludeFiles[], {}]]]],
-   CalculationMacros[OptionValue[UseVectors]],
 
    (* For each function structure passed, create the function and
       insert it *)

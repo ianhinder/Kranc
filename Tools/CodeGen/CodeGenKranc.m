@@ -35,7 +35,6 @@ ArrayName::usage = "ArrayName[variable] returns the name needed to access variab
 InitialiseFDVariables::usage = "";
 GenericGridLoop::usage = "";
 ProcessExpression::usage = "";
-CalculationMacros;
 AssignVariableFromExpression;
 GenerateCodeFromExpression;
 FileHeader;
@@ -276,16 +275,6 @@ DefFn[
 
     rhs = rhs //. {Parameter[xx_] -> xx};
     rhs]];
-
-CalculationMacros[vectorise_:False] :=
-  CommentedBlock["Define macros used in calculations",
-      Map[{"#define ", #, "\n"} &,
-         {"INITVALUE (42)"} ~Join~
-          If[vectorise,
-           VectorisationMacros[],
-           {}]
-         ]];
-
 
 (* Return a CodeGen block which assigns dest by evaluating expr *)
 Options[AssignVariableFromExpression] = {"Const" -> False, "Type" -> Automatic};

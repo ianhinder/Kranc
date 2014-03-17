@@ -203,7 +203,6 @@ DefFn[CaKernelCode[calc_List,opts___] :=
      "#undef KRANC_GFOFFSET3D\n",
      "#define KRANC_GFOFFSET3D(u,i,j,k) I3D(u,i,j,k)\n",
      "\n",
-     CalculationMacros[],
 
     "\n", CreateCalculationFunction[calc2, LoopName -> kernel<>"_Computations",
                                     opts]}]];

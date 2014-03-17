@@ -29,7 +29,6 @@ VectorisationLoadVariable;
 VectorisationConfigurationCCL;
 VectorisationType;
 VectorisationIncludeFiles;
-VectorisationMacros;
 
 Begin["`Private`"];
 
@@ -228,10 +227,6 @@ DefFn[
       x:(kmul|kadd)[a_,b_] /; !OrderedQ[x] :> Sort[x]};
 
     Return[expr]]];
-
-DefFn[VectorisationMacros[] :=
-  {}];
-
 
 (* Code generation: The following functions are called when vectorising. *)
 

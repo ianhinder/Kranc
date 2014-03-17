@@ -45,42 +45,24 @@ DefFn[
       CUB[x_] -> x^3,
       QAD[x_] -> x^4,
       INV[x_] -> 1/x};
+
     expr = expr //. Power[x_,y_] -> pow[x,y];
     
-    (* Handle division *)
-    expr = expr //. {ToReal[x_] -> ToReal[x], pow[x_,n_Integer] /; n<0 :> kdiv[1,pow[x,-n]]};
-    (* Implement integer powers efficiently *)
-    expr = expr //. {
-      pow[x_,0] -> 1,
-      pow[x_,1] -> x,
-      ToReal[x_] -> ToReal[x],
-      pow[x_,n_Integer] /; n>1 && Mod[n,2]==0 :> kmul[pow[x,n/2],pow[x,n/2]],
-      pow[x_,n_Integer] /; n>1 && Mod[n,2]==1 :> kmul[x,pow[x,n-1]]};
-    
-    (* Print["expr1 = ", expr]; *)
+    (* Vectorise *)
 
-    (* Constants *)
-    constantsRule = {
-      ToReal[x_] -> ToReal[x],
+    vectoriseRules = {
+      x_ToReal -> x,
+      x_KrancScalar -> x,
+      IfThen[cond_, x_, y_] :> IfThen[cond, x//.vectoriseRules, y//.vectoriseRules],
+      pow[x_,y_]  :> kpow[x//.vectoriseRules,y],
+      kpow[x_,y_]  :> kpow[x,y],
+
       x_Integer  -> ToReal[x],
       x_Rational -> ToReal[x],
       x_Real     -> ToReal[x],
       E          -> ToReal[E],
-      Pi         -> ToReal[Pi]};
+      Pi         -> ToReal[Pi],
 
-    (* expr = expr /. constantsRule; *)
-
-    expr = expr /. Prepend[constantsRule,
-      IfThen[cond_, x_, y_] :> IfThen[cond, x/.constantsRule, y/.constantsRule]];
-    
-    (* Print["expr2 = ", expr]; *)
-
-    ToRealQ[expr_] := Head[expr] == ToReal;
-    notToRealQ[expr_] := Head[expr] != ToReal;
-    
-    (* Operators *)
-    expr = expr //. {
-      ToReal[x_] -> ToReal[x],
       -x_ -> kneg[x],
       
       x_ + y_ -> kadd[x,y],
@@ -108,12 +90,29 @@ DefFn[
       fmin[x_,y_] -> kfmin[x,y],
       isgn[x_]    -> kisgn[x],
       log[x_]     -> klog[x],
-      pow[x_,y_]  -> kpow[x,y],
       sgn[x_]     -> ksgn[x],
       sqrt[x_]    -> ksqrt[x]};
 
+    Print[];
+    Print["before vec expr = ", expr];
+    expr = expr //. vectoriseRules;
+    Print["after vec expr = ", FullForm@expr];
+
     (* Optimise *)
     expr = expr //. {
+
+      (* Handle division *)
+      kpow[x_,n_Integer] /; n<0 :> kdiv[ToReal[1],kpow[x,-n]],
+
+      (* Implement integer powers efficiently *)
+      kpow[x_,0] -> 1,
+      kpow[x_,1] -> x,
+      kpow[x_,n_Integer] /; n>1 && Mod[n,2]==0 :> kmul[kpow[x,n/2],kpow[x,n/2]],
+      kpow[x_,n_Integer] /; n>1 && Mod[n,2]==1 :> kmul[x,kpow[x,n-1]],
+
+      kmul[x_,kpow[y_,-1]] -> kdiv[x,y],
+      kmul[x_,kpow[y_,-2]] -> kdiv[x,kmul[y,y]],
+
       kneg[ToReal[a_]]      -> ToReal[-a],
       kmul[ToReal[-1],x_]   -> kneg[x],
       kmul[ToReal[-1.0],x_] -> kneg[x],
@@ -138,11 +137,11 @@ DefFn[
       ksub[x_,x_]                    -> ToReal[0],
       kadd[ToReal[a_],ToReal[b_]]    -> ToReal[a+b],
       ksub[ToReal[a_],ToReal[b_]]    -> ToReal[a-b],
-      kadd[x_?notToRealQ,ToReal[a_]] -> kadd[ToReal[a],x],
+      kadd[x:Except[_ToReal],ToReal[a_]] -> kadd[ToReal[a],x],
       kadd[kadd[ToReal[a_],x_],y_]   -> kadd[ToReal[a],kadd[x,y]],
       kadd[kadd[ToReal[a_],x_],
            kadd[ToReal[b_],y_]]      -> kadd[ToReal[kadd[a,b]],kadd[x,y]],
-      kadd[x_?notToRealQ,
+      kadd[x:Except[_ToReal],
            kadd[ToReal[a_],y_]]      -> kadd[ToReal[a],kadd[x,y]],
       
       kmul[ToReal[0],x_]             -> ToReal[0],
@@ -173,12 +172,12 @@ DefFn[
       kdiv[x_,x_]                    -> ToReal[1],
       kmul[ToReal[a_],ToReal[b_]]    -> ToReal[a b],
       kdev[ToReal[a_],ToReal[b_]]    -> ToReal[a/b],
-      kmul[x_?notToRealQ,ToReal[a_]] -> kmul[ToReal[a],x],
-      kdiv[x_?notToRealQ,ToReal[y_]] -> kmul[ToReal[1/y],x],
+      kmul[x:Except[_ToReal],ToReal[a_]] -> kmul[ToReal[a],x],
+      kdiv[x:Except[_ToReal],ToReal[y_]] -> kmul[ToReal[1/y],x],
       kmul[kmul[ToReal[a_],x_],y_]   -> kmul[ToReal[a],kmul[x,y]],
       kmul[kmul[ToReal[a_],x_],
            kmul[ToReal[b_],y_]]      -> kmul[ToReal[a*b],kmul[x,y]],
-      kmul[x_?notToRealQ,
+      kmul[x:Except[_ToReal],
            kmul[ToReal[a_],y_]]      -> kmul[ToReal[a],kmul[x,y]],
       
       kasin[kneg[xx_]]           -> kneg[kasin[xx]],
@@ -197,6 +196,8 @@ DefFn[
       kfnabs[kneg[xx_]]          -> kfnabs[xx],
       kneg[kfabs[xx_]]           -> kfnabs[xx],
       kneg[kfnabs[xx_]]          -> kfabs[xx]};
+
+    Print["after opt expr = ", expr];
 
     (* FMA (fused multiply-add) *)
     (* kmadd (x,y,z) =   xy+z

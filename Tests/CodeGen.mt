@@ -73,6 +73,30 @@ Test[
   TestID->"ProcessExpression-vec-IfThenConsts"
 ]
 
+Test[
+  VectoriseExpression[1./1024/dx]
+  ,
+  kdiv[ToReal[Evaluate[1./1024]],dx]
+  ,
+  TestID->"ProcessExpression-vec-kdivrealvec"
+]
+
+Test[
+  VectoriseExpression[dx^-1]
+  ,
+  kpow[dx,-1]
+  ,
+  TestID->"ProcessExpression-vec-kdivrealvec2"
+]
+
+Test[
+  VectoriseExpression[dx^-1]
+  ,
+  kdiv[ToReal[1],dx]
+  ,
+  TestID->"ProcessExpression-vec-kpowdiv"
+]
+
 
 (*
 

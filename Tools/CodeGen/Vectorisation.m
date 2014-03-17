@@ -275,6 +275,9 @@ DefFn[
     
     (* expr = undoSomeVect[expr]; *)
     
+    expr = expr /. {
+      x:(kmul|kadd)[a_,b_] /; !OrderedQ[x] :> Sort[x]};
+
     Return[expr]]];
 
 DefFn[VectorisationMacros[] :=

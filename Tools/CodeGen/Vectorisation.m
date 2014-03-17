@@ -52,7 +52,6 @@ DefFn[
 
     vectoriseRules = {
       x_ToReal -> x,
-      x_KrancScalar -> x,
       IfThen[cond_, x_, y_] :> IfThen[cond, x//.vectoriseRules, y//.vectoriseRules],
       pow[x_,y_]  :> kpow[x//.vectoriseRules,y],
       kpow[x_,y_]  :> kpow[x,y],
@@ -219,7 +218,6 @@ DefFn[
 
     scalarRules = {
       ToReal[x_] :> ToReal[x//.scalarRules],
-      KrancScalar[x_] :> KrancScalar[x//.scalarRules],
       IfThen[cond_, x_, y_] :> IfThen[cond//.scalarRules, x, y],
 
       (* don't generate large integer constants *)

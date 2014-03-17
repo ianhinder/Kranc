@@ -70,7 +70,7 @@ CountOperations[IfThen[cond_, a_, b_]] :=
 CountOperations[HoldPattern[(Equal|Unequal|Less|Greater|Max|Min)[a_, b_]]] :=
   Scan[CountOperations, {a, b}];
 
-CountOperations[(KrancScalar|Sign|ToReal|Abs)[e_]] :=
+CountOperations[(Sign|ToReal|Abs)[e_]] :=
   CountOperations[e];
 
 CountOperations[e_] :=

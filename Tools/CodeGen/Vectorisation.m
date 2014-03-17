@@ -95,10 +95,7 @@ DefFn[
       sgn[x_]     -> ksgn[x],
       sqrt[x_]    -> ksqrt[x]};
 
-    (* Print[]; *)
-    (* Print["before vec expr = ", expr]; *)
     expr = expr //. vectoriseRules;
-    (* Print["after vec expr = ", FullForm@expr]; *)
 
     (* Optimise *)
     expr = expr //. {
@@ -199,8 +196,6 @@ DefFn[
       kneg[kfabs[xx_]]           -> kfnabs[xx],
       kneg[kfnabs[xx_]]          -> kfabs[xx]};
 
-    (* Print["after opt expr = ", expr]; *)
-
     (* FMA (fused multiply-add) *)
     (* kmadd (x,y,z) =   xy+z
        kmsub (x,y,z) =   xy-z
@@ -235,47 +230,6 @@ DefFn[
       E  -> N[E,30]};
       
     expr = expr //. scalarRules;
-    
-    (* (\* Undo some transformations *\) *)
-    (* undoVect[expr_] := expr //. { *)
-    (*   ToReal[x_] -> x, *)
-      
-    (*   (\* don't generate large integer constants *\) *)
-    (*   x_Integer /; Abs[x]>10^10 :> 1.0*x, *)
-    (*   (\* generate sufficient precision *\) *)
-    (*   x_Rational :> N[x,30], *)
-    (*   Pi -> N[Pi,30], *)
-    (*   E  -> N[E,30], *)
-      
-    (*   kneg[x_] -> -x, *)
-      
-    (*   kadd[x_,y_] -> x+y, *)
-    (*   ksub[x_,y_] -> x-y, *)
-    (*   kmul[x_,y_] -> x*y, *)
-    (*   kdiv[x_,y_] -> x*ScalarINV[y], *)
-      
-    (*   kmadd[x_,y_,z_]  -> x*y+z, *)
-    (*   kmsub[x_,y_,z_]  -> x*y-z, *)
-    (*   knmadd[x_,y_,z_] -> -(x*y+z), *)
-    (*   knmsub[x_,y_,z_] -> -(x*y-z), *)
-      
-    (*   x_^2 -> ScalarSQR[x], *)
-    (*   x_^3 -> ScalarCUB[x], *)
-    (*   x_^4 -> ScalarQAD[x], *)
-    (*   x_^-1 -> ScalarINV[x], *)
-    (*   x_^-2 -> ScalarINV[ScalarSQR[x]], *)
-    (*   x_^-3 -> ScalarINV[ScalarCUB[x]], *)
-    (*   x_^-4 -> ScalarINV[ScalarQAD[x]]}; *)
-    
-    (* undoSomeVect[expr_] := ( *)
-    (*   expr *)
-    (*   (\* /. ToReal[a_] :> ToReal[undoVect[a]] *\) *)
-    (*   /. KrancScalar[a_] :> KrancScalar[undoVect[a]] *)
-    (*   /. (IfThen[a_,x_,y_] :>  *)
-    (*       IfThen[undoVect[a], undoSomeVect[x], undoSomeVect[y]]) *)
-    (*   /. kpow[x_,a_] :> kpow[undoSomeVect[x], undoVect[a]]); *)
-    
-    (* expr = undoSomeVect[expr]; *)
     
     expr = expr /. {
       x:(kmul|kadd)[a_,b_] /; !OrderedQ[x] :> Sort[x]};

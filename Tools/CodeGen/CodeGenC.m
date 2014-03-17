@@ -85,7 +85,7 @@ DefFn[
 
 DefFn[
   DeclarePointers[names_?ListQ, type_String] :=
-  {type, " *",           CommaInitSeparated@names, ";\n"}];
+  {type, " *",           CommaSeparated@names, ";\n"}];
 
 DefFn[
   DeclareArray[name:(_String|_Symbol), dim_Integer, type_String] :=

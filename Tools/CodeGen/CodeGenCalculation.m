@@ -366,22 +366,9 @@ DefFn[
 
   InfoMessage[InfoFull, "Equations:"];
 
-  (* Wrap parameters with ToReal if they are in a vectorised part of the expression *)
-  (* TODO: Move this into VectoriseExpression *)
-  (* parameterRules = Join[{ *)
-  (*   ToReal[x_] -> ToReal[x], *)
-  (*   IfThen[cond_, x_, y_] :> IfThen[cond, x//.parameterRules, y//.parameterRules], *)
-  (*   Power[x_, a_] :> Power[x//.parameterRules,a]}, *)
-  (*   Map[(#->ToReal[#])&, parameters]]; *)
+  parameterRules = Map[(#->Parameter[#])&, parameters];
 
-(*  Print[parameterRules//InputForm];*)
-
-    Print["parameters = ", parameters//InputForm];
-
-    parameterRules = Map[(#->Parameter[#])&, parameters];
-    Print["parameterRules = ", parameterRules//InputForm];
-
-    eqs = eqs /. parameterRules;
+  eqs = eqs /. parameterRules;
 
   (* Map[printEq, eqs]; *)
 

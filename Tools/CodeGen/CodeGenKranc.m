@@ -116,14 +116,14 @@ DefFn[
              {"cctkLbnd1", "ptrdiff_t", "cctk_lbnd[0]"},
              {"cctkLbnd2", "ptrdiff_t", "cctk_lbnd[1]"},
              {"cctkLbnd3", "ptrdiff_t", "cctk_lbnd[2]"},
-             {"t", DataType[], "ToReal(cctk_time)"},
-             {"cctkOriginSpace1", DataType[], "ToReal(CCTK_ORIGIN_SPACE(0))"},
-             {"cctkOriginSpace2", DataType[], "ToReal(CCTK_ORIGIN_SPACE(1))"},
-             {"cctkOriginSpace3", DataType[], "ToReal(CCTK_ORIGIN_SPACE(2))"},
-             {"dt", DataType[], "ToReal(CCTK_DELTA_TIME)"},
-             {"dx", DataType[], "ToReal(CCTK_DELTA_SPACE(0))"},
-             {"dy", DataType[], "ToReal(CCTK_DELTA_SPACE(1))"},
-             {"dz", DataType[], "ToReal(CCTK_DELTA_SPACE(2))"},
+             {"t", DataType[], ToReal["cctk_time"]},
+             {"cctkOriginSpace1", DataType[], ToReal["CCTK_ORIGIN_SPACE(0)"]},
+             {"cctkOriginSpace2", DataType[], ToReal["CCTK_ORIGIN_SPACE(1)"]},
+             {"cctkOriginSpace3", DataType[], ToReal["CCTK_ORIGIN_SPACE(2)"]},
+             {"dt", DataType[], ToReal["CCTK_DELTA_TIME"]},
+             {"dx", DataType[], ToReal["CCTK_DELTA_SPACE(0)"]},
+             {"dy", DataType[], ToReal["CCTK_DELTA_SPACE(1)"]},
+             {"dz", DataType[], ToReal["CCTK_DELTA_SPACE(2)"]},
 
              (* Note that dx is already a vector, so should not be wrapped in ToReal *)
              {"dxi", DataType[], 1/dx},
@@ -271,7 +271,8 @@ DefFn[
     rhs = rhs //. IntAbs[x_] -> abs[x];
 
     If[vectorise === True,
-      rhs = VectoriseExpression[rhs]];
+      rhs = VectoriseExpression[rhs],
+      rhs = rhs /. ToReal[x_] ->x];
 
     rhs = rhs //. {Parameter[xx_] -> xx};
     rhs]];

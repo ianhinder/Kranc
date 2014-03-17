@@ -36,7 +36,7 @@ Begin["`Private`"];
 DefFn[
   VectoriseExpression[exprp_] :=
   Module[
-    {expr, undoVect, undoSomeVect, constantsRule},
+    {expr, vectoriseRules, scalarRules},
     expr = exprp;
     
     (* Remove SQR etc. *)
@@ -49,7 +49,6 @@ DefFn[
     expr = expr //. Power[x_,y_] -> pow[x,y];
     
     (* Vectorise *)
-
     vectoriseRules = {
       x_ToReal -> x,
       IfThen[cond_, x_, y_] :> IfThen[cond, x//.vectoriseRules, y//.vectoriseRules],
@@ -219,14 +218,14 @@ DefFn[
     scalarRules = {
       ToReal[x_] :> ToReal[x//.scalarRules],
       IfThen[cond_, x_, y_] :> IfThen[cond//.scalarRules, x, y],
-
+      
       (* don't generate large integer constants *)
       x_Integer /; Abs[x]>10^10 :> 1.0*x,
       (* generate sufficient precision *)
       x_Rational :> N[x,30],
       Pi -> N[Pi,30],
       E  -> N[E,30]};
-      
+    
     expr = expr //. scalarRules;
     
     expr = expr /. {

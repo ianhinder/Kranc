@@ -266,6 +266,7 @@ DefFn[
     (* Note: Mathematica simplifies Max[xx_] -> xx automatically *)
     rhs = rhs //. Max[xx_, yy__] :> fmax[xx, Max[yy]];
     rhs = rhs //. Min[xx_, yy__] :> fmin[xx, Min[yy]];
+    rhs = rhs //. Min3[xx_, yy_, zz_] :> fmin[fmin[xx, yy], zz];
     rhs = rhs //. Abs[x_] -> fabs[x];
     rhs = rhs //. Sign[x_] -> isgn[x];
     rhs = rhs //. IntAbs[x_] -> abs[x];

@@ -263,9 +263,6 @@ DefFn[
     rhs = rhs //. ArcCsch[x_] -> asinh[1/x];
     rhs = rhs //. ArcCoth[x_] -> atahn[1/x];
 
-    (* there have been some problems doing the Max/Min
-       replacement via the preprocessor for C, so we do it
-       here *)
     (* Note: Mathematica simplifies Max[xx_] -> xx automatically *)
     rhs = rhs //. Max[xx_, yy__] :> fmax[xx, Max[yy]];
     rhs = rhs //. Min[xx_, yy__] :> fmin[xx, Min[yy]];
@@ -277,7 +274,6 @@ DefFn[
       rhs = VectoriseExpression[rhs]];
 
     rhs = rhs //. {Parameter[xx_] -> xx};
-    (*       Print[rhs//FullForm];*)
     rhs]];
 
 CalculationMacros[vectorise_:False] :=

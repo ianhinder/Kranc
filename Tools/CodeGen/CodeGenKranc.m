@@ -107,8 +107,8 @@ DefFn[
          AssignVariableFromExpression.  This requires a richer
          expression language with type information so that
          scalars/vectors can be handled automatically. *)
-      Apply[DefineConstant,
-            {{"di", "ptrdiff_t", "1"},
+      MapThread[Function[{dest,type,val}, AssignVariableFromExpression[dest,val,True,vectorise,Const->True,Type->type]],
+            Transpose@{{"di", "ptrdiff_t", "1"},
              {"dj", "ptrdiff_t", "CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0)"},
              {"dk", "ptrdiff_t", "CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0)"},
              {"cdi", "ptrdiff_t", "sizeof(CCTK_REAL) * di"},
@@ -127,10 +127,9 @@ DefFn[
              {"dz", DataType[], "ToReal(CCTK_DELTA_SPACE(2))"},
 
              (* Note that dx is already a vector, so should not be wrapped in ToReal *)
-             {"dxi", DataType[], "INV(dx)"},
-             {"dyi", DataType[], "INV(dy)"},
-             {"dzi", DataType[], "INV(dz)"}},
-            {1}],
+             {"dxi", DataType[], 1/dx},
+             {"dyi", DataType[], 1/dy},
+             {"dzi", DataType[], 1/dz}}],
 
       AssignVariableFromExpression["khalf", 0.5, True, vectorise, Const -> True],
       AssignVariableFromExpression["kthird", 1/3, True, vectorise, Const -> True],
@@ -314,11 +313,14 @@ CalculationMacros[vectorise_:False] :=
 
 
 (* Return a CodeGen block which assigns dest by evaluating expr *)
-Options[AssignVariableFromExpression] = {"Const" -> False};
+Options[AssignVariableFromExpression] = {"Const" -> False, "Type" -> Automatic};
 AssignVariableFromExpression[dest_, expr_, declare_, vectorise_, noSimplify:Boolean : False,
                              OptionsPattern[]] :=
   Module[{type, exprCode, code},
-    type = If[StringMatchQ[ToString[dest], "dir*"], "ptrdiff_t", DataType[]];
+    type =
+    If[OptionValue[Type] === Automatic,
+      If[StringMatchQ[ToString[dest], "dir*"], "ptrdiff_t", DataType[]],
+      OptionValue[Type]];
     exprCode = GenerateCodeFromExpression[expr, vectorise, noSimplify];
     CountOperations[expr];
     code = If[declare,

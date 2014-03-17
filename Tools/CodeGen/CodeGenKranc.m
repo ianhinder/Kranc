@@ -192,7 +192,7 @@ DefFn[
   ProcessExpression[expr_, vectorise:Boolean, noSimplify:Boolean : False] :=
   Module[
     {rhs},
-    rhs = expr /. Power[xx_, -1] -> INV[xx];
+    rhs = expr (*/. Power[xx_, -1] -> INV[xx];
     rhs = rhs //. Power[xx_,  2  ] -> SQR[xx];
     rhs = rhs //. Power[xx_,  3  ] -> CUB[xx];
     rhs = rhs //. Power[xx_,  4  ] -> QAD[xx];
@@ -208,7 +208,7 @@ DefFn[
     rhs = rhs //. QAD[x_] QAD[y_] -> QAD[x y];
     rhs = rhs //. INV[x_] INV[y_] -> INV[x y];
     rhs = rhs //. sqrt[x_] sqrt[y_] -> sqrt[x y];
-    rhs = rhs //. INV[sqrt[x_]] sqrt[y_] -> sqrt[INV[x] y];
+    rhs = rhs //. INV[sqrt[x_]] sqrt[y_] -> sqrt[INV[x] y] *);
     
     (* Handle Piecewise function *)
     rhs = rhs /. Piecewise -> piecewise1

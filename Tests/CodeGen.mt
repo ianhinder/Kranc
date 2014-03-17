@@ -44,7 +44,7 @@ Test[
 Test[
   VectoriseExpression[a+ToReal[3] c]
   ,
-  kmadd[c,ToReal[3],a]
+  kmadd[ToReal[3],c,a]
   ,
   TestID->"ProcessExpression-vec-plus-kmadd-toreal"
 ]
@@ -52,7 +52,7 @@ Test[
 Test[
   VectoriseExpression[a+ToReal[b] c]
   ,
-  kmadd[c,ToReal[b],a]
+  kmadd[ToReal[b],c,a]
   ,
   TestID->"ProcessExpression-vec-plus-kmadd-toreal-sym"
 ]
@@ -84,14 +84,6 @@ Test[
 Test[
   VectoriseExpression[dx^-1]
   ,
-  kpow[dx,-1]
-  ,
-  TestID->"ProcessExpression-vec-kdivrealvec2"
-]
-
-Test[
-  VectoriseExpression[dx^-1]
-  ,
   kdiv[ToReal[1],dx]
   ,
   TestID->"ProcessExpression-vec-kpowdiv"
@@ -100,7 +92,7 @@ Test[
 Test[
   VectoriseExpression[fmin[1,exp[Subtract[1,rL*pow[ToReal[SpatialShiftGammaCoeffRadius],-1]]]]]
   ,
-  Null
+  kfmin[ToReal[1], kexp[knmsub[ToReal[SpatialShiftGammaCoeffRadius^(-1)], rL, ToReal[1]]]]
   ,
   TestID->"ProcessExpression-vec-param"
 ]

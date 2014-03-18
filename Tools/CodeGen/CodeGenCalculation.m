@@ -144,7 +144,7 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
                                          bodyFunction], 
                       CallerFunction -> True,
                       LoopFunction -> (GenericGridLoop[lookup[calc,Name],#,TileCalculationQ[calc], opts] &),
-                      GFAccessFunction -> ({#,"[","index","]"} &),
+                      GFAccessFunction -> ReadGridFunctionInLoop,
                       InitFDVariables -> InitialiseFDVariables[OptionValue[UseVectors]],
                       MacroPointer -> True}];
 
@@ -516,6 +516,39 @@ DefFn[
        ""]
   }]];
 
+(* Create definitions for the local copies of gridfunctions or arrays *)
+DefFn[assignLocalFunctions[gs:{_Symbol...}, useVectors:Boolean, useJacobian:Boolean, nameFunc_] :=
+  Module[{conds, varPatterns, varsInConds, simpleVars, code},
+
+    (* Conditional access to grid variables *)
+    (* Format is {var, cond, else-value} *)
+    conds =
+    {{"eT" ~~ _ ~~ _, "assume_stress_energy_state>=0 ? assume_stress_energy_state : *stress_energy_state", "ToReal(0.0)"}}; (* This should be passed as an option *)
+    If[useJacobian,
+      conds = Append[conds, JacobianConditionalGridFunctions[]]];
+
+    (* Split into conditional and simple grid variables *)
+    varPatterns = Map[First, conds];
+    varsInConds = Map[Function[pattern, Select[gs,StringMatchQ[ToString[#], pattern] &]], varPatterns];
+    simpleVars = Complement[gs, Flatten[varsInConds]];
+
+    code = {"\n",
+      (* Simple grid variables *)
+      Map[DeclareMaybeAssignVariableInLoop[DataType[],localName[#],nameFunc[#],False,"",useVectors] &, simpleVars],
+      {"\n",
+        (* Conditional grid variables *)
+        NewlineSeparated@
+        MapThread[
+          If[Length[#2] > 0,
+            {DeclareVariables[localName/@#2, DataType[]],"\n",
+              Conditional[#1,
+                Table[AssignVariableInLoop[localName[var], nameFunc[var], useVectors], {var, #2}],
+                Sequence@@If[#3 =!= None, {Table[AssignVariableInLoop[localName[var], #3, False (*useVectors*)], {var, #2}]}, {}]]},
+            (* else *)
+              {}] &,
+          {Map[#[[2]]&, conds], varsInConds, Map[#[[3]]&, conds]}]}};
+  code]];
+
 Options[equationLoop] = ThornOptions;
 
 DefFn[
@@ -651,34 +684,6 @@ DefFn[
     calcCode = Riffle[generateEquationCode /@ groupedIfs, "\n"];
     calcCodeArrays = Riffle[generateEquationCode /@ groupedIfsArrays, "\n"];
     InfoMessage[InfoFull, "Finished generating equation code"];
-
-    assignLocalFunctions[gs_, useVectors_, useJacobian_, NameFunc_] :=
-      Module[{conds, varPatterns, varsInConds, simpleVars, code},
-        conds =
-          {{"eT" ~~ _ ~~ _, "assume_stress_energy_state>=0 ? assume_stress_energy_state : *stress_energy_state", "ToReal(0.0)"}}; (* This should be passed as an option *)
-        If[useJacobian,
-          conds = Append[conds, JacobianConditionalGridFunctions[]]];
-
-        varPatterns = Map[First, conds];
-        varsInConds = Map[Function[pattern, Select[gs,StringMatchQ[ToString[#], pattern] &]], varPatterns];
-        simpleVars = Complement[gs, Flatten[varsInConds]];
-        code = {"\n",
-         Map[DeclareMaybeAssignVariableInLoop[
-              DataType[], localName[#], NameFunc[#],
-              False,"", useVectors] &, simpleVars],
-         {"\n",
-         Riffle[
-           MapThread[
-             If[Length[#2] > 0,
-               {DeclareVariables[localName/@#2, DataType[]],"\n",
-                Conditional[#1,
-                  Table[AssignVariableInLoop[localName[var], NameFunc[var], useVectors], {var, #2}],
-                  Sequence@@If[#3 =!= None, {Table[AssignVariableInLoop[localName[var], #3, False (*useVectors*)], {var, #2}]}, {}]]},
-               (* else *)
-               {}] &,
-             {Map[#[[2]]&, conds], varsInConds, Map[#[[3]]&, conds]}], "\n"]}};
-         code
-      ];
 
     assignLocalGridFunctions[gs_, useVectors_, useJacobian_] := assignLocalFunctions[gs, useVectors, useJacobian, gridName];
     assignLocalArrayFunctions[gs_] := assignLocalFunctions[gs, False, False, ArrayName];

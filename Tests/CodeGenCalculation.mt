@@ -26,7 +26,7 @@ Test[
     $CodeGenTarget = NewObject[TargetC, {"UseVectors" -> False}]},
     FlattenBlock@CodeGenCalculation`Private`assignLocalFunctions[{eT11}, False, False, ReadGridFunctionInLoop]]
   ,
-  "\n\nCCTK_REAL eT11L CCTK_ATTRIBUTE_UNUSED ;\n\nif (assume_stress_energy_state>=0 ? assume_stress_energy_state : *stress_energy_state)\n{\n  eT11L = eT11[index];\n}\nelse\n{\n  eT11L = ToReal(0.0);\n}\n"
+  "\n\nCCTK_REAL eT11L CCTK_ATTRIBUTE_UNUSED ;\n\nif (assume_stress_energy_state>=0 ? assume_stress_energy_state : *stress_energy_state)\n{\n  eT11L = eT11[index];\n}\nelse\n{\n  eT11L = 0.;\n}\n"
   ,
   TestID->"assignLocalFunctions-eT"
 ]
@@ -36,7 +36,7 @@ Test[
     $CodeGenTarget = NewObject[TargetC, {"UseVectors" -> True}]},
     FlattenBlock@CodeGenCalculation`Private`assignLocalFunctions[{eT11}, True, False, ReadGridFunctionInLoop]]
   ,
-  "\n\nCCTK_REAL eT11L CCTK_ATTRIBUTE_UNUSED ;\n\nif (assume_stress_energy_state>=0 ? assume_stress_energy_state : *stress_energy_state)\n{\n  eT11L = vec_load(eT11[index]);\n}\nelse\n{\n  eT11L = ToReal(0.0);\n}\n"
+  "\n\nCCTK_REAL eT11L CCTK_ATTRIBUTE_UNUSED ;\n\nif (assume_stress_energy_state>=0 ? assume_stress_energy_state : *stress_energy_state)\n{\n  eT11L = vec_load(eT11[index]);\n}\nelse\n{\n  eT11L = ToReal(0.);\n}\n"
   ,
   TestID->"assignLocalFunctions-eT-vec"
 ]

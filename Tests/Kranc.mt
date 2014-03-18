@@ -1,6 +1,8 @@
 
 (* Mathematica Test File *)
 
+Begin["`Kranc`"];
+
 $derivatives = {
   PDstandard2nd[i_]     -> StandardCenteredDifferenceOperator[1,1,i],
   PDstandard2nd[i_, i_] -> StandardCenteredDifferenceOperator[2,1,i]};
@@ -434,3 +436,5 @@ Test[
   ,
   TestID->"CountOperations"
 ]
+
+End[];

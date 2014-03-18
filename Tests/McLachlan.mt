@@ -1,6 +1,8 @@
 
 (* Mathematica Test File *)
 
+Begin["`McLachlan`"];
+
 SetEnhancedTimes[False];
 SetSourceLanguage["C"];
 
@@ -1489,3 +1491,5 @@ Test[
   ,
   TestID->"McLachlanCaKernel"
 ]
+
+End[];

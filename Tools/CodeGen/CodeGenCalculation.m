@@ -543,8 +543,8 @@ DefFn[assignLocalFunctions[gs:{_Symbol...}, useVectors:Boolean, useJacobian:Bool
           If[Length[#2] > 0,
             {DeclareVariables[localName/@#2, DataType[]],"\n",
               Conditional[#1,
-                Table[AssignVariableInLoop[localName[var], nameFunc[var], useVectors], {var, #2}],
-                Sequence@@If[#3 =!= None, {Table[AssignVariableInLoop[localName[var], #3, False (*useVectors*)], {var, #2}]}, {}]]},
+                Table[AssignVariableFromExpression[localName[var], GFLocal[var], False, useVectors], {var, #2}],
+                Sequence@@If[#3 =!= None, {Table[AssignVariableFromExpression[localName[var], #3, False (* declare *), False (*useVectors*)], {var, #2}]}, {}]]},
             (* else *)
               {}] &,
           {Map[#[[2]]&, conds], varsInConds, Map[#[[3]]&, conds]}]}};

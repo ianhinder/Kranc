@@ -804,6 +804,7 @@ Options[DifferencingProcessCode] = ThornOptions;
 
 DefFn[
   DifferencingProcessCode[cIn_Code, opts:OptionsPattern[]] :=
+  Block[{$CodeGenTarget = NewObject[TargetC, {"UseVectors" -> OptionValue[UseVectors]}]},
   Module[
     {diffHeader, pDefs, c = cIn},
 
@@ -827,7 +828,7 @@ DefFn[
     If[OptionValue[UseOpenCL], diffHeader = OpenCL`OpenCLProcessDifferencingHeader[diffHeader]];
     AppendObjectField[
       c, "Sources",
-      {Filename -> "Differencing.h", Contents -> diffHeader}]]];
+      {Filename -> "Differencing.h", Contents -> diffHeader}]]]];
 
 End[];
 

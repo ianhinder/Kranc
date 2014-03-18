@@ -29,46 +29,36 @@ VectorisationLoadVariable;
 VectorisationConfigurationCCL;
 VectorisationType;
 VectorisationIncludeFiles;
-VectorisationMacros;
 
 Begin["`Private`"];
 
 DefFn[
   VectoriseExpression[exprp_] :=
   Module[
-    {expr, undoVect, undoSomeVect},
+    {expr, vectoriseRules, scalarRules},
     expr = exprp;
-    
-    (* Remove SQR etc. *)
-    expr = expr //. {
-      SQR[x_] -> x^2,
-      CUB[x_] -> x^3,
-      QAD[x_] -> x^4,
-      INV[x_] -> 1/x};
+
     expr = expr //. Power[x_,y_] -> pow[x,y];
     
-    (* Handle division *)
-    expr = expr //. pow[x_,n_Integer] /; n<0 :> kdiv[1,pow[x,-n]];
-    (* Implement integer powers efficiently *)
-    expr = expr //. {
-      pow[x_,0] -> 1,
-      pow[x_,1] -> x,
-      pow[x_,n_Integer] /; n>1 && Mod[n,2]==0 :> kmul[pow[x,n/2],pow[x,n/2]],
-      pow[x_,n_Integer] /; n>1 && Mod[n,2]==1 :> kmul[x,pow[x,n-1]]};
-    
-    (* Constants *)
-    expr = expr /. {
+    (* Vectorise *)
+    vectoriseRules = {
+      x_ToReal -> x,
+      x_ConditionExpression -> x,
+      IfThen[cond_, x_, y_] :> IfThen[cond, x//.vectoriseRules, y//.vectoriseRules],
+      pow[x_,y_]  :> kpow[x//.vectoriseRules,y],
+      kpow[x_,y_]  :> kpow[x,y],
+
+      x:"vec_load"[___] :> x,
+      x:CArray[id_, {args__}] :> "vec_load"[x],
+
+      Parameter[x_] -> ToReal[x],
+
       x_Integer  -> ToReal[x],
       x_Rational -> ToReal[x],
       x_Real     -> ToReal[x],
       E          -> ToReal[E],
-      Pi         -> ToReal[Pi]};
-    
-    ToRealQ[expr_] := Head[expr] == ToReal;
-    notToRealQ[expr_] := Head[expr] != ToReal;
-    
-    (* Operators *)
-    expr = expr //. {
+      Pi         -> ToReal[Pi],
+
       -x_ -> kneg[x],
       
       x_ + y_ -> kadd[x,y],
@@ -96,12 +86,29 @@ DefFn[
       fmin[x_,y_] -> kfmin[x,y],
       isgn[x_]    -> kisgn[x],
       log[x_]     -> klog[x],
-      pow[x_,y_]  -> kpow[x,y],
       sgn[x_]     -> ksgn[x],
       sqrt[x_]    -> ksqrt[x]};
 
+    expr = expr //. vectoriseRules;
+
     (* Optimise *)
     expr = expr //. {
+
+      (* Handle division *)
+      kpow[x_,n_Integer] /; n<0 :> kdiv[ToReal[1],kpow[x,-n]],
+
+      (* Implement integer powers efficiently *)
+      kpow[x_,0] -> 1,
+      kpow[x_,1] -> x,
+      kpow[x_,n_Integer] /; n>1 && Mod[n,2]==0 :> kmul[kpow[x,n/2],kpow[x,n/2]],
+      kpow[x_,n_Integer] /; n>1 && Mod[n,2]==1 :> kmul[x,kpow[x,n-1]],
+
+      kmul[x_,kpow[y_,-1]] -> kdiv[x,y],
+      kmul[x_,kpow[y_,-2]] -> kdiv[x,kmul[y,y]],
+
+      kpow[x_,(1/2)|0.5]     -> ksqrt[x],
+      kpow[x_,(-1/2)|(-0.5)] -> kdiv[ToReal[1],ksqrt[x]],
+
       kneg[ToReal[a_]]      -> ToReal[-a],
       kmul[ToReal[-1],x_]   -> kneg[x],
       kmul[ToReal[-1.0],x_] -> kneg[x],
@@ -124,13 +131,13 @@ DefFn[
       kneg[ksub[x_,y_]]              -> ksub[y,x],
       kadd[x_,x_]                    -> kmul[ToReal[2],x],
       ksub[x_,x_]                    -> ToReal[0],
-      kadd[ToReal[a_],ToReal[b_]]    -> ToReal[kadd[a,b]],
-      ksub[ToReal[a_],ToReal[b_]]    -> ToReal[ksub[a,b]],
-      kadd[x_?notToRealQ,ToReal[a_]] -> kadd[ToReal[a],x],
+      kadd[ToReal[a_],ToReal[b_]]    -> ToReal[a+b],
+      ksub[ToReal[a_],ToReal[b_]]    -> ToReal[a-b],
+      kadd[x:Except[_ToReal],ToReal[a_]] -> kadd[ToReal[a],x],
       kadd[kadd[ToReal[a_],x_],y_]   -> kadd[ToReal[a],kadd[x,y]],
       kadd[kadd[ToReal[a_],x_],
            kadd[ToReal[b_],y_]]      -> kadd[ToReal[kadd[a,b]],kadd[x,y]],
-      kadd[x_?notToRealQ,
+      kadd[x:Except[_ToReal],
            kadd[ToReal[a_],y_]]      -> kadd[ToReal[a],kadd[x,y]],
       
       kmul[ToReal[0],x_]             -> ToReal[0],
@@ -159,14 +166,14 @@ DefFn[
       kdiv[kneg[x_],y_]              -> kneg[kdiv[x,y]],
       kdiv[x_,kneg[y_]]              -> kneg[kdiv[x,y]],
       kdiv[x_,x_]                    -> ToReal[1],
-      kmul[ToReal[a_],ToReal[b_]]    -> ToReal[kmul[a,b]],
-      kdev[ToReal[a_],ToReal[b_]]    -> ToReal[kdiv[a,b]],
-      kmul[x_?notToRealQ,ToReal[a_]] -> kmul[ToReal[a],x],
-      kdiv[x_?notToRealQ,ToReal[y_]] -> kmul[ToReal[kdiv[1,y]],x],
+      kmul[ToReal[a_],ToReal[b_]]    -> ToReal[a b],
+      (* kdiv[ToReal[a_],ToReal[b_]]    -> ToReal[a/b], *)
+      kmul[x:Except[_ToReal],ToReal[a_]] -> kmul[ToReal[a],x],
+      kdiv[x:Except[_ToReal],ToReal[y_]] -> kmul[ToReal[1/y],x],
       kmul[kmul[ToReal[a_],x_],y_]   -> kmul[ToReal[a],kmul[x,y]],
       kmul[kmul[ToReal[a_],x_],
-           kmul[ToReal[b_],y_]]      -> kmul[ToReal[kmul[a,b]],kmul[x,y]],
-      kmul[x_?notToRealQ,
+           kmul[ToReal[b_],y_]]      -> kmul[ToReal[a*b],kmul[x,y]],
+      kmul[x:Except[_ToReal],
            kmul[ToReal[a_],y_]]      -> kmul[ToReal[a],kmul[x,y]],
       
       kasin[kneg[xx_]]           -> kneg[kasin[xx]],
@@ -204,60 +211,26 @@ DefFn[
          kmul[x_, kadd[y_, ToReal[+1]]] -> kmadd[x, y, x],
          kmul[x_, kadd[y_, ToReal[-1]]] -> kmsub[x, y, x],
          *)};
-    
-    (* Undo some transformations *)
-    undoVect[expr_] := expr //. {
-      ToReal[x_] -> x,
+
+    (* Apply some transformations to scalar expressions *)
+
+    scalarRules = {
+      ToReal[x_] :> ToReal[x//.scalarRules],
+      IfThen[cond_, x_, y_] :> IfThen[cond//.scalarRules, x, y],
       
       (* don't generate large integer constants *)
       x_Integer /; Abs[x]>10^10 :> 1.0*x,
       (* generate sufficient precision *)
       x_Rational :> N[x,30],
       Pi -> N[Pi,30],
-      E  -> N[E,30],
-      
-      kneg[x_] -> -x,
-      
-      kadd[x_,y_] -> x+y,
-      ksub[x_,y_] -> x-y,
-      kmul[x_,y_] -> x*y,
-      kdiv[x_,y_] -> x*ScalarINV[y],
-      
-      kmadd[x_,y_,z_]  -> x*y+z,
-      kmsub[x_,y_,z_]  -> x*y-z,
-      knmadd[x_,y_,z_] -> -(x*y+z),
-      knmsub[x_,y_,z_] -> -(x*y-z),
-      
-      x_^2 -> ScalarSQR[x],
-      x_^3 -> ScalarCUB[x],
-      x_^4 -> ScalarQAD[x],
-      x_^-1 -> ScalarINV[x],
-      x_^-2 -> ScalarINV[ScalarSQR[x]],
-      x_^-3 -> ScalarINV[ScalarCUB[x]],
-      x_^-4 -> ScalarINV[ScalarQAD[x]]};
+      E  -> N[E,30]};
     
-    undoSomeVect[expr_] := (
-      expr
-      /. ToReal[a_] :> ToReal[undoVect[a]]
-      /. KrancScalar[a_] :> KrancScalar[undoVect[a]]
-      /. (IfThen[a_,x_,y_] :> 
-          IfThen[undoVect[a], undoSomeVect[x], undoSomeVect[y]])
-      /. kpow[x_,a_] :> kpow[undoSomeVect[x], undoVect[a]]);
+    expr = expr //. scalarRules;
     
-    expr = undoSomeVect[expr];
-    
+    expr = expr /. {
+      x:(kmul|kadd)[a_,b_] /; !OrderedQ[x] :> Sort[x]};
+
     Return[expr]]];
-
-DefFn[VectorisationMacros[] :=
-  {"ScalarINV(x) ((CCTK_REAL)1.0 / (x))",
-            "ScalarSQR(x) ((x) * (x))",
-            "ScalarCUB(x) ((x) * ScalarSQR(x))",
-            "ScalarQAD(x) (ScalarSQR(ScalarSQR(x)))",
-            "INV(x) (kdiv(ToReal(1.0),x))",
-            "SQR(x) (kmul(x,x))",
-            "CUB(x) (kmul(x,SQR(x)))",
-            "QAD(x) (SQR(SQR(x)))"}];
-
 
 (* Code generation: The following functions are called when vectorising. *)
 

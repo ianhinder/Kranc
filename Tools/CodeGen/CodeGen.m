@@ -113,10 +113,6 @@ DefFn[
   NewlineSeparated[l_List] :=
   Riffle[l, "\n"]];
 
-DefFn[
-  CommaInitSeparated[l_List] :=
-  Riffle[Map[{#," = INITVALUE"} &, l], ", "]];
-
 (* Turn a section of code into a string:
    1. quote all quotes (replace all quotes with backslash-quote)
    2. break the string into lines to make it readable (replace all newlines

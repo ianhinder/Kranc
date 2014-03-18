@@ -23,7 +23,7 @@ BeginPackage["CodeGenCalculation`", {"CodeGenCactus`", "CodeGenC`", "CodeGen`",
   "CodeGenKranc`",
   "MapLookup`", "KrancGroups`", "Differencing`", "Errors`",
   "Helpers`", "Kranc`", "Optimize`", "Jacobian`", "Profile`", "Vectorisation`",
-  "Calculation`", "DGFE`", "OpenCL`", "CalculationBoundaries`", "OperationCount`"}];
+  "Calculation`", "DGFE`", "OpenCL`", "CalculationBoundaries`", "OperationCount`", "Object`"}];
 
 CreateCalculationFunction::usage = "";
 CreateSetterSource::usage = "";
@@ -74,7 +74,8 @@ Options[CreateSetterSource] = ThornOptions;
 
 DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
   opts:OptionsPattern[]] :=
-  Module[{calc = First[calcs],bodyFunction,tiledBodyFunction},
+  Block[{$CodeGenTarget = NewObject[TargetC, {"UseVectors" -> OptionValue[UseVectors]}]},
+    Module[{calc = First[calcs],bodyFunction,tiledBodyFunction},
 
   If[!MatchQ[include, _List],
     ThrowError["CreateSetterSource: Include should be a list but is in fact " <> ToString[include]]];
@@ -103,7 +104,6 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
                          If[OptionValue[UseDGFE], {"hrscc.hh"}, {}],
                          If[OptionValue[UseOpenCL], OpenCLIncludeFiles[], {}],
                          If[OptionValue[UseVectors], VectorisationIncludeFiles[], {}]]]],
-   CalculationMacros[OptionValue[UseVectors]],
 
    (* For each function structure passed, create the function and
       insert it *)
@@ -145,11 +145,11 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
                                          bodyFunction], 
                       CallerFunction -> True,
                       LoopFunction -> (GenericGridLoop[lookup[calc,Name],#,TileCalculationQ[calc], opts] &),
-                      GFAccessFunction -> ({#,"[","index","]"} &),
+                      GFAccessFunction -> ReadGridFunctionInLoop,
                       InitFDVariables -> InitialiseFDVariables[OptionValue[UseVectors]],
                       MacroPointer -> True}];
 
-   CreateCalculationFunction[calc, opts]}]]}]}]];
+   CreateCalculationFunction[calc, opts]}]]}]}]]];
 
 (* --------------------------------------------------------------------------
    Calculations
@@ -366,9 +366,9 @@ DefFn[
 
   InfoMessage[InfoFull, "Equations:"];
 
-  (* Wrap parameters with ToReal unless they are part of the condition in an IfThen *)
-  parameterRules = Map[(#->ToReal[#])&, parameters];
-  eqs = eqs /. Prepend[parameterRules, IfThen[cond_, x_, y_] :> IfThen[cond, x/.parameterRules, y/.parameterRules]];
+  parameterRules = Map[(#->Parameter[#])&, parameters];
+
+  eqs = eqs /. parameterRules;
 
   (* Map[printEq, eqs]; *)
 
@@ -517,6 +517,39 @@ DefFn[
        ""]
   }]];
 
+(* Create definitions for the local copies of gridfunctions or arrays *)
+DefFn[assignLocalFunctions[gs:{_Symbol...}, useVectors:Boolean, useJacobian:Boolean, nameFunc_] :=
+  Module[{conds, varPatterns, varsInConds, simpleVars, code},
+
+    (* Conditional access to grid variables *)
+    (* Format is {var, cond, else-value} *)
+    conds =
+    {{"eT" ~~ _ ~~ _, "assume_stress_energy_state>=0 ? assume_stress_energy_state : *stress_energy_state", ToReal[0.]}}; (* This should be passed as an option *)
+    If[useJacobian,
+      conds = Append[conds, JacobianConditionalGridFunctions[]]];
+
+    (* Split into conditional and simple grid variables *)
+    varPatterns = Map[First, conds];
+    varsInConds = Map[Function[pattern, Select[gs,StringMatchQ[ToString[#], pattern] &]], varPatterns];
+    simpleVars = Complement[gs, Flatten[varsInConds]];
+
+    code = {"\n",
+      (* Simple grid variables *)
+      Map[AssignVariableFromExpression[localName[#],GFLocal[#],True,useVectors,True] &, simpleVars],
+      {"\n",
+        (* Conditional grid variables *)
+        NewlineSeparated@
+        MapThread[
+          If[Length[#2] > 0,
+            {DeclareVariables[localName/@#2, DataType[]],"\n",
+              Conditional[#1,
+                Table[AssignVariableFromExpression[localName[var], GFLocal[var], False, useVectors], {var, #2}],
+                Sequence@@If[#3 =!= None, {Table[AssignVariableFromExpression[localName[var], #3, False (* declare *), False (*useVectors*)], {var, #2}]}, {}]]},
+            (* else *)
+              {}] &,
+          {Map[#[[2]]&, conds], varsInConds, Map[#[[3]]&, conds]}]}};
+  code]];
+
 Options[equationLoop] = ThornOptions;
 
 DefFn[
@@ -608,7 +641,7 @@ DefFn[
        gives a performance increase over declaring them separately at
        the start of the loop.  The local variables for the grid
        functions which appear in the RHSs have been declared and set
-       already (DeclareMaybeAssignVariableInLoop below), so assignments
+       already, so assignments
        to these do not generate declarations here. *)
     declare = Block[{$RecursionLimit=Infinity},MarkFirst[First /@ eqsReplaced, Map[localName, gfsInRHS]]];
 
@@ -631,13 +664,13 @@ DefFn[
         Which[
         SameQ[Head[eq2[[2]]], IfThen],
           ret = AssignVariableFromExpression[eq2[[1]],
-            eq2[[2]] /. IfThen[cond_, x__]:> IfThen[KrancScalar[cond], x], declare2, OptionValue[UseVectors], noSimplify];,
+            eq2[[2]], declare2, OptionValue[UseVectors], noSimplify];,
         SameQ[Head[eq2], IfThenGroup],
           vars = eq2[[2,All,1]];
           cond = eq2[[1]];
           preDeclare = Pick[vars, declare2];
           ret = {Map[DeclareVariable[#, DataType[]] &, Complement[Union[preDeclare], localName/@gfsInRHS]], {"\n"},
-                 Conditional[GenerateCodeFromExpression[KrancScalar[cond], False],
+                 Conditional[GenerateCodeFromExpression[ConditionExpression[cond], False],
                   Riffle[AssignVariableFromExpression[#[[1]], #[[2]], False, OptionValue[UseVectors], noSimplify]& /@ eq2[[2]], "\n"],
                   Riffle[AssignVariableFromExpression[#[[1]], #[[2]], False, OptionValue[UseVectors], noSimplify]& /@ eq2[[3]], "\n"]]};,
         True,
@@ -652,34 +685,6 @@ DefFn[
     calcCode = Riffle[generateEquationCode /@ groupedIfs, "\n"];
     calcCodeArrays = Riffle[generateEquationCode /@ groupedIfsArrays, "\n"];
     InfoMessage[InfoFull, "Finished generating equation code"];
-
-    assignLocalFunctions[gs_, useVectors_, useJacobian_, NameFunc_] :=
-      Module[{conds, varPatterns, varsInConds, simpleVars, code},
-        conds =
-          {{"eT" ~~ _ ~~ _, "assume_stress_energy_state>=0 ? assume_stress_energy_state : *stress_energy_state", "ToReal(0.0)"}}; (* This should be passed as an option *)
-        If[useJacobian,
-          conds = Append[conds, JacobianConditionalGridFunctions[]]];
-
-        varPatterns = Map[First, conds];
-        varsInConds = Map[Function[pattern, Select[gs,StringMatchQ[ToString[#], pattern] &]], varPatterns];
-        simpleVars = Complement[gs, Flatten[varsInConds]];
-        code = {"\n",
-         Map[DeclareMaybeAssignVariableInLoop[
-              DataType[], localName[#], NameFunc[#],
-              False,"", useVectors] &, simpleVars],
-         {"\n",
-         Riffle[
-           MapThread[
-             If[Length[#2] > 0,
-               {DeclareVariables[localName/@#2, DataType[]],"\n",
-                Conditional[#1,
-                  Table[AssignVariableInLoop[localName[var], NameFunc[var], useVectors], {var, #2}],
-                  Sequence@@If[#3 =!= None, {Table[AssignVariableInLoop[localName[var], #3, False (*useVectors*)], {var, #2}]}, {}]]},
-               (* else *)
-               {}] &,
-             {Map[#[[2]]&, conds], varsInConds, Map[#[[3]]&, conds]}], "\n"]}};
-         code
-      ];
 
     assignLocalGridFunctions[gs_, useVectors_, useJacobian_] := assignLocalFunctions[gs, useVectors, useJacobian, gridName];
     assignLocalArrayFunctions[gs_] := assignLocalFunctions[gs, False, False, ArrayName];

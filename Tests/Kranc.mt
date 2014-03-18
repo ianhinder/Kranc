@@ -1,6 +1,8 @@
 
 (* Mathematica Test File *)
 
+Begin["`Kranc`"];
+
 $derivatives = {
   PDstandard2nd[i_]     -> StandardCenteredDifferenceOperator[1,1,i],
   PDstandard2nd[i_, i_] -> StandardCenteredDifferenceOperator[2,1,i]};
@@ -98,6 +100,27 @@ Test[
   ,
   TestID->"SimpleWaveVectors"
 ]
+
+(****************************************************************)
+(* SimpleWaveCaKernel *)
+(****************************************************************)
+
+Test[
+  Module[{thornName = "TestSimpleWaveCaKernel"},
+  ClearAllTensors[];
+  CatchKrancError@CreateKrancThornTT[
+    $groups, $TestThornDirectory, thornName,
+    PartialDerivatives -> $derivatives,
+    DeclaredGroups     -> {"evolved_group"},
+    Calculations       -> {initialSineCalc[thornName], evolveCalc[thornName]},
+    UseCaKernel        -> True,
+    MergeFiles         -> "TestThorns/tests/TestSimpleWave"]]
+  ,
+  Null
+  ,
+  TestID->"SimpleWaveCaKernel"
+]
+
 
 (****************************************************************)
 (* TestSimpleWaveODE *)
@@ -434,3 +457,5 @@ Test[
   ,
   TestID->"CountOperations"
 ]
+
+End[];

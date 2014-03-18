@@ -1,6 +1,8 @@
 
 (* Mathematica Test File *)
 
+Begin["`McLachlan`"];
+
 SetEnhancedTimes[False];
 SetSourceLanguage["C"];
 
@@ -1409,7 +1411,7 @@ CreateKrancThornTT [groups, $TestThornDirectory, thorn,
   DefaultEvolutionTimelevels -> 3,
   UseJacobian -> True,
   UseLoopControl -> True,
-  UseVectors -> vectorise,
+  UseVectors -> vectorise && !OptionValue[CaKernel],
   UseOpenCL -> opencl,
   UseDGFE -> OptionValue[DGFE],
   UseCaKernel -> OptionValue[CaKernel],
@@ -1483,9 +1485,11 @@ Test[
 
 Test[
   ClearAllTensors[];
-  CatchKrancError@createCode[4, False, True , 3, 1, "BSSN", True, False, CaKernel -> True];
+  CatchKrancError@createCode[4, False, True , 3, 1, "BSSN", True (* ignored *), False, CaKernel -> True];
   ,
   Null
   ,
   TestID->"McLachlanCaKernel"
 ]
+
+End[];

@@ -47,6 +47,9 @@ DefFn[
       pow[x_,y_]  :> kpow[x//.vectoriseRules,y],
       kpow[x_,y_]  :> kpow[x,y],
 
+      x:"vec_load"[___] :> x,
+      x:CArray[id_, {args__}] :> "vec_load"[x],
+
       Parameter[x_] -> ToReal[x],
 
       x_Integer  -> ToReal[x],

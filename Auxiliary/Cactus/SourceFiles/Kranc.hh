@@ -126,7 +126,6 @@ void AssertGroupStorage(cGH const * restrict const cctkGH,
  *********************************************************************/
 
 #define IfThen(x,y,z) ((x) ? (y) : (z))
-#define ToReal(x)   ((CCTK_REAL)(x))
 #define MinMod(x, y)  ((x) * (y) < 0 ? 0 : (fabs((x)) < fabs((y)) ? (x) : (y)))
 #define VanLeer(x, y)  ((x) * (y) < 0 ? 0 : (Min3(2*fabs(x),2*fabs(y),0.5*(fabs(x)+fabs(y)))*Sign((x)+(y))))
 #define StepFunction(x) ((x)>0)

@@ -102,10 +102,6 @@ DefFn[
   CommentedBlock[
     "Initialise finite differencing variables",
     {
-      (* TODO: Generate the following using
-         AssignVariableFromExpression.  This requires a richer
-         expression language with type information so that
-         scalars/vectors can be handled automatically. *)
       MapThread[Function[{dest,type,val}, AssignVariableFromExpression[dest,val,True,vectorise,Const->True,Type->type]],
             Transpose@{{"di", "ptrdiff_t", "1"},
              {"dj", "ptrdiff_t", "CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0)"},

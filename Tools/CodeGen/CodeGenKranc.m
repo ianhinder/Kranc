@@ -38,6 +38,7 @@ ProcessExpression::usage = "";
 AssignVariableFromExpression;
 GenerateCodeFromExpression;
 FileHeader;
+ReadGridFunctionInLoop;
 
 Begin["`Private`"];
 
@@ -300,6 +301,9 @@ GenerateCodeFromExpression[expr_, vectorise_, noSimplify:Boolean : False] :=
     code = StringReplace[code, "BesselJ"-> "gsl_sf_bessel_Jn"];
     code = StringReplace[code, "\"" -> ""];
     {code}];
+
+ReadGridFunctionInLoop[gf_Symbol] :=
+  FlattenBlock[{gf,"[","index","]"}];
 
 End[];
 

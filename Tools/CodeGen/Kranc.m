@@ -154,4 +154,7 @@ ScriptFlags =
    "cse" -> CSE,
    "cakernel" -> UseCaKernel};
 
+(* CodeGenKranc.m *)
+CArray;
+
 EndPackage[];

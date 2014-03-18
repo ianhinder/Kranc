@@ -291,6 +291,9 @@ AssignVariableFromExpression[dest_, expr_, declare_, vectorise_, noSimplify:Bool
     code = LineBreak[FlattenBlock[code], 70] <> "\n";
     {code}];
 
+Format[CArray[id_, {args__}], CForm] :=
+  SequenceForm[id, "[", Sequence @@ Riffle[{args}, ","], "]"];
+
 GenerateCodeFromExpression[expr_, vectorise_, noSimplify:Boolean : False] :=
   Module[{cleanExpr, code},
     cleanExpr = ProcessExpression[expr, vectorise, noSimplify];

@@ -23,21 +23,21 @@ Needs["KrancThorn`"];
 
 (* SetDebugLevel[DebugQuiet]; *)
 
-alltests = {
-  "CodeGen",
-  "Kranc",
-  "McLachlan",
-  "Tiling"
-};
+alltests = FileBaseName/@FileNames["*.mt"];
 
 args = Drop[$ScriptCommandLine, 1];
 
 If[Length[args] > 0,
-   If[StringMatchQ[args[[1]], "*.mt"],
-      tests = {StringReplace[args[[1]], ".mt" -> ""]}],
-   tests = alltests];
+  tests = FileBaseName/@Select[args, StringMatchQ[#, "*.mt"] &],
+  tests = alltests];
 
-(Print["\n"]; TestRun[#<>".mt", Loggers -> {VerbosePrintLogger[]}, TestRunTitle -> #]) & /@ tests;
+results = (Print["\n"]; TestRun[#<>".mt", Loggers -> {VerbosePrintLogger[]}, TestRunTitle -> #]) & /@ tests;
 Print[];
+Print[];
+MapThread[Print[If[#2,"P","F"]," ",#1] &, {tests, results}];
+Print[];
+
+If[And@@results, Print["All tests passed"],
+  Print["Tests failed in ", StringJoin@Riffle[Pick[tests, Not/@results],", "]]];
 
 (* ReportFunctionCounts[]; *)

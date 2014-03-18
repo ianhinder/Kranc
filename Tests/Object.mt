@@ -1,6 +1,7 @@
 
 (* Mathematica Test File *)
 
+Begin["`Object`"];
 
 (****************************************************************)
 (* NewObject *)
@@ -77,3 +78,5 @@ Test[
   ,
   TestID->"ApplyToObjectField"
 ]
+
+End[];

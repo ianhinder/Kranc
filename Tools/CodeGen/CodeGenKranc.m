@@ -20,7 +20,8 @@
 
 (* Functions for generating blocks of code specific to Kranc *)
 
-BeginPackage["CodeGenKranc`", {"Errors`", "Helpers`", "Kranc`", "CodeGenC`", "CodeGen`", "Vectorisation`", "OperationCount`"}];
+BeginPackage["CodeGenKranc`", {"Errors`", "Helpers`", "Kranc`", "CodeGenC`", "CodeGen`",
+  "Vectorisation`", "OperationCount`", "Object`"}];
 
 SetDataType::usage = "SetDataType[type] sets a string for the grid function data type (e.g. CCTK_REAL)";
 DataType::usage = "DataType[] returns a string for the grid function data type (e.g. CCTK_REAL)";
@@ -37,6 +38,8 @@ AssignVariableFromExpression;
 GenerateCodeFromExpression;
 FileHeader;
 ReadGridFunctionInLoop;
+PostProcessExpression;
+$CodeGenTarget = TargetC["UseVectors" -> False];
 
 Begin["`Private`"];
 
@@ -254,14 +257,23 @@ DefFn[
     rhs = rhs //. Abs[x_] -> fabs[x];
     rhs = rhs //. Sign[x_] -> isgn[x];
     rhs = rhs //. IntAbs[x_] -> abs[x];
-    rhs = rhs //. GFLocal[x_] -> CArray[x,{"index"}];
 
-    If[vectorise === True,
-      rhs = VectoriseExpression[rhs],
-      rhs = rhs /. ToReal[x_] ->x];
+    rhs = PostProcessExpression[$CodeGenTarget, rhs];
 
     rhs = rhs //. {Parameter[xx_] -> xx};
     rhs]];
+
+DefFn[PostProcessExpression[t_TargetC, expr_] :=
+  Module[{expr2 = expr},
+
+    expr2 = expr2 //. {
+      GFLocal[x_] -> CArray[x,{"index"}]};
+
+    expr2 = If[GetObjectField[t,"UseVectors"],
+      VectoriseExpression[expr2] ,
+      expr2 //. {ToReal[x_] :> x}] /. {ConditionExpression[x_] :> x};
+
+    expr2]];
 
 (* Return a CodeGen block which assigns dest by evaluating expr *)
 Options[AssignVariableFromExpression] = {"Const" -> False, "Type" -> Automatic};

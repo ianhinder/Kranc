@@ -98,7 +98,9 @@ Test[
 ]
 
 Test[
-  FlattenBlock@GenerateCodeFromExpression[GFLocal[u],False]
+    Block[{CodeGenKranc`Private`dataType = "CCTK_REAL",
+    $CodeGenTarget = NewObject[TargetC, {"UseVectors" -> False}]},
+      FlattenBlock@GenerateCodeFromExpression[GFLocal[u],False]]
   ,
   "u[index]"
   ,
@@ -106,7 +108,9 @@ Test[
 ]
 
 Test[
-  FlattenBlock@GenerateCodeFromExpression[GFLocal[u],True]
+    Block[{CodeGenKranc`Private`dataType = "CCTK_REAL_VEC",
+    $CodeGenTarget = NewObject[TargetC, {"UseVectors" -> True}]},
+      FlattenBlock@GenerateCodeFromExpression[GFLocal[u],True]]
   ,
   "vec_load(u[index])"
   ,

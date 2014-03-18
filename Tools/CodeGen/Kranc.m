@@ -138,6 +138,9 @@ Steerable, Never, Always, Recover, Primitives, CaKernel, ScheduleGroups, Files};
 
 {ExcisionGFs};
 
+(* CaKernel.m *)
+I3D;
+
 (* TensorTools.m *)
 
 {D1, D2, D3, D11, D22, D33, D21, D31, D32, D12, D13, D23, dot, Eps, Zero3, StepFunction}
@@ -156,5 +159,6 @@ ScriptFlags =
 
 (* CodeGenKranc.m *)
 CArray;
+ConditionExpression;
 
 EndPackage[];

@@ -43,6 +43,7 @@ DefFn[
     (* Vectorise *)
     vectoriseRules = {
       x_ToReal -> x,
+      x_ConditionExpression -> x,
       IfThen[cond_, x_, y_] :> IfThen[cond, x//.vectoriseRules, y//.vectoriseRules],
       pow[x_,y_]  :> kpow[x//.vectoriseRules,y],
       kpow[x_,y_]  :> kpow[x,y],

@@ -29,6 +29,7 @@ CaKernelConfigurationCLL;
 CaKernelInterfaceCLL;
 WithHostCalculations;
 CaKernelProcessCode;
+TargetCaKernel;
 
 Begin["`Private`"];
 
@@ -168,7 +169,8 @@ cakernelLoopFunctionBnd[b_, opts___] :=
   b;
 
 DefFn[CaKernelCode[calc_List,opts___] :=
-  Module[
+  Block[{$CodeGenTarget = NewObject[TargetCaKernel,{}]},
+    Module[
     {kernel = "CAKERNEL_"<>GetCalculationName[calc], calc2,
      compSuff, int, loopFunction},
 
@@ -205,7 +207,7 @@ DefFn[CaKernelCode[calc_List,opts___] :=
      "\n",
 
     "\n", CreateCalculationFunction[calc2, LoopName -> kernel<>"_Computations",
-                                    opts]}]];
+                                    opts]}]]];
 
 DefFn[
   splitHostCaKernel[calc_List] :=
@@ -288,6 +290,8 @@ DefFn[
        c2 = AppendObjectField[c2, "InheritedImplementations", "Accelerator"]];
     c2]];
 
+DefFn[PostProcessExpression[_TargetCaKernel, expr_] :=
+  expr //. {GFLocal[x_] -> I3D[x,0,0,0], ToReal[x_] -> x}];
 
 End[];
 

@@ -534,7 +534,7 @@ DefFn[assignLocalFunctions[gs:{_Symbol...}, useVectors:Boolean, useJacobian:Bool
 
     code = {"\n",
       (* Simple grid variables *)
-      Map[DeclareMaybeAssignVariableInLoop[DataType[],localName[#],nameFunc[#],False,"",useVectors] &, simpleVars],
+      Map[DeclareMaybeAssignVariableInLoop[DataType[],localName[#],nameFunc[#],useVectors] &, simpleVars],
       {"\n",
         (* Conditional grid variables *)
         NewlineSeparated@

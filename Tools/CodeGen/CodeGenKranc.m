@@ -75,13 +75,10 @@ DefFn[
 
 DefFn[
   DeclareMaybeAssignVariableInLoop[type_String, dest:(_String|_Symbol), src:(_String|_Symbol),
-                                 mmaCond:Boolean, codeCond:CodeGenBlock,
-                                 vectorise:Boolean:False] :=
+                                   vectorise:Boolean:False] :=
   Module[
     {loadVariable = If[vectorise, VectorisationLoadVariable, LoadVariable]},
-    If[mmaCond,
-       {type, " ", dest, " CCTK_ATTRIBUTE_UNUSED = (", codeCond, ") ? ", loadVariable[src], " : ToReal(0.0)", ";\n"},
-       {type, " ", dest, " CCTK_ATTRIBUTE_UNUSED = ", loadVariable[src], ";\n"}]]];
+    {type, " ", dest, " CCTK_ATTRIBUTE_UNUSED = ", loadVariable[src], ";\n"}]];
 
 DefFn[
   TestForNaN[expr:CodeGenBlock] :=

@@ -48,7 +48,7 @@ dt, dx, dy, dz, idx, idy, idz, cctkLbnd1, cctkLbnd2, cctkLbnd3,
 MinMod, VanLeer, BodyFunction,
 CallerFunction, LoopFunction, GFAccessFunction, InitFDVariables,
 MacroPointer, CachedVariables, SplitBy, SeparatedDerivatives,
-SeparatedDerivatives2,GFOffset}
+SeparatedDerivatives2,GFOffset,GFLocal}
 
 {ConditionalOnKeyword, ConditionalOnKeywords, CollectList, Interior,
 InteriorNoSync, Boundary, BoundaryNoSync, BoundaryWithGhosts, Where, PreDefinitions,

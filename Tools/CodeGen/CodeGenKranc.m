@@ -266,6 +266,7 @@ DefFn[
     rhs = rhs //. Abs[x_] -> fabs[x];
     rhs = rhs //. Sign[x_] -> isgn[x];
     rhs = rhs //. IntAbs[x_] -> abs[x];
+    rhs = rhs //. GFLocal[x_] -> CArray[x,{"index"}];
 
     If[vectorise === True,
       rhs = VectoriseExpression[rhs],

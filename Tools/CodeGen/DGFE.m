@@ -46,7 +46,7 @@ DefFn[
     {
       "/* DGFE Definitions */",
       "",
-      "#define config_sdg_order      5", (* TODO: make this a parameter *)
+      "#define config_sdg_order      4", (* TODO: make this a parameter *)
       "#define config_riemann_solver hrscc::LaxFriedrichsRS<DGFE_"<>name<>", false>",
       "",
       "/* Export definitions */",

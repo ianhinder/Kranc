@@ -97,12 +97,21 @@ Test[
   TestID->"ProcessExpression-vec-param"
 ]
 
+Test[
+  FlattenBlock@GenerateCodeFromExpression[GFLocal[u],False]
+  ,
+  "u[index]"
+  ,
+  TestID->"ProcessExpression-GFLocal"
+]
+
+Test[
+  FlattenBlock@GenerateCodeFromExpression[GFLocal[u],True]
+  ,
+  "vec_load(u[index])"
+  ,
+  TestID->"ProcessExpression-GFLocal-vec"
+]
 
 
 
-
-(*
-
-(kmul(p1o12dy,kmul(dir2,kadd(KRANC_GFOFFSET3D(u,0,3,0),kmadd(KRANC_GFOFFSET3D(u,0,0,0),-10,kmadd(KRANC_GFOFFSET3D(u,0,2,0),-6,kmadd(KRANC_GFOFFSET3D(u,0,-1,0),-3,kmul(KRANC_GFOFFSET3D(u,0,1,0),18))))))))
-
-*)

@@ -44,7 +44,7 @@ StackPop[stack_] :=
 (*   First[stack]; *)
 
 StackRead[stack_] :=
-  Flatten[Reverse[stack]];
+  Reverse[Flatten[stack]];
 
 End[];
 

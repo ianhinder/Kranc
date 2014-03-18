@@ -640,7 +640,7 @@ DefFn[
        gives a performance increase over declaring them separately at
        the start of the loop.  The local variables for the grid
        functions which appear in the RHSs have been declared and set
-       already (DeclareMaybeAssignVariableInLoop below), so assignments
+       already, so assignments
        to these do not generate declarations here. *)
     declare = Block[{$RecursionLimit=Infinity},MarkFirst[First /@ eqsReplaced, Map[localName, gfsInRHS]]];
 

@@ -26,8 +26,6 @@ SetDataType::usage = "SetDataType[type] sets a string for the grid function data
 DataType::usage = "DataType[] returns a string for the grid function data type (e.g. CCTK_REAL)";
 AssignVariableInLoop::usage = "AssignVariableInLoop[dest_, src_] returns a block of code " <>
   "that assigns 'src' to 'dest'.";
-DeclareMaybeAssignVariableInLoop::usage = "DeclareMaybeAssignVariableInLoop[type_, dest_, src_, cond_] returns a block of code " <>
-  "that assigns 'src' to 'dest'.";
 TestForNaN::usage = "TestForNaN[expr_] returns a block of code " <>
   "that tests 'expr' for nan.";
 ArrayName::usage = "ArrayName[variable] returns the name needed to access variable " <>
@@ -72,13 +70,6 @@ DefFn[
 
 DefFn[
   LoadVariable[x_] := x];
-
-DefFn[
-  DeclareMaybeAssignVariableInLoop[type_String, dest:(_String|_Symbol), src:(_String|_Symbol),
-                                   vectorise:Boolean:False] :=
-  Module[
-    {loadVariable = If[vectorise, VectorisationLoadVariable, LoadVariable]},
-    {type, " ", dest, " CCTK_ATTRIBUTE_UNUSED = ", loadVariable[src], ";\n"}]];
 
 DefFn[
   TestForNaN[expr:CodeGenBlock] :=

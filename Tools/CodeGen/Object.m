@@ -51,7 +51,10 @@ DefFn[
 
 DefFn[
   GetObjectField[obj_, field_String] :=
-  Cases[obj, (field -> value_) :> value][[1]]];
+  Replace[Cases[obj, (field -> value_) :> value], {
+    {}     :> ThrowError["Field "<>field<>" not found in "<>ToString[Head[obj]]],
+    {val_} :> val,
+    _      :> ThrowError["Error while reading "<>field<>" from "<>ToString[Head[obj]]]}]];
 
 (* High level functions *)
 

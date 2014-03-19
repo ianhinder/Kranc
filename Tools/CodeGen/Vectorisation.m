@@ -156,7 +156,7 @@ DefFn[
       kdiv[ToReal[0.0],x_]           -> ToReal[0],
       (* kdiv[x_,ToReal[0]]           -> ToReal[nan], *)
       (* kdiv[x_,ToReal[0.0]]         -> ToReal[nan], *)
-      kdiv[x_,ToReal[y_]]            -> kmul[x,ToReal[1/y]],
+      kdiv[x_,ToReal[y_]]            -> kmul[x,ToReal[pow[y,-1]]],
       kdiv[x_,kdiv[y_,z_]]           -> kdiv[kmul[x,z],y],
       kdiv[kdiv[x_,y_],z_]           -> kdiv[x,kmul[y,z]],
       kmul[x_,kdiv[y_,z_]]           -> kdiv[kmul[x,y],z],
@@ -169,7 +169,7 @@ DefFn[
       kmul[ToReal[a_],ToReal[b_]]    -> ToReal[a b],
       (* kdiv[ToReal[a_],ToReal[b_]]    -> ToReal[a/b], *)
       kmul[x:Except[_ToReal],ToReal[a_]] -> kmul[ToReal[a],x],
-      kdiv[x:Except[_ToReal],ToReal[y_]] -> kmul[ToReal[1/y],x],
+      kdiv[x:Except[_ToReal],ToReal[y_]] -> kmul[ToReal[pow[y,-1]],x],
       kmul[kmul[ToReal[a_],x_],y_]   -> kmul[ToReal[a],kmul[x,y]],
       kmul[kmul[ToReal[a_],x_],
            kmul[ToReal[b_],y_]]      -> kmul[ToReal[a*b],kmul[x,y]],

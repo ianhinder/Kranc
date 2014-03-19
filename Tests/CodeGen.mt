@@ -80,7 +80,7 @@ Test[
 ]
 
 Test[
-  VectoriseExpression[1./1024/dx]
+  VectoriseExpression[1./1024 pow[dx,-1]]
   ,
   kdiv[ToReal[Evaluate[1./1024]],dx]
   ,
@@ -124,9 +124,17 @@ Test[
 ]
 
 Test[
+  withVectorisation@ProcessExpression[(Parameter[width])^2, True]
+  ,
+  ToReal[pow[width, 2]]
+  ,
+  TestID->"ProcessExpression-torealpow"
+]
+
+Test[
   withVectorisation@ProcessExpression[Parameter[amplitude] Exp[-(1/2) (r/Parameter[width])^2], True]
   ,
-  kmul[kexp[kmul[ToReal[pow[width^2, -1]], kmul[ToReal[-0.5`30.], kmul[r, r]]]], ToReal[amplitude]]
+  kmul[kexp[kmul[ToReal[pow[width, -2]], kmul[ToReal[-0.5`30.], kmul[r, r]]]], ToReal[amplitude]]
   ,
   TestID->"ProcessExpression-ExpPow"
 ]

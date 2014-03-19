@@ -220,43 +220,47 @@ DefFn[
        doesn't. We therefore replace Cosh etc. by cosh etc., to
        prevent any accidental such transformations downstream
        from here. *)
-    rhs = rhs //. Power[E, power_] -> exp[power];
-    rhs = rhs //. Log[x_] -> log[x];
-    (* rhs = rhs //. Power[x_, n_Integer] -> pown[x,n]; *)
-    rhs = rhs //. Power[x_, power_] -> pow[x,power];
-    rhs = rhs //. Sin[x_] -> sin[x];
-    rhs = rhs //. Cos[x_] -> cos[x];
-    rhs = rhs //. Tan[x_] -> tan[x];
-    rhs = rhs //. Sec[x_] -> 1 / cos[x];
-    rhs = rhs //. Csc[x_] -> 1 / sin[x];
-    rhs = rhs //. Cot[x_] -> 1 / tan[x];
-    rhs = rhs //. ArcSin[x_] -> asin[x];
-    rhs = rhs //. ArcCos[x_] -> acos[x];
-    rhs = rhs //. ArcTan[x_] -> atan[x];
-    rhs = rhs //. ArcTan[x_, y_] -> atan2[y,x];
-    rhs = rhs //. ArcSec[x_] -> acos[1/x];
-    rhs = rhs //. ArcCsc[x_] -> asin[1/x];
-    rhs = rhs //. ArcCot[x_] -> atan[1/x];
-    rhs = rhs //. Sinh[x_] -> sinh[x];
-    rhs = rhs //. Cosh[x_] -> cosh[x];
-    rhs = rhs //. Tanh[x_] -> tanh[x];
-    rhs = rhs //. Sech[x_] -> 1 / cosh[x];
-    rhs = rhs //. Csch[x_] -> 1 / sinh[x];
-    rhs = rhs //. Coth[x_] -> 1 / tanh[x];
-    rhs = rhs //. ArcSinh[x_] -> asinh[x];
-    rhs = rhs //. ArcCosh[x_] -> acosh[x];
-    rhs = rhs //. ArcTanh[x_] -> atahn[x];
-    rhs = rhs //. ArcSech[x_] -> acosh[1/x];
-    rhs = rhs //. ArcCsch[x_] -> asinh[1/x];
-    rhs = rhs //. ArcCoth[x_] -> atahn[1/x];
 
-    (* Note: Mathematica simplifies Max[xx_] -> xx automatically *)
-    rhs = rhs //. Max[xx_, yy__] :> fmax[xx, Max[yy]];
-    rhs = rhs //. Min[xx_, yy__] :> fmin[xx, Min[yy]];
-    rhs = rhs //. Min3[xx_, yy_, zz_] :> fmin[fmin[xx, yy], zz];
-    rhs = rhs //. Abs[x_] -> fabs[x];
-    rhs = rhs //. Sign[x_] -> isgn[x];
-    rhs = rhs //. IntAbs[x_] -> abs[x];
+    mathematicaToCRules = {
+      Power[E, power_] -> exp[power],
+      Log[x_] -> log[x],
+      (* Power[x_, n_Integer] -> pown[x,n], *)
+      Power[x_, power_] -> pow[x,power],
+      Sin[x_] -> sin[x],
+      Cos[x_] -> cos[x],
+      Tan[x_] -> tan[x],
+      Sec[x_] -> 1 / cos[x],
+      Csc[x_] -> 1 / sin[x],
+      Cot[x_] -> 1 / tan[x],
+      ArcSin[x_] -> asin[x],
+      ArcCos[x_] -> acos[x],
+      ArcTan[x_] -> atan[x],
+      ArcTan[x_, y_] -> atan2[y,x],
+      ArcSec[x_] -> acos[1/x],
+      ArcCsc[x_] -> asin[1/x],
+      ArcCot[x_] -> atan[1/x],
+      Sinh[x_] -> sinh[x],
+      Cosh[x_] -> cosh[x],
+      Tanh[x_] -> tanh[x],
+      Sech[x_] -> 1 / cosh[x],
+      Csch[x_] -> 1 / sinh[x],
+      Coth[x_] -> 1 / tanh[x],
+      ArcSinh[x_] -> asinh[x],
+      ArcCosh[x_] -> acosh[x],
+      ArcTanh[x_] -> atahn[x],
+      ArcSech[x_] -> acosh[1/x],
+      ArcCsch[x_] -> asinh[1/x],
+      ArcCoth[x_] -> atahn[1/x],
+
+      (* Note: Mathematica simplifies Max[xx_] -> xx automatically *)
+      Max[xx_, yy__] :> fmax[xx, Max[yy]],
+      Min[xx_, yy__] :> fmin[xx, Min[yy]],
+      Min3[xx_, yy_, zz_] :> fmin[fmin[xx, yy], zz],
+      Abs[x_] -> fabs[x],
+      Sign[x_] -> isgn[x],
+      IntAbs[x_] -> abs[x]};
+
+    rhs = rhs //. mathematicaToCRules;
 
     rhs = PostProcessExpression[$CodeGenTarget, rhs];
 

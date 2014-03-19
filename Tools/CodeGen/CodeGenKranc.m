@@ -262,7 +262,13 @@ DefFn[
 
     rhs = rhs //. mathematicaToCRules;
 
+    If[Cases[rhs, _Power, Infinity] =!= {},
+      ThrowError["Power found in "<>ToString[rhs,InputForm]]];
+
     rhs = PostProcessExpression[$CodeGenTarget, rhs];
+
+    If[Cases[rhs, _Power, Infinity] =!= {},
+      ThrowError["Power found in "<>ToString[rhs,InputForm]]];
 
     rhs = rhs //. {Parameter[xx_] -> xx};
     rhs]];

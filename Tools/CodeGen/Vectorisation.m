@@ -230,6 +230,10 @@ DefFn[
     expr = expr /. {
       x:(kmul|kadd)[a_,b_] /; !OrderedQ[x] :> Sort[x]};
 
+    If[Cases[expr, _Power, Infinity] =!= {},
+      ThrowError["Power found in " <> ToString[expr,InputForm]]];
+
+
     Return[expr]]];
 
 (* Code generation: The following functions are called when vectorising. *)

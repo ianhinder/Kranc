@@ -98,7 +98,7 @@ Test[
 Test[
   VectoriseExpression[fmin[1,exp[Subtract[1,rL*pow[ToReal[SpatialShiftGammaCoeffRadius],-1]]]]]
   ,
-  kfmin[ToReal[1], kexp[knmsub[ToReal[SpatialShiftGammaCoeffRadius^(-1)], rL, ToReal[1]]]]
+  kfmin[ToReal[1], kexp[knmsub[ToReal[pow[SpatialShiftGammaCoeffRadius,-1]], rL, ToReal[1]]]]
   ,
   TestID->"ProcessExpression-vec-param"
 ]
@@ -123,5 +123,10 @@ Test[
   TestID->"ProcessExpression-GFLocal-vec"
 ]
 
-
-
+Test[
+  withVectorisation@ProcessExpression[Parameter[amplitude] Exp[-(1/2) (r/Parameter[width])^2], True]
+  ,
+  kmul[kexp[kmul[ToReal[pow[width^2, -1]], kmul[ToReal[-0.5`30.], kmul[r, r]]]], ToReal[amplitude]]
+  ,
+  TestID->"ProcessExpression-ExpPow"
+]

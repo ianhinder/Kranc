@@ -1,6 +1,12 @@
 
 (* Mathematica Test File *)
 
+SetAttributes[withVectorisation, HoldFirst];
+withVectorisation[expr_] :=
+  Block[{CodeGenKranc`Private`dataType = "CCTK_REAL_VEC",
+    $CodeGenTarget = NewObject[TargetC, {"UseVectors" -> True}]},
+    expr];
+
 Test[
   CodeBlockContents[CodeBlock["text"]]
   ,

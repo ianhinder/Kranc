@@ -92,8 +92,8 @@ DefFn[
     expr = expr //. vectoriseRules;
 
     (* Optimise *)
-    expr = expr //. {
 
+    optimiseRules = {
       (* Handle division *)
       kpow[x_,n_Integer] /; n<0 :> kdiv[ToReal[1],kpow[x,-n]],
 
@@ -193,6 +193,16 @@ DefFn[
       kneg[kfabs[xx_]]           -> kfnabs[xx],
       kneg[kfnabs[xx_]]          -> kfabs[xx]};
 
+    (* Print["Optimising:"]; *)
+    (* Module[{exprOld = Null}, *)
+    (*   Print[expr]; *)
+    (*   While[expr =!= exprOld, *)
+    (*     exprOld = expr; *)
+    (*     expr = expr /. optimiseRules; *)
+    (*     Print[expr//InputForm]]; *)
+    (*   Print["Done optimising"]]; *)
+
+    expr = expr //. optimiseRules;
 
     (* The above optimisations introduce divisions and multiplications
        of unvectorised quantities which Mathematica sometimes converts

@@ -149,9 +149,9 @@ DefFn[
       DefineConstant["dt", DataType[], "params.cagh_dt"],
       DefineConstant["t", DataType[],  "params.cagh_time"],
 
-      DefineConstant["dxi", DataType[], "INV(dx)"],
-      DefineConstant["dyi", DataType[], "INV(dy)"],
-      DefineConstant["dzi", DataType[], "INV(dz)"],
+      DefineConstant["dxi", DataType[], "1.0/dx"],
+      DefineConstant["dyi", DataType[], "1.0/dy"],
+      DefineConstant["dzi", DataType[], "1.0/dz"],
       
       DefineConstant["khalf", DataType[], "0.5"],
       DefineConstant["kthird", DataType[], "1/3.0"],

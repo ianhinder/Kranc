@@ -143,6 +143,7 @@ DefFn[
   CommentedBlock[
     "Initialise finite differencing variables",
     {
+      "#define ConditionExpression(x) (x)\n", (* TODO *)
       DefineConstant["dx", DataType[], "params.cagh_dx"],
       DefineConstant["dy", DataType[], "params.cagh_dy"],
       DefineConstant["dz", DataType[], "params.cagh_dz"],

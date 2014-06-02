@@ -458,4 +458,34 @@ Test[
   TestID->"CountOperations"
 ]
 
+(****************************************************************)
+(* Underscore *)
+(****************************************************************)
+
+Test[
+  Module[{thornName = "TestUnderscore", groups},
+
+  groups = Append[$groups, {"lvlmsk", {"level_mask"}}];
+
+  ClearAllTensors[];
+  CatchKrancError@CreateKrancThornTT[
+    groups, $TestThornDirectory, thornName,
+    PartialDerivatives -> $derivatives,
+    DeclaredGroups     -> {"evolved_group"},
+    Calculations       -> {{
+      Name      -> "initial_sine",
+      Schedule  -> {"AT initial"},
+      Equations ->
+      {
+        phi -> "level_mask" Sin[2 Pi (x - t)],
+        pi  -> -2 Pi Cos[2 Pi (x - t)]
+      }},
+      evolveCalc[thornName]},
+    MergeFiles         -> "TestThorns/tests/TestSimpleWave"]]
+  ,
+  Null
+  ,
+  TestID->"SimpleWave"
+]
+
 End[];

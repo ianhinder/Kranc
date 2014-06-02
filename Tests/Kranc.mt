@@ -478,7 +478,8 @@ Test[
       Equations ->
       {
         phi -> "level_mask" Sin[2 Pi (x - t)],
-        pi  -> -2 Pi Cos[2 Pi (x - t)]
+        pi  -> -2 Pi Cos[2 Pi (x - t)],
+        "level_mask" -> phi^2
       }},
       evolveCalc[thornName]},
     MergeFiles         -> "TestThorns/tests/TestSimpleWave"]]

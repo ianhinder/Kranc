@@ -518,7 +518,7 @@ DefFn[
   }]];
 
 (* Create definitions for the local copies of gridfunctions or arrays *)
-DefFn[assignLocalFunctions[gs:{_Symbol...}, useVectors:Boolean, useJacobian:Boolean, nameFunc_] :=
+DefFn[assignLocalFunctions[gs:{(_Symbol|_String)...}, useVectors:Boolean, useJacobian:Boolean, nameFunc_] :=
   Module[{conds, varPatterns, varsInConds, simpleVars, code},
 
     (* Conditional access to grid variables *)

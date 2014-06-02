@@ -287,7 +287,7 @@ DefFn[PostProcessExpression[t_TargetC, expr_] :=
 
 (* Return a CodeGen block which assigns dest by evaluating expr *)
 Options[AssignVariableFromExpression] = {"Const" -> False, "Type" -> Automatic};
-AssignVariableFromExpression[dest_, expr_, declare_, vectorise_, noSimplify:Boolean : False,
+DefFn[AssignVariableFromExpression[dest_, expr_, declare_, vectorise_, noSimplify:Boolean : False,
                              OptionsPattern[]] :=
   Module[{type, exprCode, code},
     type =
@@ -300,12 +300,12 @@ AssignVariableFromExpression[dest_, expr_, declare_, vectorise_, noSimplify:Bool
               If[OptionValue[Const],DefineConstant,DefineVariable][dest, type, exprCode],
               AssignVariable[dest, exprCode]];
     code = LineBreak[FlattenBlock[code], 70] <> "\n";
-    {code}];
+    {code}]];
 
 Format[CArray[id_, {args__}], CForm] :=
   SequenceForm[id, "[", Sequence @@ Riffle[{args}, ","], "]"];
 
-GenerateCodeFromExpression[expr_, vectorise_, noSimplify:Boolean : False] :=
+DefFn[GenerateCodeFromExpression[expr_, vectorise_, noSimplify:Boolean : False] :=
   Module[{cleanExpr, code},
     cleanExpr = ProcessExpression[expr, vectorise, noSimplify];
     code = ToString[cleanExpr, CForm, PageWidth -> Infinity];
@@ -314,10 +314,10 @@ GenerateCodeFromExpression[expr_, vectorise_, noSimplify:Boolean : False] :=
     code = StringReplace[code, "normal3"     -> "normal[2]"];
     code = StringReplace[code, "BesselJ"-> "gsl_sf_bessel_Jn"];
     code = StringReplace[code, "\"" -> ""];
-    {code}];
+    {code}]];
 
-ReadGridFunctionInLoop[gf_Symbol] :=
-  FlattenBlock[{gf,"[","index","]"}];
+DefFn[ReadGridFunctionInLoop[gf:(_Symbol|_String)] :=
+  FlattenBlock[{gf,"[","index","]"}]];
 
 End[];
 

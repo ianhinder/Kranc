@@ -73,6 +73,12 @@ CCTK_INT calc_rhs_calc_every "calc_rhs_calc_every" STEERABLE=ALWAYS
 } 1
 
 restricted:
+CCTK_INT calc_bound_rhs_calc_every "calc_bound_rhs_calc_every" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 1
+
+restricted:
 CCTK_INT initial_sine_calc_calc_offset "initial_sine_calc_calc_offset" STEERABLE=ALWAYS
 {
   *:* :: ""
@@ -80,6 +86,12 @@ CCTK_INT initial_sine_calc_calc_offset "initial_sine_calc_calc_offset" STEERABLE
 
 restricted:
 CCTK_INT calc_rhs_calc_offset "calc_rhs_calc_offset" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 0
+
+restricted:
+CCTK_INT calc_bound_rhs_calc_offset "calc_bound_rhs_calc_offset" STEERABLE=ALWAYS
 {
   *:* :: ""
 } 0

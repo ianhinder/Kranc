@@ -38,6 +38,14 @@ schedule CAKERNEL_Launch_calc_rhs as calc_rhs in MoL_CalcRHS
   WRITES: SimpleWaveScriptCaKernel::pirhs(ERROR(Automatic))
 } "calc_rhs"
 
+schedule CAKERNEL_Launch_calc_bound_rhs as calc_bound_rhs in MoL_CalcRHS
+{
+  LANG: C
+  TAGS: Device=1
+  WRITES: SimpleWaveScriptCaKernel::phirhs(ERROR(boundary))
+  WRITES: SimpleWaveScriptCaKernel::pirhs(ERROR(boundary))
+} "calc_bound_rhs"
+
 schedule SimpleWaveScriptCaKernel_SelectBoundConds in MoL_PostStep
 {
   LANG: C

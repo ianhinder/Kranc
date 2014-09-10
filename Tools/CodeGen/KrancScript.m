@@ -92,8 +92,11 @@ process[calc:"calculation"[content___]] :=
     {name,eqs,joinWord},
     name = Cases[calc, "uname"[n_]:>n][[1]];
     eqs = Cases[calc, "eqns"[es___]:>{es}][[1]];
+    WhereValue = "Automatic";
 
     schedule = Cases[calc, "schedule"[___,"uname"[s_],___]:>s][[1]];
+    onClause = Cases[calc, "schedule"[___,"uname"[s_],"on_clause"["uname"[f_]]]:>f];
+    If[Length[onClause]>0,WhereValue=onClause[[1]]];
     joinWord = If[StringMatchQ[schedule,"initial",IgnoreCase->True] ||
                   StringMatchQ[schedule,"analysis",IgnoreCase->True],
                   "at","in"];
@@ -101,7 +104,7 @@ process[calc:"calculation"[content___]] :=
     {Name -> name,
      Equations -> Map[process,eqs],
      Schedule -> {joinWord<>" "<>schedule},
-     Where -> Automatic}];
+     Where -> WhereValue}];
 
 process["eqn"[lhs_,rhs_]] := Module[{name,eqs}, process[lhs] -> process[rhs]];
 

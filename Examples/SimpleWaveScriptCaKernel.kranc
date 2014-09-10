@@ -16,4 +16,9 @@ begin calculation calc_rhs scheduled at MoL_CalcRHS
   D_t pi = Euc^ij*D_ij phi
 end calculation
 
+begin calculation calc_bound_rhs scheduled at MoL_CalcRHS on boundary
+  D_t phi = 0
+  D_t pi = 0
+end calculation
+
 end thorn

@@ -381,7 +381,7 @@ DefFn[
      stencilSize = MapThread[Max,Map[Last,stencilSize[[2]]]]];
 
   where = GetCalculationWhere[cleancalc];
-  If[where === Automatic,
+  If[where === "Automatic",
      where = If[MatchQ[stencilSize, {0,0,0}] =!= True, Interior, Everywhere]];
 
   (* Check all the function names *)
@@ -414,22 +414,22 @@ DefFn[
       ss_ :> ThrowError["Unknown symbols " <> StringJoin[Riffle[ToString/@ss,", "]] <> " in calculation " <> GetCalculationName[cleancalc]],
     _ :> ThrowError["Internal error: unrecognised value for unknownSymbols: "<>ToString[unknownSymbols, InputForm]]};
 
-  kernelCall = Switch[where,
-    Everywhere,
+  kernelCall = Switch[ToString[where],
+    "Everywhere"|"everywhere",
     If[TileCalculationQ[cleancalc],
       "TiledLoopOverEverything(cctkGH, " <> bodyFunctionName <> ");\n",
       "LoopOverEverything(cctkGH, " <> bodyFunctionName <> ");\n"],
-    Interior | InteriorNoSync,
+    "Interior" | "InteriorNoSync" | "interior" | "interiornosync",
     If[TileCalculationQ[cleancalc],
       "TiledLoopOverInterior(cctkGH, " <> bodyFunctionName <> ");\n",
       "LoopOverInterior(cctkGH, " <> bodyFunctionName <> ");\n"],
-    Boundary | BoundaryNoSync,
+    "Boundary" | "BoundaryNoSync" | "boundary" | "boundarynosync",
       "LoopOverBoundary(cctkGH, " <> bodyFunctionName <> ");\n",
-    BoundaryWithGhosts,
+    "BoundaryWithGhosts" | "boundarywithghosts",
       "LoopOverBoundaryWithGhosts(cctkGH, " <> bodyFunctionName <> ");\n",
     _,
       ThrowError["Unknown 'Where' entry in calculation " <>
-        functionName <> ": " <> ToString[where]]];
+        functionName <> ": (" <> ToString[where] <> ")"]];
 
   DGFEDefs = If[OptionValue[UseDGFE], DGFEDefinitions[cleancalc, eqs, gfs], {}];
 
@@ -518,7 +518,7 @@ DefFn[
   }]];
 
 (* Create definitions for the local copies of gridfunctions or arrays *)
-DefFn[assignLocalFunctions[gs:{(_Symbol|_String)...}, useVectors:Boolean, useJacobian:Boolean, nameFunc_] :=
+DefFn[assignLocalFunctions[gs:{_Symbol...}, useVectors:Boolean, useJacobian:Boolean, nameFunc_] :=
   Module[{conds, varPatterns, varsInConds, simpleVars, code},
 
     (* Conditional access to grid variables *)

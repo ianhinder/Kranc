@@ -52,35 +52,32 @@ CAKERNEL_calc_bound_rhs_Begin
   
   /* Calculate temporaries and arrays functions */
   /* Copy local copies back to grid functions */
-  CAKERNEL_calc_bound_rhs_Computations_Begin
-    /* Assign local copies of grid functions */
-    
-    
-    /* Include user supplied include files */
-    /* Precompute derivatives */
-    
-    switch (fdOrder)
+  /* Assign local copies of grid functions */
+  
+  
+  /* Include user supplied include files */
+  /* Precompute derivatives */
+  
+  switch (fdOrder)
+  {
+    case 2:
     {
-      case 2:
-      {
-        break;
-      }
-      
-      case 4:
-      {
-        break;
-      }
-      default:
-        CCTK_BUILTIN_UNREACHABLE();
+      break;
     }
-    /* Calculate temporaries and grid functions */
-    CCTK_REAL phirhsL CCTK_ATTRIBUTE_UNUSED = 0;
     
-    CCTK_REAL pirhsL CCTK_ATTRIBUTE_UNUSED = 0;
-    /* Copy local copies back to grid functions */
-    I3D(phirhs,0,0,0) = phirhsL;
-    I3D(pirhs,0,0,0) = pirhsL;
-    
-  CAKERNEL_calc_bound_rhs_Computations_End
+    case 4:
+    {
+      break;
+    }
+    default:
+      CCTK_BUILTIN_UNREACHABLE();
+  }
+  /* Calculate temporaries and grid functions */
+  CCTK_REAL phirhsL CCTK_ATTRIBUTE_UNUSED = 0;
+  
+  CCTK_REAL pirhsL CCTK_ATTRIBUTE_UNUSED = 0;
+  /* Copy local copies back to grid functions */
+  I3D(phirhs,0,0,0) = phirhsL;
+  I3D(pirhs,0,0,0) = pirhsL;
   
 CAKERNEL_calc_bound_rhs_End

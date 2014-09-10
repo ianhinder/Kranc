@@ -85,18 +85,27 @@ process[thorn:"thorn"[content___]] :=
                    {PartialDerivatives -> derivatives},
                    options];
 
+    (* Print["Creating thorn ", name, " with options:"]; *)
+    (* Print[options]; *)
+    
     CreateKrancThornTT2[name,Sequence@@options]];
 
 process[calc:"calculation"[content___]] :=
   Module[
-    {name,eqs,joinWord},
+    {name,eqs,joinWord,where},
     name = Cases[calc, "uname"[n_]:>n][[1]];
     eqs = Cases[calc, "eqns"[es___]:>{es}][[1]];
-    WhereValue = "Automatic";
 
     schedule = Cases[calc, "schedule"[___,"uname"[s_],___]:>s][[1]];
     onClause = Cases[calc, "schedule"[___,"uname"[s_],"on_clause"["uname"[f_]]]:>f];
-    If[Length[onClause]>0,WhereValue=onClause[[1]]];
+
+    where = If[Length[onClause] > 0,
+      Replace[ToLowerCase[onClause[[1]]],
+        {"boundary" :> Boundary,
+          _ :> Error["Unrecognised domain for calculation: " <> ToString[onClause[[1]]]]}],
+      (* else *)
+      Automatic];
+
     joinWord = If[StringMatchQ[schedule,"initial",IgnoreCase->True] ||
                   StringMatchQ[schedule,"analysis",IgnoreCase->True],
                   "at","in"];
@@ -104,7 +113,7 @@ process[calc:"calculation"[content___]] :=
     {Name -> name,
      Equations -> Map[process,eqs],
      Schedule -> {joinWord<>" "<>schedule},
-     Where -> WhereValue}];
+     Where -> where}];
 
 process["eqn"[lhs_,rhs_]] := Module[{name,eqs}, process[lhs] -> process[rhs]];
 

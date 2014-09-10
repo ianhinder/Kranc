@@ -381,7 +381,7 @@ DefFn[
      stencilSize = MapThread[Max,Map[Last,stencilSize[[2]]]]];
 
   where = GetCalculationWhere[cleancalc];
-  If[where === "Automatic",
+  If[where === Automatic,
      where = If[MatchQ[stencilSize, {0,0,0}] =!= True, Interior, Everywhere]];
 
   (* Check all the function names *)
@@ -414,22 +414,22 @@ DefFn[
       ss_ :> ThrowError["Unknown symbols " <> StringJoin[Riffle[ToString/@ss,", "]] <> " in calculation " <> GetCalculationName[cleancalc]],
     _ :> ThrowError["Internal error: unrecognised value for unknownSymbols: "<>ToString[unknownSymbols, InputForm]]};
 
-  kernelCall = Switch[ToString[where],
-    "Everywhere"|"everywhere",
+  kernelCall = Switch[where,
+    Everywhere,
     If[TileCalculationQ[cleancalc],
       "TiledLoopOverEverything(cctkGH, " <> bodyFunctionName <> ");\n",
       "LoopOverEverything(cctkGH, " <> bodyFunctionName <> ");\n"],
-    "Interior" | "InteriorNoSync" | "interior" | "interiornosync",
+    Interior | InteriorNoSync,
     If[TileCalculationQ[cleancalc],
       "TiledLoopOverInterior(cctkGH, " <> bodyFunctionName <> ");\n",
       "LoopOverInterior(cctkGH, " <> bodyFunctionName <> ");\n"],
-    "Boundary" | "BoundaryNoSync" | "boundary" | "boundarynosync",
+    Boundary | BoundaryNoSync,
       "LoopOverBoundary(cctkGH, " <> bodyFunctionName <> ");\n",
-    "BoundaryWithGhosts" | "boundarywithghosts",
+    BoundaryWithGhosts,
       "LoopOverBoundaryWithGhosts(cctkGH, " <> bodyFunctionName <> ");\n",
     _,
       ThrowError["Unknown 'Where' entry in calculation " <>
-        functionName <> ": (" <> ToString[where] <> ")"]];
+        functionName <> ": " <> ToString[where]]];
 
   DGFEDefs = If[OptionValue[UseDGFE], DGFEDefinitions[cleancalc, eqs, gfs], {}];
 

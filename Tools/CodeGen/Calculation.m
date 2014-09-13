@@ -383,7 +383,7 @@ CalculationSymbols[calc_] :=
 (* Return all the functions used in a calculation *)
 (* Not currently used *)
 FunctionsInCalculation[calc_] :=
-  Module[{eqs, x},
+  Module[{eqs, x, y},
     eqs = lookup[calc, Equations];
     x = Cases[eqs, f_[x___] -> f, Infinity];
     y = Union[Select[x, Context[#] === "Global`" &]];

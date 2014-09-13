@@ -34,7 +34,7 @@ DefFn[
 
     Print["Creating thorn from ",filename];
 
-    code = Parse["kranc2.peg", "thorn", filename];
+    code = ParsePEG["kranc2.peg", "thorn", filename];
 
     stringRules = XMLElement[s_,{___},c_] :> s@@c;
 

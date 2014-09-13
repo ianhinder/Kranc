@@ -238,7 +238,7 @@ DefFn[
 
 DefFn[
   parseInterfaceCCL[interfaceFile_String] :=
-  (Parse["intrfccl.peg", "intr", interfaceFile] //.
+  (ParsePEG["intrfccl.peg", "intr", interfaceFile] //.
    {("startIndex" -> _) :> Sequence[],
     ("endIndex" -> _) :> Sequence[]} )//.
   {(XMLObject["Document"][_,data_,___]) :> data, 

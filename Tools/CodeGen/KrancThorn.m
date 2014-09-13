@@ -75,7 +75,7 @@ DefFn[
 
     c = SetObjectField[c, "Groups", 
                        Union[GetObjectField[c, "Groups"],
-                             {{"grid::coordinates", {Kranc`x,Kranc`y,Kranc`z,Kranc`r}}},
+                             {{"grid::coordinates", {x,y,z,r}}},
                              SameTest->(ToLowerCase[#1]==ToLowerCase[#2]&)]];
     c = AppendObjectField[c, "InheritedImplementations", "Grid"];
     c]];

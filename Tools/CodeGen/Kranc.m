@@ -72,6 +72,11 @@ ScheduleTimelevels;
 
 (* KrancThorn.m *)
 
+(* Work around bug in Mathematica 10.0.0 where z is a symbol in the global context *)
+If[NameQ["Global`z"] && !ValueQ[Global`z], Remove[Global`z]];
+
+{x, y, z, r};
+
 ThornOptions =
  {Calculations -> {},
   ConservationCalculations -> {},

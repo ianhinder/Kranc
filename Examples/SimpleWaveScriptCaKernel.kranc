@@ -17,8 +17,8 @@ begin calculation calc_rhs scheduled at MoL_CalcRHS
 end calculation
 
 begin calculation calc_bound_rhs scheduled at MoL_CalcRHS on boundary
-  D_t phi = 0
-  D_t pi = 0
+  D_t phi = pi
+  D_t pi = -(2*PI)**2*phi
 end calculation
 
 end thorn

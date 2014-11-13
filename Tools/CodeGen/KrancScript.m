@@ -177,6 +177,7 @@ process["pow"[a_,b_]] := process[a]^process[b];
 process["pow"[a_]] := process[a];
 
 process["value"[a_]] := process[a];
+process["value"["neg"[_],a_]] := -process[a];
 
 process["number"[a_]] := ToExpression[a];
 

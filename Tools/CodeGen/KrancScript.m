@@ -167,6 +167,7 @@ process["mexpr"[cs___, a_, "addop"["+"], b_]] := process["mexpr"[cs,a]] + proces
 process["mexpr"[cs___, a_, "addop"["-"], b_]] := process["mexpr"[cs,a]] - process[b];
 
 process["expr"[m:"mexpr"[___]]] := process[m];
+process["expr"["neg"[_],m:"mexpr"[___]]] := -process[m];
 
 process["mul"[pow_]] := process[pow];
 process["mul"[]] := 1;
@@ -177,7 +178,6 @@ process["pow"[a_,b_]] := process[a]^process[b];
 process["pow"[a_]] := process[a];
 
 process["value"[a_]] := process[a];
-process["value"["neg"[_],a_]] := -process[a];
 
 process["number"[a_]] := ToExpression[a];
 

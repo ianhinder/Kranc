@@ -52,7 +52,7 @@ process[h_[args___]] :=
 
 process[thorn:"thorn"[content___]] :=
   Module[
-    {calcs = {}, name, variables = {}, temporaries = {}, tensors, kernels,
+    {calcs = {}, name, parameters = {}, variables = {}, temporaries = {}, tensors, kernels,
      nonScalars, tensorRule, withInds, options = {}, derivatives = {}},
 
     (* Print["thorn = ", thorn]; *)
@@ -61,8 +61,10 @@ process[thorn:"thorn"[content___]] :=
     Do[Switch[el,
               "calculation"[___], AppendTo[calcs,process[el]],
               "uname"[_], name = el[[1]],
+              "parameters"["begin parameters end parameters"], Null,
               "variables"["begin variables end variables"], Null,
               "temporaries"["begin temporaries end temporaries"], Null,
+              "parameters"[__], parameters = Join[parameters,List@@Map[process,el]],
               "variables"[__], variables = Join[variables,List@@Map[process,el]],
               "temporaries"[__], temporaries = Join[temporaries,List@@Map[process,el]],
               "derivatives"[__], derivatives = Join[derivatives,process[el]],
@@ -70,6 +72,7 @@ process[thorn:"thorn"[content___]] :=
               _, ThrowError["Unrecognised element '"<>Head[el]<>"' in thorn"]],
        {el, {content}}];
 
+    Print[parameters];
     tensors = Join[variables,temporaries];
     kernels = Map[If[AtomQ[#],#,First[#]] &, tensors];
     Scan[DefineTensor, kernels];
@@ -81,7 +84,7 @@ process[thorn:"thorn"[content___]] :=
 
     SetEnhancedTimes[False];
 
-    options = Join[{Calculations -> calcs, Variables -> variables, Shorthands -> temporaries} /. tensorRule,
+    options = Join[{RealParameters -> parameters, Calculations -> calcs, Variables -> variables, Shorthands -> temporaries} /. tensorRule,
                    {PartialDerivatives -> derivatives},
                    options];
 
@@ -188,6 +191,16 @@ process["option"["inherit"[imps__]]] :=
 
 process["option"["implement"[imp_]]] :=
   {Implementation -> process[imp]};
+
+process["leftenc"[sym_],"number"[num_]] := sym <> num;
+process["number"[num_],"rightenc"[sym_]] := num <> sym;
+process["infinity"[_]] := "*";
+
+process["parameter"["name"[nm_],"desc"[desc_],"number"[def_],"parlo"[le__],"parhi"[re__]]] := 
+  {Name -> ToExpression[nm],
+   Description -> desc,
+   AllowedValues -> {{Value->process[le] <> ":" <> process[re]}},
+   Default -> ToExpression[def]}
 
 flags = ScriptFlags;
 

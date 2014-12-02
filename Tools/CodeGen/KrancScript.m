@@ -72,7 +72,6 @@ process[thorn:"thorn"[content___]] :=
               _, ThrowError["Unrecognised element '"<>Head[el]<>"' in thorn"]],
        {el, {content}}];
 
-    Print[parameters];
     tensors = Join[variables,temporaries];
     kernels = Map[If[AtomQ[#],#,First[#]] &, tensors];
     Scan[DefineTensor, kernels];

@@ -195,11 +195,23 @@ process["leftenc"[sym_],"number"[num_]] := sym <> num;
 process["number"[num_],"rightenc"[sym_]] := num <> sym;
 process["infinity"[_]] := "*";
 
-process["parameter"["name"[nm_],"desc"[desc_],"number"[def_],"parlo"[le__],"parhi"[re__]]] := 
+processRange[value_,minOrMax_,paramName_] :=
+  If[StringQ[value] && value == "*",value,
+    Module[{tmp},
+      tmp = N[value];
+      If[NumberQ[tmp],1,ThrowError[minOrMax<>" value for parameter "<>paramName<>" is not a number"]];
+      Return[tmp]]]
+
+process["parameter"["name"[nm_],"desc"[desc_],"expr"[def_],"parlo"[le__],"parhi"[re__]]] := 
+Module[{dtmp,lotmp,hitmp},
+  dtmp = N[process[def]];
+  lotmp = processRange[process[le],"Minimum",nm];
+  hitmp = processRange[process[re],"Maximum",nm];
+  If[NumberQ[dtmp],1,ThrowError["Default value for parameter "<>nm<>" is not a number"]];
   {Name -> ToExpression[nm],
    Description -> desc,
-   AllowedValues -> {{Value->process[le] <> ":" <> process[re]}},
-   Default -> ToExpression[def]}
+   AllowedValues -> {{Value->ToString[lotmp] <> ":" <> ToString[hitmp]}},
+   Default -> dtmp}]
 
 flags = ScriptFlags;
 

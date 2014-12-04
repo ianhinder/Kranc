@@ -2,11 +2,18 @@ begin thorn SimpleWaveScriptCaKernel
 
 use cakernel
 
+# This is a comment
+
 begin parameters
-  Name: amp
-  Description: The amplitude of the wave
-  Default: 1.0
-  Range: -infinity to infinity
+  name: amp
+  description: The amplitude of the wave
+  default: 1.0
+  range: -infinity to infinity
+
+  name: kfac
+  description: The wave number
+  default: 2*PI
+  range: 0 to 10*PI
 end parameters
 
 begin variables
@@ -14,7 +21,7 @@ begin variables
 end variables
 
 begin calculation initial_sine_calc scheduled at initial
-  phi = amp*sin(2*PI*3*x)
+  phi = amp*sin(kfac*x)
   pi = 0
 end calculation
 
@@ -25,7 +32,7 @@ end calculation
 
 begin calculation calc_bound_rhs scheduled at MoL_CalcRHS on boundary
   D_t phi = pi
-  D_t pi = -(3*2*PI)**2*phi
+  D_t pi = -kfac**2*phi
 end calculation
 
 end thorn

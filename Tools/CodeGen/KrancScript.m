@@ -174,6 +174,7 @@ process["expr"["neg"[_],m:"mexpr"[___]]] := -process[m];
 process["mul"[pow_]] := process[pow];
 process["mul"[]] := 1;
 process["mul"[cs___, a_, "mulop"["*"], b_]] := process["mul"[cs,a]] * process[b];
+process["mul"[cs___, a_, "mulimp"[___], b_]] := process["mul"[cs,a]] * process[b];
 process["mul"[cs___, a_, "mulop"["/"], b_]] := process["mul"[cs,a]] / process[b];
 
 process["pow"[a_,b_]] := process[a]^process[b];
@@ -196,7 +197,7 @@ process["number"[num_],"rightenc"[sym_]] := num <> sym;
 process["infinity"[_]] := "*";
 
 processRange[value_,minOrMax_,paramName_] :=
-  If[StringQ[value] && value == "*",value,
+  If[StringQ[value] && value === "*",value,
     Module[{tmp},
       tmp = N[value];
       If[NumberQ[tmp],1,ThrowError[minOrMax<>" value for parameter "<>paramName<>" is not a number"]];

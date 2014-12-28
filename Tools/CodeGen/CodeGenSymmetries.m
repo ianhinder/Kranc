@@ -100,7 +100,7 @@ DefFn[
              thornName <> "_RegisterSymmetries", "void", 
              If[Length[spec] > 0,
                 {CommentedBlock["array holding symmetry definitions",
-                                "CCTK_INT sym[3];\n\n"],
+                                "int sym[3];\n\n"],
                  CommentedBlock["Register symmetries of grid functions",
                                 Map[symmetriesBlock, spec]]},
                 {}]]}]};

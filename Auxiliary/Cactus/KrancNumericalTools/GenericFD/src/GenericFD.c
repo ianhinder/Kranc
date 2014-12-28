@@ -50,11 +50,11 @@
    corresponding functions */
 
 static
-void GenericFD_GetBoundaryWidths(cGH const * restrict const cctkGH, int nboundaryzones[6])
+void GenericFD_GetBoundaryWidths(cGH const * restrict const cctkGH, CCTK_INT nboundaryzones[6])
 {
-  int is_internal[6];
-  int is_staggered[6];
-  int shiftout[6];
+  CCTK_INT is_internal[6];
+  CCTK_INT is_staggered[6];
+  CCTK_INT shiftout[6];
   int ierr = -1;
 
   if (CCTK_IsFunctionAliased ("MultiPatch_GetBoundarySpecification")) {
@@ -88,7 +88,7 @@ void GenericFD_GetBoundaryWidths(cGH const * restrict const cctkGH, int nboundar
 
 int GenericFD_GetBoundaryWidth(cGH const * restrict const cctkGH)
 {
-  int nboundaryzones[6];
+  CCTK_INT nboundaryzones[6];
   GenericFD_GetBoundaryWidths(cctkGH, nboundaryzones);
 
   int bw = nboundaryzones[0];
@@ -122,12 +122,12 @@ void GenericFD_GetBoundaryInfo(cGH const * restrict const cctkGH,
 			       int * restrict const is_physbnd,
                                int * restrict const is_ipbnd)
 {
-  int bbox[6];
-  int nboundaryzones[6];
-  int is_internal[6];
-  int is_staggered[6];
-  int shiftout[6];
-  int symbnd[6];
+  CCTK_INT bbox[6];
+  CCTK_INT nboundaryzones[6];
+  CCTK_INT is_internal[6];
+  CCTK_INT is_staggered[6];
+  CCTK_INT shiftout[6];
+  CCTK_INT symbnd[6];
 
   int symtable = 0;
   int dir = 0;
@@ -506,7 +506,7 @@ void GenericFD_EnsureStencilFits(cGH const * restrict const cctkGH, const char *
 {
   DECLARE_CCTK_ARGUMENTS
 
-  int bws[6];
+  CCTK_INT bws[6];
   GenericFD_GetBoundaryWidths(cctkGH, bws);
 
   int ns[] = {ni, nj, nk};

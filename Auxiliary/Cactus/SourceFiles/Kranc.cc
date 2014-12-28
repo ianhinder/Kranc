@@ -23,12 +23,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "cctk.h"                             
-#include "cctk_Arguments.h"                   
-#include "cctk_Parameters.h"                  
-#include "util_Table.h"
+#include <cctk.h>
+#include <cctk_Arguments.h>
+#include <cctk_Parameters.h>
+#include <util_Table.h>
 
-#include "Symmetry.h"                         
+#include <Symmetry.h>
             
 #include "Kranc.hh"
 

@@ -1,8 +1,10 @@
 skipper = \b([ \t\n\r]+|\#.*)*
 int = [0-9]+
 end = ([ \t]+|\#.*)*\r*\n
+quote = "[^"]*"
 
-keywords = to
+type = real|integer|keyword|boolean
+keywords = to|default
 name = (?!D|{keywords}\b)[A-Za-z][A-Za-z0-9]*
 uname = [A-Za-z][A-Za-z0-9_]*
 lower_index = ({index_symbol}|\({index_expr}(,{index_expr})*\))
@@ -42,7 +44,7 @@ desc = ((?!default:)[^])*
 infinity = infinity
 parlo = - {infinity}|{expr}
 parhi = {infinity}|{expr}
-parameter = name:  {name} description: {desc} default: {expr} range: {parlo}[ \t]+to[ \t]+{parhi}
+parameter = {name} : {type} {quote}(, default : {expr}|)(, range : {parlo}[ \t]+to[ \t]+{parhi}|)
 temporaries = begin[ \t]+temporaries{-end} ( end[ \t]+temporaries\b{brk}| {tensor})*{-end}
 option = {inherit}|{use}|{disable}|{implement}
 inherit = inherit[ \t]+({uname}[ \t]*)+{-end}

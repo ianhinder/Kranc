@@ -203,14 +203,24 @@ processRange[value_,minOrMax_,paramName_] :=
       If[NumberQ[tmp],1,ThrowError[minOrMax<>" value for parameter "<>paramName<>" is not a number"]];
       Return[tmp]]]
 
-process["parameter"["name"[nm_],"desc"[desc_],"expr"[def_],"parlo"[le__],"parhi"[re__]]] := 
+process["parameter"["name"[nm_],"type"[desc_],"quote"[def_]]] :=
+Module[{dtmp,lotmp,hitmp},
+  dtmp = 1.0;
+  lotmp = "*";
+  hitmp = "*";
+  {Name -> ToExpression[nm],
+   Description -> StringTake[desc,{2,StringLength[desc]-1}],
+   AllowedValues -> {{Value->ToString[lotmp] <> ":" <> ToString[hitmp]}},
+   Default -> dtmp}]
+
+process["parameter"["name"[nm_],"type"["real"],"quote"[desc_],"expr"[def_],"parlo"[le__],"parhi"[re__]]] := 
 Module[{dtmp,lotmp,hitmp},
   dtmp = N[process[def]];
   lotmp = processRange[process[le],"Minimum",nm];
   hitmp = processRange[process[re],"Maximum",nm];
   If[NumberQ[dtmp],1,ThrowError["Default value for parameter "<>nm<>" is not a number"]];
   {Name -> ToExpression[nm],
-   Description -> desc,
+   Description -> StringTake[desc,{2,StringLength[desc]-1}],
    AllowedValues -> {{Value->ToString[lotmp] <> ":" <> ToString[hitmp]}},
    Default -> dtmp}]
 

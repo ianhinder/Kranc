@@ -29,18 +29,19 @@ addop = [+-]
 mexpr = {mul}( {addop} {mul})*
 expr = {neg}?{mexpr}
 eqn = ({dtensor}|{tensor}) \= {expr}{-end}
-deqn = {dtensor} \= {expr}{-end}
+doper = {dname}{indices}
+deqn = {doper} \= {expr}{-end}
 eqns = {eqn}( {eqn})*
 deqns = {deqn}( {deqn})*
 at_or_in = (at|in)
 on_clause = on {uname}
 schedule = scheduled[ \t]+{at_or_in}[ \t]{uname}( {on_clause})?
 calculation = begin[ \t]+calculation[ \t]+{uname}([ \t]+{schedule}|){-end} {eqns} end[ \t]+calculation
+groupdef = {name}{indices}? : {quote}
+groups = begin[ \t]+group[ \t]+{name}{-end} {groupdefs}
+groupdefs = ( end[ \t]+group\b{brk}| {groupdef})*{-end}
 variables = begin[ \t]+variables{-end} ( end[ \t]+variables\b{brk}| {tensor})*{-end}
 parameters = begin[ \t]+parameters{-end} ( end[ \t]+parameters\b{brk}| {parameter})*{-end}
-leftenc = [\[\(]
-rightenc = [\]\)]
-desc = ((?!default:)[^])*
 infinity = infinity
 parlo = - {infinity}|{expr}
 parhi = {infinity}|{expr}
@@ -53,4 +54,4 @@ use = use[ \t]+({feature}[ \t]*)+
 disable = disable[ \t]+({feature}[ \t]*)+
 implement = implement[ \t]+{uname}{-end}
 derivatives = begin[ \t]+derivatives{-end} {deqns} end[ \t]+derivatives
-thorn = {-skipper}begin[ ]+thorn {uname}{-end}( {calculation}| {parameters}| {variables}| {temporaries}| {derivatives}| {option})* end[ ]+thorn
+thorn = {-skipper}begin[ ]+thorn {uname}{-end}( {calculation}| {groups}| {parameters}| {variables}| {temporaries}| {derivatives}| {option})* end[ ]+thorn

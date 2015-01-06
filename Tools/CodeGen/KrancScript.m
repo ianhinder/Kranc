@@ -53,7 +53,7 @@ process[h_[args___]] :=
 process[thorn:"thorn"[content___]] :=
   Module[
     {calcs = {}, name, parameters = {}, variables = {}, temporaries = {}, tensors, kernels,
-     nonScalars, tensorRule, withInds, options = {}, derivatives = {}},
+     nonScalars, tensorRule, withInds, options = {}, derivatives = {}, groups = {}},
 
     (* Print["thorn = ", thorn]; *)
     (* KrancTensor`printStruct[thorn]; *)
@@ -67,8 +67,9 @@ process[thorn:"thorn"[content___]] :=
               "parameters"[__], parameters = Join[parameters,List@@Map[process,el]],
               "variables"[__], variables = Join[variables,List@@Map[process,el]],
               "temporaries"[__], temporaries = Join[temporaries,List@@Map[process,el]],
-              "derivatives"[__], derivatives = Join[derivatives,process[el]],
+              "derivatives"[__], (*derivatives =*) Join[derivatives,process[el]],
               "option"[__], options = Join[options, process[el]],
+              "groups"[__], groups = Join[groups, process[el]],
               _, ThrowError["Unrecognised element '"<>Head[el]<>"' in thorn"]],
        {el, {content}}];
 
@@ -224,6 +225,8 @@ Module[{dtmp,lotmp,hitmp},
    AllowedValues -> {{Value->ToString[lotmp] <> ":" <> ToString[hitmp]}},
    Default -> dtmp}]
 
+process["groups"["name"[nm_],"groupdefs"[groups__]]] := nm
+
 flags = ScriptFlags;
 
 process["option"["use"[features__]]] :=
@@ -242,6 +245,7 @@ process[d:"deqn"[___]] :=
     Print["(deqn) No handler for ", d];
     ThrowError["Failed to parse script"]];
 
+process["deqn"["doper"["dname"[dn_],"indices"[ind__]],"expr"[ex_]]] := "";
 process["deqn"[("dtensor"["dname"[dname_],
                           "tensor"["name"[tName_],
                                    "indices"[tinds___]]]),

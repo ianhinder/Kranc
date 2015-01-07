@@ -84,9 +84,14 @@ process[thorn:"thorn"[content___]] :=
 
     SetEnhancedTimes[False];
 
-    options = Join[{RealParameters -> parameters, Calculations -> calcs, Variables -> variables, Shorthands -> temporaries} /. tensorRule,
-                   {PartialDerivatives -> derivatives},
-                   options];
+    options = Join[{
+      DeclaredGroups -> groups,
+      RealParameters -> parameters,
+      Calculations -> calcs,
+      Variables -> variables,
+      Shorthands -> temporaries} /. tensorRule,
+      {PartialDerivatives -> derivatives},
+      options];
 
     (* Print["Creating thorn ", name, " with options:"]; *)
     (* Print[options]; *)
@@ -225,7 +230,13 @@ Module[{dtmp,lotmp,hitmp},
    AllowedValues -> {{Value->ToString[lotmp] <> ":" <> ToString[hitmp]}},
    Default -> dtmp}]
 
-process["groups"["name"[nm_],"groupdefs"[groups__]]] := nm
+process["groupdef"["name"[nm_], "quote"[desc_]]] := nm;
+process["groupdef"["name"[nm_]]] := nm;
+process["groupdef"["name"[nm_], "indices"[ind__], "quote"[desc_]]] := nm<>StringJoin[Map[(#;"[3]")&,{ind}]];
+process["groupdef"["name"[nm_], "indices"[ind__]]] := nm<>StringJoin[Map[(#;"[3]")&,{ind}]];
+
+process["groups"["name"[nm_],"groupdefs"[groups__]]] := {
+  {nm,Map[process,{groups}]}};
 
 flags = ScriptFlags;
 

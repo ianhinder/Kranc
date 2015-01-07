@@ -5,9 +5,9 @@ use cakernel
 # This is a comment
 
 begin group Evolved
-  u : "scalar"
+  u 
   rho : "rho-dot"
-  v_i : "grad rho"
+  v_ij 
 end group
 
 begin group Extra

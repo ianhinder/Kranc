@@ -11,6 +11,8 @@ mapValueMapMultiple::usage = "";
 mapAdd::usage = "";
 mapEnsureKey::usage = "";
 mapQuery::usage = "";
+mapRefAdd::usage = "";
+mapRefSet::usage = "";
 
 Begin["`Private`"];
 
@@ -32,7 +34,7 @@ DefFn[
   lookup[map_List, key_Symbol, default_] :=
   lookupDefault[map, key, default]];
 
-DefFn[lookup[map_List, key:(_Symbol|_String)] :=
+lookupRaw[map_List, key:(_Symbol|_String)] :=
   Module[{values},
     VerifyMap[map];
 
@@ -42,7 +44,10 @@ DefFn[lookup[map_List, key:(_Symbol|_String)] :=
     If[Length[values] > 1,
        ThrowError["lookup failure: key " <> ToString[key]<> " found multiple times in map ", ToString[map,InputForm]]];
 
-    First[values][[2]]]];
+    First[values][[2]]];
+
+DefFn[lookup[map_List, key:(_Symbol|_String)] := 
+ mapRefObarray[lookupRaw[map,key]]];
 
 mapContains[map_, key_] :=
   Module[{},
@@ -59,7 +64,15 @@ lookupDefault[map_, key_, default_] :=
 mapReplace[map_, key_, value_] :=
   Module[{},
     VerifyMap[map];
-    Map[If[First[#] === key, key -> value, #] &, map]];
+    Map[If[First[#] === key,
+           Module[{OAKeyStr=Last[#]},
+             If[ mapRefObarraySetCount[OAKeyStr] < 0,
+                 key -> value,
+                 mapRefObarraySetCount[OAKeyStr] =
+                    mapRefObarraySetCount[OAKeyStr] + 1;
+                 mapRefObarray[OAKeyStr] = value;
+                 # ]],
+           #] &, map]];
 
 mapReplaceAdd[map_, key_, value_] :=
   Module[{},
@@ -94,6 +107,33 @@ mapValueMapMultiple[m_, defs_] :=
 
 mapQuery[ms_, key_, value_] :=
   Select[Select[ms, mapContains[#, key] &], lookup[#, key] === value &];
+
+mapRefObarray[x_] := x; 
+mapRefObarraySetCount[___] = -1;
+
+mapRefAdd[map_List,key:(_Symbol|_String)]:=
+   Module[{mapRefObarrayKey, OAKeyStr},
+     VerifyMap[map];
+     If[ mapContains[map,key], 
+         ThrowError["Map already contains "<>ToString[key]]];
+     OAKeyStr = ToString[mapRefObarrayKey];
+     mapRefObarraySetCount[OAKeyStr] = 0;
+     mapRefObarray[OAKeyStr] := 
+        Throw["Value of mapRef key "
+                 <> ToString[key] <>" accessed before being set."];
+     mapAdd[map,key,OAKeyStr]];
+
+mapRefAdd[map_List,keys_List] := Fold[mapRefAdd,map,keys];
+
+mapRefSet[map_List,key:(_Symbol|_String), value_]:=
+   Module[{OAKeyStr},
+     VerifyMap[map];
+     OAKeyStr = lookupRaw[map,key];
+     If[ mapRefObarraySetCount[OAKeyStr] < 0,
+         Throw["mapRefSet called with a non-reference key \""<>
+                  ToString[key]<>"\". Use mapRefAdd."] ];
+     mapRefObarraySetCount[OAKeyStr] = mapRefObarraySetCount[OAKeyStr] + 1;
+     mapRefObarray[OAKeyStr] = value];
 
 End[];
 

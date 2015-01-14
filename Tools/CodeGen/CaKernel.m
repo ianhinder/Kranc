@@ -73,11 +73,11 @@ DefFn[
      int, attrs, stencil},
     int = !bnd;
 
-    attrs = {"TYPE" -> If[int, "gpu_cuda/3dblock", "gpu_cuda/boundary_s"],
+    attrs = {"TYPE" -> If[int, "gpu_cuda_dc/3dblock2", "gpu_cuda/boundary_s"],
              "TILE" -> Quote[StringJoin[Riffle[ToString/@tileSize,","]]],
              "SHARECODE" -> "yes"};
 
-    stencil = CalculationStencilSize[calc];
+    stencil = lookup[calc,StencilSizeResolved];
 
     If[int,
        attrs = Append[attrs, 
@@ -88,7 +88,7 @@ DefFn[
 
     attrs = Append[attrs, "EXTERIOR" ->
       If[MemberQ[{Everywhere, BoundaryWithGhosts},
-                 GetCalculationWhere[calc]] || 
+                 lookup[calc,WhereResolved]] || 
         (MemberQ[stencil, 0] && Total[stencil] =!= 0 (* both zero and nonzero elements *)),
         Quote["1,1,1,1,1,1"],
         Quote["0,0,0,0,0,0"]]];

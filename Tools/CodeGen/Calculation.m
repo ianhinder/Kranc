@@ -415,7 +415,8 @@ VerifyCalculation[calc_] :=
          SeparatedDerivatives, SeparatedDerivatives2,
          LocalGroups, NoSimplify, UseDGFE, SimpleCode, UseCaKernel,
          UseJacobian,
-         ScheduleGroups, TriggerGroups, ThornName, Tile, UseLoopControl};
+         ScheduleGroups, TriggerGroups, ThornName, Tile, UseLoopControl,
+         WhereResolved, StencilSizeResolved };
 
     usedKeys = Map[First, calc];
     unknownKeys = Complement[usedKeys, allowedKeys];

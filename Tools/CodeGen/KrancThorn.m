@@ -368,18 +368,14 @@ DefFn[CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPa
        {"Calculations", "DeclaredGroups", "Groups", "Name",
         "EvolutionTimelevels"}), opts];
 
-    If[OptionValue[UseCaKernel],
-       InfoMessage[Terse, "Creating CaKernel file"];
-       cakernel = CaKernelCCL[GetObjectField[c, "Calculations"], opts];
-    ,
-       cakernel = None;
-    ];
-
     (* ------------------------------------------------------------------------ 
        Create calculation source files
        ------------------------------------------------------------------------ *)
 
     InfoMessage[Terse, "Creating calculation source files"];
+
+    c = ApplyToObjectField[c, "Calculations",
+      mapRefAdd[#,{WhereResolved,StencilSizeResolved}]& /@ # & ];
 
     Module[{opCounts},
       opCounts=Reap[
@@ -396,6 +392,18 @@ DefFn[CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPa
         ProcessOperationCount][[2]];
 
       c = OperationCountProcessCode[c, Flatten[opCounts], opts]];
+
+    (* ------------------------------------------------------------------------ 
+       Create CaKernel CCL File.
+       ------------------------------------------------------------------------ *)
+
+    If[OptionValue[UseCaKernel],
+       InfoMessage[Terse, "Creating CaKernel file"];
+       cakernel = CaKernelCCL[GetObjectField[c, "Calculations"], opts];
+    ,
+       cakernel = None;
+    ];
+
 
     (* ------------------------------------------------------------------------ 
        Create Makefile

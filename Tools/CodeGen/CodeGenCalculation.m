@@ -384,6 +384,9 @@ DefFn[
   If[where === Automatic,
      where = If[MatchQ[stencilSize, {0,0,0}] =!= True, Interior, Everywhere]];
 
+  mapRefSet[calcp,WhereResolved,where];
+  mapRefSet[calcp,StencilSizeResolved,stencilSize];
+
   (* Check all the function names *)
   functionsPresent = FunctionsInCalculation[cleancalc]; (* Not currently used *)
 

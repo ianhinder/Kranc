@@ -407,7 +407,7 @@ VerifyCalculation[calc_] :=
 
     allowedKeys = {BodyFunction, CallerFunction, ExecuteOn,
          GFAccessFunction, Groups, Implementation, InitFDVariables,
-         LoopFunction, MacroPointer, Name, ODEGroups, Parameters,
+         LoopFunction, MacroPointer, Name, ODEGroups, Parameters, IntParameters,
          PartialDerivatives, PreDefinitions, Schedule,Equations,
          Shorthands, ConditionalOnKeyword, Before, After,
          ConditionalOnTextuals, Where, ConditionalOnKeywords,

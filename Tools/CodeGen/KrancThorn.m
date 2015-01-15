@@ -224,6 +224,11 @@ DefFn[CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPa
       calcs = Map[Append[#, PartialDerivatives -> GetObjectField[c, "PartialDerivatives"]] &, calcs];
       calcs = Map[Append[#, ThornName -> GetObjectField[c, "Name"]] &, calcs];
 
+      (* TODO: Replace this with the parameter database, and change
+         the code in CalculationStencilSize to get the list of integer
+         parameters from the parameter database *)
+      calcs = Map[Append[#, IntParameters -> OptionValue[IntParameters]] &, calcs];
+
       SetObjectField[c, "Calculations", calcs]];
 
     (* ------------------------------------------------------------------------ 

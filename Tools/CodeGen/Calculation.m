@@ -126,12 +126,20 @@ DefFn[
 DefFn[
   CalculationStencilSize[calc_List] :=
   Module[
-    {pddefs,eqs},
+    {pddefs, eqs, stencilSize},
 
     pddefs = lookup[calc, PartialDerivatives, {}];
     eqs    = lookup[calc, Equations];
 
-    StencilSize[pddefs, eqs, "not needed", {} (*ZeroDimensions*)]]];
+    stencilSize = StencilSize[pddefs, eqs, "not needed", {} (*ZeroDimensions*),
+                              lookupDefault[calc, IntParameters, {}]];
+
+    (* We cannot handle a stencil size which depends on a parameter,
+       so take the maximum that it could possibly be *)
+    If[!VectorQ[stencilSize],
+       stencilSize = MapThread[Max,Map[Last,stencilSize[[2]]]]];
+    (* TODO: decide what to do about stencil sizes that depend on runtime parameters *)
+    stencilSize]];
 
 DefFn[
   CalculationOnDevice[calc_List] :=

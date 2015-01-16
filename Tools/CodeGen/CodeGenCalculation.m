@@ -311,7 +311,7 @@ DefFn[
           functionName, dsUsed, groups, pddefs, cleancalc, eqLoop, where,
           addToStencilWidth, pDefs, haveCondTextuals, condTextuals, calc,
           kernelCall, DGFEDefs, DGFEInit, DGFECallCode, debug, useJacobian,
-          imp, gridName, stencilSize},
+          imp, gridName, singlePointStencil},
 
   debug = OptionValue[Debug];
   useJacobian = OptionValue[UseJacobian] && lookupDefault[calcp, UseJacobian, True];
@@ -374,15 +374,15 @@ DefFn[
 
   Scan[InfoMessage[InfoFull, "  " <> ToString@First[#]<>" = ..."] &, eqs];
 
-  (* Compute necessary stencil size *)
-  stencilSize = StencilSize[pddefs, eqs, functionName, OptionValue[ZeroDimensions],
-                               lookup[{opts}, IntParameters, {}]];
-  If[!VectorQ[stencilSize],
-     stencilSize = MapThread[Max,Map[Last,stencilSize[[2]]]]];
+  singlePointStencil =
+    Module[{stencilSize = CalculationStencilSize[cleancalc]},
+      If[!MatchQ[stencilSize, {_Integer, _Integer, _Integer}],
+        Error["Internal error: Invalid stencil size"]];
+      MatchQ[stencilSize, {0,0,0}]];
 
   where = GetCalculationWhere[cleancalc];
   If[where === Automatic,
-     where = If[MatchQ[stencilSize, {0,0,0}] =!= True, Interior, Everywhere]];
+     where = If[!singlePointStencil, Interior, Everywhere]];
 
   (* Check all the function names *)
   functionsPresent = FunctionsInCalculation[cleancalc]; (* Not currently used *)
@@ -500,7 +500,7 @@ DefFn[
         CheckStencil[pddefs, eqs, functionName, OptionValue[ZeroDimensions],
                      lookup[{opts}, IntParameters, {}]],
 
-        If[where === Everywhere && !OptionValue[UseDGFE] && MatchQ[stencilSize, {0,0,0}] =!= True,
+        If[where === Everywhere && !OptionValue[UseDGFE] && !singlePointStencil,
            ThrowError["Calculation "<>functionName<>" uses derivative operators but is computed Everywhere.  Specify Where -> Interior for calculations that use derivative operators."]];
         "\n",
 

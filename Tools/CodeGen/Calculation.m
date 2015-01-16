@@ -114,8 +114,9 @@ DefFn[
 
 DefFn[
   GetCalculationWhere[calc_List] :=
-  (* TODO: support Automatic here, but we need to calculate the stencil size *)
-  lookup[calc,Where, Everywhere]];
+  (* TODO: the default for Where is Everywhere; it should probably be Automatic *)
+  lookup[calc,Where, Everywhere] /.
+  (Automatic -> If[!CalculationPointwiseQ[calc], Interior, Everywhere])];
 
 DefFn[
   BoundaryCalculationQ[calc_List] :=

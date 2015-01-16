@@ -29,6 +29,7 @@ GetCalculationScheduleName;
 GetEquations;
 GetCalculationParameters;
 CalculationStencilSize;
+CalculationPointwiseQ;
 CalculationOnDevice;
 GetCalculationWhere;
 SplitCalculations;
@@ -122,6 +123,14 @@ DefFn[
      ALWAYS computes everywhere that it can, based on the stencil
      description.  *)
   MemberQ[{Boundary, BoundaryWithGhosts, BoundaryNoSync}, GetCalculationWhere[calc]]];
+
+DefFn[
+  CalculationPointwiseQ[calc_List] :=
+  Module[
+    {stencilSize = CalculationStencilSize[calc]},
+    If[!MatchQ[stencilSize, {_Integer, _Integer, _Integer}],
+      Error["Internal error: Invalid stencil size"]];
+    MatchQ[stencilSize, {0,0,0}]]];
 
 DefFn[
   CalculationStencilSize[calc_List] :=

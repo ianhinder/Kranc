@@ -1,4 +1,4 @@
-CCTK_CUDA_KERNEL initial_sine_calc TYPE=gpu_cuda/3dblock TILE="8,8,8" SHARECODE=yes STENCIL="0,0,0,0,0,0" EXTERIOR="0,0,0,0,0,0"
+CCTK_CUDA_KERNEL initial_sine_calc TYPE=gpu_cuda/3dblock TILE="8,8,8" SHARECODE=yes STENCIL="0,0,0,0,0,0" EXTERIOR="1,1,1,1,1,1"
 {
   CCTK_CUDA_KERNEL_VARIABLE  cached=no intent=out {phi} "phi"
   CCTK_CUDA_KERNEL_VARIABLE  cached=no intent=out {pi} "pi"

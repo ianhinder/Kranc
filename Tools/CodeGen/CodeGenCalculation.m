@@ -377,8 +377,6 @@ DefFn[
   singlePointStencil = CalculationPointwiseQ[cleancalc];
 
   where = GetCalculationWhere[cleancalc];
-  If[where === Automatic,
-     where = If[!singlePointStencil, Interior, Everywhere]];
 
   (* Check all the function names *)
   functionsPresent = FunctionsInCalculation[cleancalc]; (* Not currently used *)

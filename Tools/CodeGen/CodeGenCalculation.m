@@ -374,11 +374,7 @@ DefFn[
 
   Scan[InfoMessage[InfoFull, "  " <> ToString@First[#]<>" = ..."] &, eqs];
 
-  singlePointStencil =
-    Module[{stencilSize = CalculationStencilSize[cleancalc]},
-      If[!MatchQ[stencilSize, {_Integer, _Integer, _Integer}],
-        Error["Internal error: Invalid stencil size"]];
-      MatchQ[stencilSize, {0,0,0}]];
+  singlePointStencil = CalculationPointwiseQ[cleancalc];
 
   where = GetCalculationWhere[cleancalc];
   If[where === Automatic,

@@ -1,6 +1,5 @@
 # File produced by Kranc
 
-
 STORAGE: u_group[timelevels]
 
 STORAGE: uF_group[other_timelevels]
@@ -10,7 +9,6 @@ STORAGE: uLeft_group[other_timelevels]
 STORAGE: uR_group[other_timelevels]
 
 STORAGE: u_grouprhs[rhs_timelevels]
-
 schedule Burgers_Startup at STARTUP
 {
   LANG: C
@@ -23,7 +21,6 @@ schedule Burgers_RegisterSymmetries in SymmetryRegister
   OPTIONS: meta
 } "register symmetries"
 
-
 if (CCTK_EQUALS(initial_data, "sine"))
 {
   schedule burgers_initial_sine at CCTK_INITIAL as burgers_initial
@@ -33,7 +30,6 @@ if (CCTK_EQUALS(initial_data, "sine"))
     WRITES: Burgers::u(Everywhere)
   } "burgers_initial_sine"
 }
-
 
 if (CCTK_EQUALS(initial_data, "shock"))
 {
@@ -140,7 +136,6 @@ schedule Burgers_RegisterVars in MoL_Register
   LANG: C
   OPTIONS: meta
 } "Register Variables for MoL"
-
 schedule group ApplyBCs as Burgers_ApplyBCs in MoL_PostStep after Burgers_SelectBoundConds
 {
 } "Apply boundary conditions controlled by thorn Boundary"

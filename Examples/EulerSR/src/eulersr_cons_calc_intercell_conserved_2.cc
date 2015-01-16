@@ -2,6 +2,7 @@
 
 #define KRANC_C
 
+#include <algorithm>
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
@@ -10,72 +11,78 @@
 #include "cctk.h"
 #include "cctk_Arguments.h"
 #include "cctk_Parameters.h"
-#include "GenericFD.h"
+#include "Kranc.hh"
 #include "Differencing.h"
-#include "cctk_Loop.h"
 #include "loopcontrol.h"
 
-/* Define macros used in calculations */
-#define INITVALUE (42)
-#define INV(x) ((CCTK_REAL)1.0 / (x))
-#define SQR(x) ((x) * (x))
-#define CUB(x) ((x) * SQR(x))
-#define QAD(x) (SQR(SQR(x)))
+namespace EulerSR {
 
-static void eulersr_cons_calc_intercell_conserved_2_Body(cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const imin[3], int const imax[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[])
+
+static void eulersr_cons_calc_intercell_conserved_2_Body(const cGH* restrict const cctkGH, const int dir, const int face, const CCTK_REAL normal[3], const CCTK_REAL tangentA[3], const CCTK_REAL tangentB[3], const int imin[3], const int imax[3], const int n_subblock_gfs, CCTK_REAL* restrict const subblock_gfs[])
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  
   /* Include user-supplied include files */
-  
   /* Initialise finite differencing variables */
-  ptrdiff_t /*const*/ di CCTK_ATTRIBUTE_UNUSED  = 1;
-  ptrdiff_t /*const*/ dj CCTK_ATTRIBUTE_UNUSED  = CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0);
-  ptrdiff_t /*const*/ dk CCTK_ATTRIBUTE_UNUSED  = CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0);
-  ptrdiff_t /*const*/ cdi CCTK_ATTRIBUTE_UNUSED  = sizeof(CCTK_REAL) * di;
-  ptrdiff_t /*const*/ cdj CCTK_ATTRIBUTE_UNUSED  = sizeof(CCTK_REAL) * dj;
-  ptrdiff_t /*const*/ cdk CCTK_ATTRIBUTE_UNUSED  = sizeof(CCTK_REAL) * dk;
-  CCTK_REAL /*const*/ dx CCTK_ATTRIBUTE_UNUSED  = ToReal(CCTK_DELTA_SPACE(0));
-  CCTK_REAL /*const*/ dy CCTK_ATTRIBUTE_UNUSED  = ToReal(CCTK_DELTA_SPACE(1));
-  CCTK_REAL /*const*/ dz CCTK_ATTRIBUTE_UNUSED  = ToReal(CCTK_DELTA_SPACE(2));
-  CCTK_REAL /*const*/ dt CCTK_ATTRIBUTE_UNUSED  = ToReal(CCTK_DELTA_TIME);
-  CCTK_REAL /*const*/ t CCTK_ATTRIBUTE_UNUSED  = ToReal(cctk_time);
-  CCTK_REAL /*const*/ dxi CCTK_ATTRIBUTE_UNUSED  = INV(dx);
-  CCTK_REAL /*const*/ dyi CCTK_ATTRIBUTE_UNUSED  = INV(dy);
-  CCTK_REAL /*const*/ dzi CCTK_ATTRIBUTE_UNUSED  = INV(dz);
-  CCTK_REAL /*const*/ khalf CCTK_ATTRIBUTE_UNUSED  = 0.5;
-  CCTK_REAL /*const*/ kthird CCTK_ATTRIBUTE_UNUSED  = 1/3.0;
-  CCTK_REAL /*const*/ ktwothird CCTK_ATTRIBUTE_UNUSED  = 2.0/3.0;
-  CCTK_REAL /*const*/ kfourthird CCTK_ATTRIBUTE_UNUSED  = 4.0/3.0;
-  CCTK_REAL /*const*/ keightthird CCTK_ATTRIBUTE_UNUSED  = 8.0/3.0;
-  CCTK_REAL /*const*/ hdxi CCTK_ATTRIBUTE_UNUSED  = 0.5 * dxi;
-  CCTK_REAL /*const*/ hdyi CCTK_ATTRIBUTE_UNUSED  = 0.5 * dyi;
-  CCTK_REAL /*const*/ hdzi CCTK_ATTRIBUTE_UNUSED  = 0.5 * dzi;
-  
+  const ptrdiff_t di CCTK_ATTRIBUTE_UNUSED = 1;
+  const ptrdiff_t dj CCTK_ATTRIBUTE_UNUSED = 
+    CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0);
+  const ptrdiff_t dk CCTK_ATTRIBUTE_UNUSED = 
+    CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0);
+  const ptrdiff_t cdi CCTK_ATTRIBUTE_UNUSED = sizeof(CCTK_REAL) * di;
+  const ptrdiff_t cdj CCTK_ATTRIBUTE_UNUSED = sizeof(CCTK_REAL) * dj;
+  const ptrdiff_t cdk CCTK_ATTRIBUTE_UNUSED = sizeof(CCTK_REAL) * dk;
+  const ptrdiff_t cctkLbnd1 CCTK_ATTRIBUTE_UNUSED = cctk_lbnd[0];
+  const ptrdiff_t cctkLbnd2 CCTK_ATTRIBUTE_UNUSED = cctk_lbnd[1];
+  const ptrdiff_t cctkLbnd3 CCTK_ATTRIBUTE_UNUSED = cctk_lbnd[2];
+  const CCTK_REAL t CCTK_ATTRIBUTE_UNUSED = cctk_time;
+  const CCTK_REAL cctkOriginSpace1 CCTK_ATTRIBUTE_UNUSED = 
+    CCTK_ORIGIN_SPACE(0);
+  const CCTK_REAL cctkOriginSpace2 CCTK_ATTRIBUTE_UNUSED = 
+    CCTK_ORIGIN_SPACE(1);
+  const CCTK_REAL cctkOriginSpace3 CCTK_ATTRIBUTE_UNUSED = 
+    CCTK_ORIGIN_SPACE(2);
+  const CCTK_REAL dt CCTK_ATTRIBUTE_UNUSED = CCTK_DELTA_TIME;
+  const CCTK_REAL dx CCTK_ATTRIBUTE_UNUSED = CCTK_DELTA_SPACE(0);
+  const CCTK_REAL dy CCTK_ATTRIBUTE_UNUSED = CCTK_DELTA_SPACE(1);
+  const CCTK_REAL dz CCTK_ATTRIBUTE_UNUSED = CCTK_DELTA_SPACE(2);
+  const CCTK_REAL dxi CCTK_ATTRIBUTE_UNUSED = pow(dx,-1);
+  const CCTK_REAL dyi CCTK_ATTRIBUTE_UNUSED = pow(dy,-1);
+  const CCTK_REAL dzi CCTK_ATTRIBUTE_UNUSED = pow(dz,-1);
+  const CCTK_REAL khalf CCTK_ATTRIBUTE_UNUSED = 0.5;
+  const CCTK_REAL kthird CCTK_ATTRIBUTE_UNUSED = 
+    0.333333333333333333333333333333;
+  const CCTK_REAL ktwothird CCTK_ATTRIBUTE_UNUSED = 
+    0.666666666666666666666666666667;
+  const CCTK_REAL kfourthird CCTK_ATTRIBUTE_UNUSED = 
+    1.33333333333333333333333333333;
+  const CCTK_REAL hdxi CCTK_ATTRIBUTE_UNUSED = 0.5*dxi;
+  const CCTK_REAL hdyi CCTK_ATTRIBUTE_UNUSED = 0.5*dyi;
+  const CCTK_REAL hdzi CCTK_ATTRIBUTE_UNUSED = 0.5*dzi;
   /* Initialize predefined quantities */
-  CCTK_REAL /*const*/ p1o1 CCTK_ATTRIBUTE_UNUSED  = 1.;
-  CCTK_REAL /*const*/ p1odx CCTK_ATTRIBUTE_UNUSED  = INV(dx);
-  CCTK_REAL /*const*/ p1ody CCTK_ATTRIBUTE_UNUSED  = INV(dy);
-  CCTK_REAL /*const*/ p1odz CCTK_ATTRIBUTE_UNUSED  = INV(dz);
-  
+  const CCTK_REAL p1o1 CCTK_ATTRIBUTE_UNUSED = 1;
+  const CCTK_REAL p1odx CCTK_ATTRIBUTE_UNUSED = pow(dx,-1);
+  const CCTK_REAL p1ody CCTK_ATTRIBUTE_UNUSED = pow(dy,-1);
+  const CCTK_REAL p1odz CCTK_ATTRIBUTE_UNUSED = pow(dz,-1);
   /* Assign local copies of arrays functions */
   
   
-  
   /* Calculate temporaries and arrays functions */
-  
   /* Copy local copies back to grid functions */
-  
   /* Loop over the grid points */
+  const int imin0=imin[0];
+  const int imin1=imin[1];
+  const int imin2=imin[2];
+  const int imax0=imax[0];
+  const int imax1=imax[1];
+  const int imax2=imax[2];
   #pragma omp parallel
   CCTK_LOOP3(eulersr_cons_calc_intercell_conserved_2,
-    i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
+    i,j,k, imin0,imin1,imin2, imax0,imax1,imax2,
     cctk_ash[0],cctk_ash[1],cctk_ash[2])
   {
-    ptrdiff_t /*const*/ index CCTK_ATTRIBUTE_UNUSED  = di*i + dj*j + dk*k;
-    
+    const ptrdiff_t index CCTK_ATTRIBUTE_UNUSED = di*i + dj*j + dk*k;
     /* Assign local copies of grid functions */
     
     CCTK_REAL DenLeftL CCTK_ATTRIBUTE_UNUSED = DenLeft[index];
@@ -94,57 +101,53 @@ static void eulersr_cons_calc_intercell_conserved_2_Body(cGH const * restrict co
     CCTK_REAL v3RightL CCTK_ATTRIBUTE_UNUSED = v3Right[index];
     CCTK_REAL WL CCTK_ATTRIBUTE_UNUSED = W[index];
     
-    
     /* Include user supplied include files */
-    
     /* Precompute derivatives */
-    
     /* Calculate temporaries and grid functions */
-    CCTK_REAL CCTK_ATTRIBUTE_UNUSED Wx = 1. - 1.*(SQR(v1LeftL) + 
-      SQR(v2LeftL) + SQR(v3LeftL));
+    CCTK_REAL Wx CCTK_ATTRIBUTE_UNUSED = 1 - pow(v1LeftL,2) - 
+      pow(v2LeftL,2) - pow(v3LeftL,2);
     
-    WL = INV(sqrt(Wx));
+    WL = pow(Wx,-0.5);
     
-    pL = epsiLeftL*rhoLeftL*(-1. + ToReal(gamma));
+    pL = epsiLeftL*rhoLeftL*(-1 + gamma);
     
-    hL = 1. + epsiLeftL + pL*INV(rhoLeftL);
+    hL = 1 + epsiLeftL + pL*pow(rhoLeftL,-1);
     
     DenLeftL = rhoLeftL*WL;
     
-    CCTK_REAL CCTK_ATTRIBUTE_UNUSED S1LeftL = 
-      hL*rhoLeftL*v1LeftL*SQR(WL);
+    CCTK_REAL S1LeftL CCTK_ATTRIBUTE_UNUSED = 
+      hL*rhoLeftL*v1LeftL*pow(WL,2);
     
-    CCTK_REAL CCTK_ATTRIBUTE_UNUSED S2LeftL = 
-      hL*rhoLeftL*v2LeftL*SQR(WL);
+    CCTK_REAL S2LeftL CCTK_ATTRIBUTE_UNUSED = 
+      hL*rhoLeftL*v2LeftL*pow(WL,2);
     
-    CCTK_REAL CCTK_ATTRIBUTE_UNUSED S3LeftL = 
-      hL*rhoLeftL*v3LeftL*SQR(WL);
+    CCTK_REAL S3LeftL CCTK_ATTRIBUTE_UNUSED = 
+      hL*rhoLeftL*v3LeftL*pow(WL,2);
     
-    CCTK_REAL CCTK_ATTRIBUTE_UNUSED tauLeftL = -1.*(DenLeftL + pL) + 
-      hL*rhoLeftL*SQR(WL);
+    CCTK_REAL tauLeftL CCTK_ATTRIBUTE_UNUSED = -DenLeftL - pL + 
+      hL*rhoLeftL*pow(WL,2);
     
-    Wx = 1. - 1.*(SQR(v1RightL) + SQR(v2RightL) + SQR(v3RightL));
+    Wx = 1 - pow(v1RightL,2) - pow(v2RightL,2) - pow(v3RightL,2);
     
-    WL = INV(sqrt(Wx));
+    WL = pow(Wx,-0.5);
     
-    pL = epsiRightL*rhoRightL*(-1. + ToReal(gamma));
+    pL = epsiRightL*rhoRightL*(-1 + gamma);
     
-    hL = 1. + epsiRightL + pL*INV(rhoRightL);
+    hL = 1 + epsiRightL + pL*pow(rhoRightL,-1);
     
     DenRightL = rhoRightL*WL;
     
-    CCTK_REAL CCTK_ATTRIBUTE_UNUSED S1RightL = 
-      hL*rhoRightL*v1RightL*SQR(WL);
+    CCTK_REAL S1RightL CCTK_ATTRIBUTE_UNUSED = 
+      hL*rhoRightL*v1RightL*pow(WL,2);
     
-    CCTK_REAL CCTK_ATTRIBUTE_UNUSED S2RightL = 
-      hL*rhoRightL*v2RightL*SQR(WL);
+    CCTK_REAL S2RightL CCTK_ATTRIBUTE_UNUSED = 
+      hL*rhoRightL*v2RightL*pow(WL,2);
     
-    CCTK_REAL CCTK_ATTRIBUTE_UNUSED S3RightL = 
-      hL*rhoRightL*v3RightL*SQR(WL);
+    CCTK_REAL S3RightL CCTK_ATTRIBUTE_UNUSED = 
+      hL*rhoRightL*v3RightL*pow(WL,2);
     
-    CCTK_REAL CCTK_ATTRIBUTE_UNUSED tauRightL = -1.*(DenRightL + pL) + 
-      hL*rhoRightL*SQR(WL);
-    
+    CCTK_REAL tauRightL CCTK_ATTRIBUTE_UNUSED = -DenRightL - pL + 
+      hL*rhoRightL*pow(WL,2);
     /* Copy local copies back to grid functions */
     DenLeft[index] = DenLeftL;
     DenRight[index] = DenRightL;
@@ -162,24 +165,21 @@ static void eulersr_cons_calc_intercell_conserved_2_Body(cGH const * restrict co
   }
   CCTK_ENDLOOP3(eulersr_cons_calc_intercell_conserved_2);
 }
-
 extern "C" void eulersr_cons_calc_intercell_conserved_2(CCTK_ARGUMENTS)
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  
   if (verbose > 1)
   {
     CCTK_VInfo(CCTK_THORNSTRING,"Entering eulersr_cons_calc_intercell_conserved_2_Body");
   }
-  
   if (cctk_iteration % eulersr_cons_calc_intercell_conserved_2_calc_every != eulersr_cons_calc_intercell_conserved_2_calc_offset)
   {
     return;
   }
   
-  const char *const groups[] = {
+  const char* const groups[] = {
     "EulerSR::Den_lr_group",
     "EulerSR::epsi_lr_group",
     "EulerSR::h_group",
@@ -193,13 +193,14 @@ extern "C" void eulersr_cons_calc_intercell_conserved_2(CCTK_ARGUMENTS)
     "EulerSR::v2_lr_group",
     "EulerSR::v3_lr_group",
     "EulerSR::W_group"};
-  GenericFD_AssertGroupStorage(cctkGH, "eulersr_cons_calc_intercell_conserved_2", 13, groups);
+  AssertGroupStorage(cctkGH, "eulersr_cons_calc_intercell_conserved_2", 13, groups);
   
   
-  GenericFD_LoopOverEverything(cctkGH, eulersr_cons_calc_intercell_conserved_2_Body);
-  
+  LoopOverEverything(cctkGH, eulersr_cons_calc_intercell_conserved_2_Body);
   if (verbose > 1)
   {
     CCTK_VInfo(CCTK_THORNSTRING,"Leaving eulersr_cons_calc_intercell_conserved_2_Body");
   }
 }
+
+} // namespace EulerSR

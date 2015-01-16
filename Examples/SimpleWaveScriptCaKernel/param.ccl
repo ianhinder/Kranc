@@ -24,6 +24,18 @@ CCTK_INT other_timelevels "Number of active timelevels for non-evolved grid func
 } 1
 
 restricted:
+CCTK_REAL amp "The amplitude of the wave"
+{
+  "*:*" :: ""
+} 1.
+
+restricted:
+CCTK_REAL kfac "The wave number"
+{
+  "0.:31.4159" :: ""
+} 6.283185307179586
+
+restricted:
 CCTK_INT fdOrder "fdOrder"
 {
   2 :: ""

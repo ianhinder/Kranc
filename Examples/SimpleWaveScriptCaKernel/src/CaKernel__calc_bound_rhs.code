@@ -54,6 +54,8 @@ CAKERNEL_calc_bound_rhs_Begin
   /* Copy local copies back to grid functions */
   /* Assign local copies of grid functions */
   
+  CCTK_REAL phiL CCTK_ATTRIBUTE_UNUSED = I3D(phi,0,0,0);
+  CCTK_REAL piL CCTK_ATTRIBUTE_UNUSED = I3D(pi,0,0,0);
   
   /* Include user supplied include files */
   /* Precompute derivatives */
@@ -73,9 +75,9 @@ CAKERNEL_calc_bound_rhs_Begin
       CCTK_BUILTIN_UNREACHABLE();
   }
   /* Calculate temporaries and grid functions */
-  CCTK_REAL phirhsL CCTK_ATTRIBUTE_UNUSED = 0;
+  CCTK_REAL phirhsL CCTK_ATTRIBUTE_UNUSED = piL;
   
-  CCTK_REAL pirhsL CCTK_ATTRIBUTE_UNUSED = 0;
+  CCTK_REAL pirhsL CCTK_ATTRIBUTE_UNUSED = -(phiL*pow(kfac,2));
   /* Copy local copies back to grid functions */
   I3D(phirhs,0,0,0) = phirhsL;
   I3D(pirhs,0,0,0) = pirhsL;

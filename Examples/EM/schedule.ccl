@@ -1,6 +1,5 @@
 # File produced by Kranc
 
-
 STORAGE: El_group[timelevels]
 
 STORAGE: B_group[timelevels]
@@ -12,7 +11,6 @@ STORAGE: endens[other_timelevels]
 STORAGE: B_grouprhs[rhs_timelevels]
 
 STORAGE: El_grouprhs[rhs_timelevels]
-
 schedule EM_Startup at STARTUP
 {
   LANG: C
@@ -126,7 +124,6 @@ schedule EM_RegisterVars in MoL_Register
   LANG: C
   OPTIONS: meta
 } "Register Variables for MoL"
-
 schedule group ApplyBCs as EM_ApplyBCs in MoL_PostStep after EM_SelectBoundConds
 {
 } "Apply boundary conditions controlled by thorn Boundary"

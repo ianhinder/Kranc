@@ -2,15 +2,13 @@
 
 implements: Euler
 
-inherits:   Grid GenericFD Boundary
+inherits:   Boundary GenericFD Grid
 
 
 
-USES INCLUDE: GenericFD.h
-USES INCLUDE: Symmetry.h
-USES INCLUDE: sbp_calc_coeffs.h
-USES INCLUDE: Boundary.h
 USES INCLUDE: loopcontrol.h
+USES INCLUDE: Symmetry.h
+USES INCLUDE: Boundary.h
 
 CCTK_INT FUNCTION MoLRegisterEvolved(CCTK_INT IN EvolvedIndex, CCTK_INT IN RHSIndex)
 USES FUNCTION MoLRegisterEvolved
@@ -21,6 +19,18 @@ USES FUNCTION Diff_coeff
 CCTK_INT FUNCTION MultiPatch_GetMap(CCTK_POINTER_TO_CONST IN cctkGH)
 USES FUNCTION MultiPatch_GetMap
 
+CCTK_INT FUNCTION MultiPatch_GetBbox(CCTK_POINTER_TO_CONST IN cctkGH, CCTK_INT IN size, CCTK_INT OUT ARRAY bbox)
+USES FUNCTION MultiPatch_GetBbox
+
+CCTK_INT FUNCTION GetBoundarySpecification(CCTK_INT IN size, CCTK_INT OUT ARRAY nboundaryzones, CCTK_INT OUT ARRAY is_internal, CCTK_INT OUT ARRAY is_staggered, CCTK_INT OUT ARRAY shiftout)
+USES FUNCTION GetBoundarySpecification
+
+CCTK_INT FUNCTION MultiPatch_GetBoundarySpecification(CCTK_INT IN map, CCTK_INT IN size, CCTK_INT OUT ARRAY nboundaryzones, CCTK_INT OUT ARRAY is_internal, CCTK_INT OUT ARRAY is_staggered, CCTK_INT OUT ARRAY shiftout)
+USES FUNCTION MultiPatch_GetBoundarySpecification
+
+CCTK_INT FUNCTION SymmetryTableHandleForGrid(CCTK_POINTER_TO_CONST IN cctkGH)
+USES FUNCTION SymmetryTableHandleForGrid
+
 CCTK_INT FUNCTION Boundary_SelectGroupForBC(CCTK_POINTER_TO_CONST IN GH, CCTK_INT IN faces, CCTK_INT IN boundary_width, CCTK_INT IN table_handle, CCTK_STRING IN group_name, CCTK_STRING IN bc_name)
 USES FUNCTION Boundary_SelectGroupForBC
 
@@ -28,40 +38,38 @@ CCTK_INT FUNCTION Boundary_SelectVarForBC(CCTK_POINTER_TO_CONST IN GH, CCTK_INT 
 USES FUNCTION Boundary_SelectVarForBC
 
 public:
-CCTK_REAL DenF_group type=GF timelevels=1 tags='tensortypealias="Scalar" tensorweight=0'
+CCTK_REAL Den_group type=GF timelevels=3 tags='tensortypealias="Scalar" tensorweight=0'
 {
-  DenF
-} "DenF_group"
+  Den
+} "Den_group"
 
 public:
-CCTK_REAL DenLeft_group type=GF timelevels=1 tags='tensortypealias="Scalar" tensorweight=0'
+CCTK_REAL S_group type=GF timelevels=3 tags='tensortypealias="U" tensorweight=0'
 {
-  DenLeft
-} "DenLeft_group"
+  S1,
+  S2,
+  S3
+} "S_group"
 
 public:
-CCTK_REAL DenRight_group type=GF timelevels=1 tags='tensortypealias="Scalar" tensorweight=0'
+CCTK_REAL En_group type=GF timelevels=3 tags='tensortypealias="Scalar" tensorweight=0'
 {
-  DenRight
-} "DenRight_group"
+  En
+} "En_group"
 
 public:
-CCTK_REAL EnF_group type=GF timelevels=1 tags='tensortypealias="Scalar" tensorweight=0'
+CCTK_REAL rho_group type=GF timelevels=1 tags='tensortypealias="Scalar" tensorweight=0'
 {
-  EnF
-} "EnF_group"
+  rho
+} "rho_group"
 
 public:
-CCTK_REAL EnLeft_group type=GF timelevels=1 tags='tensortypealias="Scalar" tensorweight=0'
+CCTK_REAL v_group type=GF timelevels=1 tags='tensortypealias="U" tensorweight=0'
 {
-  EnLeft
-} "EnLeft_group"
-
-public:
-CCTK_REAL EnRight_group type=GF timelevels=1 tags='tensortypealias="Scalar" tensorweight=0'
-{
-  EnRight
-} "EnRight_group"
+  v1,
+  v2,
+  v3
+} "v_group"
 
 public:
 CCTK_REAL p_group type=GF timelevels=1 tags='tensortypealias="Scalar" tensorweight=0'
@@ -70,22 +78,64 @@ CCTK_REAL p_group type=GF timelevels=1 tags='tensortypealias="Scalar" tensorweig
 } "p_group"
 
 public:
-CCTK_REAL pLeft_group type=GF timelevels=1 tags='tensortypealias="Scalar" tensorweight=0'
+CCTK_REAL DenF_group type=GF timelevels=1 tags='tensortypealias="Scalar" tensorweight=0'
 {
-  pLeft
-} "pLeft_group"
+  DenF
+} "DenF_group"
 
 public:
-CCTK_REAL pRight_group type=GF timelevels=1 tags='tensortypealias="Scalar" tensorweight=0'
+CCTK_REAL DenRight_group type=GF timelevels=1 tags='tensortypealias="Scalar" tensorweight=0'
 {
-  pRight
-} "pRight_group"
+  DenRight
+} "DenRight_group"
 
 public:
-CCTK_REAL rho_group type=GF timelevels=1 tags='tensortypealias="Scalar" tensorweight=0'
+CCTK_REAL DenLeft_group type=GF timelevels=1 tags='tensortypealias="Scalar" tensorweight=0'
 {
-  rho
-} "rho_group"
+  DenLeft
+} "DenLeft_group"
+
+public:
+CCTK_REAL SF_group type=GF timelevels=1 tags='tensortypealias="U" tensorweight=0'
+{
+  SF1,
+  SF2,
+  SF3
+} "SF_group"
+
+public:
+CCTK_REAL SRight_group type=GF timelevels=1 tags='tensortypealias="U" tensorweight=0'
+{
+  SRight1,
+  SRight2,
+  SRight3
+} "SRight_group"
+
+public:
+CCTK_REAL SLeft_group type=GF timelevels=1 tags='tensortypealias="U" tensorweight=0'
+{
+  SLeft1,
+  SLeft2,
+  SLeft3
+} "SLeft_group"
+
+public:
+CCTK_REAL EnF_group type=GF timelevels=1 tags='tensortypealias="Scalar" tensorweight=0'
+{
+  EnF
+} "EnF_group"
+
+public:
+CCTK_REAL EnRight_group type=GF timelevels=1 tags='tensortypealias="Scalar" tensorweight=0'
+{
+  EnRight
+} "EnRight_group"
+
+public:
+CCTK_REAL EnLeft_group type=GF timelevels=1 tags='tensortypealias="Scalar" tensorweight=0'
+{
+  EnLeft
+} "EnLeft_group"
 
 public:
 CCTK_REAL rhoLeft_group type=GF timelevels=1 tags='tensortypealias="Scalar" tensorweight=0'
@@ -98,38 +148,6 @@ CCTK_REAL rhoRight_group type=GF timelevels=1 tags='tensortypealias="Scalar" ten
 {
   rhoRight
 } "rhoRight_group"
-
-public:
-CCTK_REAL SF_group type=GF timelevels=1 tags='tensortypealias="U" tensorweight=0'
-{
-  SF1,
-  SF2,
-  SF3
-} "SF_group"
-
-public:
-CCTK_REAL SLeft_group type=GF timelevels=1 tags='tensortypealias="U" tensorweight=0'
-{
-  SLeft1,
-  SLeft2,
-  SLeft3
-} "SLeft_group"
-
-public:
-CCTK_REAL SRight_group type=GF timelevels=1 tags='tensortypealias="U" tensorweight=0'
-{
-  SRight1,
-  SRight2,
-  SRight3
-} "SRight_group"
-
-public:
-CCTK_REAL v_group type=GF timelevels=1 tags='tensortypealias="U" tensorweight=0'
-{
-  v1,
-  v2,
-  v3
-} "v_group"
 
 public:
 CCTK_REAL vLeft_group type=GF timelevels=1 tags='tensortypealias="U" tensorweight=0'
@@ -148,24 +166,16 @@ CCTK_REAL vRight_group type=GF timelevels=1 tags='tensortypealias="U" tensorweig
 } "vRight_group"
 
 public:
-CCTK_REAL Den_group type=GF timelevels=3 tags='tensortypealias="Scalar" tensorweight=0'
+CCTK_REAL pLeft_group type=GF timelevels=1 tags='tensortypealias="Scalar" tensorweight=0'
 {
-  Den
-} "Den_group"
+  pLeft
+} "pLeft_group"
 
 public:
-CCTK_REAL En_group type=GF timelevels=3 tags='tensortypealias="Scalar" tensorweight=0'
+CCTK_REAL pRight_group type=GF timelevels=1 tags='tensortypealias="Scalar" tensorweight=0'
 {
-  En
-} "En_group"
-
-public:
-CCTK_REAL S_group type=GF timelevels=3 tags='tensortypealias="U" tensorweight=0'
-{
-  S1,
-  S2,
-  S3
-} "S_group"
+  pRight
+} "pRight_group"
 
 public:
 CCTK_REAL Den_grouprhs type=GF timelevels=3 tags='tensortypealias="Scalar" tensorweight=0 Prolongation="None"'

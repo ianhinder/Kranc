@@ -1,47 +1,14 @@
 # File produced by Kranc
 
+STORAGE: phi_g[timelevels]
 
-if (other_timelevels == 1)
-{
-  STORAGE: xCopy_g[1]
-}
+STORAGE: pi_g[timelevels]
 
-if (timelevels == 1)
-{
-  STORAGE: phi_g[1]
-}
-if (timelevels == 2)
-{
-  STORAGE: phi_g[2]
-}
+STORAGE: xCopy_g[other_timelevels]
 
-if (timelevels == 1)
-{
-  STORAGE: pi_g[1]
-}
-if (timelevels == 2)
-{
-  STORAGE: pi_g[2]
-}
+STORAGE: phi_grhs[rhs_timelevels]
 
-if (rhs_timelevels == 1)
-{
-  STORAGE: phi_grhs[1]
-}
-if (rhs_timelevels == 2)
-{
-  STORAGE: phi_grhs[2]
-}
-
-if (rhs_timelevels == 1)
-{
-  STORAGE: pi_grhs[1]
-}
-if (rhs_timelevels == 2)
-{
-  STORAGE: pi_grhs[2]
-}
-
+STORAGE: pi_grhs[rhs_timelevels]
 schedule WaveCaKernel_Startup at STARTUP
 {
   LANG: C
@@ -57,12 +24,11 @@ schedule WaveCaKernel_RegisterSymmetries in SymmetryRegister
 schedule initial_gaussian AT INITIAL
 {
   LANG: C
-  READS:    grid::x(Everywhere)
-  WRITES:   WaveCaKernel::phi(Everywhere)
-  WRITES:   WaveCaKernel::pi(Everywhere)
-  WRITES:   WaveCaKernel::xCopy(Everywhere)
+  READS: grid::x(Everywhere)
+  WRITES: WaveCaKernel::phi(Everywhere)
+  WRITES: WaveCaKernel::pi(Everywhere)
+  WRITES: WaveCaKernel::xCopy(Everywhere)
 } "initial_gaussian"
-
 
 if (fdOrder == 2)
 {
@@ -70,13 +36,12 @@ if (fdOrder == 2)
   {
     LANG: C
     TAGS: Device=1
-    READS:    WaveCaKernel::phi(Everywhere)
-    READS:    WaveCaKernel::pi(Everywhere)
-    WRITES:   WaveCaKernel::phirhs(Interior)
-    WRITES:   WaveCaKernel::pirhs(Interior)
+    READS: WaveCaKernel::phi(Everywhere)
+    READS: WaveCaKernel::pi(Everywhere)
+    WRITES: WaveCaKernel::phirhs(Interior)
+    WRITES: WaveCaKernel::pirhs(Interior)
   } "calc_rhs_2"
 }
-
 
 if (fdOrder == 2)
 {
@@ -86,13 +51,12 @@ if (fdOrder == 2)
     SYNC: phi_grhs
     SYNC: pi_grhs
     TAGS: Device=1
-    READS:    WaveCaKernel::phi(Everywhere)
-    READS:    WaveCaKernel::pi(Everywhere)
-    WRITES:   WaveCaKernel::phirhs(Interior)
-    WRITES:   WaveCaKernel::pirhs(Interior)
+    READS: WaveCaKernel::phi(Everywhere)
+    READS: WaveCaKernel::pi(Everywhere)
+    WRITES: WaveCaKernel::phirhs(Interior)
+    WRITES: WaveCaKernel::pirhs(Interior)
   } "calc_rhs_2"
 }
-
 
 if (fdOrder == 4)
 {
@@ -100,13 +64,12 @@ if (fdOrder == 4)
   {
     LANG: C
     TAGS: Device=1
-    READS:    WaveCaKernel::phi(Everywhere)
-    READS:    WaveCaKernel::pi(Everywhere)
-    WRITES:   WaveCaKernel::phirhs(Interior)
-    WRITES:   WaveCaKernel::pirhs(Interior)
+    READS: WaveCaKernel::phi(Everywhere)
+    READS: WaveCaKernel::pi(Everywhere)
+    WRITES: WaveCaKernel::phirhs(Interior)
+    WRITES: WaveCaKernel::pirhs(Interior)
   } "calc_rhs_4"
 }
-
 
 if (fdOrder == 4)
 {
@@ -116,10 +79,10 @@ if (fdOrder == 4)
     SYNC: phi_grhs
     SYNC: pi_grhs
     TAGS: Device=1
-    READS:    WaveCaKernel::phi(Everywhere)
-    READS:    WaveCaKernel::pi(Everywhere)
-    WRITES:   WaveCaKernel::phirhs(Interior)
-    WRITES:   WaveCaKernel::pirhs(Interior)
+    READS: WaveCaKernel::phi(Everywhere)
+    READS: WaveCaKernel::pi(Everywhere)
+    WRITES: WaveCaKernel::phirhs(Interior)
+    WRITES: WaveCaKernel::pirhs(Interior)
   } "calc_rhs_4"
 }
 
@@ -127,9 +90,9 @@ schedule CAKERNEL_Launch_calc_bound_rhs as calc_bound_rhs in MoL_RHSBoundaries
 {
   LANG: C
   TAGS: Device=1
-  READS:    WaveCaKernel::xCopy(Everywhere)
-  WRITES:   WaveCaKernel::phirhs(Boundary)
-  WRITES:   WaveCaKernel::pirhs(Boundary)
+  READS: WaveCaKernel::xCopy(Everywhere)
+  WRITES: WaveCaKernel::phirhs(Boundary)
+  WRITES: WaveCaKernel::pirhs(Boundary)
 } "calc_bound_rhs"
 
 schedule CAKERNEL_Launch_calc_bound_rhs as calc_bound_rhs at ANALYSIS
@@ -138,19 +101,19 @@ schedule CAKERNEL_Launch_calc_bound_rhs as calc_bound_rhs at ANALYSIS
   SYNC: phi_grhs
   SYNC: pi_grhs
   TAGS: Device=1
-  READS:    WaveCaKernel::xCopy(Everywhere)
-  WRITES:   WaveCaKernel::phirhs(Boundary)
-  WRITES:   WaveCaKernel::pirhs(Boundary)
+  READS: WaveCaKernel::xCopy(Everywhere)
+  WRITES: WaveCaKernel::phirhs(Boundary)
+  WRITES: WaveCaKernel::pirhs(Boundary)
 } "calc_bound_rhs"
 
 schedule CAKERNEL_Launch_copy_to_device as copy_to_device at INITIAL after initial_gaussian
 {
   LANG: C
   TAGS: Device=1
-  READS:    WaveCaKernel::phi(Everywhere)
-  READS:    WaveCaKernel::pi(Everywhere)
-  WRITES:   WaveCaKernel::phi(Everywhere)
-  WRITES:   WaveCaKernel::pi(Everywhere)
+  READS: WaveCaKernel::phi(Everywhere)
+  READS: WaveCaKernel::pi(Everywhere)
+  WRITES: WaveCaKernel::phi(Everywhere)
+  WRITES: WaveCaKernel::pi(Everywhere)
 } "copy_to_device"
 
 schedule WaveCaKernel_SelectBoundConds in MoL_PostStep
@@ -178,7 +141,6 @@ schedule WaveCaKernel_Init in CCTK_BASEGRID after Accelerator_SetDevice
   LANG: C
   OPTIONS: local
 } "Initialize CUDA Device"
-
 schedule group ApplyBCs as WaveCaKernel_ApplyBCs in MoL_PostStep after WaveCaKernel_SelectBoundConds
 {
 } "Apply boundary conditions controlled by thorn Boundary"

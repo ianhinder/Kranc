@@ -1,6 +1,5 @@
 # File produced by Kranc
 
-
 STORAGE: evolved[timelevels]
 
 STORAGE: exact[timelevels]
@@ -10,7 +9,6 @@ STORAGE: errors[timelevels]
 STORAGE: norms[timelevels]
 
 STORAGE: evolvedrhs[rhs_timelevels]
-
 schedule Wave_Startup at STARTUP
 {
   LANG: C
@@ -22,7 +20,6 @@ schedule Wave_RegisterSymmetries in SymmetryRegister
   LANG: C
   OPTIONS: meta
 } "register symmetries"
-
 
 if (CCTK_EQUALS(initial_data, "sine"))
 {
@@ -37,7 +34,6 @@ if (CCTK_EQUALS(initial_data, "sine"))
   } "wave_exact_sine"
 }
 
-
 if (CCTK_EQUALS(initial_data, "sine"))
 {
   schedule wave_exact_sine AT POSTSTEP before calc_errors before import_exact
@@ -51,7 +47,6 @@ if (CCTK_EQUALS(initial_data, "sine"))
   } "wave_exact_sine"
 }
 
-
 if (CCTK_EQUALS(initial_data, "gaussian"))
 {
   schedule wave_exact_gaussian AT INITIAL before import_exact before import_exact
@@ -62,7 +57,6 @@ if (CCTK_EQUALS(initial_data, "gaussian"))
     WRITES: Wave::piExact(Everywhere)
   } "wave_exact_gaussian"
 }
-
 
 if (CCTK_EQUALS(initial_data, "gaussian"))
 {
@@ -117,7 +111,6 @@ schedule wave_calc_norm at ANALYSIS as calc_norm
   WRITES: Wave::VL2(Interior)
 } "wave_calc_norm"
 
-
 if (CCTK_EQUALS(boundary_condition, "radiative"))
 {
   schedule wave_boundary in MoL_RHSBoundaries
@@ -152,7 +145,6 @@ schedule Wave_RegisterVars in MoL_Register
   LANG: C
   OPTIONS: meta
 } "Register Variables for MoL"
-
 schedule group ApplyBCs as Wave_ApplyBCs in MoL_PostStep after Wave_SelectBoundConds
 {
 } "Apply boundary conditions controlled by thorn Boundary"

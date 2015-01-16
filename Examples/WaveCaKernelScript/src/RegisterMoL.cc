@@ -10,11 +10,9 @@ extern "C" void WaveCaKernelScript_RegisterVars(CCTK_ARGUMENTS)
   DECLARE_CCTK_PARAMETERS;
   
   CCTK_INT ierr CCTK_ATTRIBUTE_UNUSED = 0;
-  
   /* Register all the evolved grid functions with MoL */
   ierr += MoLRegisterEvolved(CCTK_VarIndex("WaveCaKernelScript::phi"),  CCTK_VarIndex("WaveCaKernelScript::phirhs"));
   ierr += MoLRegisterEvolved(CCTK_VarIndex("WaveCaKernelScript::pi"),  CCTK_VarIndex("WaveCaKernelScript::pirhs"));
-  
   /* Register all the evolved Array functions with MoL */
   return;
 }

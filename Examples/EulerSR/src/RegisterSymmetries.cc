@@ -10,10 +10,8 @@ extern "C" void EulerSR_RegisterSymmetries(CCTK_ARGUMENTS)
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  
   /* array holding symmetry definitions */
-  CCTK_INT sym[3];
-  
+  int sym[3];
   
   /* Register symmetries of grid functions */
   sym[0] = 1;
@@ -44,6 +42,46 @@ extern "C" void EulerSR_RegisterSymmetries(CCTK_ARGUMENTS)
   sym[0] = 1;
   sym[1] = 1;
   sym[2] = 1;
+  SetCartSymVN(cctkGH, sym, "EulerSR::rho");
+  
+  sym[0] = -1;
+  sym[1] = 1;
+  sym[2] = 1;
+  SetCartSymVN(cctkGH, sym, "EulerSR::v1");
+  
+  sym[0] = 1;
+  sym[1] = -1;
+  sym[2] = 1;
+  SetCartSymVN(cctkGH, sym, "EulerSR::v2");
+  
+  sym[0] = 1;
+  sym[1] = 1;
+  sym[2] = -1;
+  SetCartSymVN(cctkGH, sym, "EulerSR::v3");
+  
+  sym[0] = 1;
+  sym[1] = 1;
+  sym[2] = 1;
+  SetCartSymVN(cctkGH, sym, "EulerSR::epsi");
+  
+  sym[0] = 1;
+  sym[1] = 1;
+  sym[2] = 1;
+  SetCartSymVN(cctkGH, sym, "EulerSR::W");
+  
+  sym[0] = 1;
+  sym[1] = 1;
+  sym[2] = 1;
+  SetCartSymVN(cctkGH, sym, "EulerSR::h");
+  
+  sym[0] = 1;
+  sym[1] = 1;
+  sym[2] = 1;
+  SetCartSymVN(cctkGH, sym, "EulerSR::p");
+  
+  sym[0] = 1;
+  sym[1] = 1;
+  sym[2] = 1;
   SetCartSymVN(cctkGH, sym, "EulerSR::DenFlux");
   
   sym[0] = 1;
@@ -59,32 +97,12 @@ extern "C" void EulerSR_RegisterSymmetries(CCTK_ARGUMENTS)
   sym[0] = 1;
   sym[1] = 1;
   sym[2] = 1;
-  SetCartSymVN(cctkGH, sym, "EulerSR::epsi");
-  
-  sym[0] = 1;
-  sym[1] = 1;
-  sym[2] = 1;
   SetCartSymVN(cctkGH, sym, "EulerSR::epsiLeft");
   
   sym[0] = 1;
   sym[1] = 1;
   sym[2] = 1;
   SetCartSymVN(cctkGH, sym, "EulerSR::epsiRight");
-  
-  sym[0] = 1;
-  sym[1] = 1;
-  sym[2] = 1;
-  SetCartSymVN(cctkGH, sym, "EulerSR::h");
-  
-  sym[0] = 1;
-  sym[1] = 1;
-  sym[2] = 1;
-  SetCartSymVN(cctkGH, sym, "EulerSR::p");
-  
-  sym[0] = 1;
-  sym[1] = 1;
-  sym[2] = 1;
-  SetCartSymVN(cctkGH, sym, "EulerSR::rho");
   
   sym[0] = 1;
   sym[1] = 1;
@@ -185,25 +203,5 @@ extern "C" void EulerSR_RegisterSymmetries(CCTK_ARGUMENTS)
   sym[1] = 1;
   sym[2] = 1;
   SetCartSymVN(cctkGH, sym, "EulerSR::v3Right");
-  
-  sym[0] = -1;
-  sym[1] = 1;
-  sym[2] = 1;
-  SetCartSymVN(cctkGH, sym, "EulerSR::v1");
-  
-  sym[0] = 1;
-  sym[1] = -1;
-  sym[2] = 1;
-  SetCartSymVN(cctkGH, sym, "EulerSR::v2");
-  
-  sym[0] = 1;
-  sym[1] = 1;
-  sym[2] = -1;
-  SetCartSymVN(cctkGH, sym, "EulerSR::v3");
-  
-  sym[0] = 1;
-  sym[1] = 1;
-  sym[2] = 1;
-  SetCartSymVN(cctkGH, sym, "EulerSR::W");
   
 }

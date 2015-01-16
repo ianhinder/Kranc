@@ -75,9 +75,9 @@ CAKERNEL_initial_sine_calc_Begin
         CCTK_BUILTIN_UNREACHABLE();
     }
     /* Calculate temporaries and grid functions */
-    CCTK_REAL phiL CCTK_ATTRIBUTE_UNUSED = sin(2*Pi*(xL - t));
+    CCTK_REAL phiL CCTK_ATTRIBUTE_UNUSED = amp*sin(xL*kfac);
     
-    CCTK_REAL piL CCTK_ATTRIBUTE_UNUSED = -2*Pi*cos(2*Pi*(xL - t));
+    CCTK_REAL piL CCTK_ATTRIBUTE_UNUSED = 0;
     /* Copy local copies back to grid functions */
     I3D(phi,0,0,0) = phiL;
     I3D(pi,0,0,0) = piL;

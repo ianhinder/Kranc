@@ -1,174 +1,52 @@
 # File produced by Kranc
 
+STORAGE: Den_group[timelevels]
 
-if (other_timelevels == 1)
-{
-  STORAGE: Den_flux_group[1]
-}
+STORAGE: S_group[timelevels]
 
-if (other_timelevels == 1)
-{
-  STORAGE: Den_lr_group[1]
-}
+STORAGE: En_group[timelevels]
 
-if (other_timelevels == 1)
-{
-  STORAGE: En_flux_group[1]
-}
+STORAGE: rho_group[other_timelevels]
 
-if (other_timelevels == 1)
-{
-  STORAGE: En_lr_group[1]
-}
+STORAGE: v_group[other_timelevels]
 
-if (other_timelevels == 1)
-{
-  STORAGE: p_group[1]
-}
+STORAGE: p_group[other_timelevels]
 
-if (other_timelevels == 1)
-{
-  STORAGE: p_lr_group[1]
-}
+STORAGE: Den_flux_group[other_timelevels]
 
-if (other_timelevels == 1)
-{
-  STORAGE: rho_group[1]
-}
+STORAGE: Den_lr_group[other_timelevels]
 
-if (other_timelevels == 1)
-{
-  STORAGE: rho_lr_group[1]
-}
+STORAGE: En_flux_group[other_timelevels]
 
-if (other_timelevels == 1)
-{
-  STORAGE: S1_flux_group[1]
-}
+STORAGE: En_lr_group[other_timelevels]
 
-if (other_timelevels == 1)
-{
-  STORAGE: S1_lr_group[1]
-}
+STORAGE: p_lr_group[other_timelevels]
 
-if (other_timelevels == 1)
-{
-  STORAGE: S2_flux_group[1]
-}
+STORAGE: rho_lr_group[other_timelevels]
 
-if (other_timelevels == 1)
-{
-  STORAGE: S2_lr_group[1]
-}
+STORAGE: S1_flux_group[other_timelevels]
 
-if (other_timelevels == 1)
-{
-  STORAGE: S3_flux_group[1]
-}
+STORAGE: S1_lr_group[other_timelevels]
 
-if (other_timelevels == 1)
-{
-  STORAGE: S3_lr_group[1]
-}
+STORAGE: S2_flux_group[other_timelevels]
 
-if (other_timelevels == 1)
-{
-  STORAGE: v1_lr_group[1]
-}
+STORAGE: S2_lr_group[other_timelevels]
 
-if (other_timelevels == 1)
-{
-  STORAGE: v2_lr_group[1]
-}
+STORAGE: S3_flux_group[other_timelevels]
 
-if (other_timelevels == 1)
-{
-  STORAGE: v3_lr_group[1]
-}
+STORAGE: S3_lr_group[other_timelevels]
 
-if (other_timelevels == 1)
-{
-  STORAGE: v_group[1]
-}
+STORAGE: v1_lr_group[other_timelevels]
 
-if (timelevels == 1)
-{
-  STORAGE: Den_group[1]
-}
-if (timelevels == 2)
-{
-  STORAGE: Den_group[2]
-}
-if (timelevels == 3)
-{
-  STORAGE: Den_group[3]
-}
+STORAGE: v2_lr_group[other_timelevels]
 
-if (timelevels == 1)
-{
-  STORAGE: En_group[1]
-}
-if (timelevels == 2)
-{
-  STORAGE: En_group[2]
-}
-if (timelevels == 3)
-{
-  STORAGE: En_group[3]
-}
+STORAGE: v3_lr_group[other_timelevels]
 
-if (timelevels == 1)
-{
-  STORAGE: S_group[1]
-}
-if (timelevels == 2)
-{
-  STORAGE: S_group[2]
-}
-if (timelevels == 3)
-{
-  STORAGE: S_group[3]
-}
+STORAGE: Den_grouprhs[rhs_timelevels]
 
-if (rhs_timelevels == 1)
-{
-  STORAGE: Den_grouprhs[1]
-}
-if (rhs_timelevels == 2)
-{
-  STORAGE: Den_grouprhs[2]
-}
-if (rhs_timelevels == 3)
-{
-  STORAGE: Den_grouprhs[3]
-}
+STORAGE: En_grouprhs[rhs_timelevels]
 
-if (rhs_timelevels == 1)
-{
-  STORAGE: En_grouprhs[1]
-}
-if (rhs_timelevels == 2)
-{
-  STORAGE: En_grouprhs[2]
-}
-if (rhs_timelevels == 3)
-{
-  STORAGE: En_grouprhs[3]
-}
-
-if (rhs_timelevels == 1)
-{
-  STORAGE: S_grouprhs[1]
-}
-if (rhs_timelevels == 2)
-{
-  STORAGE: S_grouprhs[2]
-}
-if (rhs_timelevels == 3)
-{
-  STORAGE: S_grouprhs[3]
-}
-
+STORAGE: S_grouprhs[rhs_timelevels]
 schedule EulerAuto_Startup at STARTUP
 {
   LANG: C
@@ -181,59 +59,58 @@ schedule EulerAuto_RegisterSymmetries in SymmetryRegister
   OPTIONS: meta
 } "register symmetries"
 
-
 if (CCTK_EQUALS(initial_data, "shock"))
 {
   schedule eulerauto_initial_shock at CCTK_INITIAL as eulerauto_initial
   {
     LANG: C
-    READS:    grid::x(Everywhere)
-    WRITES:   EulerAuto::p(Everywhere)
-    WRITES:   EulerAuto::rho(Everywhere)
-    WRITES:   EulerAuto::v1(Everywhere)
-    WRITES:   EulerAuto::v2(Everywhere)
-    WRITES:   EulerAuto::v3(Everywhere)
+    READS: grid::x(Everywhere)
+    WRITES: EulerAuto::p(Everywhere)
+    WRITES: EulerAuto::rho(Everywhere)
+    WRITES: EulerAuto::v1(Everywhere)
+    WRITES: EulerAuto::v2(Everywhere)
+    WRITES: EulerAuto::v3(Everywhere)
   } "eulerauto_initial_shock"
 }
 
 schedule eulerauto_cons_calc_zero_rhs in MoL_CalcRHS
 {
   LANG: C
-  WRITES:   EulerAuto::Denrhs(Everywhere)
-  WRITES:   EulerAuto::Enrhs(Everywhere)
-  WRITES:   EulerAuto::S1rhs(Everywhere)
-  WRITES:   EulerAuto::S2rhs(Everywhere)
-  WRITES:   EulerAuto::S3rhs(Everywhere)
+  WRITES: EulerAuto::Denrhs(Everywhere)
+  WRITES: EulerAuto::Enrhs(Everywhere)
+  WRITES: EulerAuto::S1rhs(Everywhere)
+  WRITES: EulerAuto::S2rhs(Everywhere)
+  WRITES: EulerAuto::S3rhs(Everywhere)
 } "eulerauto_cons_calc_zero_rhs"
 
 schedule eulerauto_cons_calc_conserved at POSTINITIAL
 {
   LANG: C
-  READS:    EulerAuto::p(Everywhere)
-  READS:    EulerAuto::rho(Everywhere)
-  READS:    EulerAuto::v1(Everywhere)
-  READS:    EulerAuto::v2(Everywhere)
-  READS:    EulerAuto::v3(Everywhere)
-  WRITES:   EulerAuto::Den(Everywhere)
-  WRITES:   EulerAuto::En(Everywhere)
-  WRITES:   EulerAuto::S1(Everywhere)
-  WRITES:   EulerAuto::S2(Everywhere)
-  WRITES:   EulerAuto::S3(Everywhere)
+  READS: EulerAuto::p(Everywhere)
+  READS: EulerAuto::rho(Everywhere)
+  READS: EulerAuto::v1(Everywhere)
+  READS: EulerAuto::v2(Everywhere)
+  READS: EulerAuto::v3(Everywhere)
+  WRITES: EulerAuto::Den(Everywhere)
+  WRITES: EulerAuto::En(Everywhere)
+  WRITES: EulerAuto::S1(Everywhere)
+  WRITES: EulerAuto::S2(Everywhere)
+  WRITES: EulerAuto::S3(Everywhere)
 } "eulerauto_cons_calc_conserved"
 
 schedule eulerauto_cons_calc_primitives in MoL_PostStep after EulerAuto_ApplyBCs
 {
   LANG: C
-  READS:    EulerAuto::Den(Everywhere)
-  READS:    EulerAuto::En(Everywhere)
-  READS:    EulerAuto::S1(Everywhere)
-  READS:    EulerAuto::S2(Everywhere)
-  READS:    EulerAuto::S3(Everywhere)
-  WRITES:   EulerAuto::p(Everywhere)
-  WRITES:   EulerAuto::rho(Everywhere)
-  WRITES:   EulerAuto::v1(Everywhere)
-  WRITES:   EulerAuto::v2(Everywhere)
-  WRITES:   EulerAuto::v3(Everywhere)
+  READS: EulerAuto::Den(Everywhere)
+  READS: EulerAuto::En(Everywhere)
+  READS: EulerAuto::S1(Everywhere)
+  READS: EulerAuto::S2(Everywhere)
+  READS: EulerAuto::S3(Everywhere)
+  WRITES: EulerAuto::p(Everywhere)
+  WRITES: EulerAuto::rho(Everywhere)
+  WRITES: EulerAuto::v1(Everywhere)
+  WRITES: EulerAuto::v2(Everywhere)
+  WRITES: EulerAuto::v3(Everywhere)
 } "eulerauto_cons_calc_primitives"
 
 schedule group eulerauto_cons_calc_reconstruct_1_group in MoL_CalcRHS after eulerauto_cons_calc_zero_rhs
@@ -243,21 +120,21 @@ schedule group eulerauto_cons_calc_reconstruct_1_group in MoL_CalcRHS after eule
 schedule eulerauto_cons_calc_reconstruct_1 in eulerauto_cons_calc_reconstruct_1_group
 {
   LANG: C
-  READS:    EulerAuto::p(Everywhere)
-  READS:    EulerAuto::rho(Everywhere)
-  READS:    EulerAuto::v1(Everywhere)
-  READS:    EulerAuto::v2(Everywhere)
-  READS:    EulerAuto::v3(Everywhere)
-  WRITES:   EulerAuto::pLeft(Interior)
-  WRITES:   EulerAuto::pRight(Interior)
-  WRITES:   EulerAuto::rhoLeft(Interior)
-  WRITES:   EulerAuto::rhoRight(Interior)
-  WRITES:   EulerAuto::v1Left(Interior)
-  WRITES:   EulerAuto::v1Right(Interior)
-  WRITES:   EulerAuto::v2Left(Interior)
-  WRITES:   EulerAuto::v2Right(Interior)
-  WRITES:   EulerAuto::v3Left(Interior)
-  WRITES:   EulerAuto::v3Right(Interior)
+  READS: EulerAuto::p(Everywhere)
+  READS: EulerAuto::rho(Everywhere)
+  READS: EulerAuto::v1(Everywhere)
+  READS: EulerAuto::v2(Everywhere)
+  READS: EulerAuto::v3(Everywhere)
+  WRITES: EulerAuto::pLeft(Interior)
+  WRITES: EulerAuto::pRight(Interior)
+  WRITES: EulerAuto::rhoLeft(Interior)
+  WRITES: EulerAuto::rhoRight(Interior)
+  WRITES: EulerAuto::v1Left(Interior)
+  WRITES: EulerAuto::v1Right(Interior)
+  WRITES: EulerAuto::v2Left(Interior)
+  WRITES: EulerAuto::v2Right(Interior)
+  WRITES: EulerAuto::v3Left(Interior)
+  WRITES: EulerAuto::v3Right(Interior)
 } "eulerauto_cons_calc_reconstruct_1"
 
 schedule eulerauto_cons_calc_reconstruct_1_SelectBCs in eulerauto_cons_calc_reconstruct_1_bc_group
@@ -286,26 +163,26 @@ schedule group eulerauto_cons_calc_reconstruct_1_bc_group in MoL_PseudoEvolution
 schedule eulerauto_cons_calc_intercell_conserved_1 in MoL_CalcRHS after eulerauto_cons_calc_reconstruct_1
 {
   LANG: C
-  READS:    EulerAuto::pLeft(Everywhere)
-  READS:    EulerAuto::pRight(Everywhere)
-  READS:    EulerAuto::rhoLeft(Everywhere)
-  READS:    EulerAuto::rhoRight(Everywhere)
-  READS:    EulerAuto::v1Left(Everywhere)
-  READS:    EulerAuto::v1Right(Everywhere)
-  READS:    EulerAuto::v2Left(Everywhere)
-  READS:    EulerAuto::v2Right(Everywhere)
-  READS:    EulerAuto::v3Left(Everywhere)
-  READS:    EulerAuto::v3Right(Everywhere)
-  WRITES:   EulerAuto::DenLeft(Everywhere)
-  WRITES:   EulerAuto::DenRight(Everywhere)
-  WRITES:   EulerAuto::EnLeft(Everywhere)
-  WRITES:   EulerAuto::EnRight(Everywhere)
-  WRITES:   EulerAuto::S1Left(Everywhere)
-  WRITES:   EulerAuto::S1Right(Everywhere)
-  WRITES:   EulerAuto::S2Left(Everywhere)
-  WRITES:   EulerAuto::S2Right(Everywhere)
-  WRITES:   EulerAuto::S3Left(Everywhere)
-  WRITES:   EulerAuto::S3Right(Everywhere)
+  READS: EulerAuto::pLeft(Everywhere)
+  READS: EulerAuto::pRight(Everywhere)
+  READS: EulerAuto::rhoLeft(Everywhere)
+  READS: EulerAuto::rhoRight(Everywhere)
+  READS: EulerAuto::v1Left(Everywhere)
+  READS: EulerAuto::v1Right(Everywhere)
+  READS: EulerAuto::v2Left(Everywhere)
+  READS: EulerAuto::v2Right(Everywhere)
+  READS: EulerAuto::v3Left(Everywhere)
+  READS: EulerAuto::v3Right(Everywhere)
+  WRITES: EulerAuto::DenLeft(Everywhere)
+  WRITES: EulerAuto::DenRight(Everywhere)
+  WRITES: EulerAuto::EnLeft(Everywhere)
+  WRITES: EulerAuto::EnRight(Everywhere)
+  WRITES: EulerAuto::S1Left(Everywhere)
+  WRITES: EulerAuto::S1Right(Everywhere)
+  WRITES: EulerAuto::S2Left(Everywhere)
+  WRITES: EulerAuto::S2Right(Everywhere)
+  WRITES: EulerAuto::S3Left(Everywhere)
+  WRITES: EulerAuto::S3Right(Everywhere)
 } "eulerauto_cons_calc_intercell_conserved_1"
 
 schedule group eulerauto_cons_calc_flux_1_group in MoL_CalcRHS after eulerauto_cons_calc_intercell_conserved_1
@@ -315,31 +192,31 @@ schedule group eulerauto_cons_calc_flux_1_group in MoL_CalcRHS after eulerauto_c
 schedule eulerauto_cons_calc_flux_1 in eulerauto_cons_calc_flux_1_group
 {
   LANG: C
-  READS:    EulerAuto::DenLeft(Everywhere)
-  READS:    EulerAuto::DenRight(Everywhere)
-  READS:    EulerAuto::EnLeft(Everywhere)
-  READS:    EulerAuto::EnRight(Everywhere)
-  READS:    EulerAuto::pLeft(Everywhere)
-  READS:    EulerAuto::pRight(Everywhere)
-  READS:    EulerAuto::rhoLeft(Everywhere)
-  READS:    EulerAuto::rhoRight(Everywhere)
-  READS:    EulerAuto::S1Left(Everywhere)
-  READS:    EulerAuto::S1Right(Everywhere)
-  READS:    EulerAuto::S2Left(Everywhere)
-  READS:    EulerAuto::S2Right(Everywhere)
-  READS:    EulerAuto::S3Left(Everywhere)
-  READS:    EulerAuto::S3Right(Everywhere)
-  READS:    EulerAuto::v1Left(Everywhere)
-  READS:    EulerAuto::v1Right(Everywhere)
-  READS:    EulerAuto::v2Left(Everywhere)
-  READS:    EulerAuto::v2Right(Everywhere)
-  READS:    EulerAuto::v3Left(Everywhere)
-  READS:    EulerAuto::v3Right(Everywhere)
-  WRITES:   EulerAuto::DenFlux(Interior)
-  WRITES:   EulerAuto::EnFlux(Interior)
-  WRITES:   EulerAuto::S1Flux(Interior)
-  WRITES:   EulerAuto::S2Flux(Interior)
-  WRITES:   EulerAuto::S3Flux(Interior)
+  READS: EulerAuto::DenLeft(Everywhere)
+  READS: EulerAuto::DenRight(Everywhere)
+  READS: EulerAuto::EnLeft(Everywhere)
+  READS: EulerAuto::EnRight(Everywhere)
+  READS: EulerAuto::pLeft(Everywhere)
+  READS: EulerAuto::pRight(Everywhere)
+  READS: EulerAuto::rhoLeft(Everywhere)
+  READS: EulerAuto::rhoRight(Everywhere)
+  READS: EulerAuto::S1Left(Everywhere)
+  READS: EulerAuto::S1Right(Everywhere)
+  READS: EulerAuto::S2Left(Everywhere)
+  READS: EulerAuto::S2Right(Everywhere)
+  READS: EulerAuto::S3Left(Everywhere)
+  READS: EulerAuto::S3Right(Everywhere)
+  READS: EulerAuto::v1Left(Everywhere)
+  READS: EulerAuto::v1Right(Everywhere)
+  READS: EulerAuto::v2Left(Everywhere)
+  READS: EulerAuto::v2Right(Everywhere)
+  READS: EulerAuto::v3Left(Everywhere)
+  READS: EulerAuto::v3Right(Everywhere)
+  WRITES: EulerAuto::DenFlux(Interior)
+  WRITES: EulerAuto::EnFlux(Interior)
+  WRITES: EulerAuto::S1Flux(Interior)
+  WRITES: EulerAuto::S2Flux(Interior)
+  WRITES: EulerAuto::S3Flux(Interior)
 } "eulerauto_cons_calc_flux_1"
 
 schedule eulerauto_cons_calc_flux_1_SelectBCs in eulerauto_cons_calc_flux_1_bc_group
@@ -368,21 +245,21 @@ schedule group eulerauto_cons_calc_flux_1_bc_group in MoL_PseudoEvolutionBoundar
 schedule eulerauto_cons_calc_rhs_1 in MoL_CalcRHS after eulerauto_cons_calc_flux_1
 {
   LANG: C
-  READS:    EulerAuto::DenFlux(Everywhere)
-  READS:    EulerAuto::EnFlux(Everywhere)
-  READS:    EulerAuto::S1Flux(Everywhere)
-  READS:    EulerAuto::S2Flux(Everywhere)
-  READS:    EulerAuto::S3Flux(Everywhere)
-  READS:    EulerAuto::Denrhs(Everywhere)
-  READS:    EulerAuto::Enrhs(Everywhere)
-  READS:    EulerAuto::S1rhs(Everywhere)
-  READS:    EulerAuto::S2rhs(Everywhere)
-  READS:    EulerAuto::S3rhs(Everywhere)
-  WRITES:   EulerAuto::Denrhs(Interior)
-  WRITES:   EulerAuto::Enrhs(Interior)
-  WRITES:   EulerAuto::S1rhs(Interior)
-  WRITES:   EulerAuto::S2rhs(Interior)
-  WRITES:   EulerAuto::S3rhs(Interior)
+  READS: EulerAuto::DenFlux(Everywhere)
+  READS: EulerAuto::EnFlux(Everywhere)
+  READS: EulerAuto::S1Flux(Everywhere)
+  READS: EulerAuto::S2Flux(Everywhere)
+  READS: EulerAuto::S3Flux(Everywhere)
+  READS: EulerAuto::Denrhs(Everywhere)
+  READS: EulerAuto::Enrhs(Everywhere)
+  READS: EulerAuto::S1rhs(Everywhere)
+  READS: EulerAuto::S2rhs(Everywhere)
+  READS: EulerAuto::S3rhs(Everywhere)
+  WRITES: EulerAuto::Denrhs(Interior)
+  WRITES: EulerAuto::Enrhs(Interior)
+  WRITES: EulerAuto::S1rhs(Interior)
+  WRITES: EulerAuto::S2rhs(Interior)
+  WRITES: EulerAuto::S3rhs(Interior)
 } "eulerauto_cons_calc_rhs_1"
 
 schedule group eulerauto_cons_calc_reconstruct_2_group in MoL_CalcRHS after eulerauto_cons_calc_rhs_1
@@ -392,21 +269,21 @@ schedule group eulerauto_cons_calc_reconstruct_2_group in MoL_CalcRHS after eule
 schedule eulerauto_cons_calc_reconstruct_2 in eulerauto_cons_calc_reconstruct_2_group
 {
   LANG: C
-  READS:    EulerAuto::p(Everywhere)
-  READS:    EulerAuto::rho(Everywhere)
-  READS:    EulerAuto::v1(Everywhere)
-  READS:    EulerAuto::v2(Everywhere)
-  READS:    EulerAuto::v3(Everywhere)
-  WRITES:   EulerAuto::pLeft(Interior)
-  WRITES:   EulerAuto::pRight(Interior)
-  WRITES:   EulerAuto::rhoLeft(Interior)
-  WRITES:   EulerAuto::rhoRight(Interior)
-  WRITES:   EulerAuto::v1Left(Interior)
-  WRITES:   EulerAuto::v1Right(Interior)
-  WRITES:   EulerAuto::v2Left(Interior)
-  WRITES:   EulerAuto::v2Right(Interior)
-  WRITES:   EulerAuto::v3Left(Interior)
-  WRITES:   EulerAuto::v3Right(Interior)
+  READS: EulerAuto::p(Everywhere)
+  READS: EulerAuto::rho(Everywhere)
+  READS: EulerAuto::v1(Everywhere)
+  READS: EulerAuto::v2(Everywhere)
+  READS: EulerAuto::v3(Everywhere)
+  WRITES: EulerAuto::pLeft(Interior)
+  WRITES: EulerAuto::pRight(Interior)
+  WRITES: EulerAuto::rhoLeft(Interior)
+  WRITES: EulerAuto::rhoRight(Interior)
+  WRITES: EulerAuto::v1Left(Interior)
+  WRITES: EulerAuto::v1Right(Interior)
+  WRITES: EulerAuto::v2Left(Interior)
+  WRITES: EulerAuto::v2Right(Interior)
+  WRITES: EulerAuto::v3Left(Interior)
+  WRITES: EulerAuto::v3Right(Interior)
 } "eulerauto_cons_calc_reconstruct_2"
 
 schedule eulerauto_cons_calc_reconstruct_2_SelectBCs in eulerauto_cons_calc_reconstruct_2_bc_group
@@ -435,26 +312,26 @@ schedule group eulerauto_cons_calc_reconstruct_2_bc_group in MoL_PseudoEvolution
 schedule eulerauto_cons_calc_intercell_conserved_2 in MoL_CalcRHS after eulerauto_cons_calc_reconstruct_2
 {
   LANG: C
-  READS:    EulerAuto::pLeft(Everywhere)
-  READS:    EulerAuto::pRight(Everywhere)
-  READS:    EulerAuto::rhoLeft(Everywhere)
-  READS:    EulerAuto::rhoRight(Everywhere)
-  READS:    EulerAuto::v1Left(Everywhere)
-  READS:    EulerAuto::v1Right(Everywhere)
-  READS:    EulerAuto::v2Left(Everywhere)
-  READS:    EulerAuto::v2Right(Everywhere)
-  READS:    EulerAuto::v3Left(Everywhere)
-  READS:    EulerAuto::v3Right(Everywhere)
-  WRITES:   EulerAuto::DenLeft(Everywhere)
-  WRITES:   EulerAuto::DenRight(Everywhere)
-  WRITES:   EulerAuto::EnLeft(Everywhere)
-  WRITES:   EulerAuto::EnRight(Everywhere)
-  WRITES:   EulerAuto::S1Left(Everywhere)
-  WRITES:   EulerAuto::S1Right(Everywhere)
-  WRITES:   EulerAuto::S2Left(Everywhere)
-  WRITES:   EulerAuto::S2Right(Everywhere)
-  WRITES:   EulerAuto::S3Left(Everywhere)
-  WRITES:   EulerAuto::S3Right(Everywhere)
+  READS: EulerAuto::pLeft(Everywhere)
+  READS: EulerAuto::pRight(Everywhere)
+  READS: EulerAuto::rhoLeft(Everywhere)
+  READS: EulerAuto::rhoRight(Everywhere)
+  READS: EulerAuto::v1Left(Everywhere)
+  READS: EulerAuto::v1Right(Everywhere)
+  READS: EulerAuto::v2Left(Everywhere)
+  READS: EulerAuto::v2Right(Everywhere)
+  READS: EulerAuto::v3Left(Everywhere)
+  READS: EulerAuto::v3Right(Everywhere)
+  WRITES: EulerAuto::DenLeft(Everywhere)
+  WRITES: EulerAuto::DenRight(Everywhere)
+  WRITES: EulerAuto::EnLeft(Everywhere)
+  WRITES: EulerAuto::EnRight(Everywhere)
+  WRITES: EulerAuto::S1Left(Everywhere)
+  WRITES: EulerAuto::S1Right(Everywhere)
+  WRITES: EulerAuto::S2Left(Everywhere)
+  WRITES: EulerAuto::S2Right(Everywhere)
+  WRITES: EulerAuto::S3Left(Everywhere)
+  WRITES: EulerAuto::S3Right(Everywhere)
 } "eulerauto_cons_calc_intercell_conserved_2"
 
 schedule group eulerauto_cons_calc_flux_2_group in MoL_CalcRHS after eulerauto_cons_calc_intercell_conserved_2
@@ -464,31 +341,31 @@ schedule group eulerauto_cons_calc_flux_2_group in MoL_CalcRHS after eulerauto_c
 schedule eulerauto_cons_calc_flux_2 in eulerauto_cons_calc_flux_2_group
 {
   LANG: C
-  READS:    EulerAuto::DenLeft(Everywhere)
-  READS:    EulerAuto::DenRight(Everywhere)
-  READS:    EulerAuto::EnLeft(Everywhere)
-  READS:    EulerAuto::EnRight(Everywhere)
-  READS:    EulerAuto::pLeft(Everywhere)
-  READS:    EulerAuto::pRight(Everywhere)
-  READS:    EulerAuto::rhoLeft(Everywhere)
-  READS:    EulerAuto::rhoRight(Everywhere)
-  READS:    EulerAuto::S1Left(Everywhere)
-  READS:    EulerAuto::S1Right(Everywhere)
-  READS:    EulerAuto::S2Left(Everywhere)
-  READS:    EulerAuto::S2Right(Everywhere)
-  READS:    EulerAuto::S3Left(Everywhere)
-  READS:    EulerAuto::S3Right(Everywhere)
-  READS:    EulerAuto::v1Left(Everywhere)
-  READS:    EulerAuto::v1Right(Everywhere)
-  READS:    EulerAuto::v2Left(Everywhere)
-  READS:    EulerAuto::v2Right(Everywhere)
-  READS:    EulerAuto::v3Left(Everywhere)
-  READS:    EulerAuto::v3Right(Everywhere)
-  WRITES:   EulerAuto::DenFlux(Interior)
-  WRITES:   EulerAuto::EnFlux(Interior)
-  WRITES:   EulerAuto::S1Flux(Interior)
-  WRITES:   EulerAuto::S2Flux(Interior)
-  WRITES:   EulerAuto::S3Flux(Interior)
+  READS: EulerAuto::DenLeft(Everywhere)
+  READS: EulerAuto::DenRight(Everywhere)
+  READS: EulerAuto::EnLeft(Everywhere)
+  READS: EulerAuto::EnRight(Everywhere)
+  READS: EulerAuto::pLeft(Everywhere)
+  READS: EulerAuto::pRight(Everywhere)
+  READS: EulerAuto::rhoLeft(Everywhere)
+  READS: EulerAuto::rhoRight(Everywhere)
+  READS: EulerAuto::S1Left(Everywhere)
+  READS: EulerAuto::S1Right(Everywhere)
+  READS: EulerAuto::S2Left(Everywhere)
+  READS: EulerAuto::S2Right(Everywhere)
+  READS: EulerAuto::S3Left(Everywhere)
+  READS: EulerAuto::S3Right(Everywhere)
+  READS: EulerAuto::v1Left(Everywhere)
+  READS: EulerAuto::v1Right(Everywhere)
+  READS: EulerAuto::v2Left(Everywhere)
+  READS: EulerAuto::v2Right(Everywhere)
+  READS: EulerAuto::v3Left(Everywhere)
+  READS: EulerAuto::v3Right(Everywhere)
+  WRITES: EulerAuto::DenFlux(Interior)
+  WRITES: EulerAuto::EnFlux(Interior)
+  WRITES: EulerAuto::S1Flux(Interior)
+  WRITES: EulerAuto::S2Flux(Interior)
+  WRITES: EulerAuto::S3Flux(Interior)
 } "eulerauto_cons_calc_flux_2"
 
 schedule eulerauto_cons_calc_flux_2_SelectBCs in eulerauto_cons_calc_flux_2_bc_group
@@ -517,21 +394,21 @@ schedule group eulerauto_cons_calc_flux_2_bc_group in MoL_PseudoEvolutionBoundar
 schedule eulerauto_cons_calc_rhs_2 in MoL_CalcRHS after eulerauto_cons_calc_flux_2
 {
   LANG: C
-  READS:    EulerAuto::DenFlux(Everywhere)
-  READS:    EulerAuto::EnFlux(Everywhere)
-  READS:    EulerAuto::S1Flux(Everywhere)
-  READS:    EulerAuto::S2Flux(Everywhere)
-  READS:    EulerAuto::S3Flux(Everywhere)
-  READS:    EulerAuto::Denrhs(Everywhere)
-  READS:    EulerAuto::Enrhs(Everywhere)
-  READS:    EulerAuto::S1rhs(Everywhere)
-  READS:    EulerAuto::S2rhs(Everywhere)
-  READS:    EulerAuto::S3rhs(Everywhere)
-  WRITES:   EulerAuto::Denrhs(Interior)
-  WRITES:   EulerAuto::Enrhs(Interior)
-  WRITES:   EulerAuto::S1rhs(Interior)
-  WRITES:   EulerAuto::S2rhs(Interior)
-  WRITES:   EulerAuto::S3rhs(Interior)
+  READS: EulerAuto::DenFlux(Everywhere)
+  READS: EulerAuto::EnFlux(Everywhere)
+  READS: EulerAuto::S1Flux(Everywhere)
+  READS: EulerAuto::S2Flux(Everywhere)
+  READS: EulerAuto::S3Flux(Everywhere)
+  READS: EulerAuto::Denrhs(Everywhere)
+  READS: EulerAuto::Enrhs(Everywhere)
+  READS: EulerAuto::S1rhs(Everywhere)
+  READS: EulerAuto::S2rhs(Everywhere)
+  READS: EulerAuto::S3rhs(Everywhere)
+  WRITES: EulerAuto::Denrhs(Interior)
+  WRITES: EulerAuto::Enrhs(Interior)
+  WRITES: EulerAuto::S1rhs(Interior)
+  WRITES: EulerAuto::S2rhs(Interior)
+  WRITES: EulerAuto::S3rhs(Interior)
 } "eulerauto_cons_calc_rhs_2"
 
 schedule group eulerauto_cons_calc_reconstruct_3_group in MoL_CalcRHS after eulerauto_cons_calc_rhs_2
@@ -541,21 +418,21 @@ schedule group eulerauto_cons_calc_reconstruct_3_group in MoL_CalcRHS after eule
 schedule eulerauto_cons_calc_reconstruct_3 in eulerauto_cons_calc_reconstruct_3_group
 {
   LANG: C
-  READS:    EulerAuto::p(Everywhere)
-  READS:    EulerAuto::rho(Everywhere)
-  READS:    EulerAuto::v1(Everywhere)
-  READS:    EulerAuto::v2(Everywhere)
-  READS:    EulerAuto::v3(Everywhere)
-  WRITES:   EulerAuto::pLeft(Interior)
-  WRITES:   EulerAuto::pRight(Interior)
-  WRITES:   EulerAuto::rhoLeft(Interior)
-  WRITES:   EulerAuto::rhoRight(Interior)
-  WRITES:   EulerAuto::v1Left(Interior)
-  WRITES:   EulerAuto::v1Right(Interior)
-  WRITES:   EulerAuto::v2Left(Interior)
-  WRITES:   EulerAuto::v2Right(Interior)
-  WRITES:   EulerAuto::v3Left(Interior)
-  WRITES:   EulerAuto::v3Right(Interior)
+  READS: EulerAuto::p(Everywhere)
+  READS: EulerAuto::rho(Everywhere)
+  READS: EulerAuto::v1(Everywhere)
+  READS: EulerAuto::v2(Everywhere)
+  READS: EulerAuto::v3(Everywhere)
+  WRITES: EulerAuto::pLeft(Interior)
+  WRITES: EulerAuto::pRight(Interior)
+  WRITES: EulerAuto::rhoLeft(Interior)
+  WRITES: EulerAuto::rhoRight(Interior)
+  WRITES: EulerAuto::v1Left(Interior)
+  WRITES: EulerAuto::v1Right(Interior)
+  WRITES: EulerAuto::v2Left(Interior)
+  WRITES: EulerAuto::v2Right(Interior)
+  WRITES: EulerAuto::v3Left(Interior)
+  WRITES: EulerAuto::v3Right(Interior)
 } "eulerauto_cons_calc_reconstruct_3"
 
 schedule eulerauto_cons_calc_reconstruct_3_SelectBCs in eulerauto_cons_calc_reconstruct_3_bc_group
@@ -584,26 +461,26 @@ schedule group eulerauto_cons_calc_reconstruct_3_bc_group in MoL_PseudoEvolution
 schedule eulerauto_cons_calc_intercell_conserved_3 in MoL_CalcRHS after eulerauto_cons_calc_reconstruct_3
 {
   LANG: C
-  READS:    EulerAuto::pLeft(Everywhere)
-  READS:    EulerAuto::pRight(Everywhere)
-  READS:    EulerAuto::rhoLeft(Everywhere)
-  READS:    EulerAuto::rhoRight(Everywhere)
-  READS:    EulerAuto::v1Left(Everywhere)
-  READS:    EulerAuto::v1Right(Everywhere)
-  READS:    EulerAuto::v2Left(Everywhere)
-  READS:    EulerAuto::v2Right(Everywhere)
-  READS:    EulerAuto::v3Left(Everywhere)
-  READS:    EulerAuto::v3Right(Everywhere)
-  WRITES:   EulerAuto::DenLeft(Everywhere)
-  WRITES:   EulerAuto::DenRight(Everywhere)
-  WRITES:   EulerAuto::EnLeft(Everywhere)
-  WRITES:   EulerAuto::EnRight(Everywhere)
-  WRITES:   EulerAuto::S1Left(Everywhere)
-  WRITES:   EulerAuto::S1Right(Everywhere)
-  WRITES:   EulerAuto::S2Left(Everywhere)
-  WRITES:   EulerAuto::S2Right(Everywhere)
-  WRITES:   EulerAuto::S3Left(Everywhere)
-  WRITES:   EulerAuto::S3Right(Everywhere)
+  READS: EulerAuto::pLeft(Everywhere)
+  READS: EulerAuto::pRight(Everywhere)
+  READS: EulerAuto::rhoLeft(Everywhere)
+  READS: EulerAuto::rhoRight(Everywhere)
+  READS: EulerAuto::v1Left(Everywhere)
+  READS: EulerAuto::v1Right(Everywhere)
+  READS: EulerAuto::v2Left(Everywhere)
+  READS: EulerAuto::v2Right(Everywhere)
+  READS: EulerAuto::v3Left(Everywhere)
+  READS: EulerAuto::v3Right(Everywhere)
+  WRITES: EulerAuto::DenLeft(Everywhere)
+  WRITES: EulerAuto::DenRight(Everywhere)
+  WRITES: EulerAuto::EnLeft(Everywhere)
+  WRITES: EulerAuto::EnRight(Everywhere)
+  WRITES: EulerAuto::S1Left(Everywhere)
+  WRITES: EulerAuto::S1Right(Everywhere)
+  WRITES: EulerAuto::S2Left(Everywhere)
+  WRITES: EulerAuto::S2Right(Everywhere)
+  WRITES: EulerAuto::S3Left(Everywhere)
+  WRITES: EulerAuto::S3Right(Everywhere)
 } "eulerauto_cons_calc_intercell_conserved_3"
 
 schedule group eulerauto_cons_calc_flux_3_group in MoL_CalcRHS after eulerauto_cons_calc_intercell_conserved_3
@@ -613,31 +490,31 @@ schedule group eulerauto_cons_calc_flux_3_group in MoL_CalcRHS after eulerauto_c
 schedule eulerauto_cons_calc_flux_3 in eulerauto_cons_calc_flux_3_group
 {
   LANG: C
-  READS:    EulerAuto::DenLeft(Everywhere)
-  READS:    EulerAuto::DenRight(Everywhere)
-  READS:    EulerAuto::EnLeft(Everywhere)
-  READS:    EulerAuto::EnRight(Everywhere)
-  READS:    EulerAuto::pLeft(Everywhere)
-  READS:    EulerAuto::pRight(Everywhere)
-  READS:    EulerAuto::rhoLeft(Everywhere)
-  READS:    EulerAuto::rhoRight(Everywhere)
-  READS:    EulerAuto::S1Left(Everywhere)
-  READS:    EulerAuto::S1Right(Everywhere)
-  READS:    EulerAuto::S2Left(Everywhere)
-  READS:    EulerAuto::S2Right(Everywhere)
-  READS:    EulerAuto::S3Left(Everywhere)
-  READS:    EulerAuto::S3Right(Everywhere)
-  READS:    EulerAuto::v1Left(Everywhere)
-  READS:    EulerAuto::v1Right(Everywhere)
-  READS:    EulerAuto::v2Left(Everywhere)
-  READS:    EulerAuto::v2Right(Everywhere)
-  READS:    EulerAuto::v3Left(Everywhere)
-  READS:    EulerAuto::v3Right(Everywhere)
-  WRITES:   EulerAuto::DenFlux(Interior)
-  WRITES:   EulerAuto::EnFlux(Interior)
-  WRITES:   EulerAuto::S1Flux(Interior)
-  WRITES:   EulerAuto::S2Flux(Interior)
-  WRITES:   EulerAuto::S3Flux(Interior)
+  READS: EulerAuto::DenLeft(Everywhere)
+  READS: EulerAuto::DenRight(Everywhere)
+  READS: EulerAuto::EnLeft(Everywhere)
+  READS: EulerAuto::EnRight(Everywhere)
+  READS: EulerAuto::pLeft(Everywhere)
+  READS: EulerAuto::pRight(Everywhere)
+  READS: EulerAuto::rhoLeft(Everywhere)
+  READS: EulerAuto::rhoRight(Everywhere)
+  READS: EulerAuto::S1Left(Everywhere)
+  READS: EulerAuto::S1Right(Everywhere)
+  READS: EulerAuto::S2Left(Everywhere)
+  READS: EulerAuto::S2Right(Everywhere)
+  READS: EulerAuto::S3Left(Everywhere)
+  READS: EulerAuto::S3Right(Everywhere)
+  READS: EulerAuto::v1Left(Everywhere)
+  READS: EulerAuto::v1Right(Everywhere)
+  READS: EulerAuto::v2Left(Everywhere)
+  READS: EulerAuto::v2Right(Everywhere)
+  READS: EulerAuto::v3Left(Everywhere)
+  READS: EulerAuto::v3Right(Everywhere)
+  WRITES: EulerAuto::DenFlux(Interior)
+  WRITES: EulerAuto::EnFlux(Interior)
+  WRITES: EulerAuto::S1Flux(Interior)
+  WRITES: EulerAuto::S2Flux(Interior)
+  WRITES: EulerAuto::S3Flux(Interior)
 } "eulerauto_cons_calc_flux_3"
 
 schedule eulerauto_cons_calc_flux_3_SelectBCs in eulerauto_cons_calc_flux_3_bc_group
@@ -666,21 +543,21 @@ schedule group eulerauto_cons_calc_flux_3_bc_group in MoL_PseudoEvolutionBoundar
 schedule eulerauto_cons_calc_rhs_3 in MoL_CalcRHS after eulerauto_cons_calc_flux_3
 {
   LANG: C
-  READS:    EulerAuto::DenFlux(Everywhere)
-  READS:    EulerAuto::EnFlux(Everywhere)
-  READS:    EulerAuto::S1Flux(Everywhere)
-  READS:    EulerAuto::S2Flux(Everywhere)
-  READS:    EulerAuto::S3Flux(Everywhere)
-  READS:    EulerAuto::Denrhs(Everywhere)
-  READS:    EulerAuto::Enrhs(Everywhere)
-  READS:    EulerAuto::S1rhs(Everywhere)
-  READS:    EulerAuto::S2rhs(Everywhere)
-  READS:    EulerAuto::S3rhs(Everywhere)
-  WRITES:   EulerAuto::Denrhs(Interior)
-  WRITES:   EulerAuto::Enrhs(Interior)
-  WRITES:   EulerAuto::S1rhs(Interior)
-  WRITES:   EulerAuto::S2rhs(Interior)
-  WRITES:   EulerAuto::S3rhs(Interior)
+  READS: EulerAuto::DenFlux(Everywhere)
+  READS: EulerAuto::EnFlux(Everywhere)
+  READS: EulerAuto::S1Flux(Everywhere)
+  READS: EulerAuto::S2Flux(Everywhere)
+  READS: EulerAuto::S3Flux(Everywhere)
+  READS: EulerAuto::Denrhs(Everywhere)
+  READS: EulerAuto::Enrhs(Everywhere)
+  READS: EulerAuto::S1rhs(Everywhere)
+  READS: EulerAuto::S2rhs(Everywhere)
+  READS: EulerAuto::S3rhs(Everywhere)
+  WRITES: EulerAuto::Denrhs(Interior)
+  WRITES: EulerAuto::Enrhs(Interior)
+  WRITES: EulerAuto::S1rhs(Interior)
+  WRITES: EulerAuto::S2rhs(Interior)
+  WRITES: EulerAuto::S3rhs(Interior)
 } "eulerauto_cons_calc_rhs_3"
 
 schedule EulerAuto_SelectBoundConds in MoL_PostStep
@@ -688,8 +565,8 @@ schedule EulerAuto_SelectBoundConds in MoL_PostStep
   LANG: C
   OPTIONS: level
   SYNC: Den_group
-  SYNC: En_group
   SYNC: S_group
+  SYNC: En_group
 } "select boundary conditions"
 
 schedule EulerAuto_CheckBoundaries at BASEGRID
@@ -703,7 +580,6 @@ schedule EulerAuto_RegisterVars in MoL_Register
   LANG: C
   OPTIONS: meta
 } "Register Variables for MoL"
-
 schedule group ApplyBCs as EulerAuto_ApplyBCs in MoL_PostStep after EulerAuto_SelectBoundConds
 {
 } "Apply boundary conditions controlled by thorn Boundary"

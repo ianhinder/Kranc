@@ -1,10 +1,8 @@
 # File produced by Kranc
 
-
 STORAGE: phi_group[timelevels]
 
 STORAGE: phi_grouprhs[rhs_timelevels]
-
 schedule Laplace_Startup at STARTUP
 {
   LANG: C
@@ -80,7 +78,6 @@ schedule Laplace_RegisterVars in MoL_Register
   LANG: C
   OPTIONS: meta
 } "Register Variables for MoL"
-
 schedule group ApplyBCs as Laplace_ApplyBCs in MoL_PostStep after Laplace_SelectBoundConds
 {
 } "Apply boundary conditions controlled by thorn Boundary"

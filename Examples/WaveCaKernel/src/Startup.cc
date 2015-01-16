@@ -4,7 +4,7 @@
 
 extern "C" int WaveCaKernel_Startup(void)
 {
-  const char * banner CCTK_ATTRIBUTE_UNUSED  = "WaveCaKernel";
+  const char* banner CCTK_ATTRIBUTE_UNUSED = "WaveCaKernel";
   CCTK_RegisterBanner(banner);
   return 0;
 }

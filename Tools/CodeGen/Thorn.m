@@ -89,7 +89,9 @@ DefFn[mergeFiles[thorn_, from_, to_String, generatedFiles_List] :=
     None,
     (* else *)
     Module[{allFiles},
+      (* Make a list of all files in the |from| directory, relative to it *)
       allFiles = FileNameDrop[#,FileNameDepth[from]]& /@ FileNames["*", from, Infinity];
+      (* Copy or merge each file into the generated thorn directory *)
       Map[mergeFile[thorn, from, to, #, generatedFiles] &, allFiles]]]];
 
 DefFn[mergeFile[thorn_,

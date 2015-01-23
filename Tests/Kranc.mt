@@ -428,6 +428,25 @@ Test[
 ]
 
 (****************************************************************)
+(* MergeFilesIgnore *)
+(****************************************************************)
+
+Test[
+  ClearAllTensors[];
+  CatchKrancError@CreateKrancThornTT[
+    $groups, $TestThornDirectory, "MergeFilesIgnore",
+    PartialDerivatives -> $derivatives,
+    DeclaredGroups     -> {"evolved_group"},
+    Calculations       -> {$initialSineCalc, $evolveCalc},
+    MergeFiles         -> FileNameJoin[{KrancDirectory,"Tests/Data/MergeFilesIgnore"}]];
+  Union[FileNameDrop[#, 3] & /@ FileNames["*", FileNameJoin[{$TestThornDirectory, "MergeFilesIgnore"}]]]
+  ,
+  Union[{"configuration.ccl", "dir", "file.txt", "interface.ccl", "param.ccl", "schedule.ccl", "src"}]
+  ,
+  TestID->"MergeFilesIgnore"
+]
+
+(****************************************************************)
 (* ProcessOperationCount *)
 (****************************************************************)
 

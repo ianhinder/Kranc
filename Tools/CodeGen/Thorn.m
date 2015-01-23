@@ -94,6 +94,10 @@ DefFn[mergeFiles[thorn_, from_, to_String, generatedFiles_List] :=
       (* Copy or merge each file into the generated thorn directory *)
       Map[mergeFile[thorn, from, to, #, generatedFiles] &, allFiles]]]];
 
+DefFn[importText[fileName_String] :=
+  Check[Import[fileName, "Text"],
+    ThrowError["Unable to read file "<>fileName]]];
+
 DefFn[mergeFile[thorn_,
                 from_String, to_String, path_String, generatedFiles_List] :=
   Module[{thornName, fromPath, toPath},
@@ -106,13 +110,13 @@ DefFn[mergeFile[thorn_,
         CreateDirectory[toPath, CreateIntermediateDirectories->True]],
       (* else *)
       If[MemberQ[generatedFiles, toPath],
-        Module[{orig = Import[toPath,"Text"], new = Import[fromPath,"Text"]},
+        Module[{orig = importText[toPath], new = importText[fromPath]},
           new = StringReplace[new, "@THORN_NAME@" -> thornName];
           Export[toPath, orig<>"\n"<>new<>"\n", "Text"]],
         (* else *)
         If[FileExistsQ[toPath], DeleteFile[toPath]];
         (* CopyFile[fromPath,toPath] *)
-        new = Import[fromPath,"Text"];
+        new = importText[fromPath];
         new = StringReplace[new, "@THORN_NAME@" -> thornName];
         Export[toPath, new<>"\n", "Text"]]]]];
 

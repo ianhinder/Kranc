@@ -13,6 +13,7 @@ mapEnsureKey::usage = "";
 mapQuery::usage = "";
 mapRefAdd::usage = "";
 mapRefSet::usage = "";
+mapRefAppend::usage = "";
 
 Begin["`Private`"];
 
@@ -125,6 +126,16 @@ mapRefAdd[map_List,key:(_Symbol|_String)]:=
 
 mapRefAdd[map_List,keys_List] := Fold[mapRefAdd,map,keys];
 
+mapRefPrepare[map_List,key:(_Symbol|_String)]:=
+   Module[{OAKeyStr},
+     VerifyMap[map];
+     OAKeyStr = lookupRaw[map,key];
+     If[ mapRefObarraySetCount[OAKeyStr] < 0,
+         Throw["mapRefSet called with a non-reference key \""<>
+                  ToString[key]<>"\". Use mapRefAdd."] ];
+     mapRefObarraySetCount[OAKeyStr] = mapRefObarraySetCount[OAKeyStr] + 1;
+     OAKeyStr];
+
 mapRefSet[map_List,key:(_Symbol|_String), value_]:=
    Module[{OAKeyStr},
      VerifyMap[map];
@@ -134,6 +145,13 @@ mapRefSet[map_List,key:(_Symbol|_String), value_]:=
                   ToString[key]<>"\". Use mapRefAdd."] ];
      mapRefObarraySetCount[OAKeyStr] = mapRefObarraySetCount[OAKeyStr] + 1;
      mapRefObarray[OAKeyStr] = value];
+
+mapRefAppend[map_List,key:(_Symbol|_String), value_String]:=
+   Module[{OAKeyStr,prevVal},
+     OAKeyStr = mapRefPrepare[map,key];
+     prevVal = If[ mapRefObarraySetCount[OAKeyStr] === 1, "",
+                   mapRefObarray[OAKeyStr] ];
+     mapRefObarray[OAKeyStr] = prevVal <> value];
 
 End[];
 

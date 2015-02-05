@@ -47,6 +47,7 @@ VerifyNewCalculation;
 TileCalculationQ;
 CalculationLoopControlQ;
 SetCalculationLoopControl;
+CalculationExpressionSymbols;
 
 Begin["`Private`"];
 
@@ -375,6 +376,11 @@ calculationLHSUsedShorthands[calc_] :=
     allShorthands = lookupDefault[calc, Shorthands, {}];
     Intersection[calcSymbols, allShorthands]];
 
+CalculationExpressionSymbols[expr_] :=
+  Module[{allAtoms},
+    allAtoms = Union[Level[expr, {-1}]];
+    Cases[allAtoms, x_Symbol]];
+
 CalculationSymbols[calc_] :=
   Module[{allAtoms},
     allAtoms = Union[Level[lookup[calc, Equations], {-1}]];
@@ -409,6 +415,7 @@ VerifyCalculation[calc_] :=
          GFAccessFunction, Groups, Implementation, InitFDVariables,
          LoopFunction, MacroPointer, Name, ODEGroups, Parameters,
          PartialDerivatives, PreDefinitions, Schedule,Equations,
+         PreDefinitionsExpr,
          Shorthands, ConditionalOnKeyword, Before, After,
          ConditionalOnTextuals, Where, ConditionalOnKeywords,
          CollectList, AllowedSymbols, ApplyBCs, Conditional, CachedVariables, SplitBy,
@@ -416,7 +423,7 @@ VerifyCalculation[calc_] :=
          LocalGroups, NoSimplify, UseDGFE, SimpleCode, UseCaKernel,
          UseJacobian,
          ScheduleGroups, TriggerGroups, ThornName, Tile, UseLoopControl,
-         WhereResolved, StencilSizeResolved };
+         WhereResolved, StencilSizeResolved, ChemoraContents };
 
     usedKeys = Map[First, calc];
     unknownKeys = Complement[usedKeys, allowedKeys];

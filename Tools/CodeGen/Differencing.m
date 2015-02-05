@@ -154,6 +154,9 @@ DifferencingOperatorExpansion;
 $DifferencingMacroExpansions;
 CountDerivativeOperations;
 
+chemoraPrecomputeDerivative;
+chemoraPrecomputeDerivatives;
+
 Begin["`Private`"];
 
 DPlus[n_] := (shift[n] - 1)/spacing[n];
@@ -334,6 +337,53 @@ DefFn[
        Return[ToString[macroName] <> "(" <> ToString[gf] <> ")"]]
   ]];
 
+
+chemoraPrecomputeDerivative[d:pd_[gf_, inds___]] :=
+  {GridFunctionDerivativeName[d], 
+   ComponentDerivativeOperatorMacroName[pd[inds] -> expr], gf };
+
+chemoraPrecomputeDerivatives[
+ derivOps_, expr_, intParams_, zeroDims_, macroPointer_] :=
+   Module[ {componentDerivOps, gfds, sortedgfds, opNames, 
+            intParamNames, paramsInOps, paramName, opsWithParam, 
+            opNamesWithParam, replace, param, pd, u},
+
+    CountDerivativeOperations[derivOps, expr, zeroDims];
+
+    gfds = GridFunctionDerivativesInExpression[derivOps, expr, zeroDims];
+    sortedgfds = Sort[gfds, ordergfds];
+
+    opNames = Union[Map[Head, sortedgfds]];
+    intParamNames = getParamName /@ intParams;
+    paramsInOps = Union @ Flatten @ 
+     Map[Cases[derivOps, #, Infinity] &, intParamNames];
+
+    If[Length[paramsInOps] > 1,
+      ThrowError["Cannot have more than one integer parameter in the list of partial derivative definitions"]];
+
+    If[paramsInOps === {},
+      Map[DerivativeOperatorVerify, derivOps];
+      { GridFunctionDerivativeName[#], #[[1]], False,
+        {{ 0, ComponentDerivativeOperatorMacroName[Drop[#,1] -> expr] }} } &
+      /@ sortedgfds,
+      (* else *)
+      paramName = First[paramsInOps];
+      opsWithParam = Select[derivOps, Cases[#, paramName, Infinity] =!= {} &];
+      opNamesWithParam = Map[#[[1,0]] &, opsWithParam];
+
+      replace[value_] :=
+        Map[(# -> combineOpNameWithParameter[#, paramName, value]) &, 
+            opNamesWithParam];
+
+      param = Select[intParams, getParamName[#] === paramName &][[1]];
+      { GridFunctionDerivativeName[#], #[[1]], paramName,      
+        Table[ { value, 
+                 ComponentDerivativeOperatorMacroName
+                    [ Drop[#/.replace[value],1] -> expr ] },
+               { value, lookup[param, AllowedValues] } ] } &
+        /@ sortedgfds
+    ]];
+
 (*************************************************************)
 (* GridFunctionDerivative *)
 (*************************************************************)
@@ -427,7 +477,8 @@ DefFn[
        Print["Sequenced: ", Apply[SequenceForm,Simplify[1/(ss /. spacings2)],{0,Infinity}]];*)
 
        liName = "p" <> signModifier <> quotient <> ToString[Apply[SequenceForm,Simplify[1/(ss /. spacings2)],{0,Infinity}]];
-       pDefs = {{liName -> CFormHideStrings[ProcessExpression[num / den ss /. spacings2, vectorise]]}};
+       pDefs = { { liName -> ProcessExpression[
+         num / den ss /. spacings2, vectorise] } };
 
        rhs = rhs /. pat -> Times[liName, rest],
 (*       Print["!!!!!!!!DOES NOT MATCH!!!!!!!!!"];*)
@@ -806,17 +857,19 @@ DefFn[
   DifferencingProcessCode[cIn_Code, opts:OptionsPattern[]] :=
   Block[{$CodeGenTarget = NewObject[TargetC, {"UseVectors" -> OptionValue[UseVectors]}]},
   Module[
-    {diffHeader, pDefs, c = cIn},
+    {diffHeader, pDefsExpr, pDefsStr, c = cIn},
 
     InfoMessage[Terse, "Creating differencing header file"];
 
     (* This is the easiest way to propagate this information; the
        differencing code will be rewritten soon, so this should go
        away *)
-    {{pDefs, diffHeader}, $DifferencingMacroExpansions} = Reap[CreateDifferencingHeader[
+    { {pDefsExpr, diffHeader}, $DifferencingMacroExpansions } = 
+      Reap[CreateDifferencingHeader[
       GetObjectField[c, "PartialDerivatives"], OptionValue[ZeroDimensions],
       OptionValue[UseVectors], OptionValue[IntParameters]], DifferencingOperatorExpansion];
-    c = SetObjectField[c, "Calculations", Map[Join[#, {PreDefinitions -> pDefs}] &, GetObjectField[c, "Calculations"]]];
+    pDefsStr = First[#] -> CFormHideStrings[Last[#]] & /@ pDefsExpr;
+    c = SetObjectField[c, "Calculations", Map[Join[#, {PreDefinitions -> pDefsStr, PreDefinitionsExpr -> pDefsExpr}] &, GetObjectField[c, "Calculations"]]];
     diffHeader = Join[
       If[OptionValue[UseVectors] && ! OptionValue[UseOpenCL],
          {"#include <assert.h>\n",

@@ -28,6 +28,8 @@ BeginPackage["CodeGenCalculation`", {"CodeGenCactus`", "CodeGenC`", "CodeGen`",
 CreateCalculationFunction::usage = "";
 CreateSetterSource::usage = "";
 GridFunctionsInExpression;
+chemoraQuote;
+chemoraCDifferenceOps;
 
 Begin["`Private`"];
 
@@ -302,6 +304,125 @@ DefFn[pdCanonicalOrdering[name_[inds___] -> x_] :=
    Calculation function generation
    -------------------------------------------------------------------------- *)
 
+chemoraCalculationExpressionVariables[x_]:=
+ Cases[Union[Level[x,{-1}]],y:(_Symbol|_String)];
+
+chemoraCalculationExpressionVariablesDO[x_]:=
+ Module[{ woDO },
+   woDO = x /. {k_String/;StringMatchQ[k,RegularExpression["^KRANC.*"]] :> k[]};
+   Cases[Union[Level[woDO,{-1}]],y:(_Symbol|_String)]];
+
+chemoraDExpressionInfo[do_]:=
+   Module[{offsetsStr,offsetsRaw,vars,offsetsExp},
+     offsetsStr = 
+        Cases[do,k_String/;StringMatchQ[k,RegularExpression["^KRANC.*"]],{-1}];
+     offsetsRaw = StringCases[ offsetsStr,
+                  RegularExpression[
+                    "^KRANC_GFOFFSET3D\\(u,([^,]+),([^,]+),([^,]+)\\)"]
+                     :> ToExpression /@ {"$1","$2","$3"} ];
+     vars = chemoraCalculationExpressionVariables[offsetsRaw];
+     offsetsExp = 
+       Which[ Length[vars] == 0, 
+                offsetsRaw,
+              Length[vars] == 1, 
+                Join@@ ( offsetsRaw /. First[vars] -> # & /@ {-1,1} ),
+              True, {{FinishMe}} ];
+     {vars,Union[First /@ offsetsExp]}]
+     
+chemoraEqToFile[c_,eqs_] :=
+    mapRefAppend[c,ChemoraContents,
+      StringJoin@@ (
+        "//"
+        <> ToString[First[#]] <> " = " 
+        <> GenerateCodeFromExpression[Last[#],False]
+        <> ";\n"
+        & /@ eqs ) ];
+
+chemoraQuote[a_] := "\"" <> ToString[a] <> "\"";
+chemoraGenerateQuotedExpr[expr_,vectorise_] := 
+  "\"" <> GenerateCodeFromExpression[expr,vectorise] <> "\""
+
+chemoraExpandRules =
+   { Rule[lhs_,IfThen[cond_,ifpart_,elsepart_]] :>
+        Sequence@@Module[{lhs1,lhs2},
+          lhs1 = Symbol[ ToString[lhs] <> "xxxI" ];
+          lhs2 = Symbol[ ToString[lhs] <> "xxxE" ];
+          {lhs1 -> ifpart, lhs2 -> elsepart,
+           lhs -> chemoraIfElse[cond,lhs1,lhs2] }
+          ],
+        Rule[lhs_,Plus[op1_,op2_]] :>
+        Sequence@@Module[{lhs1,lhs2},
+          lhs1 = Symbol[ ToString[lhs] <> "xxx1" ];
+          lhs2 = Symbol[ ToString[lhs] <> "xxx2" ];
+          { lhs1 -> op1, lhs2 -> op2,
+            lhs -> lhs1 + lhs2 }
+          ]
+     }
+
+chemoraCExpressionEQ[c_,lhs_->rhs_]:=
+   mapRefAppend[c,ChemoraContents,
+       " assign_from_expr("
+          <> chemoraQuote[lhs] <> ", 0, "
+          <> chemoraGenerateQuotedExpr[rhs,False]
+          <> ", "
+          <> StringJoin[
+               chemoraQuote[#] <> ", " &
+                  /@ chemoraCalculationExpressionVariables[rhs] ]
+          <> "NULL );\n"];
+
+chemoraCExpressionEQ[c_,lhs_ -> chemoraIfElse[Parameter[cond_],ip_,ep_]]:=
+   mapRefAppend[c,ChemoraContents,
+       " assign_from_ifelse("
+          <> chemoraQuote[lhs] <> ", "
+          <> chemoraQuote[cond] <> ", "
+          <> chemoraQuote[ip] <> ", "
+          <> chemoraQuote[ep] <> ");\n"];
+
+chemoraCDifferenceOp[opNameBase_[u_,ind___] -> rhs_ ]:=
+   Module[{offsetsAndVars = chemoraDExpressionInfo[rhs],
+           offsets,offsetVars,
+           opName = ToString[opNameBase] <> StringJoin[ ToString /@ {ind} ] },
+     {offsetVars,offsets} = offsetsAndVars;
+     " set_differencing_op("
+        <> chemoraQuote[opName] <> ", "
+        <> "0, "
+        <> chemoraGenerateQuotedExpr[rhs,False] <> ", "
+        <> StringJoin[
+             chemoraQuote[#] <> ", " &
+               /@ Union[ offsetVars,
+                         chemoraCalculationExpressionVariablesDO[rhs]]]
+        <> "NULL, "
+        <> ToString[Length[offsets]]
+        <> StringJoin[","<>ToString[#]& /@ Flatten[offsets]]
+        <> ");\n"];
+
+chemoraCDifferenceOps[] :=
+   StringJoin[
+     chemoraCDifferenceOp[#] & /@ ( Flatten @@ $DifferencingMacroExpansions ) ];
+
+chemoraCSimpleExpression[c_, lhs_ -> rhs_ ]:=
+   Module[ { localName = ToString[lhs] <> "xxxL", diffOp, gf },
+     {diffOp,gf} = 
+       First[ StringCases[ 
+         rhs, RegularExpression["^([^()]+)\\(([^()]+)\\)"] -> {"$1","$2"} ]];
+     mapRefAppend[c,ChemoraContents,
+       " assign_from_gf_load(" 
+         <> chemoraQuote[localName] <> ", "
+         <> chemoraQuote[gf] <> ", "
+         <> chemoraQuote[diffOp]
+         <> ");\n"
+         <> " gf_store(" <> chemoraQuote[lhs] <> ", " 
+         <> chemoraQuote[localName] <> ");\n" ] ];
+
+chemoraCSimpleExpression[c_, anything_]:=
+     mapRefAppend[c,ChemoraContents,
+      "Error, simple expression not understood: " 
+      <> chemoraQuote[anything] <> "\n"];
+
+          
+chemoraCExpression[c_,eqs_] :=
+   chemoraCExpressionEQ[c,#] & /@ ( eqs /. chemoraExpandRules );
+
 Options[CreateCalculationFunction] = Join[ThornOptions,{Debug -> False}];
 
 DefFn[
@@ -442,6 +563,9 @@ DefFn[
        DGFECall[cleancalc],
        {}];
 
+  mapRefAppend[calcp,ChemoraContents,"// PreDefinitions:\n"];
+  chemoraCExpression[calcp,lookup[cleancalc, PreDefinitionsExpr]];
+
   InfoMessage[InfoFull,"Generating function"];
   {
     DGFEDefs,
@@ -575,6 +699,10 @@ DefFn[
 
     gridName = Function[x,FlattenBlock[lookup[cleancalc, GFAccessFunction][x]]];
 
+    mapRefAppend[cleancalc,ChemoraContents,
+         "// Generating code using equationLoop.\n"];
+    chemoraEqToFile[cleancalc,eqs];
+
     rhss = Map[#[[2]] &, eqs];
     lhss = Map[#[[1]] &, eqs];
 
@@ -628,6 +756,9 @@ DefFn[
 
     (* Replace grid functions with their local forms *)
     eqsReplaced = eqs2 /. Join[{g:GFOffset[___]:>g},localMap];
+
+    mapRefAppend[cleancalc,ChemoraContents,"\n// Replaced:\n"];
+    chemoraEqToFile[cleancalc,eqsReplaced];
 
     gridFunctionsFreeQ[x_] :=
     Module[
@@ -701,6 +832,52 @@ DefFn[
     gfsInLHS = Complement[gfsInLHS, odeVars];
     gfsOnlyInRHS = Complement[gfsInRHS, gfsInLHS];
 
+    mapRefAppend[cleancalc,ChemoraContents, "// gfsInRHS:\n"];
+    mapRefAppend[cleancalc,ChemoraContents,
+     StringJoin[ " assign_from_gf_load(" 
+                 <> chemoraQuote[localName[#]] <> ", "
+                 <> chemoraQuote[#]
+                 <> ", NULL"
+                 <> ");\n" &
+                 /@ gfsInRHS ]];
+
+    Module[{sortedgfds},
+     sortedgfds = GridFunctionDerivativesInExpression
+                       [defsWithoutShorts, eqsOrdered,
+                        OptionValue[ZeroDimensions]];
+     mapRefAppend[cleancalc,ChemoraContents,"// About to show dfs:?:\n"];
+     mapRefAppend[cleancalc,ChemoraContents,
+     "// gfds: "<>StringJoin@@( ToString[#]<>", " & /@ sortedgfds )<>"\n" ];
+     mapRefAppend[cleancalc,ChemoraContents,
+       StringJoin[( "// " <> ToString[#[[1]]] <> " = " <> ToString[#[[2]]] 
+                    <> "{ "<>ToString[#[[3]]]<>"}\n" &
+         [chemoraPrecomputeDerivative[#]] ) & /@ sortedgfds ] ];
+     ];
+
+    mapRefAppend[cleancalc,ChemoraContents,
+      Function[{ localName, gfname, param, cases },
+          " assign_from_gf_load_switch(" <> chemoraQuote[localName] <> ", "
+          <> chemoraQuote[gfname] <> ", "
+          <> chemoraQuote[param] <> ", "
+          <> StringJoin
+              [ ToString[#[[1]]] <> ", " 
+                <> chemoraQuote[#[[2]]] <> ", " & /@ cases ]
+          <> "0, NULL);\n" ] @@ # ] &
+        /@ chemoraPrecomputeDerivatives[
+             defsWithoutShorts, 
+             eqsOrdered,
+             lookup[{opts}, IntParameters, {}],
+             OptionValue[ZeroDimensions],
+             lookup[cleancalc, MacroPointer]];
+
+    chemoraCExpression[cleancalc,eqsReplaced];
+
+    mapRefAppend[cleancalc,ChemoraContents,
+        StringJoin
+          [ "  gf_store(" <> chemoraQuote[#] <> ", " 
+            <> chemoraQuote[localName[#]] <> ");\n" &
+            /@ gfsInLHS ] ];
+
     {
     CommentedBlock["Assign local copies of arrays functions",
       assignLocalArrayFunctions[arraysInRHS]],
@@ -764,7 +941,12 @@ DefFn[
     eqs2 = ReplaceDerivatives[pddefs, eqs2, False, OptionValue[ZeroDimensions], 
                               lookup[cleancalc, MacroPointer]];
     gridName = lookup[cleancalc, GFAccessFunction];
-    
+
+    mapRefAppend[cleancalc,ChemoraContents,
+      "// Generating code using simpleEquationLoop.\n"];
+    chemoraEqToFile[cleancalc,eqs2];
+    chemoraCSimpleExpression[cleancalc,#]& /@ eqs2;
+
     lookup[cleancalc,LoopFunction][
       {
         CommentedBlock[

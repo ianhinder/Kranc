@@ -375,7 +375,11 @@ DefFn[CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPa
     InfoMessage[Terse, "Creating calculation source files"];
 
     c = ApplyToObjectField[c, "Calculations",
-      mapRefAdd[#,{WhereResolved,StencilSizeResolved}]& /@ # & ];
+      mapRefAdd[#,{WhereResolved,StencilSizeResolved,ChemoraContents}]&
+       /@ # &];
+
+    ApplyToObjectField[c, "Calculations",
+      mapRefAppend[#,ChemoraContents,"// Start of calculation.\n"]& /@ # &];
 
     Module[{opCounts},
       opCounts=Reap[
@@ -392,6 +396,33 @@ DefFn[CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPa
         ProcessOperationCount][[2]];
 
       c = OperationCountProcessCode[c, Flatten[opCounts], opts]];
+
+    c = JoinObjectField[
+      c, "Sources", 
+      {{ Filename -> "Chemora.h",
+         Contents -> 
+      "#include \"chemora_cg_kranc_startup.h\"\n\n"
+      <> "static void\nchemora_cg_thorn_startup()\n"
+      <> "{\n"
+      <> "  CHEMORA_CG_KRANC_INIT_THORN_START("
+      <> chemoraQuote[thornName] <> ");\n"
+      <> chemoraCDifferenceOps[]
+      <> StringJoin[ Map[ 
+           "\n\n  CHEMORA_CG_KRANC_INIT_THORN_KERNEL("
+           <> chemoraQuote[lookup[#,Name]] <> ");\n"
+           <> StringJoin[
+            " set_parameter(" <> chemoraQuote[lookup[#,Name]] 
+              <> ", \"CCTK_INT\");\n" & 
+              /@ lookup[GetObjectField[c,"Parameters"],"Integers"] ]
+           <> StringJoin[
+            " set_parameter(" <> chemoraQuote[lookup[#,Name]] 
+              <> ", \"CCTK_REAL\");\n" & 
+              /@ lookup[GetObjectField[c,"Parameters"],"Reals"] ]
+           <> lookup[#,ChemoraContents] &,
+           Select[ GetObjectField[c, "Calculations"], 
+                   CalculationOnDevice[#] &] ] ]
+      <> "  CHEMORA_CG_KRANC_INIT_THORN_END;\n}\n" }} ];
+
 
     (* ------------------------------------------------------------------------ 
        Create CaKernel CCL File.

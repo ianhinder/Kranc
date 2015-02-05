@@ -39,9 +39,11 @@ CreateStartupFile[thornName_, bannerText_] :=
   tmp = {FileHeader["C"],
 
    NewlineSeparated[{IncludeFile["cctk.h"],
+                     IncludeFile["Chemora.h"],
    {"extern \"C\" ", DefineFunction[thornName <> "_Startup", "int", "void",
      {DefineVariable["banner", "const char*", Quote[bannerText]],
       "CCTK_RegisterBanner(banner);\n",
+      "chemora_cg_thorn_startup();\n",
       "return 0;\n"}]}}]};
 
   CodeGenC`SOURCELANGUAGE = lang;

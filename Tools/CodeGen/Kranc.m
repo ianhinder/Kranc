@@ -43,6 +43,7 @@ dummy;
 LoopPreIncludes, GroupImplementations, PartialDerivatives, NoSimplify,
 Boundary, Interior, InteriorNoSync, Where, AddToStencilWidth,
 StencilSizeResolved, WhereResolved,
+ChemoraContents,
 Everywhere, normal1, normal2, normal3, INV, SQR, CUB, QAD, dot, pow,
 exp, t, cctkOriginSpace1, cctkOriginSpace2, cctkOriginSpace3,
 dt, dx, dy, dz, idx, idy, idz, cctkLbnd1, cctkLbnd2, cctkLbnd3,
@@ -52,7 +53,8 @@ MacroPointer, CachedVariables, SplitBy, SeparatedDerivatives,
 SeparatedDerivatives2,GFOffset,GFLocal}
 
 {ConditionalOnKeyword, ConditionalOnKeywords, CollectList, Interior,
-InteriorNoSync, Boundary, BoundaryNoSync, BoundaryWithGhosts, Where, PreDefinitions,
+InteriorNoSync, Boundary, BoundaryNoSync, BoundaryWithGhosts, Where, 
+PreDefinitions, PreDefinitionsExpr,
 AllowedSymbols, Parameters, ConditionalOnTextuals, ApplyBCs,
 SimpleCode};
 

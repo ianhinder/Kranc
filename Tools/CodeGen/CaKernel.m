@@ -285,6 +285,7 @@ DefFn[
     c2 = SetObjectField[c, "Calculations", calcs];
 
     If[OptionValue[UseCaKernel],
+       c2 = AppendObjectField[c2, "IncludeFiles", "chemora_cg_kranc_startup.h"];
        c2 = AppendObjectField[c2, "IncludeFiles", "CaCUDALib_driver_support.h"]];
 
     If[OptionValue[UseCaKernel],

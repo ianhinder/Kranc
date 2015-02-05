@@ -89,7 +89,7 @@ DefFn[
     attrs = Append[attrs, "EXTERIOR" ->
       If[MemberQ[{Everywhere, BoundaryWithGhosts},
                  lookup[calc,WhereResolved]] || 
-        (MemberQ[stencil, 0] && Total[stencil] =!= 0 (* both zero and nonzero elements *)),
+         (MemberQ[stencil, 0] && Total[stencil] === 0 ),
         Quote["1,1,1,1,1,1"],
         Quote["0,0,0,0,0,0"]]];
 

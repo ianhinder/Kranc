@@ -10,21 +10,14 @@ extern "C" void EulerAuto_RegisterSymmetries(CCTK_ARGUMENTS)
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  
   /* array holding symmetry definitions */
-  CCTK_INT sym[3];
-  
+  int sym[3];
   
   /* Register symmetries of grid functions */
   sym[0] = 1;
   sym[1] = 1;
   sym[2] = 1;
   SetCartSymVN(cctkGH, sym, "EulerAuto::Den");
-  
-  sym[0] = 1;
-  sym[1] = 1;
-  sym[2] = 1;
-  SetCartSymVN(cctkGH, sym, "EulerAuto::En");
   
   sym[0] = -1;
   sym[1] = 1;
@@ -40,6 +33,36 @@ extern "C" void EulerAuto_RegisterSymmetries(CCTK_ARGUMENTS)
   sym[1] = 1;
   sym[2] = -1;
   SetCartSymVN(cctkGH, sym, "EulerAuto::S3");
+  
+  sym[0] = 1;
+  sym[1] = 1;
+  sym[2] = 1;
+  SetCartSymVN(cctkGH, sym, "EulerAuto::En");
+  
+  sym[0] = 1;
+  sym[1] = 1;
+  sym[2] = 1;
+  SetCartSymVN(cctkGH, sym, "EulerAuto::rho");
+  
+  sym[0] = -1;
+  sym[1] = 1;
+  sym[2] = 1;
+  SetCartSymVN(cctkGH, sym, "EulerAuto::v1");
+  
+  sym[0] = 1;
+  sym[1] = -1;
+  sym[2] = 1;
+  SetCartSymVN(cctkGH, sym, "EulerAuto::v2");
+  
+  sym[0] = 1;
+  sym[1] = 1;
+  sym[2] = -1;
+  SetCartSymVN(cctkGH, sym, "EulerAuto::v3");
+  
+  sym[0] = 1;
+  sym[1] = 1;
+  sym[2] = 1;
+  SetCartSymVN(cctkGH, sym, "EulerAuto::p");
   
   sym[0] = 1;
   sym[1] = 1;
@@ -74,22 +97,12 @@ extern "C" void EulerAuto_RegisterSymmetries(CCTK_ARGUMENTS)
   sym[0] = 1;
   sym[1] = 1;
   sym[2] = 1;
-  SetCartSymVN(cctkGH, sym, "EulerAuto::p");
-  
-  sym[0] = 1;
-  sym[1] = 1;
-  sym[2] = 1;
   SetCartSymVN(cctkGH, sym, "EulerAuto::pLeft");
   
   sym[0] = 1;
   sym[1] = 1;
   sym[2] = 1;
   SetCartSymVN(cctkGH, sym, "EulerAuto::pRight");
-  
-  sym[0] = 1;
-  sym[1] = 1;
-  sym[2] = 1;
-  SetCartSymVN(cctkGH, sym, "EulerAuto::rho");
   
   sym[0] = 1;
   sym[1] = 1;
@@ -175,20 +188,5 @@ extern "C" void EulerAuto_RegisterSymmetries(CCTK_ARGUMENTS)
   sym[1] = 1;
   sym[2] = 1;
   SetCartSymVN(cctkGH, sym, "EulerAuto::v3Right");
-  
-  sym[0] = -1;
-  sym[1] = 1;
-  sym[2] = 1;
-  SetCartSymVN(cctkGH, sym, "EulerAuto::v1");
-  
-  sym[0] = 1;
-  sym[1] = -1;
-  sym[2] = 1;
-  SetCartSymVN(cctkGH, sym, "EulerAuto::v2");
-  
-  sym[0] = 1;
-  sym[1] = 1;
-  sym[2] = -1;
-  SetCartSymVN(cctkGH, sym, "EulerAuto::v3");
   
 }

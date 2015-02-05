@@ -1,6 +1,5 @@
 # File produced by Kranc
 
-
 STORAGE: rho_group[timelevels]
 
 STORAGE: Frho_group[other_timelevels]
@@ -10,7 +9,6 @@ STORAGE: F2rho_group[other_timelevels]
 STORAGE: v_group[other_timelevels]
 
 STORAGE: rho_grouprhs[rhs_timelevels]
-
 schedule Advect_Startup at STARTUP
 {
   LANG: C
@@ -22,7 +20,6 @@ schedule Advect_RegisterSymmetries in SymmetryRegister
   LANG: C
   OPTIONS: meta
 } "register symmetries"
-
 
 if (CCTK_EQUALS(initial_data, "sine"))
 {
@@ -36,7 +33,6 @@ if (CCTK_EQUALS(initial_data, "sine"))
     WRITES: Advect::v3(Everywhere)
   } "advect_initial_sine"
 }
-
 
 if (CCTK_EQUALS(initial_data, "shock"))
 {
@@ -90,7 +86,6 @@ schedule Advect_RegisterVars in MoL_Register
   LANG: C
   OPTIONS: meta
 } "Register Variables for MoL"
-
 schedule group ApplyBCs as Advect_ApplyBCs in MoL_PostStep after Advect_SelectBoundConds
 {
 } "Apply boundary conditions controlled by thorn Boundary"

@@ -1,6 +1,5 @@
 # File produced by Kranc
 
-
 STORAGE: phi_g[timelevels]
 
 STORAGE: pi_g[timelevels]
@@ -10,7 +9,6 @@ STORAGE: xCopy_g[other_timelevels]
 STORAGE: phi_grhs[rhs_timelevels]
 
 STORAGE: pi_grhs[rhs_timelevels]
-
 schedule WaveHost_Startup at STARTUP
 {
   LANG: C
@@ -32,7 +30,6 @@ schedule initial_gaussian AT INITIAL
   WRITES: WaveHost::xCopy(Everywhere)
 } "initial_gaussian"
 
-
 if (fdOrder == 2)
 {
   schedule calc_rhs_2 in MoL_CalcRHS
@@ -44,7 +41,6 @@ if (fdOrder == 2)
     WRITES: WaveHost::pirhs(Interior)
   } "calc_rhs_2"
 }
-
 
 if (fdOrder == 2)
 {
@@ -60,7 +56,6 @@ if (fdOrder == 2)
   } "calc_rhs_2"
 }
 
-
 if (fdOrder == 4)
 {
   schedule calc_rhs_4 in MoL_CalcRHS
@@ -72,7 +67,6 @@ if (fdOrder == 4)
     WRITES: WaveHost::pirhs(Interior)
   } "calc_rhs_4"
 }
-
 
 if (fdOrder == 4)
 {
@@ -125,7 +119,6 @@ schedule WaveHost_RegisterVars in MoL_Register
   LANG: C
   OPTIONS: meta
 } "Register Variables for MoL"
-
 schedule group ApplyBCs as WaveHost_ApplyBCs in MoL_PostStep after WaveHost_SelectBoundConds
 {
 } "Apply boundary conditions controlled by thorn Boundary"

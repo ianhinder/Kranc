@@ -2,6 +2,7 @@
 
 #define KRANC_C
 
+#include <algorithm>
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
@@ -10,96 +11,103 @@
 #include "cctk.h"
 #include "cctk_Arguments.h"
 #include "cctk_Parameters.h"
-#include "GenericFD.h"
+#include "Kranc.hh"
 #include "Differencing.h"
-#include "cctk_Loop.h"
 #include "loopcontrol.h"
 
-/* Define macros used in calculations */
-#define INITVALUE (42)
-#define INV(x) ((CCTK_REAL)1.0 / (x))
-#define SQR(x) ((x) * (x))
-#define CUB(x) ((x) * SQR(x))
-#define QAD(x) (SQR(SQR(x)))
+namespace EulerAuto {
 
 extern "C" void eulerauto_cons_calc_flux_2_SelectBCs(CCTK_ARGUMENTS)
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  CCTK_INT ierr CCTK_ATTRIBUTE_UNUSED  = 0;
-  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, GenericFD_GetBoundaryWidth(cctkGH), -1 /* no table */, "EulerAuto::Den_flux_group","flat");
+  if (cctk_iteration % eulerauto_cons_calc_flux_2_calc_every != eulerauto_cons_calc_flux_2_calc_offset)
+    return;
+  CCTK_INT ierr CCTK_ATTRIBUTE_UNUSED = 0;
+  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, GetBoundaryWidth(cctkGH), -1 /* no table */, "EulerAuto::Den_flux_group","flat");
   if (ierr < 0)
     CCTK_WARN(1, "Failed to register flat BC for EulerAuto::Den_flux_group.");
-  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, GenericFD_GetBoundaryWidth(cctkGH), -1 /* no table */, "EulerAuto::En_flux_group","flat");
+  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, GetBoundaryWidth(cctkGH), -1 /* no table */, "EulerAuto::En_flux_group","flat");
   if (ierr < 0)
     CCTK_WARN(1, "Failed to register flat BC for EulerAuto::En_flux_group.");
-  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, GenericFD_GetBoundaryWidth(cctkGH), -1 /* no table */, "EulerAuto::S1_flux_group","flat");
+  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, GetBoundaryWidth(cctkGH), -1 /* no table */, "EulerAuto::S1_flux_group","flat");
   if (ierr < 0)
     CCTK_WARN(1, "Failed to register flat BC for EulerAuto::S1_flux_group.");
-  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, GenericFD_GetBoundaryWidth(cctkGH), -1 /* no table */, "EulerAuto::S2_flux_group","flat");
+  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, GetBoundaryWidth(cctkGH), -1 /* no table */, "EulerAuto::S2_flux_group","flat");
   if (ierr < 0)
     CCTK_WARN(1, "Failed to register flat BC for EulerAuto::S2_flux_group.");
-  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, GenericFD_GetBoundaryWidth(cctkGH), -1 /* no table */, "EulerAuto::S3_flux_group","flat");
+  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, GetBoundaryWidth(cctkGH), -1 /* no table */, "EulerAuto::S3_flux_group","flat");
   if (ierr < 0)
     CCTK_WARN(1, "Failed to register flat BC for EulerAuto::S3_flux_group.");
   return;
 }
 
-static void eulerauto_cons_calc_flux_2_Body(cGH const * restrict const cctkGH, int const dir, int const face, CCTK_REAL const normal[3], CCTK_REAL const tangentA[3], CCTK_REAL const tangentB[3], int const imin[3], int const imax[3], int const n_subblock_gfs, CCTK_REAL * restrict const subblock_gfs[])
+static void eulerauto_cons_calc_flux_2_Body(const cGH* restrict const cctkGH, const int dir, const int face, const CCTK_REAL normal[3], const CCTK_REAL tangentA[3], const CCTK_REAL tangentB[3], const int imin[3], const int imax[3], const int n_subblock_gfs, CCTK_REAL* restrict const subblock_gfs[])
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  
   /* Include user-supplied include files */
-  
   /* Initialise finite differencing variables */
-  ptrdiff_t /*const*/ di CCTK_ATTRIBUTE_UNUSED  = 1;
-  ptrdiff_t /*const*/ dj CCTK_ATTRIBUTE_UNUSED  = CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0);
-  ptrdiff_t /*const*/ dk CCTK_ATTRIBUTE_UNUSED  = CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0);
-  ptrdiff_t /*const*/ cdi CCTK_ATTRIBUTE_UNUSED  = sizeof(CCTK_REAL) * di;
-  ptrdiff_t /*const*/ cdj CCTK_ATTRIBUTE_UNUSED  = sizeof(CCTK_REAL) * dj;
-  ptrdiff_t /*const*/ cdk CCTK_ATTRIBUTE_UNUSED  = sizeof(CCTK_REAL) * dk;
-  CCTK_REAL /*const*/ dx CCTK_ATTRIBUTE_UNUSED  = ToReal(CCTK_DELTA_SPACE(0));
-  CCTK_REAL /*const*/ dy CCTK_ATTRIBUTE_UNUSED  = ToReal(CCTK_DELTA_SPACE(1));
-  CCTK_REAL /*const*/ dz CCTK_ATTRIBUTE_UNUSED  = ToReal(CCTK_DELTA_SPACE(2));
-  CCTK_REAL /*const*/ dt CCTK_ATTRIBUTE_UNUSED  = ToReal(CCTK_DELTA_TIME);
-  CCTK_REAL /*const*/ t CCTK_ATTRIBUTE_UNUSED  = ToReal(cctk_time);
-  CCTK_REAL /*const*/ dxi CCTK_ATTRIBUTE_UNUSED  = INV(dx);
-  CCTK_REAL /*const*/ dyi CCTK_ATTRIBUTE_UNUSED  = INV(dy);
-  CCTK_REAL /*const*/ dzi CCTK_ATTRIBUTE_UNUSED  = INV(dz);
-  CCTK_REAL /*const*/ khalf CCTK_ATTRIBUTE_UNUSED  = 0.5;
-  CCTK_REAL /*const*/ kthird CCTK_ATTRIBUTE_UNUSED  = 1/3.0;
-  CCTK_REAL /*const*/ ktwothird CCTK_ATTRIBUTE_UNUSED  = 2.0/3.0;
-  CCTK_REAL /*const*/ kfourthird CCTK_ATTRIBUTE_UNUSED  = 4.0/3.0;
-  CCTK_REAL /*const*/ keightthird CCTK_ATTRIBUTE_UNUSED  = 8.0/3.0;
-  CCTK_REAL /*const*/ hdxi CCTK_ATTRIBUTE_UNUSED  = 0.5 * dxi;
-  CCTK_REAL /*const*/ hdyi CCTK_ATTRIBUTE_UNUSED  = 0.5 * dyi;
-  CCTK_REAL /*const*/ hdzi CCTK_ATTRIBUTE_UNUSED  = 0.5 * dzi;
-  
+  const ptrdiff_t di CCTK_ATTRIBUTE_UNUSED = 1;
+  const ptrdiff_t dj CCTK_ATTRIBUTE_UNUSED = 
+    CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0);
+  const ptrdiff_t dk CCTK_ATTRIBUTE_UNUSED = 
+    CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0);
+  const ptrdiff_t cdi CCTK_ATTRIBUTE_UNUSED = sizeof(CCTK_REAL) * di;
+  const ptrdiff_t cdj CCTK_ATTRIBUTE_UNUSED = sizeof(CCTK_REAL) * dj;
+  const ptrdiff_t cdk CCTK_ATTRIBUTE_UNUSED = sizeof(CCTK_REAL) * dk;
+  const ptrdiff_t cctkLbnd1 CCTK_ATTRIBUTE_UNUSED = cctk_lbnd[0];
+  const ptrdiff_t cctkLbnd2 CCTK_ATTRIBUTE_UNUSED = cctk_lbnd[1];
+  const ptrdiff_t cctkLbnd3 CCTK_ATTRIBUTE_UNUSED = cctk_lbnd[2];
+  const CCTK_REAL t CCTK_ATTRIBUTE_UNUSED = cctk_time;
+  const CCTK_REAL cctkOriginSpace1 CCTK_ATTRIBUTE_UNUSED = 
+    CCTK_ORIGIN_SPACE(0);
+  const CCTK_REAL cctkOriginSpace2 CCTK_ATTRIBUTE_UNUSED = 
+    CCTK_ORIGIN_SPACE(1);
+  const CCTK_REAL cctkOriginSpace3 CCTK_ATTRIBUTE_UNUSED = 
+    CCTK_ORIGIN_SPACE(2);
+  const CCTK_REAL dt CCTK_ATTRIBUTE_UNUSED = CCTK_DELTA_TIME;
+  const CCTK_REAL dx CCTK_ATTRIBUTE_UNUSED = CCTK_DELTA_SPACE(0);
+  const CCTK_REAL dy CCTK_ATTRIBUTE_UNUSED = CCTK_DELTA_SPACE(1);
+  const CCTK_REAL dz CCTK_ATTRIBUTE_UNUSED = CCTK_DELTA_SPACE(2);
+  const CCTK_REAL dxi CCTK_ATTRIBUTE_UNUSED = pow(dx,-1);
+  const CCTK_REAL dyi CCTK_ATTRIBUTE_UNUSED = pow(dy,-1);
+  const CCTK_REAL dzi CCTK_ATTRIBUTE_UNUSED = pow(dz,-1);
+  const CCTK_REAL khalf CCTK_ATTRIBUTE_UNUSED = 0.5;
+  const CCTK_REAL kthird CCTK_ATTRIBUTE_UNUSED = 
+    0.333333333333333333333333333333;
+  const CCTK_REAL ktwothird CCTK_ATTRIBUTE_UNUSED = 
+    0.666666666666666666666666666667;
+  const CCTK_REAL kfourthird CCTK_ATTRIBUTE_UNUSED = 
+    1.33333333333333333333333333333;
+  const CCTK_REAL hdxi CCTK_ATTRIBUTE_UNUSED = 0.5*dxi;
+  const CCTK_REAL hdyi CCTK_ATTRIBUTE_UNUSED = 0.5*dyi;
+  const CCTK_REAL hdzi CCTK_ATTRIBUTE_UNUSED = 0.5*dzi;
   /* Initialize predefined quantities */
-  CCTK_REAL /*const*/ p1o1 CCTK_ATTRIBUTE_UNUSED  = 1.;
-  CCTK_REAL /*const*/ p1odx CCTK_ATTRIBUTE_UNUSED  = INV(dx);
-  CCTK_REAL /*const*/ p1ody CCTK_ATTRIBUTE_UNUSED  = INV(dy);
-  CCTK_REAL /*const*/ p1odz CCTK_ATTRIBUTE_UNUSED  = INV(dz);
-  
+  const CCTK_REAL p1o1 CCTK_ATTRIBUTE_UNUSED = 1;
+  const CCTK_REAL p1odx CCTK_ATTRIBUTE_UNUSED = pow(dx,-1);
+  const CCTK_REAL p1ody CCTK_ATTRIBUTE_UNUSED = pow(dy,-1);
+  const CCTK_REAL p1odz CCTK_ATTRIBUTE_UNUSED = pow(dz,-1);
   /* Assign local copies of arrays functions */
   
   
-  
   /* Calculate temporaries and arrays functions */
-  
   /* Copy local copies back to grid functions */
-  
   /* Loop over the grid points */
+  const int imin0=imin[0];
+  const int imin1=imin[1];
+  const int imin2=imin[2];
+  const int imax0=imax[0];
+  const int imax1=imax[1];
+  const int imax2=imax[2];
   #pragma omp parallel
   CCTK_LOOP3(eulerauto_cons_calc_flux_2,
-    i,j,k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
+    i,j,k, imin0,imin1,imin2, imax0,imax1,imax2,
     cctk_ash[0],cctk_ash[1],cctk_ash[2])
   {
-    ptrdiff_t /*const*/ index CCTK_ATTRIBUTE_UNUSED  = di*i + dj*j + dk*k;
-    
+    const ptrdiff_t index CCTK_ATTRIBUTE_UNUSED = di*i + dj*j + dk*k;
     /* Assign local copies of grid functions */
     
     CCTK_REAL DenLeftL CCTK_ATTRIBUTE_UNUSED = DenLeft[index];
@@ -123,67 +131,60 @@ static void eulerauto_cons_calc_flux_2_Body(cGH const * restrict const cctkGH, i
     CCTK_REAL v3LeftL CCTK_ATTRIBUTE_UNUSED = v3Left[index];
     CCTK_REAL v3RightL CCTK_ATTRIBUTE_UNUSED = v3Right[index];
     
-    
     /* Include user supplied include files */
-    
     /* Precompute derivatives */
-    CCTK_REAL /*const*/ ShiftMinus2DenRight CCTK_ATTRIBUTE_UNUSED  = ShiftMinus2(&DenRight[index]);
-    CCTK_REAL /*const*/ ShiftMinus2EnRight CCTK_ATTRIBUTE_UNUSED  = ShiftMinus2(&EnRight[index]);
-    CCTK_REAL /*const*/ ShiftMinus2pRight CCTK_ATTRIBUTE_UNUSED  = ShiftMinus2(&pRight[index]);
-    CCTK_REAL /*const*/ ShiftMinus2rhoRight CCTK_ATTRIBUTE_UNUSED  = ShiftMinus2(&rhoRight[index]);
-    CCTK_REAL /*const*/ ShiftMinus2S1Right CCTK_ATTRIBUTE_UNUSED  = ShiftMinus2(&S1Right[index]);
-    CCTK_REAL /*const*/ ShiftMinus2S2Right CCTK_ATTRIBUTE_UNUSED  = ShiftMinus2(&S2Right[index]);
-    CCTK_REAL /*const*/ ShiftMinus2S3Right CCTK_ATTRIBUTE_UNUSED  = ShiftMinus2(&S3Right[index]);
-    CCTK_REAL /*const*/ ShiftMinus2v1Right CCTK_ATTRIBUTE_UNUSED  = ShiftMinus2(&v1Right[index]);
-    CCTK_REAL /*const*/ ShiftMinus2v2Right CCTK_ATTRIBUTE_UNUSED  = ShiftMinus2(&v2Right[index]);
-    CCTK_REAL /*const*/ ShiftMinus2v3Right CCTK_ATTRIBUTE_UNUSED  = ShiftMinus2(&v3Right[index]);
-    
+    const CCTK_REAL ShiftMinus2DenRight CCTK_ATTRIBUTE_UNUSED = ShiftMinus2(&DenRight[index]);
+    const CCTK_REAL ShiftMinus2EnRight CCTK_ATTRIBUTE_UNUSED = ShiftMinus2(&EnRight[index]);
+    const CCTK_REAL ShiftMinus2pRight CCTK_ATTRIBUTE_UNUSED = ShiftMinus2(&pRight[index]);
+    const CCTK_REAL ShiftMinus2rhoRight CCTK_ATTRIBUTE_UNUSED = ShiftMinus2(&rhoRight[index]);
+    const CCTK_REAL ShiftMinus2S1Right CCTK_ATTRIBUTE_UNUSED = ShiftMinus2(&S1Right[index]);
+    const CCTK_REAL ShiftMinus2S2Right CCTK_ATTRIBUTE_UNUSED = ShiftMinus2(&S2Right[index]);
+    const CCTK_REAL ShiftMinus2S3Right CCTK_ATTRIBUTE_UNUSED = ShiftMinus2(&S3Right[index]);
+    const CCTK_REAL ShiftMinus2v1Right CCTK_ATTRIBUTE_UNUSED = ShiftMinus2(&v1Right[index]);
+    const CCTK_REAL ShiftMinus2v2Right CCTK_ATTRIBUTE_UNUSED = ShiftMinus2(&v2Right[index]);
+    const CCTK_REAL ShiftMinus2v3Right CCTK_ATTRIBUTE_UNUSED = ShiftMinus2(&v3Right[index]);
     /* Calculate temporaries and grid functions */
-    CCTK_REAL CCTK_ATTRIBUTE_UNUSED DenFluxLeft = rhoLeftL*v2LeftL;
+    CCTK_REAL DenFluxLeft CCTK_ATTRIBUTE_UNUSED = rhoLeftL*v2LeftL;
     
-    CCTK_REAL CCTK_ATTRIBUTE_UNUSED DenFluxRight = 
+    CCTK_REAL DenFluxRight CCTK_ATTRIBUTE_UNUSED = 
       ShiftMinus2rhoRight*ShiftMinus2v2Right;
     
-    CCTK_REAL CCTK_ATTRIBUTE_UNUSED DenFluxL = 0.5*(DenFluxLeft + 
-      DenFluxRight + (-1.*DenLeftL + 
-      ShiftMinus2DenRight)*ToReal(hlleAlpha));
+    CCTK_REAL DenFluxL CCTK_ATTRIBUTE_UNUSED = 0.5*(DenFluxLeft + 
+      DenFluxRight + hlleAlpha*(-DenLeftL + ShiftMinus2DenRight));
     
-    CCTK_REAL CCTK_ATTRIBUTE_UNUSED S1FluxLeft = 
-      rhoLeftL*v1LeftL*v2LeftL;
+    CCTK_REAL S1FluxLeft CCTK_ATTRIBUTE_UNUSED = rhoLeftL*v1LeftL*v2LeftL;
     
-    CCTK_REAL CCTK_ATTRIBUTE_UNUSED S1FluxRight = 
+    CCTK_REAL S1FluxRight CCTK_ATTRIBUTE_UNUSED = 
       ShiftMinus2rhoRight*ShiftMinus2v1Right*ShiftMinus2v2Right;
     
-    CCTK_REAL CCTK_ATTRIBUTE_UNUSED S1FluxL = 0.5*(S1FluxLeft + 
-      S1FluxRight + (-1.*S1LeftL + ShiftMinus2S1Right)*ToReal(hlleAlpha));
+    CCTK_REAL S1FluxL CCTK_ATTRIBUTE_UNUSED = 0.5*(S1FluxLeft + 
+      S1FluxRight + hlleAlpha*(-S1LeftL + ShiftMinus2S1Right));
     
-    CCTK_REAL CCTK_ATTRIBUTE_UNUSED S2FluxLeft = pLeftL + 
-      rhoLeftL*SQR(v2LeftL);
+    CCTK_REAL S2FluxLeft CCTK_ATTRIBUTE_UNUSED = pLeftL + 
+      rhoLeftL*pow(v2LeftL,2);
     
-    CCTK_REAL CCTK_ATTRIBUTE_UNUSED S2FluxRight = ShiftMinus2pRight + 
-      ShiftMinus2rhoRight*SQR(ShiftMinus2v2Right);
+    CCTK_REAL S2FluxRight CCTK_ATTRIBUTE_UNUSED = ShiftMinus2pRight + 
+      ShiftMinus2rhoRight*pow(ShiftMinus2v2Right,2);
     
-    CCTK_REAL CCTK_ATTRIBUTE_UNUSED S2FluxL = 0.5*(S2FluxLeft + 
-      S2FluxRight + (-1.*S2LeftL + ShiftMinus2S2Right)*ToReal(hlleAlpha));
+    CCTK_REAL S2FluxL CCTK_ATTRIBUTE_UNUSED = 0.5*(S2FluxLeft + 
+      S2FluxRight + hlleAlpha*(-S2LeftL + ShiftMinus2S2Right));
     
-    CCTK_REAL CCTK_ATTRIBUTE_UNUSED S3FluxLeft = 
-      rhoLeftL*v2LeftL*v3LeftL;
+    CCTK_REAL S3FluxLeft CCTK_ATTRIBUTE_UNUSED = rhoLeftL*v2LeftL*v3LeftL;
     
-    CCTK_REAL CCTK_ATTRIBUTE_UNUSED S3FluxRight = 
+    CCTK_REAL S3FluxRight CCTK_ATTRIBUTE_UNUSED = 
       ShiftMinus2rhoRight*ShiftMinus2v2Right*ShiftMinus2v3Right;
     
-    CCTK_REAL CCTK_ATTRIBUTE_UNUSED S3FluxL = 0.5*(S3FluxLeft + 
-      S3FluxRight + (-1.*S3LeftL + ShiftMinus2S3Right)*ToReal(hlleAlpha));
+    CCTK_REAL S3FluxL CCTK_ATTRIBUTE_UNUSED = 0.5*(S3FluxLeft + 
+      S3FluxRight + hlleAlpha*(-S3LeftL + ShiftMinus2S3Right));
     
-    CCTK_REAL CCTK_ATTRIBUTE_UNUSED EnFluxLeft = (EnLeftL + 
+    CCTK_REAL EnFluxLeft CCTK_ATTRIBUTE_UNUSED = (EnLeftL + 
       pLeftL)*v2LeftL;
     
-    CCTK_REAL CCTK_ATTRIBUTE_UNUSED EnFluxRight = (ShiftMinus2EnRight + 
+    CCTK_REAL EnFluxRight CCTK_ATTRIBUTE_UNUSED = (ShiftMinus2EnRight + 
       ShiftMinus2pRight)*ShiftMinus2v2Right;
     
-    CCTK_REAL CCTK_ATTRIBUTE_UNUSED EnFluxL = 0.5*(EnFluxLeft + 
-      EnFluxRight + (-1.*EnLeftL + ShiftMinus2EnRight)*ToReal(hlleAlpha));
-    
+    CCTK_REAL EnFluxL CCTK_ATTRIBUTE_UNUSED = 0.5*(EnFluxLeft + 
+      EnFluxRight + hlleAlpha*(-EnLeftL + ShiftMinus2EnRight));
     /* Copy local copies back to grid functions */
     DenFlux[index] = DenFluxL;
     EnFlux[index] = EnFluxL;
@@ -193,24 +194,21 @@ static void eulerauto_cons_calc_flux_2_Body(cGH const * restrict const cctkGH, i
   }
   CCTK_ENDLOOP3(eulerauto_cons_calc_flux_2);
 }
-
 extern "C" void eulerauto_cons_calc_flux_2(CCTK_ARGUMENTS)
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  
   if (verbose > 1)
   {
     CCTK_VInfo(CCTK_THORNSTRING,"Entering eulerauto_cons_calc_flux_2_Body");
   }
-  
   if (cctk_iteration % eulerauto_cons_calc_flux_2_calc_every != eulerauto_cons_calc_flux_2_calc_offset)
   {
     return;
   }
   
-  const char *const groups[] = {
+  const char* const groups[] = {
     "EulerAuto::Den_flux_group",
     "EulerAuto::Den_lr_group",
     "EulerAuto::En_flux_group",
@@ -226,14 +224,15 @@ extern "C" void eulerauto_cons_calc_flux_2(CCTK_ARGUMENTS)
     "EulerAuto::v1_lr_group",
     "EulerAuto::v2_lr_group",
     "EulerAuto::v3_lr_group"};
-  GenericFD_AssertGroupStorage(cctkGH, "eulerauto_cons_calc_flux_2", 15, groups);
+  AssertGroupStorage(cctkGH, "eulerauto_cons_calc_flux_2", 15, groups);
   
-  GenericFD_EnsureStencilFits(cctkGH, "eulerauto_cons_calc_flux_2", 1, 1, 1);
+  EnsureStencilFits(cctkGH, "eulerauto_cons_calc_flux_2", 1, 1, 1);
   
-  GenericFD_LoopOverInterior(cctkGH, eulerauto_cons_calc_flux_2_Body);
-  
+  LoopOverInterior(cctkGH, eulerauto_cons_calc_flux_2_Body);
   if (verbose > 1)
   {
     CCTK_VInfo(CCTK_THORNSTRING,"Leaving eulerauto_cons_calc_flux_2_Body");
   }
 }
+
+} // namespace EulerAuto

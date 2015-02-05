@@ -31,6 +31,12 @@ CCTK_INT fdOrder "fdOrder"
 } 2
 
 restricted:
+CCTK_INT tile_size "Loop tile size"
+{
+  *:* :: ""
+} -1
+
+restricted:
 CCTK_INT WaveCaKernelScript_MaxNumEvolvedVars "Number of evolved variables used by this thorn" ACCUMULATOR-BASE=MethodofLines::MoL_Num_Evolved_Vars STEERABLE=RECOVER
 {
   2:2 :: "Number of evolved variables used by this thorn"

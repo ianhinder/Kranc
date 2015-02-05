@@ -77,7 +77,7 @@ DefFn[
              "TILE" -> Quote[StringJoin[Riffle[ToString/@tileSize,","]]],
              "SHARECODE" -> "yes"};
 
-    stencil = lookup[calc,StencilSizeResolved];
+    stencil = CalculationStencilSize[calc];
 
     If[int,
        attrs = Append[attrs, 
@@ -88,7 +88,7 @@ DefFn[
 
     attrs = Append[attrs, "EXTERIOR" ->
       If[MemberQ[{Everywhere, BoundaryWithGhosts},
-                 lookup[calc,WhereResolved]] || 
+                 GetCalculationWhere[calc]] || 
          (MemberQ[stencil, 0] && Total[stencil] === 0 ),
         Quote["1,1,1,1,1,1"],
         Quote["0,0,0,0,0,0"]]];

@@ -1,6 +1,5 @@
 # File produced by Kranc
 
-
 STORAGE: evolved_group[timelevels]
 
 STORAGE: evolved_grouprhs[rhs_timelevels]
@@ -8,7 +7,6 @@ STORAGE: evolved_grouprhs[rhs_timelevels]
 STORAGE: ode_group[other_timelevels]
 
 STORAGE: ode_grouprhs[other_timelevels]
-
 schedule SimpleWaveODE_Startup at STARTUP
 {
   LANG: C
@@ -62,7 +60,6 @@ schedule SimpleWaveODE_RegisterVars in MoL_Register
   LANG: C
   OPTIONS: meta
 } "Register Variables for MoL"
-
 schedule group ApplyBCs as SimpleWaveODE_ApplyBCs in MoL_PostStep after SimpleWaveODE_SelectBoundConds
 {
 } "Apply boundary conditions controlled by thorn Boundary"

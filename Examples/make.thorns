@@ -1,0 +1,13 @@
+Advect
+AdvectCaKernel
+Burgers
+EM
+Euler
+EulerAuto
+EulerSR
+Laplace
+SimpleWave
+SimpleWaveODE
+SimpleWaveOpenCL
+Wave
+WaveCaKernel

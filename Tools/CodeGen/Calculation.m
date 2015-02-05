@@ -29,6 +29,7 @@ GetCalculationScheduleName;
 GetEquations;
 GetCalculationParameters;
 CalculationStencilSize;
+CalculationPointwiseQ;
 CalculationOnDevice;
 GetCalculationWhere;
 SplitCalculations;
@@ -114,8 +115,9 @@ DefFn[
 
 DefFn[
   GetCalculationWhere[calc_List] :=
-  (* TODO: support Automatic here, but we need to calculate the stencil size *)
-  lookup[calc,Where, Everywhere]];
+  (* TODO: the default for Where is Everywhere; it should probably be Automatic *)
+  lookup[calc,Where, Everywhere] /.
+  (Automatic -> If[!CalculationPointwiseQ[calc], Interior, Everywhere])];
 
 DefFn[
   BoundaryCalculationQ[calc_List] :=
@@ -125,14 +127,30 @@ DefFn[
   MemberQ[{Boundary, BoundaryWithGhosts, BoundaryNoSync}, GetCalculationWhere[calc]]];
 
 DefFn[
+  CalculationPointwiseQ[calc_List] :=
+  Module[
+    {stencilSize = CalculationStencilSize[calc]},
+    If[!MatchQ[stencilSize, {_Integer, _Integer, _Integer}],
+      Error["Internal error: Invalid stencil size"]];
+    MatchQ[stencilSize, {0,0,0}]]];
+
+DefFn[
   CalculationStencilSize[calc_List] :=
   Module[
-    {pddefs,eqs},
+    {pddefs, eqs, stencilSize},
 
     pddefs = lookup[calc, PartialDerivatives, {}];
     eqs    = lookup[calc, Equations];
 
-    StencilSize[pddefs, eqs, "not needed", {} (*ZeroDimensions*)]]];
+    stencilSize = StencilSize[pddefs, eqs, "not needed", {} (*ZeroDimensions*),
+                              lookupDefault[calc, IntParameters, {}]];
+
+    (* We cannot handle a stencil size which depends on a parameter,
+       so take the maximum that it could possibly be *)
+    If[!VectorQ[stencilSize],
+       stencilSize = MapThread[Max,Map[Last,stencilSize[[2]]]]];
+    (* TODO: decide what to do about stencil sizes that depend on runtime parameters *)
+    stencilSize]];
 
 DefFn[
   CalculationOnDevice[calc_List] :=
@@ -413,7 +431,7 @@ VerifyCalculation[calc_] :=
 
     allowedKeys = {BodyFunction, CallerFunction, ExecuteOn,
          GFAccessFunction, Groups, Implementation, InitFDVariables,
-         LoopFunction, MacroPointer, Name, ODEGroups, Parameters,
+         LoopFunction, MacroPointer, Name, ODEGroups, Parameters, IntParameters,
          PartialDerivatives, PreDefinitions, Schedule,Equations,
          PreDefinitionsExpr,
          Shorthands, ConditionalOnKeyword, Before, After,
@@ -423,7 +441,7 @@ VerifyCalculation[calc_] :=
          LocalGroups, NoSimplify, UseDGFE, SimpleCode, UseCaKernel,
          UseJacobian,
          ScheduleGroups, TriggerGroups, ThornName, Tile, UseLoopControl,
-         WhereResolved, StencilSizeResolved, ChemoraContents };
+         ChemoraContents };
 
     usedKeys = Map[First, calc];
     unknownKeys = Complement[usedKeys, allowedKeys];

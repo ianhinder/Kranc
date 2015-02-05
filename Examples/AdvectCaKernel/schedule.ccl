@@ -1,11 +1,6 @@
 # File produced by Kranc
 
-
-if (other_timelevels == 1)
-{
-  STORAGE: phi_g[1]
-}
-
+STORAGE: phi_g[other_timelevels]
 schedule AdvectCaKernel_Startup at STARTUP
 {
   LANG: C
@@ -22,8 +17,8 @@ schedule CAKERNEL_Launch_initial_gaussian as initial_gaussian AT INITIAL
 {
   LANG: C
   TAGS: Device=1
-  READS:    grid::x(Everywhere)
-  WRITES:   AdvectCaKernel::phi(Everywhere)
+  READS: grid::x(Everywhere)
+  WRITES: AdvectCaKernel::phi(Everywhere)
 } "initial_gaussian"
 
 schedule AdvectCaKernel_SelectBoundConds in MoL_PostStep
@@ -49,7 +44,6 @@ schedule AdvectCaKernel_Init in CCTK_BASEGRID after Accelerator_SetDevice
   LANG: C
   OPTIONS: local
 } "Initialize CUDA Device"
-
 schedule group ApplyBCs as AdvectCaKernel_ApplyBCs in MoL_PostStep after AdvectCaKernel_SelectBoundConds
 {
 } "Apply boundary conditions controlled by thorn Boundary"

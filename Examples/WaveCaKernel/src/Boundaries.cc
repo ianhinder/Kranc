@@ -30,7 +30,7 @@ extern "C" void WaveCaKernel_SelectBoundConds(CCTK_ARGUMENTS)
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  CCTK_INT ierr CCTK_ATTRIBUTE_UNUSED  = 0;
+  CCTK_INT ierr CCTK_ATTRIBUTE_UNUSED = 0;
   
   if (CCTK_EQUALS(phi_g_bound, "none"  ) ||
       CCTK_EQUALS(phi_g_bound, "static") ||
@@ -79,7 +79,7 @@ extern "C" void WaveCaKernel_SelectBoundConds(CCTK_ARGUMENTS)
   if (CCTK_EQUALS(phi_g_bound, "radiative"))
   {
    /* select radiation boundary condition */
-    static CCTK_INT handle_phi_g_bound CCTK_ATTRIBUTE_UNUSED  = -1;
+    static CCTK_INT handle_phi_g_bound CCTK_ATTRIBUTE_UNUSED = -1;
     if (handle_phi_g_bound < 0) handle_phi_g_bound = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);
     if (handle_phi_g_bound < 0) CCTK_WARN(0, "could not create table!");
     if (Util_TableSetReal(handle_phi_g_bound , phi_g_bound_limit, "LIMIT") < 0)
@@ -98,7 +98,7 @@ extern "C" void WaveCaKernel_SelectBoundConds(CCTK_ARGUMENTS)
   if (CCTK_EQUALS(pi_g_bound, "radiative"))
   {
    /* select radiation boundary condition */
-    static CCTK_INT handle_pi_g_bound CCTK_ATTRIBUTE_UNUSED  = -1;
+    static CCTK_INT handle_pi_g_bound CCTK_ATTRIBUTE_UNUSED = -1;
     if (handle_pi_g_bound < 0) handle_pi_g_bound = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);
     if (handle_pi_g_bound < 0) CCTK_WARN(0, "could not create table!");
     if (Util_TableSetReal(handle_pi_g_bound , pi_g_bound_limit, "LIMIT") < 0)
@@ -117,7 +117,7 @@ extern "C" void WaveCaKernel_SelectBoundConds(CCTK_ARGUMENTS)
   if (CCTK_EQUALS(phi_bound, "radiative"))
   {
    /* select radiation boundary condition */
-    static CCTK_INT handle_phi_bound CCTK_ATTRIBUTE_UNUSED  = -1;
+    static CCTK_INT handle_phi_bound CCTK_ATTRIBUTE_UNUSED = -1;
     if (handle_phi_bound < 0) handle_phi_bound = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);
     if (handle_phi_bound < 0) CCTK_WARN(0, "could not create table!");
     if (Util_TableSetReal(handle_phi_bound , phi_bound_limit, "LIMIT") < 0)
@@ -136,7 +136,7 @@ extern "C" void WaveCaKernel_SelectBoundConds(CCTK_ARGUMENTS)
   if (CCTK_EQUALS(pi_bound, "radiative"))
   {
    /* select radiation boundary condition */
-    static CCTK_INT handle_pi_bound CCTK_ATTRIBUTE_UNUSED  = -1;
+    static CCTK_INT handle_pi_bound CCTK_ATTRIBUTE_UNUSED = -1;
     if (handle_pi_bound < 0) handle_pi_bound = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);
     if (handle_pi_bound < 0) CCTK_WARN(0, "could not create table!");
     if (Util_TableSetReal(handle_pi_bound , pi_bound_limit, "LIMIT") < 0)
@@ -155,7 +155,7 @@ extern "C" void WaveCaKernel_SelectBoundConds(CCTK_ARGUMENTS)
   if (CCTK_EQUALS(phi_g_bound, "scalar"))
   {
    /* select scalar boundary condition */
-    static CCTK_INT handle_phi_g_bound CCTK_ATTRIBUTE_UNUSED  = -1;
+    static CCTK_INT handle_phi_g_bound CCTK_ATTRIBUTE_UNUSED = -1;
     if (handle_phi_g_bound < 0) handle_phi_g_bound = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);
     if (handle_phi_g_bound < 0) CCTK_WARN(0, "could not create table!");
     if (Util_TableSetReal(handle_phi_g_bound ,phi_g_bound_scalar, "SCALAR") < 0)
@@ -172,7 +172,7 @@ extern "C" void WaveCaKernel_SelectBoundConds(CCTK_ARGUMENTS)
   if (CCTK_EQUALS(pi_g_bound, "scalar"))
   {
    /* select scalar boundary condition */
-    static CCTK_INT handle_pi_g_bound CCTK_ATTRIBUTE_UNUSED  = -1;
+    static CCTK_INT handle_pi_g_bound CCTK_ATTRIBUTE_UNUSED = -1;
     if (handle_pi_g_bound < 0) handle_pi_g_bound = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);
     if (handle_pi_g_bound < 0) CCTK_WARN(0, "could not create table!");
     if (Util_TableSetReal(handle_pi_g_bound ,pi_g_bound_scalar, "SCALAR") < 0)
@@ -189,7 +189,7 @@ extern "C" void WaveCaKernel_SelectBoundConds(CCTK_ARGUMENTS)
   if (CCTK_EQUALS(phi_bound, "scalar"))
   {
    /* select scalar boundary condition */
-    static CCTK_INT handle_phi_bound CCTK_ATTRIBUTE_UNUSED  = -1;
+    static CCTK_INT handle_phi_bound CCTK_ATTRIBUTE_UNUSED = -1;
     if (handle_phi_bound < 0) handle_phi_bound = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);
     if (handle_phi_bound < 0) CCTK_WARN(0, "could not create table!");
     if (Util_TableSetReal(handle_phi_bound ,phi_bound_scalar, "SCALAR") < 0)
@@ -206,7 +206,7 @@ extern "C" void WaveCaKernel_SelectBoundConds(CCTK_ARGUMENTS)
   if (CCTK_EQUALS(pi_bound, "scalar"))
   {
    /* select scalar boundary condition */
-    static CCTK_INT handle_pi_bound CCTK_ATTRIBUTE_UNUSED  = -1;
+    static CCTK_INT handle_pi_bound CCTK_ATTRIBUTE_UNUSED = -1;
     if (handle_pi_bound < 0) handle_pi_bound = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);
     if (handle_pi_bound < 0) CCTK_WARN(0, "could not create table!");
     if (Util_TableSetReal(handle_pi_bound ,pi_bound_scalar, "SCALAR") < 0)

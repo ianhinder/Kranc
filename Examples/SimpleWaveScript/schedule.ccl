@@ -1,6 +1,5 @@
 # File produced by Kranc
 
-
 STORAGE: phi_group[timelevels]
 
 STORAGE: pi_group[timelevels]
@@ -8,7 +7,6 @@ STORAGE: pi_group[timelevels]
 STORAGE: phi_grouprhs[rhs_timelevels]
 
 STORAGE: pi_grouprhs[rhs_timelevels]
-
 schedule SimpleWaveScript_Startup at STARTUP
 {
   LANG: C
@@ -58,7 +56,6 @@ schedule SimpleWaveScript_RegisterVars in MoL_Register
   LANG: C
   OPTIONS: meta
 } "Register Variables for MoL"
-
 schedule group ApplyBCs as SimpleWaveScript_ApplyBCs in MoL_PostStep after SimpleWaveScript_SelectBoundConds
 {
 } "Apply boundary conditions controlled by thorn Boundary"

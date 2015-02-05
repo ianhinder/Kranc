@@ -23,12 +23,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "cctk.h"                             
-#include "cctk_Arguments.h"                   
-#include "cctk_Parameters.h"                  
-#include "util_Table.h"
+#include <cctk.h>
+#include <cctk_Arguments.h>
+#include <cctk_Parameters.h>
+#include <util_Table.h>
 
-#include "Symmetry.h"                         
+#include <Symmetry.h>
             
 #include "Kranc.hh"
 
@@ -38,11 +38,11 @@ namespace SimpleWaveScriptCaKernel {
  * GetBoundaryWidths
  *********************************************************************/
 
-void GetBoundaryWidths(cGH const * restrict const cctkGH, int nboundaryzones[6])
+void GetBoundaryWidths(cGH const * restrict const cctkGH, CCTK_INT nboundaryzones[6])
 {
-  int is_internal[6];
-  int is_staggered[6];
-  int shiftout[6];
+  CCTK_INT is_internal[6];
+  CCTK_INT is_staggered[6];
+  CCTK_INT shiftout[6];
   int ierr = -1;
 
   if (CCTK_IsFunctionAliased ("MultiPatch_GetBoundarySpecification")) {
@@ -80,7 +80,7 @@ void GetBoundaryWidths(cGH const * restrict const cctkGH, int nboundaryzones[6])
 
 int GetBoundaryWidth(cGH const * restrict const cctkGH)
 {
-  int nboundaryzones[6];
+  CCTK_INT nboundaryzones[6];
   GetBoundaryWidths(cctkGH, nboundaryzones);
 
   int bw = nboundaryzones[0];
@@ -118,12 +118,12 @@ void GetBoundaryInfo(cGH const * restrict const cctkGH,
 			       int * restrict const is_physbnd,
                                int * restrict const is_ipbnd)
 {
-  int bbox[6];
-  int nboundaryzones[6];
-  int is_internal[6];
-  int is_staggered[6];
-  int shiftout[6];
-  int symbnd[6];
+  CCTK_INT bbox[6];
+  CCTK_INT nboundaryzones[6];
+  CCTK_INT is_internal[6];
+  CCTK_INT is_staggered[6];
+  CCTK_INT shiftout[6];
+  CCTK_INT symbnd[6];
 
   int symtable = 0;
   int dir = 0;
@@ -526,7 +526,7 @@ void EnsureStencilFits(cGH const * restrict const cctkGH, const char *calc, int 
 {
   DECLARE_CCTK_ARGUMENTS
 
-  int bws[6];
+  CCTK_INT bws[6];
   GetBoundaryWidths(cctkGH, bws);
 
   int ns[] = {ni, nj, nk};

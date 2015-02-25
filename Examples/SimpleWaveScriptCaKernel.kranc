@@ -9,10 +9,6 @@ begin parameters
   kfac : real "The wave number", default: 2 PI, range: 0 to 10 PI
 end parameters
 
-begin variables
-  phi pi
-end variables
-
 begin calculation initial_sine_calc scheduled at initial
   phi = amp sin(kfac x)+amp (1+2)
   pi = 0
@@ -27,5 +23,9 @@ begin calculation calc_bound_rhs scheduled at MoL_CalcRHS on boundary
   D_t phi = pi
   D_t pi = -kfac**2 phi
 end calculation
+
+begin variables
+  phi pi
+end variables
 
 end thorn

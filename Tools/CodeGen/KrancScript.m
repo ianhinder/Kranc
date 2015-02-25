@@ -55,7 +55,7 @@ process[thorn:"thorn"[content___]] :=
     {calcs = {}, name, parameters = {}, variables = {}, temporaries = {}, tensors, kernels,
      nonScalars, tensorRule, withInds, options = {}, derivatives = {}},
 
-    (* Print["thorn = ", thorn]; *)
+    (* Print["thorn = ", content]; *)
     (* KrancTensor`printStruct[thorn]; *)
     
     Do[Switch[el,
@@ -73,6 +73,7 @@ process[thorn:"thorn"[content___]] :=
        {el, {content}}];
 
     tensors = Join[variables,temporaries];
+    Print["tensors ==> ",tensors];
     kernels = Map[If[AtomQ[#],#,First[#]] &, tensors];
     Scan[DefineTensor, kernels];
     nonScalars = Cases[tensors, _tensor];
@@ -133,26 +134,46 @@ Do[
   {b,builtIns}];
 
 process["tensor"["name"[k_],inds_]] :=
-  tensor[ToExpression[If[Names[k] === {}, "Global`"<>k, k]],Sequence@@process[inds]];
+  (Print["Define:","tensor"["name"[k],inds]];
+   tensor[ToExpression[If[Names[k] === {}, "Global`"<>k, k]],Sequence@@process[inds]]);
 
 fprint[x_] := (Print[x//InputForm]; x);
 
 (* Simple derivative rules *)
+TempNum = 1
+Clear[PDiv,MakeTemp,dtens];
+(*
 PDiv[n1_?NumberQ,inds_] := 0;
 PDiv[n1_?NumberQ x2,inds_] := n1 PDiv[x2,inds];
 PDiv[x1_+x2_,inds_] := PDiv[x1,inds]+PDiv[x2,inds];
 PDiv[x1_ x2_,inds_] := PDiv[x1,inds] x2 + PDiv[x2,inds] x1;
 PDiv[x1_^n2_?NumberQ,inds_] := n2 x1^(n2-1) PDiv[x1,inds];
 PDiv[x1_,inds_] := PD[x1,inds]
+*)
+MakeTemp[x1_,inds_] := Module[{tmpnm,inds2},
+  tmpnm="Global`tmp"<>ToString[TempNum++];
+  Print["indexes$$==",InputForm[inds]];tmpnm[Sequence@@inds];
+  inds2 = inds /.
+    {
+      TensorIndex[n1_,"l"] :> "lower_index"["index_symbol"[n1]],
+      TensorIndex[n1_,"u"] :> "upper_index"["index_symbol"[n1]]
+    } /. List->"indices";
+  process["tensor"["name"[tmpnm],inds2]]];
+MakeTemp[x1__] := 
+  MakeTemp[x1,freesIn[x1]];
 
 TensorStrQ["tensor"[__]] := True;
 TensorStrQ[__] := False;
 
 process["dtensor"["dname"[dname_],inds_,"tensor"[tensor__]]] := ToExpression[dname][process["tensor"[tensor]],Sequence@@process[inds]];
 
-process["dtensor"["dname"["D"],inds_,"tensor"[tensor__]]] := (Print[">>tensor[",tensor,"] inds=[",inds,"] ",Sequence@@process[inds]];PD[process["tensor"[tensor]],Sequence@@process[inds]]);
-process["dtensor"["dname"["D"],inds_,"expr"[tensor__]]] := (Print[">>expr[",process[tensor],"] pdiv=[",PDiv[process[tensor],lx],"] inds=[",inds,"] ",Sequence@@process[inds]];
-  PDiv[process["expr"[tensor]],Sequence@@process[inds]]);
+process["dtensor"["dname"["D"],inds_,"tensor"[tensor__]]] := PD[process["tensor"[tensor]],Sequence@@process[inds]];
+process["dtensor"["dname"["D"],inds_,"expr"[tensor__]]] := Module[{xxx,tmp},
+  procexpr =process["expr"[tensor]];
+  tmp=MakeTemp[procexpr];
+  Print["tmp calc=",tmp,"=",procexpr];
+  xxx=makeSumOverDummies[PD[tmp,Sequence@@process[inds]]];
+  xxx]
 
 process["dtensor"["dname"["D"], "indices"["lower_index"["index_symbol"["t"]]],"tensor"[tensor__]]] :=
   dot[process["tensor"[tensor]]];

@@ -33,6 +33,8 @@ DefineDerivative::usage = "DefineDerivative[pd] registers a symbol to be used as
 
 ClearAllTensors;
 
+makeSumOverDummies::usage = "";
+
 MakeExplicit::usage = "MakeExplicit[x] converts an expression x \
 containing abstract indices into one containing components \
 instead.";
@@ -48,6 +50,8 @@ indicates that \ when the two-component tensor (e.g. T[la,lb]) is \
 represented as components, no distinction \ should be made between the \
 two orderings of the indices, and the increasing order is to be \
 preferred.";
+
+freesIn::usage = "Returns the free indicies in an expression";
 
 PD::usage = "PD[x,i1, i2, ...] represents the partial derivative of x
 with respect to the indices i1, i2, ...";
@@ -265,12 +269,14 @@ charactersMatch[c1_,c2_] :=
 
 DefineTensor[T_[inds__], Symmetric[{symInds__}]] :=
  Module[{},
+  Print["Defining ",T,"[",inds,"]"];
   DefineTensor[T];
   AssertSymetricIncreasing[T[inds], symInds];
 ]
 
 DefineTensor[T_[_, _, _, _], RiemannSymmetric[{_, _, _, _}]] :=
  Module[{},
+  Print["Defining ",T,"[...]"];
   DefineTensor[T];
   Tensor[T, i_, j_, k_, l_] /; i > j := -T[j, i, k, l];
   Tensor[T, i_, j_, k_, l_] /; i == j := 0;
@@ -282,8 +288,11 @@ DefineTensor[T_[_, _, _, _], RiemannSymmetric[{_, _, _, _}]] :=
 
 DefineTensor[T_[__]] := DefineTensor[T];
 
+DefineTensor[other__] := ThrowError["Bad call to DefineTensor: ",other];
+
 DefineTensor[T_] :=
   Module[{},
+    Print["Defining ",T,"[?]"];
     Format[Tensor[T, is:((TensorIndex[_,_] | _Integer) ..) ], StandardForm] :=
       Row[{T,is}]/.x_Integer->Subscript[null,x];
 
@@ -1462,9 +1471,6 @@ UndefineTensor[Tensor[T,___]] :=
     (* TODO: undefine the symmetries somehow *)
     TensorCharacter[T] =.;
     TensorAttributes[T] =.];
-
-
-
 
 End[];
 

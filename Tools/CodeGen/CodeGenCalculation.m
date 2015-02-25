@@ -401,6 +401,7 @@ DefFn[
     If[useJacobian, JacobianSymbols[], {}]];
 
   unknownSymbols = Complement[allSymbols, knownSymbols];
+  (* Print["knownSymbols=",knownSymbols]; *)
 
   unknownSymbols /.
     {{} :> True,

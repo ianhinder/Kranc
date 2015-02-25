@@ -269,14 +269,12 @@ charactersMatch[c1_,c2_] :=
 
 DefineTensor[T_[inds__], Symmetric[{symInds__}]] :=
  Module[{},
-  Print["Defining ",T,"[",inds,"]"];
   DefineTensor[T];
   AssertSymetricIncreasing[T[inds], symInds];
 ]
 
 DefineTensor[T_[_, _, _, _], RiemannSymmetric[{_, _, _, _}]] :=
  Module[{},
-  Print["Defining ",T,"[...]"];
   DefineTensor[T];
   Tensor[T, i_, j_, k_, l_] /; i > j := -T[j, i, k, l];
   Tensor[T, i_, j_, k_, l_] /; i == j := 0;
@@ -292,7 +290,6 @@ DefineTensor[other__] := ThrowError["Bad call to DefineTensor: ",other];
 
 DefineTensor[T_] :=
   Module[{},
-    Print["Defining ",T,"[?]"];
     Format[Tensor[T, is:((TensorIndex[_,_] | _Integer) ..) ], StandardForm] :=
       Row[{T,is}]/.x_Integer->Subscript[null,x];
 

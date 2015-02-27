@@ -51,7 +51,7 @@ process[h_[args___]] :=
     ThrowError["Failed to parse script"]];
 
 AddTmpCalcs[eqns_] := Module[{tmpeqns={}},
-  eqns /. {"TmpVar"[var_],"TmpCalc"[calc_],"Result"[res_]} :> AppendTo[tmpeqns,calc];
+  eqns /. TmpEqn["TmpVar"[var_],"TmpCalc"[calc_],"Result"[res_]] :> AppendTo[tmpeqns,calc];
   Join[eqns,tmpeqns]
 ];
 
@@ -80,7 +80,7 @@ process[thorn:"thorn"[content___]] :=
     (* Pull out implicitly defined temporary equations *)
     calcs = calcs /. (Equations->eqn_) :> (Equations->AddTmpCalcs[eqn]);
     (* Pull out implicitly defined temporary variables *)
-    calcs = calcs /. {"TmpVar"[var_],"TmpCalc"[calc_],"Result"[res_]} :> (
+    calcs = calcs /. TmpEqn["TmpVar"[var_],"TmpCalc"[calc_],"Result"[res_]] :> (
       AppendTo[temporaries,var];
       res);
 
@@ -167,7 +167,7 @@ MakeTemp[x1__] :=
 process["dtensor"["dname"[dname_],inds_,"tensor"[tensor__]]] := ToExpression[dname][process["tensor"[tensor]],Sequence@@process[inds]];
 
 process["dtensor"["dname"["D"],inds_,"tensor"[tensor__]]] := PD[process["tensor"[tensor]],Sequence@@process[inds]];
-process["dtensor"["dname"["D"],inds_,"expr"[tensor__]]] := Module[{summed,tmp,tmpAST,procexpr},
+process["dtensor"["dname"["D"],inds_,"expr"[tensor__]]] := Module[{summed,tmp,tmpAST,procexpr,result},
   procexpr =process["expr"[tensor]];
   tmparray=MakeTemp[procexpr];
   tmpAST = tmparray[[2]];
@@ -177,7 +177,8 @@ process["dtensor"["dname"["D"],inds_,"expr"[tensor__]]] := Module[{summed,tmp,tm
   (* Construct the AST for the equation, re-use Kranc machinery *)
   precalc="eqn"[tmpAST,"expr"[tensor]];
   calc=process[precalc];
-  {"TmpVar"[tmp],"TmpCalc"[calc],"Result"[summed]}]
+  result=TmpEqn["TmpVar"[tmp],"TmpCalc"[calc],"Result"[summed]];
+  result]
 
 process["dtensor"["dname"["D"], "indices"["lower_index"["index_symbol"["t"]]],"tensor"[tensor__]]] :=
   dot[process["tensor"[tensor]]];

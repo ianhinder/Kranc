@@ -105,6 +105,7 @@ scheduleUnconditionalFunction[spec_] :=
                                     InteriorNoSync, "Interior",
                                     Boundary, "Boundary",
                                     BoundaryNoSync, "Boundary",
+                                    Automatic,"Interior", (* TODO: is this right? *)
                                     _, "ERROR(" <> ToString[r] <> ")"];
       Map[{"READS: ", #, "(",
            translateRegion[lookupDefault[spec, RequiredRegion, "ERROR"]],
@@ -214,14 +215,42 @@ scheduleFunction[spec_,params_] :=
 scheduleGroup[spec_,params_] :=
   scheduleFunction[mapReplace[spec, Name, "group " <> lookup[spec, Name]],params];
 
+mylookup[list_List,key_] := 
+  Map[Last,Select[list,MatchQ[#,key->_]&]];
+mylookup[_,_] := ThrowError["Need list as first arg to mylookup"];
+
+buildAfterRules[sf_] := Module[{pg,sp,co,gr},
+  co = mylookup[sf,Comment];
+  sp = mylookup[sf,SchedulePoint];
+  pg = Flatten[mylookup[sf,ProvidedGroups]];
+  If[Length[pg] == 0,Return[Null]];
+  Rule[sp[[1]],Table[Rule[gr,Dep[co[[1]]]],{gr,pg}]]
+];
+
+applyAfterRules[sf_,rules_] := Module[{co,myrules,rq,pg,ap,aps,sfn},
+  co = mylookup[sf,Comment];
+  sp = mylookup[sf,SchedulePoint];
+  myrules = sp[[1]] /. rules;
+  If[MatchQ[myrules,_String],Return[sf]];
+  rq = Flatten[mylookup[sf,RequiredGroups]];
+  pg = Flatten[mylookup[sf,ProvidedGroups]];
+  ap = Map[(# /. Dep[dep_] :> dep)&,Select[rq /. myrules,MatchQ[#,Dep[_]]&]];
+  If[Length[ap]===0,Return[sf]];
+  aps = StringJoin[" after ",Riffle[ap,", "]];
+  sfn=sf /. (SchedulePoint->schedpt_) :> (SchedulePoint->StringJoin[schedpt,aps]);
+  Return[sfn];
+];
+
 (* Taking a list of group storage specifications for global storage,
    and lists of scheduled function and scheduled group structures,
    return a CodeGen block representing a schedule.ccl file. *)
-CreateSchedule[globalStorageGroups_, scheduledGroups_, scheduledFunctions_, params_] :=
+CreateSchedule[globalStorageGroups_, scheduledGroups_, scheduledFunctions_, params_] := Module[{sf,updatedScheduleFunctions},
+  rules = Select[Map[buildAfterRules,scheduledFunctions],(# =!= Null)&];
+  updatedScheduledFunctions=Map[applyAfterRules[#,rules]&,scheduledFunctions];
   {FileHeader["CCL"],
    NewlineSeparated[Map[groupStorage[#]             &, globalStorageGroups]],
-   NewlineSeparated[Map[scheduleFunction[#,params]  &, scheduledFunctions]],
-   NewlineSeparated[Map[scheduleGroup[#,params]     &, scheduledGroups]]};
+   NewlineSeparated[Map[scheduleFunction[#,params]  &, updatedScheduledFunctions]],
+   NewlineSeparated[Map[scheduleGroup[#,params]     &, scheduledGroups]]}];
 
 End[];
 

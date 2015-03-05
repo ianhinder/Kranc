@@ -547,6 +547,14 @@ DefFn[assignLocalFunctions[gs:{_Symbol...}, useVectors:Boolean, useJacobian:Bool
 
 Options[equationLoop] = ThornOptions;
 
+HasBadDeriv[eqn_,shorts_] := 
+    eqn /. Global`PDstandard[arg_,_,_] :>
+      If[ MemberQ[shorts,arg],
+        ThrowError[
+          "The cacluation "<>ToString[eqn]<>
+          " contains the derivative of a temporary (" <>
+          ToString[arg] <> "). This isn't allowed."]];
+
 DefFn[
   equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, odeGroups_, pddefs_,
              where_, addToStencilWidth_,
@@ -560,6 +568,7 @@ DefFn[
           gridName, useJacobian, allCode, opCounts},
 
     InfoMessage[InfoFull, "Equation loop"];
+    Do[HasBadDeriv[eqn,shorts],{eqn,eqs}];
 
     {allCode, opCounts} = Reap[
 

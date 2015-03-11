@@ -234,28 +234,35 @@ removeFrom[b_List, a_List] := Module[{f,g},
   g[_] := True;
   Select[b,g]]
 
-buildAfterRules[sf_] := Module[{pg,sp,co,gr,rq},
+buildAfterRules[sf_] := Module[{pg,sp,co,gr},
   co = mylookup[sf,Comment];
   sp = mylookup[sf,SchedulePoint];
   rq = Flatten[mylookup[sf,RequiredGroups]];
   pg = Flatten[mylookup[sf,ProvidedGroups]];
-  is = Intersection[rq,pg];
-  If[Length[is] > 0,
-    Print["Warning: grid function(s) "<>StringJoin[Riffle[is,", "]]<>" are both read and written by "<>co[[1]]];
-    pg=removeFrom[pg,rq];
-  ];
   If[Length[pg] == 0,Return[Null]];
   Rule[sp[[1]],Table[Rule[gr,Dep[co[[1]]]],{gr,pg}]]
 ];
 
-applyAfterRules[sf_,rules_] := Module[{co,myrules,rq,pg,ap,aps,sfn},
+multiWriterWarning[a_,b_List] := 
+  If[Length[b]>1,
+    Print["Warning: multiple writers for "<>a<>". Writers include "<>StringJoin[Riffle[Map[First,b],", "]]]];
+
+applyAfterRules[sf_,rules_] := Module[{co,myrules,rq,pg,ap,aps,sfn,is},
   co = mylookup[sf,Comment];
   sp = mylookup[sf,SchedulePoint];
   myrules = sp[[1]] /. rules;
   If[MatchQ[myrules,_String],Return[sf]];
   rq = Flatten[mylookup[sf,RequiredGroups]];
   pg = Flatten[mylookup[sf,ProvidedGroups]];
-  ap = Map[(# /. Dep[dep_] :> dep)&,Select[rq /. myrules,MatchQ[#,Dep[_]]&]];
+  is = Intersection[rq,pg];
+  If[Length[is] > 0,
+    Print["Warning: grid function(s) "<>StringJoin[Riffle[is,", "]]<>" are both read and written by "<>co[[1]]];
+    rq=removeFrom[rq,pg];
+  ];
+  mr = mergeRules[myrules];
+  (* mr /. Rule[a_,b_] :> multiWriterWarning[a,b]; *)
+  (* ap = Map[(# /. Dep[dep_] :> dep)&,Select[rq /. myrules,MatchQ[#,Dep[_]]&]]; *)
+  ap = DeleteDuplicates[Map[(# /. Dep[dep_] :> dep)&,Select[Flatten[rq /. mergeRules[myrules]],MatchQ[#,Dep[_]]&]]];
   If[Length[ap]===0,Return[sf]];
   aps = StringJoin[" after ",Riffle[ap,", "]];
   sfn=sf /. (SchedulePoint->schedpt_) :> (SchedulePoint->StringJoin[schedpt,aps]);

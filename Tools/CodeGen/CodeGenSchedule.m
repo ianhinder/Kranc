@@ -219,10 +219,31 @@ mylookup[list_List,key_] :=
   Map[Last,Select[list,MatchQ[#,key->_]&]];
 mylookup[_,_] := ThrowError["Need list as first arg to mylookup"];
 
-buildAfterRules[sf_] := Module[{pg,sp,co,gr},
+mergeRules[rules_] := Module[{key,keys},
+  keys=DeleteDuplicates[Map[First,rules]];
+  (*Table[Print[key,"==>",mylookup[rules,key]],{key,keys}]*)
+ Table[Rule[key,Flatten[mylookup[rules,key]]],{key,keys}]
+];
+
+(* Copied from the web:
+   http://mathematica.stackexchange.com/questions/18100/removing-elements-from-a-list-which-appear-in-another-list
+*)
+removeFrom[b_List, a_List] := Module[{f,g},
+  (f[#] = -#2) & @@@ Tally[a];
+  g[x_] /; f[x] < 0 := f[x]++;
+  g[_] := True;
+  Select[b,g]]
+
+buildAfterRules[sf_] := Module[{pg,sp,co,gr,rq},
   co = mylookup[sf,Comment];
   sp = mylookup[sf,SchedulePoint];
+  rq = Flatten[mylookup[sf,RequiredGroups]];
   pg = Flatten[mylookup[sf,ProvidedGroups]];
+  is = Intersection[rq,pg];
+  If[Length[is] > 0,
+    Print["Warning: grid function(s) "<>StringJoin[Riffle[is,", "]]<>" are both read and written by "<>co[[1]]];
+    pg=removeFrom[pg,rq];
+  ];
   If[Length[pg] == 0,Return[Null]];
   Rule[sp[[1]],Table[Rule[gr,Dep[co[[1]]]],{gr,pg}]]
 ];
@@ -245,7 +266,7 @@ applyAfterRules[sf_,rules_] := Module[{co,myrules,rq,pg,ap,aps,sfn},
    and lists of scheduled function and scheduled group structures,
    return a CodeGen block representing a schedule.ccl file. *)
 CreateSchedule[globalStorageGroups_, scheduledGroups_, scheduledFunctions_, params_] := Module[{sf,updatedScheduleFunctions},
-  rules = Select[Map[buildAfterRules,scheduledFunctions],(# =!= Null)&];
+  rules = mergeRules[Select[Map[buildAfterRules,scheduledFunctions],(# =!= Null)&]];
   updatedScheduledFunctions=Map[applyAfterRules[#,rules]&,scheduledFunctions];
   {FileHeader["CCL"],
    NewlineSeparated[Map[groupStorage[#]             &, globalStorageGroups]],

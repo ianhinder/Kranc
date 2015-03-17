@@ -887,18 +887,21 @@ CDtoPDRuleTTTensorProduct :=
 
 CDtoPDRule :=
   CD[x_, i_] :>
-    PD[x,i] + Apply[Plus,Map[CDtoPDTerm[x, #, i] &, indicesIn[x]]];
+  Module[{di,inds},
+    inds = indicesIn[x];
+    If[Length[inds] > 0, di = dummyNotIn[{x, i}]];
+    PD[x,i] + Apply[Plus,Map[CDtoPDTerm[x, #, i, di] &, inds]]];
 
 (* Give the term in the expansion of the CD corresponding to the index
 i in x.  Differentiation is with respect to "wrt". *)
 
-CDtoPDTerm[x_, i:TensorIndex[_,lower], wrt_] :=
-  Module[{di = dummyNotIn[{x, wrt}], gamma = defaultConnection},
+CDtoPDTerm[x_, i:TensorIndex[_,lower], wrt_, di_] :=
+  Module[{gamma = defaultConnection},
     -TTTensorProduct[(x /. i -> di), Tensor[gamma, toggleIndex[di], wrt, i]]];
 
-CDtoPDTerm[x_, i:TensorIndex[_,upper], wrt_] :=
-  Module[{di = toggleIndex[dummyNotIn[{x, wrt}]], gamma = defaultConnection},
-    TTTensorProduct[(x /. i -> di), Tensor[gamma, i, wrt, toggleIndex[di]]]];
+CDtoPDTerm[x_, i:TensorIndex[_,upper], wrt_, di_] :=
+  Module[{gamma = defaultConnection},
+    TTTensorProduct[(x /. i -> toggleIndex[di]), Tensor[gamma, i, wrt, di]]];
 
 CDtoPDFullRule := x_ :> (((x //. CDReduce) //. CDtoPDRuleTTTensorProduct) //. CDtoPDRule);
 

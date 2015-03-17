@@ -369,7 +369,17 @@ remainingLowerIndices[x_] :=
     Select[listLowerIndices[], ! MemberQ[indsInExpr, #] &]];
 
 (* Return an index that isn't used in x *)
-dummyNotIn[x_] := First[remainingLowerIndices[x]];
+(* dummyNotIn[x_] := ($dummyCount = $dummyCount+1; Print["Dummies generated: ", $dummyCount]; First[remainingLowerIndices[x]]); *)
+
+dummyNotIn[x_] := 
+  If[$availableIndices === {}, ThrowError["No more dummy indices available"],
+  Module[{i = First[$availableIndices]},
+    (* Print["Taking new dummy index ", i, " from available indices ", $availableIndices]; *)
+    $dummyCount = $dummyCount+1;
+    (* Print["Dummies generated: ", $dummyCount]; *)
+    $availableIndices = Rest[$availableIndices];
+    i]];
+
 
 (* Given two lower (or upper) indices, replace the first with the
    second wherever it occurs in x *)
@@ -508,8 +518,9 @@ Protect[Equal];
    expanded, and tensor components and derivatives in single-symbol
    form suitable for code generation *)
 MakeExplicit[x_] := 
+  Block[{$dummyCount = 0, $availableIndices = remainingLowerIndices[x]},
   (((((makeSplit[makeSum[PDtoFD[LieToPD[CDtoPD[x]]]]] /. componentNameRule) /. KDrule) /. EpsilonRule)
-       /. derivativeNameRule) /. TTTensorProduct -> Times) //. PDReduce;
+       /. derivativeNameRule) /. TTTensorProduct -> Times) //. PDReduce];
 
 MakeExplicit[l:List[Rule[_, _] ..]] :=
   Flatten[Map[removeDuplicatesFromMap, Map[MakeExplicit, l]],1];

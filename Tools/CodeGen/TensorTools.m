@@ -150,6 +150,8 @@ replaceConflicting;
 Symmetric;
 RiemannSymmetric;
 
+WithAvailableIndices;
+
 (* This is for compatibility with MathTensor notation *)
 (*OD = PD;*)
 
@@ -518,9 +520,14 @@ Protect[Equal];
    expanded, and tensor components and derivatives in single-symbol
    form suitable for code generation *)
 MakeExplicit[x_] := 
-  Block[{$dummyCount = 0, $availableIndices = remainingLowerIndices[x]},
+  WithAvailableIndices[
   (((((makeSplit[makeSum[PDtoFD[LieToPD[CDtoPD[x]]]]] /. componentNameRule) /. KDrule) /. EpsilonRule)
-       /. derivativeNameRule) /. TTTensorProduct -> Times) //. PDReduce];
+       /. derivativeNameRule) /. TTTensorProduct -> Times) //. PDReduce, x];
+
+SetAttributes[WithAvailableIndices, HoldFirst];
+WithAvailableIndices[expr_, x_] :=
+  Block[{$dummyCount = 0, $availableIndices = remainingLowerIndices[x]},
+    expr];
 
 MakeExplicit[l:List[Rule[_, _] ..]] :=
   Flatten[Map[removeDuplicatesFromMap, Map[MakeExplicit, l]],1];

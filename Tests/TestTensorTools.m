@@ -49,6 +49,10 @@ test[t_, r1_] :=
        Print["Fail"]];
     Print[]];
 
+test[___] :=
+  (Print["Invalid arguments to test[...]"];
+    Abort[];)
+
 count[num_Integer, noun_String] :=
   ToString[num] <> " " <> noun <> If[num === 1, "", "s"];
 

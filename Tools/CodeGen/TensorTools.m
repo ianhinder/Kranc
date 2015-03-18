@@ -374,13 +374,14 @@ remainingLowerIndices[x_] :=
 (* dummyNotIn[x_] := ($dummyCount = $dummyCount+1; Print["Dummies generated: ", $dummyCount]; First[remainingLowerIndices[x]]); *)
 
 dummyNotIn[x_] := 
+  If[!ListQ[$availableIndices],(ThrowError["No dummy indices made available; wrap the expression in WithAvailableIndices"]),
   If[$availableIndices === {}, ThrowError["No more dummy indices available"],
   Module[{i = First[$availableIndices]},
     (* Print["Taking new dummy index ", i, " from available indices ", $availableIndices]; *)
     $dummyCount = $dummyCount+1;
     (* Print["Dummies generated: ", $dummyCount]; *)
     $availableIndices = Rest[$availableIndices];
-    i]];
+    i]]];
 
 
 (* Given two lower (or upper) indices, replace the first with the

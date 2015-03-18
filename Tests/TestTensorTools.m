@@ -215,13 +215,13 @@ test[CDtoPD[CD[4, la]], 0];
 
 test[CDtoPD[CD[alpha, la]], PD[alpha,la]];
 
-test[CDtoPD[CD[S[ua], lb]], PD[S[ua], lb] + TTTensorProduct[gamma[ua, lb, lc],S[uc]]];
+test[WithAvailableIndices[CDtoPD[CD[S[ua], lb]],CD[S[ua], lb]], PD[S[ua], lb] + TTTensorProduct[gamma[ua, lb, lc],S[uc]]];
 
-test[CDtoPD[CD[a[ub,uc], ld]], PD[a[ub, uc], ld] + TTTensorProduct[gamma[ub, ld, la],a[ua, uc]] + TTTensorProduct[gamma[uc, ld, la],a[ub, ua]]];
+test[WithAvailableIndices[CDtoPD[CD[a[ub,uc], ld]],CD[a[ub,uc], ld]], PD[a[ub, uc], ld] + TTTensorProduct[gamma[ub, ld, la],a[ua, uc]] + TTTensorProduct[gamma[uc, ld, la],a[ub, ua]]];
 
-test[CDtoPD[CD[b[ub,lc], ld]], PD[b[ub, lc], ld] + TTTensorProduct[gamma[ub, ld, la],b[ua, lc]] - TTTensorProduct[gamma[ua, ld, lc],b[ub, la]]];
+test[WithAvailableIndices[CDtoPD[CD[b[ub,lc], ld]],CD[b[ub,lc], ld]], PD[b[ub, lc], ld] + TTTensorProduct[gamma[ub, ld, la],b[ua, lc]] - TTTensorProduct[gamma[ua, ld, lc],b[ub, la]]];
 
-test[u[lc] CDtoPD[CD[S[ua], lb]], u[lc] PD[S[ua], lb] + u[lc] TTTensorProduct[gamma[ua, lb, ld],S[ud]]];
+test[WithAvailableIndices[CDtoPD[u[lc] CD[S[ua], lb]], u[lc] CD[S[ua], lb]], u[lc] PD[S[ua], lb] + u[lc] TTTensorProduct[gamma[ua, lb, ld],S[ud]]];
 
 (****************************************************************)
 (* Results *)

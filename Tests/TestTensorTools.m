@@ -37,7 +37,7 @@ test[t_, r1_] :=
   Module[
     {r},
     Print["Input: ", HoldForm[InputForm@t]];
-    r = If[enhancedTimes, r1 /. Times -> TensorProduct, r1];
+    r = If[enhancedTimes, r1 /. Times -> TTTensorProduct, r1];
     Print["Expected: ", Expand@r//InputForm];
     If[Expand[Evaluate[t]] === Expand[r],
        testsPassed++; 

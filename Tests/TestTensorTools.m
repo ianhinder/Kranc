@@ -39,7 +39,7 @@ test[t_, r1_] :=
     Print["Input: ", HoldForm[InputForm@t]];
     r = If[enhancedTimes, r1 /. Times -> TTTensorProduct, r1];
     Print["Expected: ", Expand@r//InputForm];
-    If[Expand[Evaluate[t]] === Expand[r],
+    If[Expand[Evaluate[CatchKrancError@t]] === Expand[r],
        testsPassed++; 
        Print["Result: ", Expand[r]//InputForm];
        Print["Pass"],

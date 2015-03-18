@@ -68,7 +68,11 @@ reportResults[] :=
 
 testsPassed = 0; testsFailed = 0;
 
-DefineTensor /@ {S, SS, T, TT, u, v, w, a, b};
+DefineTensor /@ {S, SS, T, TT, u, v, w, a, b, gamma};
+
+DefineConnection [CD, PD, gamma];
+
+AssertSymmetricIncreasing [gamma[ua,lb,lc], lb, lc];
 
 (* We currently only test with correct input as it is CheckTensor's
    responsibility to check that the input is correct.  This should be
@@ -202,6 +206,26 @@ test[FullSimplify[MakeExplicit[PD[MatrixInverse[a[ua, ub]], ld] a[lb, lc]] +
    MakeExplicit[MatrixInverse[a[ua, ub]] PD[a[lb, lc], ld]]],
  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0}];
+
+(****************************************************************)
+(* Covariant derivatives *)
+(****************************************************************)
+
+test[CDtoPD[CD[4, la]], 0];
+
+test[CDtoPD[CD[alpha, la]], PD[alpha,la]];
+
+test[CDtoPD[CD[S[ua], lb]], PD[S[ua], lb] + TTTensorProduct[gamma[ua, lb, lc],S[uc]]];
+
+test[CDtoPD[CD[a[ub,uc], ld]], PD[a[ub, uc], ld] + TTTensorProduct[gamma[ub, ld, la],a[ua, uc]] + TTTensorProduct[gamma[uc, ld, la],a[ub, ua]]];
+
+test[CDtoPD[CD[b[ub,lc], ld]], PD[b[ub, lc], ld] + TTTensorProduct[gamma[ub, ld, la],b[ua, lc]] - TTTensorProduct[gamma[ua, ld, lc],b[ub, la]]];
+
+test[u[lc] CDtoPD[CD[S[ua], lb]], u[lc] PD[S[ua], lb] + u[lc] TTTensorProduct[gamma[ua, lb, ld],S[ud]]];
+
+(****************************************************************)
+(* Results *)
+(****************************************************************)
 
 reportResults[];
 

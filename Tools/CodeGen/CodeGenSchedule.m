@@ -264,7 +264,7 @@ applyAfterRules[sf_,rules_] := Module[{co,myrules,rq,pg,ap,aps,sfn,is},
   (* ap = Map[(# /. Dep[dep_] :> dep)&,Select[rq /. myrules,MatchQ[#,Dep[_]]&]]; *)
   ap = DeleteDuplicates[Map[(# /. Dep[dep_] :> dep)&,Select[Flatten[rq /. mergeRules[myrules]],MatchQ[#,Dep[_]]&]]];
   If[Length[ap]===0,Return[sf]];
-  aps = StringJoin[" after ",Riffle[ap,", "]];
+  aps = StringJoin[" after (",Riffle[ap," "],")"];
   sfn=sf /. (SchedulePoint->schedpt_) :> (SchedulePoint->StringJoin[schedpt,aps]);
   Return[sfn];
 ];

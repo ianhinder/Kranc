@@ -7,6 +7,7 @@ inherits:   Accelerator Boundary GenericFD Grid
 
 
 USES INCLUDE: CaCUDALib_driver_support.h
+USES INCLUDE: chemora_cg_kranc_startup.h
 USES INCLUDE: loopcontrol.h
 USES INCLUDE: Symmetry.h
 USES INCLUDE: Boundary.h

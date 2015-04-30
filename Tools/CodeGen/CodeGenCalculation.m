@@ -312,6 +312,26 @@ chemoraCalculationExpressionVariablesDO[x_]:=
    woDO = x /. {k_String/;StringMatchQ[k,RegularExpression["^KRANC.*"]] :> k[]};
    Cases[Union[Level[woDO,{-1}]],y:(_Symbol|_String)]];
 
+chemoraCountPreProcess = 
+ { pow[a_,-1] -> 1/a,
+   pow[a_,-2] -> (1/(a*a)),
+   pow[a_,2] -> (a*a),
+   pow[a_,b_] -> Power[a,b],
+   Parameter[a_] -> a
+    };
+
+chemoraCountOperations[expr_]:=
+   Module[ { opInfoRaw, opInfo },
+     opInfoRaw = 
+        Flatten[Last[
+                Reap[CountOperations[
+                       expr /. chemoraCountPreProcess]
+                        ,CountOperations]]];
+     opInfo = Rule[#[[1,1]],Plus@@(Last/@#)]& /@ GatherBy[opInfoRaw,First];
+     opInfo = StringJoin[
+                ToString[#1] <> ":" <> ToString[#2] <> ";" & @@ # & /@ opInfo];
+     chemoraQuote[opInfo]];
+
 chemoraDExpressionInfo[do_]:=
    Module[{offsetsStr,offsetsRaw,vars,offsetsExp},
      offsetsStr = 
@@ -362,7 +382,8 @@ chemoraExpandRules =
 chemoraCExpressionEQ[c_,lhs_->rhs_]:=
    mapRefAppend[c,ChemoraContents,
        " assign_from_expr("
-          <> chemoraQuote[lhs] <> ", 0, "
+          <> chemoraQuote[lhs] <> ", "
+          <> chemoraCountOperations[rhs] <> ", "
           <> chemoraGenerateQuotedExpr[rhs,False]
           <> ", "
           <> StringJoin[
@@ -385,7 +406,7 @@ chemoraCDifferenceOp[opNameBase_[u_,ind___] -> rhs_ ]:=
      {offsetVars,offsets} = offsetsAndVars;
      " set_differencing_op("
         <> chemoraQuote[opName] <> ", "
-        <> "0, "
+        <> chemoraCountOperations[rhs] <> ", "
         <> chemoraGenerateQuotedExpr[rhs,False] <> ", "
         <> StringJoin[
              chemoraQuote[#] <> ", " &

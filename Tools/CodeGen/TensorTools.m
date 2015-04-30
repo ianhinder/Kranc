@@ -150,6 +150,8 @@ replaceConflicting;
 Symmetric;
 RiemannSymmetric;
 
+WithAvailableIndices;
+
 (* This is for compatibility with MathTensor notation *)
 (*OD = PD;*)
 
@@ -369,7 +371,18 @@ remainingLowerIndices[x_] :=
     Select[listLowerIndices[], ! MemberQ[indsInExpr, #] &]];
 
 (* Return an index that isn't used in x *)
-dummyNotIn[x_] := First[remainingLowerIndices[x]];
+(* dummyNotIn[x_] := ($dummyCount = $dummyCount+1; Print["Dummies generated: ", $dummyCount]; First[remainingLowerIndices[x]]); *)
+
+dummyNotIn[x_] := 
+  If[!ListQ[$availableIndices],(ThrowError["No dummy indices made available; wrap the expression in WithAvailableIndices"]),
+  If[$availableIndices === {}, ThrowError["No more dummy indices available"],
+  Module[{i = First[$availableIndices]},
+    (* Print["Taking new dummy index ", i, " from available indices ", $availableIndices]; *)
+    $dummyCount = $dummyCount+1;
+    (* Print["Dummies generated: ", $dummyCount]; *)
+    $availableIndices = Rest[$availableIndices];
+    i]]];
+
 
 (* Given two lower (or upper) indices, replace the first with the
    second wherever it occurs in x *)
@@ -508,8 +521,14 @@ Protect[Equal];
    expanded, and tensor components and derivatives in single-symbol
    form suitable for code generation *)
 MakeExplicit[x_] := 
+  WithAvailableIndices[
   (((((makeSplit[makeSum[PDtoFD[LieToPD[CDtoPD[x]]]]] /. componentNameRule) /. KDrule) /. EpsilonRule)
-       /. derivativeNameRule) /. TTTensorProduct -> Times) //. PDReduce;
+       /. derivativeNameRule) /. TTTensorProduct -> Times) //. PDReduce, x];
+
+SetAttributes[WithAvailableIndices, HoldFirst];
+WithAvailableIndices[expr_, x_] :=
+  Block[{$dummyCount = 0, $availableIndices = remainingLowerIndices[x]},
+    expr];
 
 MakeExplicit[l:List[Rule[_, _] ..]] :=
   Flatten[Map[removeDuplicatesFromMap, Map[MakeExplicit, l]],1];
@@ -876,18 +895,21 @@ CDtoPDRuleTTTensorProduct :=
 
 CDtoPDRule :=
   CD[x_, i_] :>
-    PD[x,i] + Apply[Plus,Map[CDtoPDTerm[x, #, i] &, indicesIn[x]]];
+  Module[{di,inds},
+    inds = indicesIn[x];
+    If[Length[inds] > 0, di = dummyNotIn[{x, i}]];
+    PD[x,i] + Apply[Plus,Map[CDtoPDTerm[x, #, i, di] &, inds]]];
 
 (* Give the term in the expansion of the CD corresponding to the index
 i in x.  Differentiation is with respect to "wrt". *)
 
-CDtoPDTerm[x_, i:TensorIndex[_,lower], wrt_] :=
-  Module[{di = dummyNotIn[{x, wrt}], gamma = defaultConnection},
+CDtoPDTerm[x_, i:TensorIndex[_,lower], wrt_, di_] :=
+  Module[{gamma = defaultConnection},
     -TTTensorProduct[(x /. i -> di), Tensor[gamma, toggleIndex[di], wrt, i]]];
 
-CDtoPDTerm[x_, i:TensorIndex[_,upper], wrt_] :=
-  Module[{di = toggleIndex[dummyNotIn[{x, wrt}]], gamma = defaultConnection},
-    TTTensorProduct[(x /. i -> di), Tensor[gamma, i, wrt, toggleIndex[di]]]];
+CDtoPDTerm[x_, i:TensorIndex[_,upper], wrt_, di_] :=
+  Module[{gamma = defaultConnection},
+    TTTensorProduct[(x /. i -> toggleIndex[di]), Tensor[gamma, i, wrt, di]]];
 
 CDtoPDFullRule := x_ :> (((x //. CDReduce) //. CDtoPDRuleTTTensorProduct) //. CDtoPDRule);
 

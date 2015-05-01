@@ -30,20 +30,23 @@ Begin["`Private`"];
    Startup file
    ------------------------------------------------------------------------ *)
 
-CreateStartupFile[thornName_, bannerText_] :=
-  Module[{tmp, lang},
+CreateStartupFile[thornName_, bannerText_, useChemora_] :=
+  Module[{tmp, lang, inclines, bodylines},
   
   lang = CodeGenC`SOURCELANGUAGE;
   CodeGenC`SOURCELANGUAGE = "C";
 
+  inclines = If[ useChemora, IncludeFile["Chemora.h"], "" ];
+  bodylines = If[ useChemora, "chemora_cg_thorn_startup();\n", "" ];
+
   tmp = {FileHeader["C"],
 
    NewlineSeparated[{IncludeFile["cctk.h"],
-                     IncludeFile["Chemora.h"],
+                     inclines,
    {"extern \"C\" ", DefineFunction[thornName <> "_Startup", "int", "void",
      {DefineVariable["banner", "const char*", Quote[bannerText]],
       "CCTK_RegisterBanner(banner);\n",
-      "chemora_cg_thorn_startup();\n",
+      bodylines,
       "return 0;\n"}]}}]};
 
   CodeGenC`SOURCELANGUAGE = lang;

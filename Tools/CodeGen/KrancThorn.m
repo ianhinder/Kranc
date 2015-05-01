@@ -343,7 +343,8 @@ DefFn[CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPa
       c, "Sources",
       {Filename -> "Startup.cc",
        Contents -> CreateStartupFile[GetObjectField[c, "Name"],
-                                     GetObjectField[c, "Name"]]}];
+                                     GetObjectField[c, "Name"],
+                                     OptionValue[UseCaKernel]]}];
 
     (* ------------------------------------------------------------------------ 
        Create CCL files

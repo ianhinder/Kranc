@@ -43,11 +43,12 @@ Begin["`Private`"];
 
 (* To be used for parameters; will quote it if it is a keyword *)
 renderValue[type_, value_] :=
-  If[type == "KEYWORD",
-    Quote[value],
-    If[type == "CCTK_REAL",
-      ToString[CForm[value]],
-    value]];
+  If[type == "CCTK_KEYWORD" || type == "KEYWORD" ||
+     type == "CCTK_STRING" || type == "STRING",
+    Quote[value],                 (* quote strings *)
+    If[StringQ[value],
+      value,                      (* leave already-formatted values alone *)
+      ToString[CForm[value]]]];   (* format numbers properly *)
 
 (* Return a block defining a parameter with the given
    parameterSpec (defined above).  This is used for defining new

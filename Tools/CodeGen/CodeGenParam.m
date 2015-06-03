@@ -63,11 +63,13 @@ parameterBlock[spec_] :=
       {}],
   
    If[mapContains[spec, Steerable],
-      {" STEERABLE=",Switch[lookup[spec, Steerable], 
-        Never,"NEVER", 
-        Always,"ALWAYS", 
+      {" STEERABLE=", Switch[lookup[spec, Steerable], 
+        Never, "NEVER", 
+        Always, "ALWAYS", 
         Recover, "RECOVER", 
-        _,ThrowError["Unknown 'Steerable' entry in parameter " <> ToString[lookup[spec, Name]] <> ": " <> ToString[lookup[spec, Steerable]]]]},
+        _, ThrowError["Unknown 'Steerable' entry for parameter '" <>
+                      ToString[lookup[spec, Name]] <> "': " <>
+                      ToString[lookup[spec, Steerable]]]]},
       {}],
 
    "\n",

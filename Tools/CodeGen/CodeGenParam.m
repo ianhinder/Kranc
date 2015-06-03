@@ -79,8 +79,11 @@ parameterBlock[spec_] :=
           Quote[lookup[#, Description]], "\n"} &, 
          lookupDefault[spec, AllowedValues, {}]],
 
-     (* Output the line describing the default value of the parameter *)
-     renderValue[lookup[spec,Type], lookup[spec, Default]]],
+     (* Output the line describing the default value of the parameter,
+        if there is one *)
+     If[mapContains[spec, Default],
+         renderValue[lookup[spec,Type], lookup[spec, Default]],
+         {}]],
 
      "\n"};
 

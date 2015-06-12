@@ -362,21 +362,30 @@ chemoraQuote[a_] := "\"" <> ToString[a] <> "\"";
 chemoraGenerateQuotedExpr[expr_,vectorise_] := 
   "\"" <> GenerateCodeFromExpression[expr,vectorise] <> "\""
 
+chemoraExpandRulesSeqNum = 1;
+
 chemoraExpandRules =
-   { Rule[lhs_,IfThen[cond_,ifpart_,elsepart_]] :>
+   { Rule[lhs_,IfThen[Parameter[cond_]|cond_,ifpart_,elsepart_]] :>
         Sequence@@Module[{lhs1,lhs2},
           lhs1 = Symbol[ ToString[lhs] <> "xxxI" ];
           lhs2 = Symbol[ ToString[lhs] <> "xxxE" ];
           {lhs1 -> ifpart, lhs2 -> elsepart,
            lhs -> chemoraIfElse[cond,lhs1,lhs2] }
           ],
-        Rule[lhs_,Plus[op1_,op2_]] :>
-        Sequence@@Module[{lhs1,lhs2},
-          lhs1 = Symbol[ ToString[lhs] <> "xxx1" ];
-          lhs2 = Symbol[ ToString[lhs] <> "xxx2" ];
-          { lhs1 -> op1, lhs2 -> op2,
-            lhs -> lhs1 + lhs2 }
-          ]
+     Rule[lhs_, chemoraIfElse[Parameter[cond_],rest___]] :>
+        lhs -> chemoraIfElse[cond,rest],
+     Rule[lhs_, h1_[op1___,
+                    h2_?(Not[MemberQ[{Parameter},#]]&)[op2__],op3___]] :>
+        Sequence@@Module[{lhs2, seq = chemoraExpandRulesSeqNum++},
+          lhs2 = Symbol[ ToString[lhs] <> "x" <> 
+                         ToString[h2] <> "x" <> ToString[seq] ];
+                    { lhs2 -> h2[op2], lhs -> h1[op1,lhs2,op3] }
+                    ],
+     Rule[lhs_, h1_?(MemberQ[{Plus,Times},#]&)[op1_, op2_, op3__]] :>
+        Sequence@@Module[{lhs2, seq = chemoraExpandRulesSeqNum++},
+          lhs2 = Symbol[ ToString[lhs] <> "y" <> 
+                         ToString[h1] <> "y" <> ToString[seq] ];
+                    { lhs2 -> h1[op1,op2], lhs -> h1[lhs2,op3] } ]
      }
 
 chemoraCExpressionEQ[c_,lhs_->rhs_]:=
@@ -391,7 +400,7 @@ chemoraCExpressionEQ[c_,lhs_->rhs_]:=
                   /@ chemoraCalculationExpressionVariables[rhs] ]
           <> "NULL );\n"];
 
-chemoraCExpressionEQ[c_,lhs_ -> chemoraIfElse[Parameter[cond_],ip_,ep_]]:=
+chemoraCExpressionEQ[c_,lhs_ -> chemoraIfElse[cond_,ip_,ep_]]:=
    mapRefAppend[c,ChemoraContents,
        " assign_from_ifelse("
           <> chemoraQuote[lhs] <> ", "
@@ -442,7 +451,7 @@ chemoraCSimpleExpression[c_, anything_]:=
 
           
 chemoraCExpression[c_,eqs_] :=
-   chemoraCExpressionEQ[c,#] & /@ ( eqs /. chemoraExpandRules );
+   chemoraCExpressionEQ[c,#] & /@ ( eqs //. chemoraExpandRules );
 
 Options[CreateCalculationFunction] = Join[ThornOptions,{Debug -> False}];
 

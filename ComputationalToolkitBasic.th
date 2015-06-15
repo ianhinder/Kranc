@@ -51,6 +51,7 @@ CactusBase/Time
 CactusNumerical/MoL
 CactusNumerical/Periodic
 CactusNumerical/Slab
+CactusNumerical/LocalReduce
 
 # CactusPUGH thorns
 !TARGET   = $ARR

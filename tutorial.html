@@ -47,7 +47,7 @@ executable. This script allows you to download Cactus thorns from many
 different repositories listed in a <i>ThornList</i>.
 
 <pre>
-wget http://cactuscode.org/download/GetComponents
+curl -kLO https://raw.githubusercontent.com/gridaphobe/CRL/master/GetComponents
 chmod u+x GetComponents
 </pre>
 
@@ -96,15 +96,16 @@ script.</p>
 cd ../..
 cp ComputationalToolkitBasic.th kranc.th</pre>
 
-<p>Open kranc.th in an editor and add the following lines to it:</p>
+<p>Add KrancNumericalTools/GenericFD and KrancExamples/SimpleWave to
+kranc.th using a text editor or the following command::</p>
 <pre>
-KrancNumericalTools/GenericFD
-KrancExamples/SimpleWave
+echo 'KrancNumericalTools/GenericFD
+KrancExamples/SimpleWave' >> kranc.th
 </pre>
 
 <p>Create a Cactus configuration called "kranc" using this thornlist:</p>
 <pre>
-make kranc-config THORNLIST=kranc.th
+make kranc-config THORNLIST=kranc.th PROMPT=no
 </pre>
 
 <p>If a C compiler cannot be found, or there is some other error,
@@ -112,11 +113,6 @@ consult the <a href = "http://cactuscode.org/documentation">Cactus
 documentation</a> for advice on configuring Cactus for your system.
 You may have to write an <i>optionlist</i> for your system and use it
 in the "make kranc-config" line.</p>
-
-<p>Build the configuration:</p>
-<pre>
-make kranc
-</pre>
 
 <p>The configuration containing the Kranc-generated thorn should now
 have been built.  The executable will be exe/cactus_kranc and the
@@ -143,7 +139,8 @@ using the provided Analysis.nb notebook, or in the <a href =
 animation tool.</p>
 
 <p>To visualise the output in Mathematica, open the notebook
-"Analysis.nb" and choose Evaluation -> Evaluate Notebook.</p>
+"Analysis.nb", provided in the Examples directory, and choose
+Evaluation -> Evaluate Notebook.</p>
 
 <p>You should see a sine wave.  Use the Manipulate slider to animate
 the display to see the different iterations of the simulation.</p>

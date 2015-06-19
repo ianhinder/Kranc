@@ -156,6 +156,7 @@ CountDerivativeOperations;
 
 chemoraPrecomputeDerivative;
 chemoraPrecomputeDerivatives;
+chemoraDifferencingMacroExpansions;
 
 Begin["`Private`"];
 
@@ -877,6 +878,23 @@ DefFn[
           "\n"},
          {}],
       diffHeader];
+
+    chemoraDifferencingMacroExpansions = 
+      Flatten[$DifferencingMacroExpansions]
+        /. { ( opNameBase_[usless_,ind___] -> rhs_ ) :>
+             Rule[ ( ToString[opNameBase]
+                     <> StringJoin[ ToString /@ {ind} ]) [u_],
+                   rhs /. { ks_String/;StringMatchQ
+                             [ks,RegularExpression["^KRANC.*"]]
+                            :> Flatten
+                               [StringCases
+                                [ ks, 
+                                  RegularExpression
+                                  ["^KRANC_GFOFFSET3D\\(u,([^,]+),([^,]+),([^,]+)\\)"]
+                                  :> ChemoraNOffset[u, "$1","$2","$3"] ]]} ]};
+    chemoraDifferencingMacroExpansions =
+      chemoraDifferencingMacroExpansions /. { ( lhs_->{rhs_} ) -> lhs->rhs };
+
     (* TODO: fix circular dependency which stops us from importing OpenCL in this package *)
     If[OptionValue[UseOpenCL], diffHeader = OpenCL`OpenCLProcessDifferencingHeader[diffHeader]];
     AppendObjectField[

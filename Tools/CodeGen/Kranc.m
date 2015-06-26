@@ -171,9 +171,7 @@ ConditionExpression;
 (* Chemora Symobls *)
 
 chemoraQuote;
-chemoraCDifferenceOps;
 
-ChemoraNLiteral;
 ChemoraNDO;
 ChemoraNOffset;
 

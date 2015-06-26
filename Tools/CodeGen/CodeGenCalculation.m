@@ -318,7 +318,8 @@ chemoraCountPreProcess =
    Parameter[a_] -> a
     };
 
-chemoraCountOperations[ChemoraNLiteral[expr_]]:= chemoraQuote["Literal"];
+chemoraCountOperations[expr:(_String|_Symbol)]:=chemoraQuote["Identity"];
+chemoraCountOperations[expr_?NumberQ]:= chemoraQuote["Literal"];
 
 chemoraCountOperations[expr_]:=
    Module[ { opInfoRaw, opInfo },
@@ -362,6 +363,12 @@ chemoraQuote[a_] := "\"" <> ToString[a] <> "\"";
 chemoraGenerateQuotedExpr[expr_,vectorise_] := 
   "\"" <> GenerateCodeFromExpression[expr,vectorise] <> "\""
 
+chemoraQuoteArgument[Parameter[n_]]:= chemoraQuoteArgument[n]
+chemoraQuoteArgument[n_?NumberQ]:= "\"=" <> ToString[CForm[n]] <> "\""
+chemoraQuoteArgument[n_]:= "\"" <> ToString[n] <> "\""
+chemoraQuoteArguments[args_List]:=
+   StringJoin[ chemoraQuoteArgument[#] <> ", " & /@ args ]        
+
 chemoraExpandRulesSeqNum = 1;
 
 chemoraExpandRules =
@@ -374,12 +381,6 @@ chemoraExpandRules =
           ],
      Rule[lhs_, chemoraIfElse[Parameter[cond_],rest___]] :>
         lhs -> chemoraIfElse[cond,rest],
-     Rule[lhs_, h1_?(Not[MemberQ[{ChemoraNLiteral},#]]&)
-             [op1___, h2_?(NumberQ), op3___]] :>
-        Sequence@@Module[{lhs2, seq = chemoraExpandRulesSeqNum++},
-          lhs2 = Symbol[ ToString[lhs] <> "xLiteralx" <> ToString[seq] ];
-                    { lhs2 -> ChemoraNLiteral[h2],
-                      lhs -> h1[op1,lhs2,op3] }],
      Rule[lhs_, h1_[op1___,
                     h2_String?(StringMatchQ[#,RegularExpression["^KRANC.*"]]&),
                     op3___]] :>
@@ -423,12 +424,14 @@ chemoraCExpressionEQstr[lhs_->ChemoraNOffset[gf_,di_,dj_,dk_]]:=
           <> chemoraQuote[dk]
           <> ");\n"];
 
-chemoraCExpressionEQstr[lhs_->ChemoraNLiteral[val_]]:=
-  Module[{},
-     " assign_from_expr("
+chemoraCExpressionEQstr[lhs_->fn_[operands__]]:=
+   Module[{},
+       " assign_from_func("
           <> chemoraQuote[lhs] <> ", "
-          <> chemoraQuote["Literal"] <> ", "
-          <> chemoraQuote[CForm[val]] <> ", NULL);\n"];
+          <> chemoraQuote[fn] <> ", "
+          <> chemoraGenerateQuotedExpr[fn[operands],False] <> ", "
+          <> chemoraQuoteArguments[{operands}]
+          <> "NULL );\n"];
 
 chemoraCExpressionEQstr[lhs_->rhs_]:=
    Module[{},
@@ -437,10 +440,8 @@ chemoraCExpressionEQstr[lhs_->rhs_]:=
           <> chemoraCountOperations[rhs] <> ", "
           <> chemoraGenerateQuotedExpr[rhs,False]
           <> ", "
-          <> StringJoin[
-               chemoraQuote[#] <> ", " &
-                  /@ chemoraCalculationExpressionVariables[rhs] ]
-          <> "NULL );\n"];
+          <> chemoraQuoteArgument[rhs]
+          <> ", NULL );\n"];
 
 chemoraCExpressionEQ[c_,lhs_->rhs_]:=
    mapRefAppend[c,ChemoraContents,chemoraCExpressionEQstr[lhs->rhs]]
@@ -452,29 +453,6 @@ chemoraCExpressionEQ[c_,lhs_ -> chemoraIfElse[cond_,ip_,ep_]]:=
           <> chemoraQuote[cond] <> ", "
           <> chemoraQuote[ip] <> ", "
           <> chemoraQuote[ep] <> ");\n"];
-
-chemoraCDifferenceOp[opNameBase_[u_,ind___] -> rhs_ ]:=
-   Module[{offsetsAndVars = chemoraDExpressionInfo[rhs],
-           offsets,offsetVars,
-           opName = ToString[opNameBase] <> StringJoin[ ToString /@ {ind} ] },
-     {offsetVars,offsets} = offsetsAndVars;
-     " set_differencing_op("
-        <> chemoraQuote[opName] <> ", "
-        <> chemoraCountOperations[rhs] <> ", "
-        <> chemoraGenerateQuotedExpr[rhs,False] <> ", "
-        <> StringJoin[
-             chemoraQuote[#] <> ", " &
-               /@ Union[ offsetVars,
-                         chemoraCalculationExpressionVariablesDO[rhs]]]
-        <> "NULL, "
-        <> ToString[Length[offsets]]
-        <> StringJoin[","<>ToString[#]& /@ Flatten[offsets]]
-        <> ");\n"];
-
-(* Called from KrancThorn.m:CreateKrancThorn *)
-chemoraCDifferenceOps[] :=
-   StringJoin[
-     chemoraCDifferenceOp[#] & /@ ( Flatten @@ $DifferencingMacroExpansions ) ];
 
 chemoraCSimpleExpression[c_, lhs_ -> rhs_ ]:=
    Module[ { localName = ToString[lhs] <> "xxxL", diffOp, gf },
@@ -914,7 +892,6 @@ DefFn[
      StringJoin[ " assign_from_gf_load(" 
                  <> chemoraQuote[localName[#]] <> ", "
                  <> chemoraQuote[#]
-                 <> ", NULL"
                  <> ");\n" &
                  /@ gfsInRHS ]];
 

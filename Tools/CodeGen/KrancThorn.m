@@ -411,7 +411,6 @@ DefFn[CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPa
       <> "{\n"
       <> "  CHEMORA_CG_KRANC_INIT_THORN_START("
       <> chemoraQuote[thornName] <> ");\n"
-      <> chemoraCDifferenceOps[]
       <> StringJoin[ Map[ 
            "\n\n  CHEMORA_CG_KRANC_INIT_THORN_KERNEL("
            <> chemoraQuote[lookup[#,Name]] <> ");\n"

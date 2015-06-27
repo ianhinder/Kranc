@@ -80,7 +80,7 @@ DefFn[checkCondition[{cond_, error_String}] :=
 
     ConditionalOnParameterTextual[
       renderbool[cond],
-      {"CCTK_WARN(CCTK_WARN_ABORT, ", StringDrop[Stringify[error],-1], ");\n"}]]];
+      {"CCTK_ERROR(", StringDrop[Stringify[error],-1], ");\n"}]]];
 
 Options[ParamCheckProcessCode] = ThornOptions;
 

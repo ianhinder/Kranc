@@ -65,7 +65,7 @@ CalculationBoundariesFunction[calc_List] :=
          "ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, GetBoundaryWidth(cctkGH), -1 /* no table */, ",
                  Quote[g], ",", Quote["flat"], ");\n",
         "if (ierr < 0)\n",
-        "  CCTK_WARN(1, " <> Quote["Failed to register flat BC for "<>g<>"."] <> ");\n" }];
+        "  CCTK_WARN(CCTK_WARN_ALERT, " <> Quote["Failed to register flat BC for "<>g<>"."] <> ");\n" }];
 
     groups = lookup[calc, Groups];
     groupNamesSet = qualifyGroupName[#, imp] & /@ groupsSetInCalc[calc, groups];

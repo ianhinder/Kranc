@@ -189,7 +189,7 @@ DefFn[CreateMoLBoundariesSource[spec_] :=
      "  ierr = CartSymGN(cctkGH, \"" <> fullgroupname <> "\");\n",
 
      "  if (ierr < 0)\n",
-     "     CCTK_WARN(0, \"Failed to apply symmetry BC for " <> fullgroupname <> "!\");\n"}
+     "     CCTK_ERROR(\"Failed to apply symmetry BC for " <> fullgroupname <> "!\");\n"}
      ];
 *)
 
@@ -210,7 +210,7 @@ DefFn[CreateMoLBoundariesSource[spec_] :=
      "                    \"" <> fullgroupname <> "\", " <> boundpar <> ");\n",
 
      "  if (ierr < 0)\n",
-     "     CCTK_WARN(0, \"Failed to register "<>boundpar<>" BC for "<>fullgroupname<>"!\");\n",
+     "     CCTK_ERROR(\"Failed to register "<>boundpar<>" BC for "<>fullgroupname<>"!\");\n",
 
      "}\n"}];
 
@@ -232,7 +232,7 @@ DefFn[CreateMoLBoundariesSource[spec_] :=
      "                    \"" <> fullgfname <> "\", " <> boundpar <> ");\n",
 
      "  if (ierr < 0)\n",
-     "     CCTK_WARN(0, \"Failed to register "<>boundpar<>" BC for "<>fullgfname<>"!\");\n",
+     "     CCTK_ERROR(\"Failed to register "<>boundpar<>" BC for "<>fullgfname<>"!\");\n",
 
      "}\n"}];
 
@@ -252,20 +252,20 @@ DefFn[CreateMoLBoundariesSource[spec_] :=
 
       "  if ("<>myhandle<>" < 0) "<>myhandle<>" = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);\n",
 
-      "  if ("<>myhandle<>" < 0) CCTK_WARN(0, \"could not create table!\");\n",
+      "  if ("<>myhandle<>" < 0) CCTK_ERROR(\"could not create table!\");\n",
 
       "  if (Util_TableSetReal("<>myhandle<>" , "<> boundpar <>"_limit, \"LIMIT\") < 0)\n",
-      "     CCTK_WARN(0, \"could not set LIMIT value in table!\");\n",
+      "     CCTK_ERROR(\"could not set LIMIT value in table!\");\n",
 
       "  if (Util_TableSetReal("<>myhandle<>" ," <> boundpar <> "_speed, \"SPEED\") < 0)\n",
-      "     CCTK_WARN(0, \"could not set SPEED value in table!\");\n",
+      "     CCTK_ERROR(\"could not set SPEED value in table!\");\n",
 
       "\n",
       "  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, 1, "<>myhandle<>", \n",
       "                    \"" <> fullgroupname <> "\", \"Radiation\");\n\n",
 
       "  if (ierr < 0)\n",
-      "     CCTK_WARN(0, \"Failed to register Radiation BC for "<>fullgroupname<>"!\");\n",
+      "     CCTK_ERROR(\"Failed to register Radiation BC for "<>fullgroupname<>"!\");\n",
 
       "\n}\n"}];
 
@@ -286,20 +286,20 @@ DefFn[CreateMoLBoundariesSource[spec_] :=
 
       "  if ("<>myhandle<>" < 0) "<>myhandle<>" = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);\n",
 
-      "  if ("<>myhandle<>" < 0) CCTK_WARN(0, \"could not create table!\");\n",
+      "  if ("<>myhandle<>" < 0) CCTK_ERROR(\"could not create table!\");\n",
 
       "  if (Util_TableSetReal("<>myhandle<>" , "<> boundpar <>"_limit, \"LIMIT\") < 0)\n",
-      "     CCTK_WARN(0, \"could not set LIMIT value in table!\");\n",
+      "     CCTK_ERROR(\"could not set LIMIT value in table!\");\n",
 
       "  if (Util_TableSetReal("<>myhandle<>" ," <> boundpar <> "_speed, \"SPEED\") < 0)\n",
-      "      CCTK_WARN(0, \"could not set SPEED value in table!\");\n",
+      "      CCTK_ERROR(\"could not set SPEED value in table!\");\n",
 
       "\n",
       "  ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, "<>myhandle<>", \n",
       "                    \"" <> fullgfname <> "\", \"Radiation\");\n\n",
 
       "  if (ierr < 0)\n",
-      "     CCTK_WARN(0, \"Failed to register Radiation BC for "<>fullgfname<>"!\");\n",
+      "     CCTK_ERROR(\"Failed to register Radiation BC for "<>fullgfname<>"!\");\n",
 
      "\n}\n"}];
 
@@ -318,17 +318,17 @@ DefFn[CreateMoLBoundariesSource[spec_] :=
 
       "  if ("<>myhandle<>" < 0) "<>myhandle<>" = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);\n",
 
-      "  if ("<>myhandle<>" < 0) CCTK_WARN(0, \"could not create table!\");\n",
+      "  if ("<>myhandle<>" < 0) CCTK_ERROR(\"could not create table!\");\n",
 
       "  if (Util_TableSetReal("<>myhandle<>" ," <> boundpar <> "_scalar, \"SCALAR\") < 0)\n",
-      "      CCTK_WARN(0, \"could not set SCALAR value in table!\");\n",
+      "      CCTK_ERROR(\"could not set SCALAR value in table!\");\n",
 
       "\n",
       "  ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, 1, "<>myhandle<>", \n",
       "                    \"" <> fullgroupname <> "\", \"scalar\");\n\n",
 
       "  if (ierr < 0)\n",
-      "     CCTK_WARN(0, \"Failed to register Scalar BC for "<>fullgroupname<>"!\");\n",
+      "     CCTK_ERROR(\"Failed to register Scalar BC for "<>fullgroupname<>"!\");\n",
 
       "\n}\n"}];
 
@@ -348,17 +348,17 @@ DefFn[CreateMoLBoundariesSource[spec_] :=
 
       "  if ("<>myhandle<>" < 0) "<>myhandle<>" = Util_TableCreate(UTIL_TABLE_FLAGS_CASE_INSENSITIVE);\n",
 
-      "  if ("<>myhandle<>" < 0) CCTK_WARN(0, \"could not create table!\");\n",
+      "  if ("<>myhandle<>" < 0) CCTK_ERROR(\"could not create table!\");\n",
 
       "  if (Util_TableSetReal("<>myhandle<>" ," <> boundpar <> "_scalar, \"SCALAR\") < 0)\n",
-      "    CCTK_WARN(0, \"could not set SCALAR value in table!\");\n",
+      "    CCTK_ERROR(\"could not set SCALAR value in table!\");\n",
 
       "\n",
       "  ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, "<>myhandle<>", \n",
       "                    \"" <> fullgfname <> "\", \"scalar\");\n\n",
 
       "  if (ierr < 0)\n",
-      "     CCTK_WARN(0, \"Error in registering Scalar BC for "<>fullgfname<>"!\");\n",
+      "     CCTK_ERROR(\"Error in registering Scalar BC for "<>fullgfname<>"!\");\n",
 
      "\n}\n"}];
 
@@ -462,7 +462,7 @@ DefFn[CreateMoLExcisionSource[spec_] :=
       "if ( (excision .ne. 0).AND.(find_excision_boundary .ne. 0) ) then\n\n",
 
       "  call ExcisionFindBoundary(ierr, emask, nx, ny, nz)\n",
-      "  if (ierr < 0) call CCTK_WARN(2, \"findboundary exited with an error\")\n\n",
+      "  if (ierr < 0) call CCTK_WARN(CCTK_WARN_COMPLAIN, \"findboundary exited with an error\")\n\n",
 
      "endif\n\n",
      "return\n"}],
@@ -483,7 +483,7 @@ DefFn[CreateMoLExcisionSource[spec_] :=
       "if ( (excision .ne. 0).AND.(find_excision_normals .ne. 0) ) then\n\n",
 
       "  call ExcisionFindNormals(ierr, emask, exnormx, exnormy, exnormz, nx, ny, nz)\n",
-      "  if (ierr < 0) call CCTK_WARN(2, \"findnormals exited with an error\")\n\n",
+      "  if (ierr < 0) call CCTK_WARN(CCTK_WARN_COMPLAIN, \"findnormals exited with an error\")\n\n",
 
      "endif\n\n",
      "return\n"}],

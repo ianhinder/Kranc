@@ -99,7 +99,7 @@ GetScheduledFunctions[thornName_, declaredGroups_List, groups_List] :=
 
 createBoundTypeParam[groupOrGF_, def_] := {
                  Name          ->  ToString@groupOrGF <> "_bound",
-                 Type          ->  "KEYWORD",
+                 Type          ->  "CCTK_KEYWORD",
                  Default       ->  def,
                  Description   ->  "Boundary condition to implement",
                  Visibility    ->  "private",

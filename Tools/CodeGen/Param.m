@@ -245,14 +245,13 @@ krancParamStructExtended[definition_, type_] :=
     {Name        -> name,
      Type        -> type, 
      Description -> description,
-     Default     -> "",
      Visibility  -> "restricted",
      AllowedValues -> allowedValues}];
 
 krancKeywordParamStruct[struct_] :=
   Join[
   {Name -> lookup[struct, Name],
-   Type -> "KEYWORD",
+   Type -> "CCTK_KEYWORD",
    Default -> lookup[struct, Default],
    Description -> lookupDefault[struct, Description, lookup[struct, Name]],
    Visibility -> lookupDefault[struct, Visibility, "private"]},

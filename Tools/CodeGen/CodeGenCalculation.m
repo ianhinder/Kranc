@@ -545,196 +545,259 @@ DefFn[assignLocalFunctions[gs:{_Symbol...}, useVectors:Boolean, useJacobian:Bool
   code]];
 
 Options[equationLoop] = ThornOptions;
-
 DefFn[
-  equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, odeGroups_, pddefs_,
-             where_, addToStencilWidth_,
-             opts:OptionsPattern[]] :=
-  Module[{rhss, lhss, gfsInRHS, gfsInLHS, gfsOnlyInRHS, localGFs,
-          localMap, eqs2, derivSwitch, code, functionName, calcCode,
-          gfsInBoth, gfsDifferentiated,
-          gfsDifferentiatedAndOnLHS, declare, eqsReplaced,
-          arraysInRHS, arraysInLHS, arraysOnlyInRHS, odeVars,
-          generateEquationCode, groupedIfs, IfThenGroup, noSimplify,
-          gridName, useJacobian, allCode, opCounts},
+  equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, odeGroups_,
+               pddefs_, where_, addToStencilWidth_, opts:OptionsPattern[]] :=
+  Module[
+    {allCode, opCounts,
+     useJacobian,
+     gridName,
+     rhss, lhss,
+     orderings, eqsOrdered,
+     odeVars,
+     gfsInRHS, gfsInLHS, gfsOnlyInRHS, gfsInBoth,
+     localGFs, localMap,
+     gfsDifferentiated, gfsDifferentiatedAndOnLHS,
+     defsWithoutShorts, defsWithShorts,
+     eqs2,
+     functionName,
+     eqsReplaced,
+     gridFunctionsFreeQ,
+     declare,
+     groupedIfs, IfThenGroup,
+     noSimplify,
+     generateEquationCode,
+     groupedIfsArrays,
+     calcCode, calcCodeArrays,
+     assignLocalGridFunctions, assignLocalArrayFunctions,
+     arraysInRHS, arraysInLHS, arraysOnlyInRHS},
 
     InfoMessage[InfoFull, "Equation loop"];
 
     {allCode, opCounts} = Reap[
 
-    useJacobian = OptionValue[UseJacobian] && lookupDefault[cleancalc, UseJacobian, True];
+      useJacobian =
+        OptionValue[UseJacobian] && lookupDefault[cleancalc, UseJacobian, True];
 
-    gridName = Function[x,FlattenBlock[lookup[cleancalc, GFAccessFunction][x]]];
+      gridName =
+        Function[x, FlattenBlock[lookup[cleancalc, GFAccessFunction][x]]];
 
-    rhss = Map[#[[2]] &, eqs];
-    lhss = Map[#[[1]] &, eqs];
+      rhss = Map[#[[2]] &, eqs];
+      lhss = Map[#[[1]] &, eqs];
 
-    orderings = Flatten[Map[pdCanonicalOrdering, pddefs], 1];
-    eqsOrdered = (eqs //. orderings);
+      orderings = Flatten[Map[pdCanonicalOrdering, pddefs], 1];
+      eqsOrdered = eqs //. orderings;
 
-    odeVars = variablesFromGroups[odeGroups, groups];
+      odeVars = variablesFromGroups[odeGroups, groups];
 
-    gfsInRHS = Union[Cases[rhss, _ ? (MemberQ[gfs,#] &), Infinity]];
-    gfsInLHS = Union[Cases[lhss, _ ? (MemberQ[gfs,#] &), Infinity]];
-    gfsOnlyInRHS = Complement[gfsInRHS, gfsInLHS];
+      gfsInRHS = Union[Cases[rhss, _ ? (MemberQ[gfs,#] &), Infinity]];
+      gfsInLHS = Union[Cases[lhss, _ ? (MemberQ[gfs,#] &), Infinity]];
+      gfsOnlyInRHS = Complement[gfsInRHS, gfsInLHS];
+      gfsInBoth = Intersection[gfsInRHS, gfsInLHS];
 
-    gfsInBoth = Intersection[gfsInRHS,gfsInLHS];
+      If[OptionValue[ProhibitAssignmentToGridFunctionsRead] &&
+         gfsInBoth =!= {},
+         ThrowError[
+           "The calculation " <> ToString@lookup[cleancalc, Name] <>
+           " has the grid functions " <> ToString[gfsInBoth] <>
+           " on both the left hand side and the right hand side.  This is" <>
+           " not allowed with the option" <>
+           " ProhibitAssignmentToGridFunctionsRead -> True."]];
 
-    If[OptionValue[ProhibitAssignmentToGridFunctionsRead] &&
-       gfsInBoth =!= {},
-      ThrowError["The calculation " <> ToString@lookup[cleancalc, Name] <>
-        " has the grid functions " <> ToString[gfsInBoth] <>
-        " on both the left hand side and the right hand side.  This is" <>
-        " not allowed with the option" <>
-        " ProhibitAssignmentToGridFunctionsRead -> True."]];
+      localGFs = Map[localName, gfs];
+      localMap = Map[# -> localName[#] &, gfs];
 
-    localGFs = Map[localName, gfs];
-    localMap = Map[# -> localName[#] &, gfs];
+      gfsDifferentiated =
+        Map[First,
+            GridFunctionDerivativesInExpression[pddefs, eqsOrdered,
+                                                OptionValue[ZeroDimensions]]];
+      gfsDifferentiatedAndOnLHS = Intersection[gfsDifferentiated, gfsInLHS];
 
-    derivSwitch =
-      GridFunctionDerivativesInExpression[pddefs, eqsOrdered,
-                                          OptionValue[ZeroDimensions]] != {};
+      If[gfsDifferentiatedAndOnLHS =!= {},
+         ThrowError[
+           "The calculation " <> ToString@lookup[cleancalc, Name] <> " " <>
+           "has both assignments to, and derivatives of, the grid functions " <>
+           ToString[gfsDifferentiatedAndOnLHS] <> ".  " <>
+           "This is not allowed, as it gives results which are dependent " <>
+           "on the ordering of the loop over grid points."]];
 
-    gfsDifferentiated = Map[First,
-      GridFunctionDerivativesInExpression[pddefs, eqsOrdered,
-                                          OptionValue[ZeroDimensions]]];
+      (* Replace the partial derivatives *)
+      {defsWithoutShorts, defsWithShorts} =
+        splitPDDefsWithShorthands[pddefs, shorts];
+      eqs2 = ReplaceDerivatives[defsWithoutShorts, eqsOrdered, True,
+                                OptionValue[ZeroDimensions],
+                                lookup[cleancalc, MacroPointer]];
+      eqs2 = ReplaceDerivatives[defsWithShorts, eqs2, False,
+                                OptionValue[ZeroDimensions],
+                                lookup[cleancalc, MacroPointer]];
 
-    gfsDifferentiatedAndOnLHS = Intersection[gfsDifferentiated, gfsInLHS];
+      checkEquationAssignmentOrder[eqs2, shorts];
+      functionName = ToString@lookup[cleancalc, Name];
 
-    If[gfsDifferentiatedAndOnLHS =!= {},
-      ThrowError["The calculation " <> ToString@lookup[cleancalc, Name] <>
-        " has both assignments to, and derivatives of, the grid functions " <>
-        ToString[gfsDifferentiatedAndOnLHS] <>
-        ".  This is not allowed, as it gives results which are dependent" <>
-        " on the ordering of the loop over grid points."]];
+      (* Replace grid functions with their local forms *)
+      eqsReplaced = eqs2 /. Join[{g:GFOffset[___]:>g}, localMap];
 
-    (* Replace the partial derivatives *)
-    {defsWithoutShorts, defsWithShorts} = splitPDDefsWithShorthands[pddefs, shorts];
-    eqs2 = ReplaceDerivatives[defsWithoutShorts, eqsOrdered, True,
-                              OptionValue[ZeroDimensions],lookup[cleancalc, MacroPointer]];
-    eqs2 = ReplaceDerivatives[defsWithShorts, eqs2, False, OptionValue[ZeroDimensions], lookup[cleancalc, MacroPointer]];
+      gridFunctionsFreeQ[x_] :=
+        Module[
+          {r},
+          (* Print["groups = ", groups]; *)
+          (* Print["gridFunctionsFreeQ[", x, "] ="]; *)
+          r = GridFunctionsInExpression[x, groups/.localMap] === {};
+          (* Print["  ", r]; *)
+          r];
 
-    checkEquationAssignmentOrder[eqs2, shorts];
-    functionName = ToString@lookup[cleancalc, Name];
+      (* Construct a list, corresponding to the list of equations,
+         marking those which need their LHS variables declared. We
+         declare variables at the same time as assigning to them as it
+         gives a performance increase over declaring them separately
+         at the start of the loop. The local variables for the grid
+         functions which appear in the RHSs have been declared and set
+         already, so assignments to these do not generate declarations
+         here. *)
+      declare =
+        Block[{$RecursionLimit=Infinity},
+              MarkFirst[First /@ eqsReplaced, Map[localName, gfsInRHS]]];
 
-    (* Replace grid functions with their local forms *)
-    eqsReplaced = eqs2 /. Join[{g:GFOffset[___]:>g},localMap];
+      (* Replace consecutive IfThen statements with the same condition
+         by a single IfThenGroup *)
+      groupedIfs =
+        Thread[{declare, eqsReplaced}] //.
+        {
+          {x___, {deca_, a_->IfThen[cond_, at_, af_]},
+                 {decb_, b_->IfThen[cond_, bt_, bf_]}, y___} :>
+          {x, {{deca, decb},
+               IfThenGroup[cond, {a->at, b->bt}, {a->af, b->bf}]}, y} /;
+          gridFunctionsFreeQ[cond],
+          {x___, {deca_, IfThenGroup[cond_, at_, af_]},
+                 {decb_, b_->IfThen[cond_, bt_, bf_]}, y___} :>
+          {x, {Join[deca, {decb}],
+               IfThenGroup[cond, Join[at, {b->bt}], Join[af, {b->bf}]]}, y},
+          {x___, {deca_, IfThenGroup[cond_, at_, af_]},
+                 {decb_, IfThenGroup[cond_, bt_, bf_]}, y___} :>
+          {x, {Join[deca, decb],
+               IfThenGroup[cond, Join[at, bt], Join[af, bf]]}, y}};
 
-    gridFunctionsFreeQ[x_] :=
-    Module[
-      {r},
-      (* Print["groups = ", groups]; *)
-      (* Print["gridFunctionsFreeQ[", x, "] ="]; *)
-      r = GridFunctionsInExpression[x, groups/.localMap] === {};
-      (* Print["  ", r]; *)
-      r];
+      noSimplify = lookupDefault[cleancalc, NoSimplify, False];
 
-    (* Construct a list, corresponding to the list of equations,
-       marking those which need their LHS variables declared.  We
-       declare variables at the same time as assigning to them as it
-       gives a performance increase over declaring them separately at
-       the start of the loop.  The local variables for the grid
-       functions which appear in the RHSs have been declared and set
-       already, so assignments
-       to these do not generate declarations here. *)
-    declare = Block[{$RecursionLimit=Infinity},MarkFirst[First /@ eqsReplaced, Map[localName, gfsInRHS]]];
+      (* Generate actual code strings. Try to declare variables as
+         they are assigned, but it is only possible to do this outside
+         all if(){} statements. *)
+      generateEquationCode[{declare2_, eq2_}] :=
+        Module[
+          {ret, vars, code, preDeclare},
+          InfoMessage[InfoFull,
+                      "Generating code for " <> ToString[eq2[[1]], InputForm]];
+          Which[
+            SameQ[Head[eq2[[2]]], IfThen],
+            ret = AssignVariableFromExpression[
+              eq2[[1]], eq2[[2]], declare2, OptionValue[UseVectors],
+              noSimplify],
+            SameQ[Head[eq2], IfThenGroup],
+            vars = eq2[[2,All,1]];
+            cond = eq2[[1]];
+            preDeclare = Pick[vars, declare2];
+            ret = {Map[DeclareVariable[#, DataType[]] &,
+                       Complement[Union[preDeclare], localName/@gfsInRHS]],
+                   {"\n"},
+                   Conditional[
+                     GenerateCodeFromExpression[ConditionExpression[cond],
+                                                False],
+                     Riffle[
+                       AssignVariableFromExpression[#[[1]], #[[2]], False,
+                                                    OptionValue[UseVectors],
+                                                    noSimplify]& /@ eq2[[2]],
+                       "\n"],
+                     Riffle[
+                       AssignVariableFromExpression[#[[1]], #[[2]], False,
+                                                    OptionValue[UseVectors],
+                                                    noSimplify]& /@ eq2[[3]],
+                       "\n"]]},
+            True,
+            ret = AssignVariableFromExpression[eq2[[1]], eq2[[2]], declare2,
+                                               OptionValue[UseVectors],
+                                               noSimplify]];
+          ret];
 
-    (* Replace consecutive IfThen statements with the same condition by a single IfThenGroup *)
-    groupedIfs = Thread[{declare, eqsReplaced}] //.
-      {{x___, {deca_, a_->IfThen[cond_, at_, af_]}, {decb_, b_->IfThen[cond_, bt_, bf_]}, y___} :>
-         {x, {{deca, decb}, IfThenGroup[cond, {a->at, b->bt}, {a->af, b->bf}]}, y} /; gridFunctionsFreeQ[cond],
-       {x___, {deca_, IfThenGroup[cond_, at_, af_]}, {decb_, b_->IfThen[cond_, bt_, bf_]}, y___} :>
-         {x, {Join[deca, {decb}], IfThenGroup[cond, Join[at, {b->bt}], Join[af, {b->bf}]]}, y},
-       {x___, {deca_, IfThenGroup[cond_, at_, af_]}, {decb_, IfThenGroup[cond_, bt_, bf_]}, y___} :>
-         {x, {Join[deca, decb], IfThenGroup[cond, Join[at, bt], Join[af, bf]]}, y}};
+      groupedIfsArrays =
+        Select[groupedIfs, MemberQ[Map[localName, odeVars], #[[2]][[1]]] &];
+      groupedIfs =
+        Select[groupedIfs, !MemberQ[Map[localName, odeVars], #[[2]][[1]]] &];
 
-    noSimplify = lookupDefault[cleancalc, NoSimplify, False];
+      calcCode = Riffle[generateEquationCode /@ groupedIfs, "\n"];
+      calcCodeArrays = Riffle[generateEquationCode /@ groupedIfsArrays, "\n"];
+      InfoMessage[InfoFull, "Finished generating equation code"];
 
-    (* Generate actual code strings. Try to declare variables as they are assigned, but
-       it is only possible to do this outside all if(){} statements. *)
-    generateEquationCode[{declare2_, eq2_}] :=
-      Module[{ret, vars, preDeclare, cond},
-        InfoMessage[InfoFull, "Generating code for " <> ToString[eq2[[1]], InputForm]];
-        Which[
-        SameQ[Head[eq2[[2]]], IfThen],
-          ret = AssignVariableFromExpression[eq2[[1]],
-            eq2[[2]], declare2, OptionValue[UseVectors], noSimplify];,
-        SameQ[Head[eq2], IfThenGroup],
-          vars = eq2[[2,All,1]];
-          cond = eq2[[1]];
-          preDeclare = Pick[vars, declare2];
-          ret = {Map[DeclareVariable[#, DataType[]] &, Complement[Union[preDeclare], localName/@gfsInRHS]], {"\n"},
-                 Conditional[GenerateCodeFromExpression[ConditionExpression[cond], False],
-                  Riffle[AssignVariableFromExpression[#[[1]], #[[2]], False, OptionValue[UseVectors], noSimplify]& /@ eq2[[2]], "\n"],
-                  Riffle[AssignVariableFromExpression[#[[1]], #[[2]], False, OptionValue[UseVectors], noSimplify]& /@ eq2[[3]], "\n"]]};,
-        True,
-          ret = AssignVariableFromExpression[eq2[[1]], eq2[[2]], declare2, OptionValue[UseVectors], noSimplify];
-        ];
-        ret
-    ];
+      assignLocalGridFunctions[gs_, useVectors_, useJacobian_] :=
+        assignLocalFunctions[gs, useVectors, useJacobian, gridName];
+      assignLocalArrayFunctions[gs_] :=
+        assignLocalFunctions[gs, False, False, ArrayName];
 
-    groupedIfsArrays = Select[groupedIfs, MemberQ[Map[localName, odeVars], #[[2]][[1]]]  &];
-    groupedIfs = Select[groupedIfs, !MemberQ[Map[localName, odeVars], #[[2]][[1]]]  &];
+      (* separate grid and array variables *)
+      arraysInRHS = Intersection[odeVars, gfsInRHS];
+      arraysInLHS = Intersection[odeVars, gfsInLHS];
+      arraysOnlyInRHS = Complement[arraysInRHS, arraysInLHS];
 
-    calcCode = Riffle[generateEquationCode /@ groupedIfs, "\n"];
-    calcCodeArrays = Riffle[generateEquationCode /@ groupedIfsArrays, "\n"];
-    InfoMessage[InfoFull, "Finished generating equation code"];
+      gfsInRHS = Complement[gfsInRHS, odeVars];
+      gfsInLHS = Complement[gfsInLHS, odeVars];
+      gfsOnlyInRHS = Complement[gfsInRHS, gfsInLHS];
 
-    assignLocalGridFunctions[gs_, useVectors_, useJacobian_] := assignLocalFunctions[gs, useVectors, useJacobian, gridName];
-    assignLocalArrayFunctions[gs_] := assignLocalFunctions[gs, False, False, ArrayName];
+      {
+        CommentedBlock[
+          "Assign local copies of arrays functions",
+          assignLocalArrayFunctions[arraysInRHS]],
 
-    (* separate grid and array variables *)
-    arraysInRHS = Intersection[odeVars, gfsInRHS];
-    arraysInLHS = Intersection[odeVars, gfsInLHS];
-    arraysOnlyInRHS = Complement[arraysInRHS, arraysInLHS];
+        CommentedBlock[
+          "Calculate temporaries and arrays functions",
+          calcCodeArrays],
 
-    gfsInRHS = Complement[gfsInRHS, odeVars];
-    gfsInLHS = Complement[gfsInLHS, odeVars];
-    gfsOnlyInRHS = Complement[gfsInRHS, gfsInLHS];
+        CommentedBlock[
+          "Copy local copies back to grid functions",
+          Map[AssignVariableInLoop[ArrayName[#], localName[#]] &, arraysInLHS]],
 
-    {
-    CommentedBlock["Assign local copies of arrays functions",
-      assignLocalArrayFunctions[arraysInRHS]],
+        lookup[cleancalc, LoopFunction][
+          {
+            (* TODO: Only make local copies for variables that are
+               actually used later on; see e.g. variablesReadInCalc
+               for how to make the distinction *)
+            CommentedBlock[
+              "Assign local copies of grid functions",
+              assignLocalGridFunctions[gfsInRHS,
+                                       OptionValue[UseVectors], useJacobian]],
 
-    CommentedBlock["Calculate temporaries and arrays functions", calcCodeArrays],
+            CommentedBlock[
+              "Include user supplied include files",
+              Map[IncludeFile, incs]],
 
-    CommentedBlock["Copy local copies back to grid functions",
-        Map[AssignVariableInLoop[ArrayName[#], localName[#]] &, arraysInLHS]],
+            CommentedBlock[
+              "Precompute derivatives",
+              PrecomputeDerivatives[defsWithoutShorts, eqsOrdered, 
+                                    lookup[{opts}, IntParameters, {}],
+                                    OptionValue[ZeroDimensions],
+                                    lookup[cleancalc, MacroPointer]]],
 
-    lookup[cleancalc,LoopFunction][
-    {
-      (* TODO: Only make local copies for variables that are actually
-         used later on; see e.g. variablesReadInCalc for how to make the
-         distinction *)
-      CommentedBlock["Assign local copies of grid functions",
-        assignLocalGridFunctions[gfsInRHS, OptionValue[UseVectors], useJacobian]],
+            CommentedBlock[
+              "Calculate temporaries and grid functions",
+              calcCode],
 
-      CommentedBlock["Include user supplied include files",
-        Map[IncludeFile, incs]],
+            If[debugInLoop,
+               Map[InfoVariable[#[[1]]] &, (eqs2 /. localMap)],
+               ""],
 
-      CommentedBlock["Precompute derivatives",
-        PrecomputeDerivatives[defsWithoutShorts, eqsOrdered, 
-                              lookup[{opts}, IntParameters, {}],
-                              OptionValue[ZeroDimensions],
-                              lookup[cleancalc, MacroPointer]]],
+            localsToGridFunctions[gfsInLHS, gridName,
+                                  Which[OptionValue[UseOpenCL], "OpenCL",
+                                        OptionValue[UseVectors], "Vectors",
+                                        True, "Default"]],
 
-      CommentedBlock["Calculate temporaries and grid functions", calcCode],
+            If[debugInLoop,
+               Map[InfoVariable[gridName[#]] &, gfsInLHS],
+               ""]
+          },
+          opts]},               (* LoopFunction *)
 
-      If[debugInLoop,
-        Map[InfoVariable[#[[1]]] &, (eqs2 /. localMap)],
-        ""],
-
-      localsToGridFunctions[gfsInLHS, gridName,
-                            Which[OptionValue[UseOpenCL], "OpenCL",
-                                  OptionValue[UseVectors], "Vectors",
-                                  True, "Default"]],
-
-      If[debugInLoop, Map[InfoVariable[gridName[#]] &, gfsInLHS], ""]}, opts]}, 
-
-        CountOperations];
+      CountOperations];         (* Reap *)
   
     If[OptionValue[CountOperations],
-      ProcessOperationCount[opCounts, GetCalculationName[cleancalc]]];
+       ProcessOperationCount[opCounts, GetCalculationName[cleancalc]]];
   
     allCode]];
 

@@ -306,243 +306,313 @@ Options[CreateCalculationFunction] = Join[ThornOptions,{Debug -> False}];
 
 DefFn[
   CreateCalculationFunction[calcp_, opts:OptionsPattern[]] :=
-  Module[{gfs, allSymbols, knownSymbols,
-          shorts, eqs, parameters, parameterRules, odeGroups,
-          functionName, dsUsed, groups, pddefs, cleancalc, eqLoop, where,
-          addToStencilWidth, pDefs, haveCondTextuals, condTextuals, calc,
-          kernelCall, DGFEDefs, DGFEInit, DGFECallCode, debug, useJacobian,
-          imp, gridName, singlePointStencil},
+  Module[
+    {debug, useJacobian,
+     imp, gridName, functionName, bodyFunctionName,
+     calc, cleancalc,
+     shorts, eqs,
+     parameters,
+     groups, odeGroups,
+     pddefs,
+     addToStencilWidth,
+     pDefs,
+     haveCondTextuals,
+     gfs,
+     parameterRules,
+     singlePointStencil,
+     where,
+     functionsPresent,
+     condTextuals,
+     allSymbols, knownSymbols,
+     unknownSymbols,
+     kernelCall,
+     DGFEDefs, DGFEInit, DGFECallCode
+    },
 
-  debug = OptionValue[Debug];
-  useJacobian = OptionValue[UseJacobian] && lookupDefault[calcp, UseJacobian, True];
-  imp = lookup[calcp, Implementation];
-  gridName = lookup[calcp, GFAccessFunction];
+    debug = OptionValue[Debug];
+    useJacobian =
+      OptionValue[UseJacobian] && lookupDefault[calcp, UseJacobian, True];
+    imp = lookup[calcp, Implementation];
+    gridName = lookup[calcp, GFAccessFunction];
 
-  functionName = ToString@lookup[calcp, Name];
-  bodyFunctionName = functionName <> "_Body";
+    functionName = ToString@lookup[calcp, Name];
+    bodyFunctionName = functionName <> "_Body";
 
-  InfoMessage[Terse, "Creating calculation function: " <> functionName];
+    InfoMessage[Terse, "Creating calculation function: " <> functionName];
+    InfoMessage[InfoFull,
+                "Calculation sets " <> ToString[Map[First,
+                                                    lookup[calcp, Equations]]]];
 
-  InfoMessage[InfoFull, "Calculation sets "<>ToString[Map[First,lookup[calcp, Equations]]]];
+    calc = If[useJacobian, InsertJacobian[calcp, opts], calcp];
+    cleancalc = RemoveUnusedShorthands[calc];
+    If[OptionValue[CSE],
+       cleancalc = EliminateCommonSubexpressions[cleancalc, opts]];
 
-  calc = If[useJacobian, InsertJacobian[calcp, opts], calcp];
+    shorts = lookupDefault[cleancalc, Shorthands, {}];
+    eqs = lookup[cleancalc, Equations];
+    parameters = lookupDefault[cleancalc, Parameters, {}];
+    groups = lookup[cleancalc, Groups];
+    odeGroups = lookupDefault[cleancalc, ODEGroups, {}];
+    If[useJacobian, groups = Join[groups, JacobianGroups[]]];
+    pddefs = lookupDefault[cleancalc, PartialDerivatives, {}];
+    addToStencilWidth = lookupDefault[cleancalc, AddToStencilWidth, 0];
+    pDefs = lookup[cleancalc, PreDefinitions];
+    haveCondTextuals = mapContains[cleancalc, ConditionalOnTextuals];
 
-  cleancalc = RemoveUnusedShorthands[calc];
-  If[OptionValue[CSE],
-    cleancalc = EliminateCommonSubexpressions[cleancalc, opts]];
+    VerifyCalculation[cleancalc];
 
-  shorts = lookupDefault[cleancalc, Shorthands, {}];
+    gfs = allGroupVariables[groups];
 
-  eqs    = lookup[cleancalc, Equations];
-  parameters = lookupDefault[cleancalc, Parameters, {}];
-  groups = lookup[cleancalc, Groups];
-  odeGroups = lookupDefault[cleancalc, ODEGroups, {}];
-  If[useJacobian, groups = Join[groups, JacobianGroups[]]];
-  pddefs = lookupDefault[cleancalc, PartialDerivatives, {}];
-  addToStencilWidth = lookupDefault[cleancalc, AddToStencilWidth, 0];
-  pDefs = lookup[cleancalc, PreDefinitions];
-  haveCondTextuals = mapContains[cleancalc, ConditionalOnTextuals];
+    InfoMessage[InfoFull, " " <> ToString[Length@shorts] <> " shorthands"];
+    InfoMessage[InfoFull, " " <> ToString[Length@gfs] <> " grid functions"];
+    InfoMessage[InfoFull, " " <> ToString[Length@groups] <> " groups"];
 
-  VerifyCalculation[cleancalc];
+    InfoMessage[InfoFull, "Shorthands: ", shorts];
+    InfoMessage[InfoFull, "Grid functions: ", gfs];
+    InfoMessage[InfoFull, "Groups: ", Map[groupName, groups]];
 
-  gfs = allGroupVariables[groups];
+    If[Length@lookupDefault[cleancalc, CollectList, {}] > 0,
+       eqs = Map[First[#] -> simpCollect[lookup[cleancalc, CollectList],
+                                         Last[#],
+                                         First[#], debug] &,
+                 eqs],
+       (* else *)
+       If[!lookupDefault[cleancalc, NoSimplify, False],
+          eqs = Map[(InfoMessage[InfoFull,
+                                 "Simplifying " <>
+                                 ToString[#[[1]], InputForm] <> " -> ..."];
+                     Simplify[#, {r>=0}]) &,
+                    eqs]]];
 
-  InfoMessage[InfoFull, " " <> ToString[Length@shorts] <> " shorthands"];
-  InfoMessage[InfoFull, " " <> ToString[Length@gfs] <> " grid functions"];
-  InfoMessage[InfoFull, " " <> ToString[Length@groups] <> " groups"];
+    InfoMessage[InfoFull, "Equations:"];
+    parameterRules = Map[(#->Parameter[#])&, parameters];
+    eqs = eqs /. parameterRules;
+    (* Map[printEq, eqs]; *)
+    Scan[InfoMessage[InfoFull, "  " <> ToString@First[#]<>" = ..."] &, eqs];
 
-  InfoMessage[InfoFull, "Shorthands: ", shorts];
-  InfoMessage[InfoFull, "Grid functions: ", gfs];
-  InfoMessage[InfoFull, "Groups: ", Map[groupName, groups]];
+    singlePointStencil = CalculationPointwiseQ[cleancalc];
+    where = GetCalculationWhere[cleancalc];
 
-  If[Length@lookupDefault[cleancalc, CollectList, {}] > 0,
-    eqs = Map[First[#] -> simpCollect[lookup[cleancalc, CollectList],
-                                      Last[#],
-                                      First[#], debug] &,
-              eqs],
-    (* else *)
-    If[!lookupDefault[cleancalc, NoSimplify, False],
-       eqs = Map[(InfoMessage[InfoFull, "Simplifying "<>ToString[#[[1]], InputForm]<>" -> ..."]; Simplify[#, {r>=0}]) &, eqs]]];
+    (* Check all the function names *)
+    functionsPresent =
+      FunctionsInCalculation[cleancalc]; (* Not currently used *)
 
-  InfoMessage[InfoFull, "Equations:"];
+    (* Check that there are no shorthands defined with the same name
+       as a grid function *)
+    If[!(Intersection[shorts, gfs] === {}),
+       ThrowError["The following shorthands are already declared as grid functions:",
+                  Intersection[shorts, gfs]]];
 
-  parameterRules = Map[(#->Parameter[#])&, parameters];
+    (* check that the passed in textual condition makes sense *)
+    If[haveCondTextuals,
+       condTextuals = lookup[cleancalc, ConditionalOnTextuals];
+       If[! MatchQ[condTextuals, {_String ...}],
+          ThrowError["ConditionalOnTextuals entry in calculation expected to be of the form {string, ...}, but was ", condTextuals, "Calculation is ", calc]];
+      ];
 
-  eqs = eqs /. parameterRules;
+    (* Check that there are no unknown symbols in the calculation *)
+    allSymbols = CalculationSymbols[cleancalc];
+    knownSymbols = Join[lookupDefault[cleancalc, AllowedSymbols, {}],
+                        gfs, shorts, parameters,
+                        {t,
+                         cctkOriginSpace1, cctkOriginSpace2, cctkOriginSpace3,
+                         dx,dy,dz,dt, idx,idy,idz,
+                         usejacobian,
+                         Pi, E,
+                         cctkLbnd1, cctkLbnd2, cctkLbnd3,
+                         Symbol["i"], Symbol["j"], Symbol["k"],
+                         Symbol["ti"], Symbol["tj"], Symbol["tk"],
+                         normal1, normal2, normal3,
+                         tangentA1, tangentA2, tangentA3,
+                         tangentB1, tangentB2, tangentB3},
+                        If[useJacobian, JacobianSymbols[], {}]];
 
-  (* Map[printEq, eqs]; *)
+    unknownSymbols = Complement[allSymbols, knownSymbols];
 
-  Scan[InfoMessage[InfoFull, "  " <> ToString@First[#]<>" = ..."] &, eqs];
-
-  singlePointStencil = CalculationPointwiseQ[cleancalc];
-
-  where = GetCalculationWhere[cleancalc];
-
-  (* Check all the function names *)
-  functionsPresent = FunctionsInCalculation[cleancalc]; (* Not currently used *)
-
-  (* Check that there are no shorthands defined with the same name as a grid function *)
-  If[!(Intersection[shorts, gfs] === {}),
-    ThrowError["The following shorthands are already declared as grid functions:",
-      Intersection[shorts, gfs]]];
-
-  (* check that the passed in textual condition makes sense *)
-  If[haveCondTextuals,
-    condTextuals = lookup[cleancalc, ConditionalOnTextuals];
-    If[! MatchQ[condTextuals, {_String ...}],
-      ThrowError["ConditionalOnTextuals entry in calculation expected to be of the form {string, ...}, but was ", condTextuals, "Calculation is ", calc]];
-    ];
-
-  (* Check that there are no unknown symbols in the calculation *)
-  allSymbols = CalculationSymbols[cleancalc];
-  knownSymbols = Join[lookupDefault[cleancalc, AllowedSymbols, {}], gfs, shorts, parameters,
-    {t,cctkOriginSpace1,cctkOriginSpace2,cctkOriginSpace3,dx,dy,dz,dt,idx,idy,idz, usejacobian, Pi, E, cctkLbnd1, cctkLbnd2, cctkLbnd3, Symbol["i"], Symbol["j"], Symbol["k"], Symbol["ti"], Symbol["tj"], Symbol["tk"], normal1, normal2,
-    normal3, tangentA1, tangentA2, tangentA3, tangentB1, tangentB2, tangentB3},
-    If[useJacobian, JacobianSymbols[], {}]];
-
-  unknownSymbols = Complement[allSymbols, knownSymbols];
-
-  unknownSymbols /.
+    unknownSymbols /.
     {{} :> True,
-      {s_} :> ThrowError["Unknown symbol " <> ToString[s] <> " in calculation " <> GetCalculationName[cleancalc]],
-      ss_ :> ThrowError["Unknown symbols " <> StringJoin[Riffle[ToString/@ss,", "]] <> " in calculation " <> GetCalculationName[cleancalc]],
-    _ :> ThrowError["Internal error: unrecognised value for unknownSymbols: "<>ToString[unknownSymbols, InputForm]]};
+     {s_} :> ThrowError["Unknown symbol " <> ToString[s] <>
+                        " in calculation " <> GetCalculationName[cleancalc]],
+     ss_ :> ThrowError["Unknown symbols " <>
+                       StringJoin[Riffle[ToString/@ss,", "]] <>
+                       " in calculation " <> GetCalculationName[cleancalc]],
+     _ :> ThrowError["Internal error: unrecognised value for unknownSymbols: "<>
+                     ToString[unknownSymbols, InputForm]]};
 
-  kernelCall = Switch[where,
-    Everywhere,
-    If[TileCalculationQ[cleancalc],
-      "TiledLoopOverEverything(cctkGH, " <> bodyFunctionName <> ");\n",
-      "LoopOverEverything(cctkGH, " <> bodyFunctionName <> ");\n"],
-    Interior | InteriorNoSync,
-    If[TileCalculationQ[cleancalc],
-      "TiledLoopOverInterior(cctkGH, " <> bodyFunctionName <> ");\n",
-      "LoopOverInterior(cctkGH, " <> bodyFunctionName <> ");\n"],
-    Boundary | BoundaryNoSync,
+    kernelCall = Switch[
+      where,
+      Everywhere,
+      If[TileCalculationQ[cleancalc],
+         "TiledLoopOverEverything(cctkGH, " <> bodyFunctionName <> ");\n",
+         "LoopOverEverything(cctkGH, " <> bodyFunctionName <> ");\n"],
+      Interior | InteriorNoSync,
+      If[TileCalculationQ[cleancalc],
+         "TiledLoopOverInterior(cctkGH, " <> bodyFunctionName <> ");\n",
+         "LoopOverInterior(cctkGH, " <> bodyFunctionName <> ");\n"],
+      Boundary | BoundaryNoSync,
       "LoopOverBoundary(cctkGH, " <> bodyFunctionName <> ");\n",
-    BoundaryWithGhosts,
+      BoundaryWithGhosts,
       "LoopOverBoundaryWithGhosts(cctkGH, " <> bodyFunctionName <> ");\n",
-    _,
+      _,
       ThrowError["Unknown 'Where' entry in calculation " <>
-        functionName <> ": " <> ToString[where]]];
+                 functionName <> ": " <> ToString[where]]];
 
-  DGFEDefs = If[OptionValue[UseDGFE], DGFEDefinitions[cleancalc, eqs, gfs], {}];
+    DGFEDefs =
+      If[OptionValue[UseDGFE], DGFEDefinitions[cleancalc, eqs, gfs], {}];
+    DGFEInit = If[OptionValue[UseDGFE], DGFEInitialise[cleancalc], {}];
+    DGFECallCode =
+      If[OptionValue[UseDGFE] && lookupDefault[cleancalc, UseDGFE, False],
+         DGFECall[cleancalc],
+         {}];
 
-  DGFEInit = If[OptionValue[UseDGFE], DGFEInitialise[cleancalc], {}];
+    InfoMessage[InfoFull,"Generating function"];
 
-  DGFECallCode = If[OptionValue[UseDGFE] && lookupDefault[cleancalc, UseDGFE, False],
-       DGFECall[cleancalc],
-       {}];
+    {
+      DGFEDefs,
 
-  InfoMessage[InfoFull,"Generating function"];
-  {
-    DGFEDefs,
-    lookup[calcp,BodyFunction][{
-    (* OpenCL kernel prologue *)
-    (* We could (or probably should) write this into a source file of its own *)
-    If[OptionValue[UseOpenCL], {OpenCLPrologue[]}, {}],
+      lookup[calcp,BodyFunction]
+      [{
+        (* OpenCL kernel prologue *)
+        (* We could (or probably should) write this into a source file
+           of its own *)
+        If[OptionValue[UseOpenCL], {OpenCLPrologue[]}, {}],
 
-    Module[
-      {kernelCode},
-      kernelCode =
-      {
-    CommentedBlock["Include user-supplied include files",
-      Map[IncludeFile, lookupDefault[cleancalc, DeclarationIncludes, {}]]],
+        Module[
+          {kernelCode},
+          kernelCode =
+          {
+            CommentedBlock[
+              "Include user-supplied include files",
+              Map[IncludeFile,
+                  lookupDefault[cleancalc, DeclarationIncludes, {}]]],
 
-    lookup[calcp,InitFDVariables],
+            lookup[calcp,InitFDVariables],
 
-    definePreDefinitions[pDefs],
+            definePreDefinitions[pDefs],
 
-    If[useJacobian, CreateJacobianVariables[], {}],
+            If[useJacobian, CreateJacobianVariables[], {}],
 
-    If[Cases[{pddefs}, SBPDerivative[_], Infinity] != {},
-      CommentedBlock["Compute Summation By Parts derivatives",
-        IncludeFile["sbp_calc_coeffs.h"]],
-      {}],
+            If[Cases[{pddefs}, SBPDerivative[_], Infinity] != {},
+               CommentedBlock["Compute Summation By Parts derivatives",
+                              IncludeFile["sbp_calc_coeffs.h"]],
+               {}],
 
-    If[gfs != {},
-      {
-	eqLoop = If[lookup[calcp, SimpleCode, False], 
+            If[gfs != {},
+               {
+                 If[lookup[calcp, SimpleCode, False], 
                     simpleEquationLoop,
-                    equationLoop][eqs, cleancalc, gfs, shorts, {}, groups, odeGroups,
-          pddefs, where, addToStencilWidth, opts]},
-      {}]
+                    equationLoop]
+                 [eqs, cleancalc, gfs, shorts, {}, groups, odeGroups,
+                  pddefs, where, addToStencilWidth, opts]},
+               {}]
+          };
 
-    };
+          If[OptionValue[UseOpenCL],
+             kernelCode = OpenCLProcessKernel[kernelCode]];
+          kernelCode],
 
-    If[OptionValue[UseOpenCL], kernelCode = OpenCLProcessKernel[kernelCode]];
-
-    kernelCode],
-
-    (* OpenCL kernel epilogue *)
-    If[OptionValue[UseOpenCL], OpenCLEpilogue[cleancalc, imp, functionName], {}]
-    }], (* <BodyFunction *)
+        (* OpenCL kernel epilogue *)
+        If[OptionValue[UseOpenCL],
+           OpenCLEpilogue[cleancalc, imp, functionName], {}]
+       }], (* <BodyFunction *)
   
-    If[lookup[calcp,CallerFunction],
-      DefineCCTKSubroutine[functionName,
-      FlattenBlock[{
-        If[haveCondTextuals, Map[ConditionalOnParameterTextual["!(" <> # <> ")", "return;\n"] &,condTextuals], {}],
+      If[lookup[calcp,CallerFunction],
+         DefineCCTKSubroutine
+         [functionName,
+          FlattenBlock[
+            {If[haveCondTextuals,
+                Map[ConditionalOnParameterTextual["!(" <> # <> ")",
+                                                  "return;\n"] &, condTextuals],
+                {}],
 
-        ConditionalOnParameterTextual["verbose > 1",
-          "CCTK_VInfo(CCTK_THORNSTRING,\"Entering " <> bodyFunctionName <> "\");\n"],
+             ConditionalOnParameterTextual[
+               "verbose > 1",
+               "CCTK_VInfo(CCTK_THORNSTRING,\"Entering " <> bodyFunctionName <>
+               "\");\n"],
 
-        ConditionalOnParameterTextual["cctk_iteration % " <> functionName <> "_calc_every != " <>
-          functionName <> "_calc_offset", "return;\n"],
+             ConditionalOnParameterTextual[
+               "cctk_iteration % " <> functionName <> "_calc_every != " <>
+               functionName <> "_calc_offset", "return;\n"],
   
-        CheckGroupStorage[GroupsInCalculation[cleancalc, imp], functionName],
-        "\n",
+             CheckGroupStorage[GroupsInCalculation[cleancalc, imp],
+                               functionName],
+             "\n",
 
-        CheckStencil[pddefs, eqs, functionName, OptionValue[ZeroDimensions],
-                     lookup[{opts}, IntParameters, {}]],
+             CheckStencil[pddefs, eqs, functionName,
+                          OptionValue[ZeroDimensions],
+                          lookup[{opts}, IntParameters, {}]],
 
-        If[where === Everywhere && !OptionValue[UseDGFE] && !singlePointStencil,
-           ThrowError["Calculation "<>functionName<>" uses derivative operators but is computed Everywhere.  Specify Where -> Interior for calculations that use derivative operators."]];
-        "\n",
+             If[where === Everywhere && !OptionValue[UseDGFE] &&
+                !singlePointStencil,
+                ThrowError["Calculation "<>functionName<>" uses derivative operators but is computed Everywhere.  Specify Where -> Interior for calculations that use derivative operators."]];
+             "\n",
 
-        DGFEInit,
+             DGFEInit,
+             kernelCall,
+             DGFECallCode,
 
-        kernelCall,
-
-        DGFECallCode,
-
-        ConditionalOnParameterTextual["verbose > 1",
-          "CCTK_VInfo(CCTK_THORNSTRING,\"Leaving " <> bodyFunctionName <> "\");\n"]
-      }]],
-      (* else *)
-       ""]
-  }]];
+             ConditionalOnParameterTextual[
+               "verbose > 1",
+               "CCTK_VInfo(CCTK_THORNSTRING,\"Leaving " <> bodyFunctionName <>
+               "\");\n"]
+            }]],
+         (* else *)
+         ""]
+    }]];
 
 (* Create definitions for the local copies of gridfunctions or arrays *)
-DefFn[assignLocalFunctions[gs:{_Symbol...}, useVectors:Boolean, useJacobian:Boolean, nameFunc_] :=
-  Module[{conds, varPatterns, varsInConds, simpleVars, code},
+DefFn[
+  assignLocalFunctions[gs:{_Symbol...}, useVectors:Boolean, useJacobian:Boolean,
+                       nameFunc_] :=
+  Module[
+    {conds, varPatterns, varsInConds, simpleVars, code},
 
     (* Conditional access to grid variables *)
     (* Format is {var, cond, else-value} *)
     conds =
-    {{"eT" ~~ _ ~~ _, "assume_stress_energy_state>=0 ? assume_stress_energy_state : *stress_energy_state", ToReal[0.]}}; (* This should be passed as an option *)
+    {{"eT" ~~ _ ~~ _,
+      "assume_stress_energy_state>=0 ? assume_stress_energy_state : *stress_energy_state",
+      ToReal[0.]}}; (* This should be passed as an option *)
     If[useJacobian,
-      conds = Append[conds, JacobianConditionalGridFunctions[]]];
+       conds = Append[conds, JacobianConditionalGridFunctions[]]];
 
     (* Split into conditional and simple grid variables *)
     varPatterns = Map[First, conds];
-    varsInConds = Map[Function[pattern, Select[gs,StringMatchQ[ToString[#], pattern] &]], varPatterns];
+    varsInConds =
+      Map[Function[pattern, Select[gs,StringMatchQ[ToString[#], pattern] &]],
+          varPatterns];
     simpleVars = Complement[gs, Flatten[varsInConds]];
 
-    code = {"\n",
+    code = {
+      "\n",
       (* Simple grid variables *)
-      Map[AssignVariableFromExpression[localName[#],GFLocal[#],True,useVectors,True] &, simpleVars],
-      {"\n",
+      Map[AssignVariableFromExpression[localName[#], GFLocal[#],
+                                       True, useVectors, True] &,
+          simpleVars],
+      {
+        "\n",
         (* Conditional grid variables *)
         NewlineSeparated@
         MapThread[
           If[Length[#2] > 0,
-            {DeclareVariables[localName/@#2, DataType[]],"\n",
-              Conditional[#1,
-                Table[AssignVariableFromExpression[localName[var], GFLocal[var], False, useVectors], {var, #2}],
-                Sequence@@If[#3 =!= None, {Table[AssignVariableFromExpression[localName[var], #3, False (* declare *), False (*useVectors*)], {var, #2}]}, {}]]},
-            (* else *)
-              {}] &,
+             {
+               DeclareVariables[localName/@#2, DataType[]], "\n",
+               Conditional
+                 [#1,
+                  Table[AssignVariableFromExpression
+                        [localName[var], GFLocal[var], False, useVectors],
+                        {var, #2}],
+                  Sequence@@
+                  If[#3 =!= None,
+                     {Table[AssignVariableFromExpression
+                            [localName[var], #3,
+                             False (*declare*), False (*useVectors*)],
+                            {var, #2}]},
+                     {}]]},
+             (* else *)
+             {}] &,
           {Map[#[[2]]&, conds], varsInConds, Map[#[[3]]&, conds]}]}};
-  code]];
+    code]];
 
 Options[equationLoop] = ThornOptions;
 DefFn[

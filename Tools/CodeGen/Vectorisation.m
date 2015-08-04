@@ -44,12 +44,16 @@ DefFn[
     vectoriseRules = {
       x_ToReal -> x,
       x_ConditionExpression -> x,
-      IfThen[cond_, x_, y_] :> IfThen[cond, x//.vectoriseRules, y//.vectoriseRules],
-      pow[x_,y_]  :> kpow[x//.vectoriseRules,y],
-      kpow[x_,y_]  :> kpow[x,y],
+
+      IfThen[cond_, x_, y_] :> IfThen[cond,
+                                      x//.vectoriseRules, y//.vectoriseRules],
+      GFOffset[var_,i_,j_,k_] :> GFOffset[var,i,j,k],
+      pow[x_,y_]  :> kpow[x//.vectoriseRules, y],
+      kpow[x_,y_] :> kpow[x,y],
 
       x:"vec_load"[___] :> x,
       x:CArray[id_, {args__}] :> "vec_load"[x],
+      CTileArray[id_, {args__}] :> "vec_load"["getelt"[id, args]],
 
       Parameter[x_] -> ToReal[x],
 

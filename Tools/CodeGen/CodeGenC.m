@@ -121,7 +121,8 @@ DefFn[
 DefFn[
   CommentedBlock[comment:CodeGenBlock, block:CodeGenBlock] :=
   {InsertComment[comment],
-                  block}];
+   block,
+   "\n"}];
 
 (* FUNCTIONS *)
 

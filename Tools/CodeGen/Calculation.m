@@ -46,6 +46,7 @@ VerifyCalculation;
 CalculationSymbols;
 VerifyNewCalculation;
 TileCalculationQ;
+DGTileCalculationQ;
 CalculationLoopControlQ;
 SetCalculationLoopControl;
 
@@ -429,11 +430,13 @@ VerifyCalculation[calc_] :=
          PartialDerivatives, PreDefinitions, Schedule,Equations,
          Shorthands, ConditionalOnKeyword, Before, After,
          ConditionalOnTextuals, Where, ConditionalOnKeywords,
-         CollectList, AllowedSymbols, ApplyBCs, Conditional, CachedVariables, SplitBy,
+         CollectList, AllowedSymbols, ApplyBCs, Conditional, CachedVariables,
+         SplitBy,
          SeparatedDerivatives, SeparatedDerivatives2,
          LocalGroups, NoSimplify, UseDGFE, SimpleCode, UseCaKernel,
          UseJacobian,
-         ScheduleGroups, TriggerGroups, ThornName, Tile, UseLoopControl};
+         ScheduleGroups, TriggerGroups, ThornName, Tile, DGTile,
+         UseLoopControl};
 
     usedKeys = Map[First, calc];
     unknownKeys = Complement[usedKeys, allowedKeys];
@@ -491,6 +494,9 @@ VerifyNewCalculation[calc_] :=
 
 DefFn[TileCalculationQ[calc_] :=
   lookup[calc,Tile]];
+
+DefFn[DGTileCalculationQ[calc_] :=
+  lookup[calc,DGTile]];
 
 DefFn[CalculationLoopControlQ[calc_] :=
   lookup[calc,UseLoopControl]];

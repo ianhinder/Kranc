@@ -101,6 +101,7 @@ ThornOptions =
   UseLoopControl -> True,
   UseDGFE -> False,
   Tile -> False,
+  DGTile -> False,
   UseOpenCL -> False,
   UseVectors -> False,
   ProhibitAssignmentToGridFunctionsRead -> False,
@@ -164,6 +165,7 @@ ScriptFlags =
 
 (* CodeGenKranc.m *)
 CArray;
+CTileArray;
 ConditionExpression;
 
 EndPackage[];

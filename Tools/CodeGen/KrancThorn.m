@@ -98,8 +98,13 @@ DefFn[
     {Filename -> "Kranc.hh",
      Contents -> embeddedFile["Kranc.hh",c, opts]};
 
+    stencilHeader =
+    {Filename -> "StencilOps.hh",
+     Contents -> embeddedFile["StencilOps.hh",c, opts]};
+
     c = AppendObjectField[c, "Sources", krancSource];
     c = AppendObjectField[c, "Sources", krancHeader];
+    c = AppendObjectField[c, "Sources", stencilHeader];
     c]];
 
 DefFn[

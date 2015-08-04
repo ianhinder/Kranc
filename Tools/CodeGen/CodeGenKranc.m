@@ -90,18 +90,22 @@ DefFn[
   ToString[x] <> "[0]"];
 
 DefFn[
-  InitialiseFDVariables[vectorise:Boolean] :=
+  InitialiseFDVariables[vectorise:Boolean, dgTile:Boolean] :=
   CommentedBlock[
     "Initialise finite differencing variables",
     {
-      MapThread[Function[{dest,type,val}, AssignVariableFromExpression[dest,val,True,vectorise,Const->True,Type->type]],
-            Transpose@{{"di", "ptrdiff_t", "1"},
-             {"dj", "ptrdiff_t", "CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0)"},
-             {"dk", "ptrdiff_t", "CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0)"},
-             {"cdi", "ptrdiff_t", "sizeof(CCTK_REAL) * di"},
-             {"cdj", "ptrdiff_t", "sizeof(CCTK_REAL) * dj"},
-             {"cdk", "ptrdiff_t", "sizeof(CCTK_REAL) * dk"},
-             {"cctkLbnd1", "ptrdiff_t", "cctk_lbnd[0]"},
+      If[!dgTile,
+        MapThread[Function[{dest,type,val}, AssignVariableFromExpression[dest,val,True,vectorise,dgTile,Const->True,Type->type]],
+              Transpose@{{"di", "ptrdiff_t", "1"},
+               {"dj", "ptrdiff_t", "CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0)"},
+               {"dk", "ptrdiff_t", "CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0)"},
+               {"cdi", "ptrdiff_t", "sizeof(CCTK_REAL) * di"},
+               {"cdj", "ptrdiff_t", "sizeof(CCTK_REAL) * dj"},
+               {"cdk", "ptrdiff_t", "sizeof(CCTK_REAL) * dk"}}],
+        {}],
+
+      MapThread[Function[{dest,type,val}, AssignVariableFromExpression[dest,val,True,vectorise,dgTile,Const->True,Type->type]],
+            Transpose@{{"cctkLbnd1", "ptrdiff_t", "cctk_lbnd[0]"},
              {"cctkLbnd2", "ptrdiff_t", "cctk_lbnd[1]"},
              {"cctkLbnd3", "ptrdiff_t", "cctk_lbnd[2]"},
              {"t", DataType[], ToReal["cctk_time"]},
@@ -118,47 +122,56 @@ DefFn[
              {"dyi", DataType[], 1/dy},
              {"dzi", DataType[], 1/dz}}],
 
-      AssignVariableFromExpression["khalf", 0.5, True, vectorise, Const -> True],
-      AssignVariableFromExpression["kthird", 1/3, True, vectorise, Const -> True],
-      AssignVariableFromExpression["ktwothird", 2/3, True, vectorise, Const -> True],
-      AssignVariableFromExpression["kfourthird", 4/3, True, vectorise, Const -> True],
-      AssignVariableFromExpression["hdxi", 0.5 "dxi", True, vectorise, Const -> True],
-      AssignVariableFromExpression["hdyi", 0.5 "dyi", True, vectorise, Const -> True],
-      AssignVariableFromExpression["hdzi", 0.5 "dzi", True, vectorise, Const -> True]}]];
+      AssignVariableFromExpression["khalf", 0.5, True, vectorise, dgTile, Const -> True],
+      AssignVariableFromExpression["kthird", 1/3, True, vectorise, dgTile, Const -> True],
+      AssignVariableFromExpression["ktwothird", 2/3, True, vectorise, dgTile, Const -> True],
+      AssignVariableFromExpression["kfourthird", 4/3, True, vectorise, dgTile, Const -> True],
+      AssignVariableFromExpression["hdxi", 0.5 "dxi", True, vectorise, dgTile, Const -> True],
+      AssignVariableFromExpression["hdyi", 0.5 "dyi", True, vectorise, dgTile, Const -> True],
+      AssignVariableFromExpression["hdzi", 0.5 "dzi", True, vectorise, dgTile, Const -> True]}]];
 
-Options[GenericGridLoop] = Join[ThornOptions, {Tile -> False}];
+Options[GenericGridLoop] = Join[ThornOptions, {Tile -> False, DGTile -> False}];
 
 DefFn[
-  GenericGridLoop[functionName_String, block:CodeGenBlock, tile_, opts:OptionsPattern[]] :=
-  CommentedBlock[
-    "Loop over the grid points",
-    { (* Circumvent a compiler bug on Blue Gene/Q *)
-      "const int imin0=imin[0];\n",
-      "const int imin1=imin[1];\n",
-      "const int imin2=imin[2];\n",
-      "const int imax0=imax[0];\n",
-      "const int imax1=imax[1];\n",
-      "const int imax2=imax[2];\n",
-      "#pragma omp parallel\n",
-      If[OptionValue[UseVectors], "CCTK_LOOP3STR", "CCTK_LOOP3"],
-      "(", functionName, ",\n",
-      "  i,j,k, imin0,imin1,imin2, imax0,imax1,imax2,\n",
-      "  cctk_ash[0],cctk_ash[1],cctk_ash[2]",
-      If[OptionValue[UseVectors], {",\n", "  vecimin,vecimax, CCTK_REAL_VEC_SIZE"}, ""],
-      ")\n",
-      "{\n",
-      IndentBlock[
-        {DefineConstant["index", "ptrdiff_t", "di*i + dj*j + dk*k"],
-          If[tile,
-            {"const int ti CCTK_ATTRIBUTE_UNUSED = i - kd.tile_imin[0];\n",
-             "const int tj CCTK_ATTRIBUTE_UNUSED = j - kd.tile_imin[1];\n",
-             "const int tk CCTK_ATTRIBUTE_UNUSED = k - kd.tile_imin[2];\n"},
-            {}],
-         block}],
-      "}\n",
-      If[OptionValue[UseVectors], "CCTK_ENDLOOP3STR", "CCTK_ENDLOOP3"] <>
-      "(", functionName, ");\n" 
-       }]];
+  GenericGridLoop[functionName_String, block:CodeGenBlock, tile_, dgtile_,
+                  opts:OptionsPattern[]] :=
+  If[dgtile,
+     CommentedBlock[
+       "Loop over all grid points in the current tile",
+       {
+         "for (ptrdiff_t off = 0; off < tsz; off += vs) {\n",
+         IndentBlock[block],
+         "}\n"
+       }],
+     CommentedBlock[
+       "Loop over the grid points",
+       { (* Circumvent a compiler bug on Blue Gene/Q *)
+         "const int imin0=imin[0];\n",
+         "const int imin1=imin[1];\n",
+         "const int imin2=imin[2];\n",
+         "const int imax0=imax[0];\n",
+         "const int imax1=imax[1];\n",
+         "const int imax2=imax[2];\n",
+         "#pragma omp parallel\n",
+         If[OptionValue[UseVectors], "CCTK_LOOP3STR", "CCTK_LOOP3"],
+         "(", functionName, ",\n",
+         "  i,j,k, imin0,imin1,imin2, imax0,imax1,imax2,\n",
+         "  cctk_ash[0],cctk_ash[1],cctk_ash[2]",
+         If[OptionValue[UseVectors], {",\n", "  vecimin,vecimax, CCTK_REAL_VEC_SIZE"}, ""],
+         ")\n",
+         "{\n",
+         IndentBlock[
+           {DefineConstant["index", "ptrdiff_t", "di*i + dj*j + dk*k"],
+            If[tile,
+               {"const int ti CCTK_ATTRIBUTE_UNUSED = i - kd.tile_imin[0];\n",
+                "const int tj CCTK_ATTRIBUTE_UNUSED = j - kd.tile_imin[1];\n",
+                "const int tk CCTK_ATTRIBUTE_UNUSED = k - kd.tile_imin[2];\n"},
+               {}],
+            block}],
+         "}\n",
+         If[OptionValue[UseVectors], "CCTK_ENDLOOP3STR", "CCTK_ENDLOOP3"] <>
+         "(", functionName, ");\n" 
+       }]]];
 
 DefFn[
   onceInGridLoop[block:CodeGenBlock] :=
@@ -176,7 +189,8 @@ DefFn[
 (* Take an expression x and replace occurrences of Powers with the C
    macros SQR, CUB, QAD *)
 DefFn[
-  ProcessExpression[expr_, vectorise:Boolean, noSimplify:Boolean : False] :=
+  ProcessExpression[expr_, vectorise:Boolean, dgTile:Boolean,
+                    noSimplify:Boolean : False] :=
   Module[
     {rhs},
     rhs = expr;
@@ -265,7 +279,7 @@ DefFn[
     If[Cases[rhs, _Power, Infinity] =!= {},
       ThrowError["Power found in "<>ToString[rhs,InputForm]]];
 
-    rhs = PostProcessExpression[$CodeGenTarget, rhs];
+    rhs = PostProcessExpression[$CodeGenTarget, rhs, dgTile];
 
     If[Cases[rhs, _Power, Infinity] =!= {},
       ThrowError["Power found in "<>ToString[rhs,InputForm]]];
@@ -273,11 +287,12 @@ DefFn[
     rhs = rhs //. {Parameter[xx_] -> xx};
     rhs]];
 
-DefFn[PostProcessExpression[t_TargetC, expr_] :=
+DefFn[PostProcessExpression[t_TargetC, expr_, byteIndexing:Boolean] :=
   Module[{expr2 = expr},
 
-    expr2 = expr2 //. {
-      GFLocal[x_] -> CArray[x,{"index"}]};
+    If[byteIndexing,
+      expr2 = expr2 //. {GFLocal[x_] :> CTileArray[ToString[x]<>"T", {"off"}]},
+      expr2 = expr2 //. {GFLocal[x_] :> CArray[x,{"index"}]}];
 
     expr2 = If[GetObjectField[t,"UseVectors"],
       VectoriseExpression[expr2] ,
@@ -287,14 +302,16 @@ DefFn[PostProcessExpression[t_TargetC, expr_] :=
 
 (* Return a CodeGen block which assigns dest by evaluating expr *)
 Options[AssignVariableFromExpression] = {"Const" -> False, "Type" -> Automatic};
-DefFn[AssignVariableFromExpression[dest_, expr_, declare_, vectorise_, noSimplify:Boolean : False,
+DefFn[AssignVariableFromExpression[dest_, expr_, declare:Boolean,
+                                   vectorise:Boolean, dgTile:Boolean,
+                                   noSimplify:Boolean : False,
                              OptionsPattern[]] :=
   Module[{type, exprCode, code},
     type =
     If[OptionValue[Type] === Automatic,
       If[StringMatchQ[ToString[dest], "dir*"], "ptrdiff_t", DataType[]],
       OptionValue[Type]];
-    exprCode = GenerateCodeFromExpression[expr, vectorise, noSimplify];
+    exprCode = GenerateCodeFromExpression[expr, vectorise, dgTile, noSimplify];
     CountOperations[expr];
     code = If[declare,
               If[OptionValue[Const],DefineConstant,DefineVariable][dest, type, exprCode],
@@ -305,9 +322,10 @@ DefFn[AssignVariableFromExpression[dest_, expr_, declare_, vectorise_, noSimplif
 Format[CArray[id_, {args__}], CForm] :=
   SequenceForm[id, "[", Sequence @@ Riffle[{args}, ","], "]"];
 
-DefFn[GenerateCodeFromExpression[expr_, vectorise_, noSimplify:Boolean : False] :=
+DefFn[GenerateCodeFromExpression[expr_, vectorise_, dgTile_,
+                                 noSimplify:Boolean : False] :=
   Module[{cleanExpr, code},
-    cleanExpr = ProcessExpression[expr, vectorise, noSimplify];
+    cleanExpr = ProcessExpression[expr, vectorise, dgTile, noSimplify];
     code = ToString[cleanExpr, CForm, PageWidth -> Infinity];
     code = StringReplace[code, "normal1"     -> "normal[0]"];
     code = StringReplace[code, "normal2"     -> "normal[1]"];

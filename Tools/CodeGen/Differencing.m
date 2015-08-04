@@ -133,6 +133,7 @@ BeginPackage["Differencing`", {"CodeGen`", "CodeGenC`", "CodeGenCactus`", "CodeG
 
 CreateDifferencingHeader::usage = "";
 PrecomputeDerivatives::usage = "";
+PrecomputeTiledDerivatives::usage = "";
 ReplaceDerivatives::usage = "";
 StandardCenteredDifferenceOperator::usage = "";
 StandardUpwindDifferenceOperator::usage = "";
@@ -202,7 +203,8 @@ DefFn[CountDerivativeOperations[derivOps_, expr_, zeroDims_] :=
     Scan[CountOperations, gfdEvaluations]]];
 
 DefFn[
-  PrecomputeDerivatives[derivOps_, expr_, intParams_, zeroDims_, macroPointer_] :=
+  PrecomputeDerivatives[derivOps_, expr_, intParams_, zeroDims_, macroPointer_,
+                        dgTile_] :=
   Module[{componentDerivOps, gfds, sortedgfds, opNames, intParamNames, paramsInOps,
           paramName, opsWithParam, opNamesWithParam, replace, param, pd, u},
 
@@ -220,7 +222,7 @@ DefFn[
 
     If[paramsInOps === {},
       Map[DerivativeOperatorVerify, derivOps];
-      Map[PrecomputeDerivative[#,Automatic,macroPointer]&, sortedgfds],
+      Map[PrecomputeDerivative[#,Automatic,macroPointer,dgTile]&, sortedgfds],
       (* else *)
       paramName = First[paramsInOps];
       opsWithParam = Select[derivOps, Cases[#, paramName, Infinity] =!= {} &];
@@ -233,8 +235,17 @@ DefFn[
       {Map[DeclareVariable[GridFunctionDerivativeName[#],DataType[]] &, sortedgfds],
        "\n",
        SwitchStatement[paramName,
-         Sequence@@Table[{value, Map[PrecomputeDerivative[# /. replace[value],#,macroPointer] &, sortedgfds]}, 
+         Sequence@@Table[{value, Map[PrecomputeDerivative[# /. replace[value],#,macroPointer,dgTile] &, sortedgfds]}, 
                          {value, lookup[param, AllowedValues]}]]}]]];
+
+DefFn[
+  PrecomputeTiledDerivatives[derivOps_, expr_, zeroDims_] :=
+  Module[
+    {gfds, sortedgfds},
+    CountDerivativeOperations[derivOps, expr, zeroDims];
+    gfds = GridFunctionDerivativesInExpression[derivOps, expr, zeroDims];
+    sortedgfds = Sort[gfds, ordergfds];
+    Map[PrecomputeTiledDerivative, sortedgfds]]];
 
 DefFn[
   ReplaceDerivatives[derivOps_, expr_, precompute_, zeroDims_, macroPointer_] :=
@@ -318,20 +329,38 @@ DefFn[
 (*************************************************************)
 
 DefFn[
-  PrecomputeDerivative[d:pd_[gf_, inds___], vargfd_, macroPointer_] :=
+  PrecomputeDerivative[d:pd_[gf_, inds___], vargfd_, macroPointer_, dgTile_] :=
   Module[{},
     If[vargfd === Automatic,
-      DefineConstant[GridFunctionDerivativeName[d], DataType[], evaluateDerivative[d,macroPointer]],
-      AssignVariable[GridFunctionDerivativeName[vargfd], evaluateDerivative[d,macroPointer]]]]];
+      DefineConstant[GridFunctionDerivativeName[d], DataType[], evaluateDerivative[d,macroPointer,dgTile]],
+      AssignVariable[GridFunctionDerivativeName[vargfd], evaluateDerivative[d,macroPointer,dgTile]]]]];
 
 DefFn[
-  evaluateDerivative[d:pd_[gf_, inds___], macroPointer_] :=
+  PrecomputeTiledDerivative[d:pd_[gf_, inds___]] :=
+  Module[
+    {
+      gfn = ToString[gf],
+      gfdn = ToString[GridFunctionDerivativeName[d]],
+      indstr = Apply[StringJoin, Map[ToString[#-1]&, {inds}]]
+    },
+    {
+      "unsigned char "<>gfdn<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(sizeof(CCTK_REAL_VEC));\n",
+      "stencil_dg_dim3_dir"<>indstr<>"<dgop>(&((const unsigned char *)"<>gfn<>")[off1], "<>gfdn<>"T, dj, dk);\n"
+    }]];
+
+DefFn[
+  evaluateDerivative[d:pd_[gf_, inds___], macroPointer_, dgTile_] :=
   Module[{macroname},
     macroName = ComponentDerivativeOperatorMacroName[pd[inds] -> expr];
     (* Return[ToString[macroName] <> "(" <> ToString[gf] <> ", i, j, k)"] *)
-    If[macroPointer,
-       Return[ToString[macroName] <> "(&" <> ToString[gf] <> "[index])"],
-       Return[ToString[macroName] <> "(" <> ToString[gf] <> ")"]]
+    Which[
+      dgTile,
+      Return["vec_load(getelt(" <>
+             ToString[macroName] <> ToString[gf] <> "T, off))"],
+      macroPointer,
+      Return[ToString[macroName] <> "(&" <> ToString[gf] <> "[index])"],
+      True,
+      Return[ToString[macroName] <> "(" <> ToString[gf] <> ")"]]
   ]];
 
 (*************************************************************)
@@ -427,7 +456,7 @@ DefFn[
        Print["Sequenced: ", Apply[SequenceForm,Simplify[1/(ss /. spacings2)],{0,Infinity}]];*)
 
        liName = "p" <> signModifier <> quotient <> ToString[Apply[SequenceForm,Simplify[1/(ss /. spacings2)],{0,Infinity}]];
-       pDefs = {{liName -> CFormHideStrings[ProcessExpression[num / den ss /. spacings2, vectorise]]}};
+       pDefs = {{liName -> CFormHideStrings[ProcessExpression[num / den ss /. spacings2, vectorise, False]]}};
 
        rhs = rhs /. pat -> Times[liName, rest],
 (*       Print["!!!!!!!!DOES NOT MATCH!!!!!!!!!"];*)
@@ -448,7 +477,7 @@ DefFn[
 
     Sow[name[u_, inds] -> rhs, DifferencingOperatorExpansion];
 
-    rhs = CFormHideStrings[ProcessExpression[rhs /. spacings, vectorise]];
+    rhs = CFormHideStrings[ProcessExpression[rhs /. spacings, vectorise, False]];
     (* Print["rhs=",FullForm[rhs]]; *)
 
     (* Call another FD operator if we can swap or exchange array indices;

@@ -5,34 +5,27 @@ use cakernel
 # This is a comment
 
 begin parameters
-  name: amp
-  description: The amplitude of the wave
-  default: 1.0
-  range: -infinity to infinity
-
-  name: kfac
-  description: The wave number
-  default: 2*PI
-  range: 0 to 10*PI
+  amp : real "The amplitude of the wave", default: 1.0, range: -infinity to infinity
+  kfac : real "The wave number", default: 2 PI, range: 0 to 10 PI
 end parameters
 
-begin variables
-  phi pi
-end variables
-
 begin calculation initial_sine_calc scheduled at initial
-  phi = amp*sin(kfac*x)
+  phi = amp sin(kfac x)
   pi = 0
 end calculation
 
 begin calculation calc_rhs scheduled at MoL_CalcRHS
   D_t phi = pi
-  D_t pi = Euc^ij*D_ij phi
+  D_t pi = Euc^ij D_ij phi
 end calculation
 
 begin calculation calc_bound_rhs scheduled at MoL_CalcRHS on boundary
   D_t phi = pi
-  D_t pi = -kfac**2*phi
+  D_t pi = -kfac**2 phi
 end calculation
+
+begin variables
+  phi pi
+end variables
 
 end thorn

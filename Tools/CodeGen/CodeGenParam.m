@@ -43,11 +43,12 @@ Begin["`Private`"];
 
 (* To be used for parameters; will quote it if it is a keyword *)
 renderValue[type_, value_] :=
-  If[type == "KEYWORD",
-    Quote[value],
-    If[type == "CCTK_REAL",
-      ToString[CForm[value]],
-    value]];
+  If[type == "CCTK_KEYWORD" || type == "KEYWORD" ||
+     type == "CCTK_STRING" || type == "STRING",
+    Quote[value],                 (* quote strings *)
+    If[StringQ[value],
+      value,                      (* leave already-formatted values alone *)
+      ToString[CForm[value]]]];   (* format numbers properly *)
 
 (* Return a block defining a parameter with the given
    parameterSpec (defined above).  This is used for defining new
@@ -62,11 +63,13 @@ parameterBlock[spec_] :=
       {}],
   
    If[mapContains[spec, Steerable],
-      {" STEERABLE=",Switch[lookup[spec, Steerable], 
-        Never,"NEVER", 
-        Always,"ALWAYS", 
+      {" STEERABLE=", Switch[lookup[spec, Steerable], 
+        Never, "NEVER", 
+        Always, "ALWAYS", 
         Recover, "RECOVER", 
-        _,ThrowError["Unknown 'Steerable' entry in parameter " <> ToString[lookup[spec, Name]] <> ": " <> ToString[lookup[spec, Steerable]]]]},
+        _, ThrowError["Unknown 'Steerable' entry for parameter '" <>
+                      ToString[lookup[spec, Name]] <> "': " <>
+                      ToString[lookup[spec, Steerable]]]]},
       {}],
 
    "\n",
@@ -78,8 +81,11 @@ parameterBlock[spec_] :=
           Quote[lookup[#, Description]], "\n"} &, 
          lookupDefault[spec, AllowedValues, {}]],
 
-     (* Output the line describing the default value of the parameter *)
-     renderValue[lookup[spec,Type], lookup[spec, Default]]],
+     (* Output the line describing the default value of the parameter,
+        if there is one *)
+     If[mapContains[spec, Default],
+         renderValue[lookup[spec,Type], lookup[spec, Default]],
+         {}]],
 
      "\n"};
 

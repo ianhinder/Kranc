@@ -1,7 +1,11 @@
 skipper = \b([ \t\n\r]+|\#.*)*
 int = [0-9]+
 end = ([ \t]+|\#.*)*\r*\n
-name = [A-Za-z][A-Za-z0-9]*
+quote = "[^"]*"
+type = real|integer|keyword|boolean
+keywords = to|default
+name = (?!D|{keywords}\b)[A-Za-z][A-Za-z0-9]*
+
 uname = [A-Za-z][A-Za-z0-9_]*
 lower_index = ({index_symbol}|\({index_expr}(,{index_expr})*\))
 upper_index = ({index_symbol}|\({index_expr}(,{index_expr})*\))
@@ -12,19 +16,21 @@ index_expr = {index_symbol}({index_op}{int}|)
 tensor = {name}{indices}
 dname = D[a-z0-9]*
 rawmath = @\{[^}]*\}
-dtensor = {rawmath}|{dname}{indices}? {tensor} 
+dtensor = {rawmath}|{dname}{indices}? ({tensor}|{expr})
 number = -?[0-9]+(\.[0-9]*|)([eEdD][+-]?[0-9]+|)
 func = {name} \( ({expr}( , {expr})*|) \)
 neg = -
 value = {func}|{dtensor}|{tensor}|{number}|\( {expr} \)
 pow = {value}( \*\* {value}|)
 mulop = [*/%]
-mul = {pow}( {mulop} {pow})*
+mulimp = [ \t]*
+mul = {pow}( {mulop} {pow}|{mulimp}{pow})*
 addop = [+-]
 mexpr = {mul}( {addop} {mul})*
 expr = {neg}?{mexpr}( \? {mexpr} : {mexpr})?
 eqn = ({dtensor}|{tensor}) \= {expr}{-end}
-deqn = {dtensor} \= {expr}{-end}
+doper = {dname}{indices}
+deqn = {doper} \= {expr}{-end}
 eqns = {eqn}( {eqn})*
 deqns = {deqn}( {deqn})*
 at_or_in = (at|in)
@@ -33,13 +39,10 @@ schedule = scheduled[ \t]+{at_or_in}[ \t]{uname}( {on_clause})?
 calculation = begin[ \t]+calculation[ \t]+{uname}([ \t]+{schedule}|){-end} {eqns} end[ \t]+calculation
 variables = begin[ \t]+variables{-end} ( end[ \t]+variables\b{brk}| {tensor})*{-end}
 parameters = begin[ \t]+parameters{-end} ( end[ \t]+parameters\b{brk}| {parameter})*{-end}
-leftenc = [\[\(]
-rightenc = [\]\)]
-desc = ((?!default:)[^])*
 infinity = infinity
 parlo = - {infinity}|{expr}
 parhi = {infinity}|{expr}
-parameter = name:  {name} description: {desc} default: {expr} range: {parlo} to {parhi}
+parameter = {name}( : {type})( {quote}|)( , default : {expr}|)( , range : {parlo}[ \t]+to[ \t]+{parhi}|)
 temporaries = begin[ \t]+temporaries{-end} ( end[ \t]+temporaries\b{brk}| {tensor})*{-end}
 option = {inherit}|{use}|{disable}|{implement}
 inherit = inherit[ \t]+({uname}[ \t]*)+{-end}

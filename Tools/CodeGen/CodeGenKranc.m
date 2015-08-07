@@ -223,6 +223,7 @@ DefFn[
 
     mathematicaToCRules = {
       Power[E, power_] -> exp[power],
+      Global`RawMath[x_] -> x,
       Log[x_] -> log[x],
       (* Power[x_, n_Integer] -> pown[x,n], *)
       Power[x_, power_] -> pow[x,power],

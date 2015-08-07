@@ -1,0 +1,21 @@
+begin thorn Shallow
+
+  begin variables
+    sa_i ShiA ShiB h za eta
+    u2^i w0^i w2^i V2^i V3_i
+    zavg zavg2 
+  end variables
+
+  begin calculation evolve
+    ShiA = Euc^ij D_i (h sa_j)
+    ShiB = Euc^ij D_i sa_j
+    u2^j = (za-zavg) (Euc^ij D_i ShiA) + (1/2) (za**2-2 za zavg+zavg2) (Euc^ij D_i ShiB)
+    V2^k = Euc^km D_m ((za-eta) Euc^ij D_j (sa_i ShiA) +
+      (1/2) (za**2-eta**2) Euc^ij D_i (sa_j ShiB) + (1/2) (ShiA+eta ShiB)**2)
+    w0^k = Eps^ijk D_i sa_j 
+    w2^k = Eps^ijk D_i (Euc_mj u2^m)
+    V3_i = Eps_ijk w0^j u2^k + Eps_ijk w2^j sa_m Euc^mk
+    D_t sa_k = -Euc^ij sa_i D_j sa_k - Euc_mk (Euc^im D_i eta - V2^m) - V_k
+  end calculation
+
+end thorn

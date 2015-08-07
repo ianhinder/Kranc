@@ -221,6 +221,8 @@ process["pow"[a_]] := process[a];
 process["value"[a_]] := process[a];
 
 process["number"[a_]] := ToExpression[a];
+process["rawmath"["rawtext"[rm_]]] := ToExpression[rm];
+process["rawc"["rawtext"[rm_]]] := Global`RawMath[rm];
 
 process["uname"[n_]] := n;
 
@@ -240,6 +242,27 @@ processRange[value_,minOrMax_,paramName_] :=
       tmp = N[value];
       If[NumberQ[tmp],1,ThrowError[minOrMax<>" value for parameter "<>paramName<>" is not a number"]];
       Return[tmp]]]
+
+process["parameter"["name"[nm_], "type"[ty_]]] :=
+Module[{dtmp,lotmp,hitmp},
+  dtmp = 1.0;
+  lotmp = "*";
+  hitmp = "*";
+  {Name -> ToExpression[nm],
+   VariableType -> ty,
+   Description -> "Parameter " <> nm, (*StringTake[desc,{2,StringLength[desc]-1}],*)
+   AllowedValues -> {{Value->ToString[lotmp] <> ":" <> ToString[hitmp]}},
+   Default -> dtmp}]
+
+process["parameter"["name"[nm_],"type"[desc_],"expr"[exprd_]]] :=
+Module[{dtmp,lotmp,hitmp},
+  dtmp = process[exprd];
+  lotmp = "*";
+  hitmp = "*";
+  {Name -> ToExpression[nm],
+   Description -> "Parameter " <> nm, (*StringTake[desc,{2,StringLength[desc]-1}],*)
+   AllowedValues -> {{Value->ToString[lotmp] <> ":" <> ToString[hitmp]}},
+   Default -> dtmp}]
 
 process["parameter"["name"[nm_],"type"[desc_],"quote"[def_]]] :=
 Module[{dtmp,lotmp,hitmp},
@@ -280,6 +303,7 @@ process[d:"deqn"[___]] :=
     Print["(deqn) No handler for ", d];
     ThrowError["Failed to parse script"]];
 
+process["tname"[tens_]] := process[tens]
 process["deqn"["doper"["dname"[dn_],"indices"[ind__]],"expr"[ex_]]] := "";
 process["deqn"[("dtensor"["dname"[dname_],
                           "tensor"["name"[tName_],

@@ -310,7 +310,17 @@ DefFn[CreateKrancThornTT2[thornName_String, opts:OptionsPattern[]] :=
            PDstandard[i_, i_] ->
            StandardCenteredDifferenceOperator[2,fdOrder/2,i],
            PDstandard[i_, j_] ->
-           StandardCenteredDifferenceOperator[1,fdOrder/2,i] StandardCenteredDifferenceOperator[1,fdOrder/2,j]
+           StandardCenteredDifferenceOperator[1,fdOrder/2,i] StandardCenteredDifferenceOperator[1,fdOrder/2,j],
+           PDstandard[i_, i_, i_] ->
+           StandardCenteredDifferenceOperator[3,fdOrder/2,i],
+           PDstandard[i_, i_, j_] ->
+           StandardCenteredDifferenceOperator[2,fdOrder/2,i] StandardCenteredDifferenceOperator[1,fdOrder/2,j],
+           PDstandard[i_, j_, j_] ->
+           StandardCenteredDifferenceOperator[1,fdOrder/2,i] StandardCenteredDifferenceOperator[2,fdOrder/2,j],
+           PDstandard[i_, j_, i_] ->
+           StandardCenteredDifferenceOperator[2,fdOrder/2,i] StandardCenteredDifferenceOperator[1,fdOrder/2,j],
+           PDstandard[i_, j_, k_] ->
+           StandardCenteredDifferenceOperator[1,fdOrder/2,i] StandardCenteredDifferenceOperator[1,fdOrder/2,j] StandardCenteredDifferencingOperator[1,fdOrder/2,k]
          }];
 
     opts2 = mapReplaceAdd[{opts}, PartialDerivatives, pderivs];

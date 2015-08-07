@@ -7,10 +7,6 @@ use cakernel
 begin parameters
   amp : real "The amplitude of the wave", default: 1.0, range: -infinity to infinity
   kfac : real "The wave number", default: 2 PI, range: 0 to 10 PI
-<<<<<<< HEAD
-end parameters
-
-=======
   vamp : real "potential amplitude", default: 1, range: 0 to 100
   xv0 : real, default: 0.5
   yv0 : real, default: 0.5
@@ -23,19 +19,14 @@ begin temporaries
   xbound ybound zbound
 end temporaries
 
->>>>>>> origin/implicit_temps
 begin calculation initial_sine_calc scheduled at initial
   phi = amp sin(kfac x)
   pi = 0
 end calculation
 
 begin calculation calc_rhs scheduled at MoL_CalcRHS
-<<<<<<< HEAD
-  D_t phi = pi
-=======
   tmp1 = (x-xv0)**2+(y-yv0)**2+(z-zv0)**2
   D_t phi = pi + vamp exp(-sigma*tmp1)
->>>>>>> origin/implicit_temps
   D_t pi = Euc^ij D_ij phi
 end calculation
 
@@ -44,11 +35,7 @@ begin calculation calc_bound_rhs scheduled at MoL_CalcRHS on boundary
   ybound = 0 #@c{{cctk_bbox[3]-cctk_bbox[2]}}
   zbound = 0 #@c{{cctk_bbox[5]-cctk_bbox[4]}}
   D_t phi = pi
-<<<<<<< HEAD
-  D_t pi = -kfac**2 phi
-=======
   D_t pi = -(xbound+ybound+zbound)*kfac**2 phi
->>>>>>> origin/implicit_temps
 end calculation
 
 begin variables

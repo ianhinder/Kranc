@@ -57,11 +57,8 @@ AddTmpCalcs[eqns_] := Module[{tmpeqns={}},
 
 process[thorn:"thorn"[content___]] :=
   Module[
-    {calcs = {}, name, parameters = {}, variables = {}, temporaries = {}, tensors, kernels,
-     nonScalars, tensorRule, withInds, options = {}, derivatives = {}},
-
-    (* Print["thorn = ", content]; *)
-    (* KrancTensor`printStruct[thorn]; *)
+    {calcs = {}, name, parameters = {}, variables = {}, temporaries = {Global`boundx,Global`boundy,Global`boundz}, tensors, kernels,
+     nonScalars, tensorRule, withInds, options = {}, derivatives = {}, bounds, iter, position, pos},
     
     Do[Switch[el,
               "calculation"[___], AppendTo[calcs,process[el]],
@@ -76,6 +73,17 @@ process[thorn:"thorn"[content___]] :=
               "option"[__], options = Join[options, process[el]],
               _, ThrowError["Unrecognised element '"<>Head[el]<>"' in thorn"]],
        {el, {content}}];
+
+    bounds = {
+      Global`boundx->"bound_x",
+      Global`boundy->"bound_y",
+      Global`boundz->"bound_z"
+    };
+    position = Map[First,Position[calcs,Where->Boundary]];
+    Do[
+      pos = position[[iter]];
+      calcs[[pos]] = calcs[[pos]] /. (Equations -> eqn_) :> (Equations -> Join[bounds,eqn]);
+    ,{iter,1,Length[position]}];
 
     (* Pull out implicitly defined temporary equations *)
     calcs = calcs /. (Equations->eqn_) :> (Equations->AddTmpCalcs[eqn]);

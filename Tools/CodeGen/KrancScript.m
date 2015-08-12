@@ -201,8 +201,13 @@ process[(pos:("lower_index"|"upper_index"))["index_symbol"[i_]]] :=
 process["func"["name"[name_],exprs__]] :=
   Module[
     {fns},
-    fns = {"sin" -> Sin, "cos" -> Cos, "if" -> IfThen, "max" -> Max,
-           "sqrt" -> Sqrt, "exp" -> Exp};
+    fns = {"sin" -> Sin, "cos" -> Cos,
+           "tan" -> Tan, "cot" -> Cot,
+           "sec" -> Sec, "csc" -> Csc,
+           "atan" -> ArcTan, "asin" -> ArcSin, "acos" -> ArcCos,
+           "sinh" -> Sinh, "cosh" -> Cosh, "tanh" -> Tanh,
+           (* "if" -> IfThen, *) "max" -> Max, "min" -> Min,
+           "abs"->Abs,"sqrt" -> Sqrt, "exp" -> Exp};
     If[MemberQ[First/@fns,name], (name/.fns)@@Map[process,{exprs}],
        (* If it's not a function call, it's an explicit multiply *)
        process["mul"["mexpr"["mul"["pow"["value"["tensor"["name"[name],"indices"[]]]]]],"mulop"["*"],"mexpr"[exprs]]]]];
@@ -262,33 +267,47 @@ Module[{dtmp,lotmp,hitmp},
    AllowedValues -> {{Value->ToString[lotmp] <> ":" <> ToString[hitmp]}},
    Default -> dtmp}]
 
-process["parameter"["name"[nm_],"type"[desc_],"expr"[exprd_]]] :=
+process["parameter"["name"[nm_],"type"[ty_],"expr"[exprd_]]] :=
 Module[{dtmp,lotmp,hitmp},
   dtmp = process[exprd];
   lotmp = "*";
   hitmp = "*";
   {Name -> ToExpression[nm],
+   VariableType -> ty,
    Description -> "Parameter " <> nm, (*StringTake[desc,{2,StringLength[desc]-1}],*)
    AllowedValues -> {{Value->ToString[lotmp] <> ":" <> ToString[hitmp]}},
    Default -> dtmp}]
 
-process["parameter"["name"[nm_],"type"[desc_],"quote"[def_]]] :=
+process["parameter"["name"[nm_], "type"[ty_], "quote"[desc_], "expr"[exprd_]]] :=
+Module[{dtmp,lotmp,hitmp},
+  dtmp = process[exprd];
+  lotmp = "*";
+  hitmp = "*";
+  {Name -> ToExpression[nm],
+   VariableType -> ty,
+   Description -> StringTake[desc,{2,StringLength[desc]-1}],
+   AllowedValues -> {{Value->ToString[lotmp] <> ":" <> ToString[hitmp]}},
+   Default -> dtmp}]
+
+process["parameter"["name"[nm_],"type"[ty_],"quote"[desc_]]] :=
 Module[{dtmp,lotmp,hitmp},
   dtmp = 1.0;
   lotmp = "*";
   hitmp = "*";
   {Name -> ToExpression[nm],
+   VariableType -> ty,
    Description -> StringTake[desc,{2,StringLength[desc]-1}],
    AllowedValues -> {{Value->ToString[lotmp] <> ":" <> ToString[hitmp]}},
    Default -> dtmp}]
 
-process["parameter"["name"[nm_],"type"["real"],"quote"[desc_],"expr"[def_],"parlo"[le__],"parhi"[re__]]] := 
+process["parameter"["name"[nm_],"type"[ty_],"quote"[desc_],"expr"[def_],"parlo"[le__],"parhi"[re__]]] := 
 Module[{dtmp,lotmp,hitmp},
   dtmp = N[process[def]];
   lotmp = processRange[process[le],"Minimum",nm];
   hitmp = processRange[process[re],"Maximum",nm];
   If[NumberQ[dtmp],1,ThrowError["Default value for parameter "<>nm<>" is not a number"]];
   {Name -> ToExpression[nm],
+   VariableType -> ty,
    Description -> StringTake[desc,{2,StringLength[desc]-1}],
    AllowedValues -> {{Value->ToString[lotmp] <> ":" <> ToString[hitmp]}},
    Default -> dtmp}]

@@ -19,7 +19,7 @@ dname = D[a-z0-9]*
 rawtext = ((?=\}\}){brk}|.)*
 rawmath = @m\{\{{rawtext}\}\}
 rawc = @c\{\{{rawtext}\}\}
-dtensor = {dname}{indices}? ({tensor}|{expr})
+dtensor = {dname}{indices}? {tensor}
 number = -?[0-9]+(\.[0-9]*|)([eEdD][+-]?[0-9]+|)
 func = {name} \( ({expr}( , {expr})*|) \)
 neg = -

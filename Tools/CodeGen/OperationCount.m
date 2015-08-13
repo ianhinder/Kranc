@@ -67,6 +67,10 @@ CountOperations[IfThen[cond_, a_, b_]] :=
   (* Assume the first branch is actually taken *)
   Scan[CountOperations, {cond, a}];
 
+CountOperations[IfPositive[cond_, a_, b_]] :=
+  (* Assume both branches are evaluated *)
+  Scan[CountOperations, {cond, a, b}];
+
 CountOperations[HoldPattern[(Equal|Unequal|Less|Greater|Max|Min)[a_, b_]]] :=
   Scan[CountOperations, {a, b}];
 

@@ -34,12 +34,12 @@
 
 namespace @THORN_NAME@ {
 
-    /*********************************************************************
-     * GetBoundaryWidths
-     *********************************************************************/
+/*********************************************************************
+ * GetBoundaryWidths
+ *********************************************************************/
 
-    void GetBoundaryWidths(cGH const *restrict const cctkGH,
-                           CCTK_INT nboundaryzones[6]){CCTK_INT is_internal[6];
+void GetBoundaryWidths(cGH const *restrict const cctkGH,
+                       CCTK_INT nboundaryzones[6]){CCTK_INT is_internal[6];
 CCTK_INT is_staggered[6];
 CCTK_INT shiftout[6];
 int ierr = -1;

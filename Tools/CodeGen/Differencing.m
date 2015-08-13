@@ -262,12 +262,13 @@ DefFn[
 (* Generate code to ensure that there are sufficient ghost and
    boundary points for the passed derivative operators used in eqs *)
 DefFn[
-  CheckStencil[derivOps_, eqs_, name_, zeroDims_] :=
+  CheckStencil[derivOps_, eqs_, name_, zeroDims_, dgTile_] :=
   Module[{gfds, rgzList, rgz},
     gfds = Map[GridFunctionDerivativesInExpression[{#}, eqs, zeroDims] &, derivOps];
     rgzList = MapThread[If[Length[#2] > 0, DerivativeOperatorStencilWidth[#1,zeroDims], {0,0,0}] &, {derivOps, gfds}];
     If[Length[rgzList] === 0, Return[{}]];
     rgz = Map[Max, Transpose[rgzList]];
+    If[dgTile, rgz = Map[1&, rgz]];
     If[Max[rgz] == 0, {},
     {"EnsureStencilFits(cctkGH, ", Quote@name, ", ", Riffle[rgz,", "], ");\n"}]]];
 
@@ -276,17 +277,17 @@ parametersUsedInOps[derivOps_, intParams_] :=
                     intParams], 1];
 
 DefFn[
-  CheckStencil[derivOps_, eqs_, name_, zeroDims_, intParams_] :=
+  CheckStencil[derivOps_, eqs_, name_, zeroDims_, dgTile_, intParams_] :=
   Module[{psUsed, p},
     psUsed = parametersUsedInOps[derivOps, intParams];
     If[Length[psUsed] > 1, ThrowError["Too many parameters in partial derivatives"]];
     If[psUsed === {},
-      CheckStencil[derivOps,eqs,name,zeroDims],
+      CheckStencil[derivOps,eqs,name,zeroDims,dgTile],
       p = psUsed[[1]];
       SwitchStatement[getParamName[p],
         Sequence@@Table[{value,
                          CheckStencil[derivOps/.getParamName[p]->value, eqs,
-                                      name, zeroDims]},
+                                      name, zeroDims, dgTile]},
                         {value, lookup[p, AllowedValues]}]]]]];
 
 (* It would be good to refactor StencilSize and CheckStencil as much
@@ -339,13 +340,18 @@ DefFn[
   PrecomputeTiledDerivative[d:pd_[gf_, inds___]] :=
   Module[
     {
+      pdn = ToString[pd],
       gfn = ToString[gf],
       gfdn = ToString[GridFunctionDerivativeName[d]],
-      indstr = Apply[StringJoin, Map[ToString[#-1]&, {inds}]]
+      indstr = Apply[StringJoin, Map[ToString[#-1]&, {inds}]],
+      dxistr = Apply[StringJoin,
+                     Map[("kmul(" <> {"dxi","dyi","dzi"}[[#]] <> ", " <>
+                          "ToReal(2.0/(order+1))), ")&,
+                         {inds}]]
     },
     {
-      "unsigned char "<>gfdn<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(sizeof(CCTK_REAL_VEC));\n",
-      "stencil_dg_dim3_dir"<>indstr<>"<dgop>(&((const unsigned char *)"<>gfn<>")[off1], "<>gfdn<>"T, dj, dk);\n"
+      "unsigned char "<>gfdn<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_CACHELINE_SIZE * sizeof(CCTK_REAL));\n",
+      "stencil_dg_dim3_dir"<>indstr<>"<dgop_"<>pdn<>">(&((const unsigned char *)"<>gfn<>")[off1], "<>gfdn<>"T, "<>dxistr<>"dj, dk);\n"
     }]];
 
 DefFn[
@@ -716,6 +722,7 @@ RemoveDuplicateRules[l_] :=
     result];
 
 (* Return a difference operator approximating a derivative of order p
+   (i.e. a p-th derivative with a certain order of accuracy)
    using m grid points before and m grid points after the centre
    point. Return an error if this is not possible. *)
 
@@ -737,6 +744,7 @@ StandardCenteredDifferenceOperator[p_, m_Integer, i_] :=
 
 
 (* Return a difference operator approximating a derivative of order p
+   (i.e. a p-th derivative with a certain order of accuracy)
    using m1 grid points before and m2 grid points after the centre
    point. Return an error if this is not possible. *)
 

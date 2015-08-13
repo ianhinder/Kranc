@@ -9,12 +9,12 @@
 
 namespace @THORN_NAME@ {
 
-    /*********************************************************************
-     * Types
-     *********************************************************************/
+/*********************************************************************
+ * Types
+ *********************************************************************/
 
-    struct KrancData{// Actual loop bounds
-                     int imin[3];
+struct KrancData{// Actual loop bounds
+                 int imin[3];
 int imax[3];
 // Region covered by this tile
 int tile_imin[3];

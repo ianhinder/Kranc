@@ -147,9 +147,12 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
        "DECLARE_CCTK_ARGUMENTS;\n",
        "DECLARE_CCTK_PARAMETERS;\n",
        "\n",
+       "// Define stencil family\n",
+       "constexpr ptrdiff_t order = "<>ToString[OptionValue[DGOrder]]<>";\n",
+       "\n",
        "// Define stencil operators\n",
-       "typedef dgop_order4_derivs<int> dgop;\n",
-       "constexpr ptrdiff_t order = dgop::order;\n",
+       "typedef dgop_derivs<order, int> dgop_PD;\n",
+       "static_assert(dgop_PD::order == order, \"\")\n";
        "\n",
        "// Determine tile shape from stencil\n",
        "constexpr ptrdiff_t npoints_i = order + 1;\n",
@@ -184,7 +187,7 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
        "// Calculate grid function offset (in bytes)\n",
        "const ptrdiff_t off1 = i1 * di + j1 * dj + k1 * dk;\n",
        "\n",
-       "// Vector size\n",
+       "// Vector size (in elements)\n",
        "constexpr ptrdiff_t vs = CCTK_REAL_VEC_SIZE;\n",
        "\n",
        "// Padded tile shape (in grid points)\n",
@@ -246,7 +249,8 @@ DefFn[CheckGroupStorage[groupNames_, calcName_] :=
     {"\nconst char* const groups[] = {\n  ",
     Riffle[Map[Quote,groupNames2], ",\n  "],
     "};\n",
-    "AssertGroupStorage(cctkGH, ", Quote[calcName],", ", Length[groupNames2], ", groups);\n"}]];
+    "AssertGroupStorage(cctkGH, ", Quote[calcName],", ", Length[groupNames2], ", groups);\n",
+    "\n"}]];
 
 (* --------------------------------------------------------------------------
    Variables
@@ -502,6 +506,7 @@ DefFn[
                          dx,dy,dz,dt, idx,idy,idz,
                          usejacobian,
                          Pi, E,
+                         cctkIdx1, cctkIdx2, cctkIdx3,
                          cctkLbnd1, cctkLbnd2, cctkLbnd3,
                          Symbol["i"], Symbol["j"], Symbol["k"],
                          Symbol["ti"], Symbol["tj"], Symbol["tk"],
@@ -624,10 +629,10 @@ DefFn[
   
              CheckGroupStorage[GroupsInCalculation[cleancalc, imp],
                                functionName],
-             "\n",
 
              CheckStencil[pddefs, eqs, functionName,
                           OptionValue[ZeroDimensions],
+                          DGTileCalculationQ[calc],
                           lookup[{opts}, IntParameters, {}]],
 
              If[where === Everywhere && !OptionValue[UseDGFE] &&
@@ -713,7 +718,7 @@ DefFn[
      rhss, lhss,
      orderings, eqsOrdered,
      odeVars,
-     gfsInRHS, gfsInLHS, gfsOnlyInRHS, gfsInBoth,
+     gfsInRHS, gfsInLHS, gfsOnlyInRHS, gfsOnlyInLHS, gfsInBoth,
      localGFs, localMap,
      gfsDifferentiated, gfsDifferentiatedAndOnLHS,
      defsWithoutShorts, defsWithShorts,
@@ -729,7 +734,7 @@ DefFn[
      calcCode, calcCodeArrays,
      assignLocalGridFunctions, assignLocalArrayFunctions,
      generateTileDefinition,
-     generateTileLoad, generateTileDerivs, generateTileStore,
+     generateTileLoad, generateTileStore,
      arraysInRHS, arraysInLHS, arraysOnlyInRHS},
 
     InfoMessage[InfoFull, "Equation loop"];
@@ -753,6 +758,7 @@ DefFn[
       gfsInRHS = Union[Cases[rhss, _ ? (MemberQ[gfs,#] &), Infinity]];
       gfsInLHS = Union[Cases[lhss, _ ? (MemberQ[gfs,#] &), Infinity]];
       gfsOnlyInRHS = Complement[gfsInRHS, gfsInLHS];
+      gfsOnlyInLHS = Complement[gfsInLHS, gfsInRHS]; 
       gfsInBoth = Intersection[gfsInRHS, gfsInLHS];
 
       If[OptionValue[ProhibitAssignmentToGridFunctionsRead] &&
@@ -897,23 +903,29 @@ DefFn[
         assignLocalFunctions[gs, False, False, False, ArrayName];
 
       generateTileDefinition[gf_] :=
-      "unsigned char "<>ToString[gf]<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(sizeof(CCTK_REAL_VEC));\n";
+      "unsigned char "<>ToString[gf]<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_CACHELINE_SIZE * sizeof(CCTK_REAL));\n";
 
-      generateTileLoad[gf_] :=
+      generateTileLoad[gf:(_String|_Symbol)] :=
+      Module[
+        {gfn = ToString[gf],
+         jcgfs = JacobianConditionalGridFunctions[],
+         decl, load, isjac, maybeload},
+        decl = {"unsigned char "<>gfn<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_CACHELINE_SIZE * sizeof(CCTK_REAL));\n"};
+        load = {"assert("<>gfn<>"!=NULL);\n",
+                "load_dg_dim3<dgop_PD>(&((const unsigned char *)"<>gfn<>")[off1], "<>gfn<>"T, dj, dk);\n"};
+        isjac = StringMatchQ[gfn, jcgfs[[1]]];
+        maybeload = If[isjac,
+                       {"if ("<>jcgfs[[2]]<>") {\n",
+                        IndentBlock[load],
+                        "}\n"},
+                       load];
+        {decl, maybeload}];
+
+      generateTileStore[gf:(_String|_Symbol)] :=
       {
-        "unsigned char "<>ToString[gf]<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(sizeof(CCTK_REAL_VEC));\n",
-        "load_dg_dim3<dgop>(&((const unsigned char *)"<>ToString[gf]<>")[off1], "<>ToString[gf]<>"T, dj, dk);\n"
+        "assert("<>ToString[gf]<>"!=NULL);\n",
+        "store_dg_dim3<dgop_PD>(&((unsigned char *)"<>ToString[gf]<>")[off1], "<>ToString[gf]<>"T, dj, dk);\n"
       };
-
-      generateTileDerivs[gf_] :=
-      Table[
-        {
-          "unsigned char PD"<>ToString[gf]<>ToString[dir]<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(sizeof(CCTK_REAL_VEC));\n",
-          "stencil_dg_dim3_dir"<>ToString[dir-1]<>"<dgop>(&((const unsigned char *)"<>ToString[gf]<>")[off1], PD"<>ToString[gf]<>ToString[dir]<>"T, dj, dk);\n"
-        }, {dir,1,3}];
-
-      generateTileStore[gf_] :=
-      "store_dg_dim3<dgop>(&((unsigned char *)"<>ToString[gf]<>")[off1], "<>ToString[gf]<>"T, dj, dk);\n";
 
       (* separate grid and array variables *)
       arraysInRHS = Intersection[odeVars, gfsInRHS];
@@ -946,7 +958,6 @@ DefFn[
         If[DGTileCalculationQ[cleancalc],
            CommentedBlock[
              "Calculate derivatives into tiles",
-             (* generateTileDerivs /@ gfsInRHS *)
              PrecomputeTiledDerivatives[defsWithoutShorts, eqsOrdered,
                                         OptionValue[ZeroDimensions]]],
            {}],
@@ -954,7 +965,7 @@ DefFn[
         If[DGTileCalculationQ[cleancalc],
            CommentedBlock[
              "Declare result tiles",
-             generateTileDefinition /@ gfsInLHS],
+             generateTileDefinition /@ gfsOnlyInLHS],
            {}],
 
         lookup[cleancalc, LoopFunction][

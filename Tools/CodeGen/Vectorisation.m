@@ -38,22 +38,23 @@ DefFn[
     {expr, vectoriseRules, scalarRules},
     expr = exprp;
 
-    expr = expr //. Power[x_,y_] -> pow[x,y];
-    
     (* Vectorise *)
     vectoriseRules = {
       x_ToReal -> x,
       x_ConditionExpression -> x,
 
+      GFOffset[var_,i_,j_,k_] :> GFOffset[var,i,j,k],
       IfThen[cond_, x_, y_] :> IfThen[cond,
                                       x//.vectoriseRules, y//.vectoriseRules],
-      GFOffset[var_,i_,j_,k_] :> GFOffset[var,i,j,k],
-      pow[x_,y_]  :> kpow[x//.vectoriseRules, y],
-      kpow[x_,y_] :> kpow[x,y],
 
-      x:"vec_load"[___] :> x,
-      x:CArray[id_, {args__}] :> "vec_load"[x],
-      CTileArray[id_, {args__}] :> "vec_load"["getelt"[id, args]],
+      expr:kpow[x_,a_] -> expr,
+      pow[x_,a_]       :> kpow[x//.vectoriseRules, a],
+
+      expr:"vec_load"[___] -> expr,
+      expr:CArray[id_, {args__}] -> "vec_load"[expr],
+      CTileArray[id_, {args__}] -> "vec_load"["getelt"[id, args]],
+
+      IfPositive[c_,x_,y_] -> kifthen[ksignbit[c],y,x],
 
       Parameter[x_] -> ToReal[x],
 
@@ -62,56 +63,59 @@ DefFn[
       x_Real     -> ToReal[x],
       E          -> ToReal[E],
       Pi         -> ToReal[Pi],
+      cctkLbnd1  -> ToReal[cctkLbnd1],
+      cctkLbnd2  -> ToReal[cctkLbnd2],
+      cctkLbnd3  -> ToReal[cctkLbnd3],
 
       -x_ -> kneg[x],
-      
+
       x_ + y_ -> kadd[x,y],
       x_ - y_ -> ksub[x,y],
-      
+
       x_ * y_ -> kmul[x,y],
       x_ / y_ -> kdiv[x,y],
-      
-      acos[xx_]  -> kacos[xx],
-      acosh[xx_] -> kacosh[xx],
-      asin[xx_]  -> kasin[xx],
-      asinh[xx_] -> kasinh[xx],
-      atan[xx_]  -> katan[xx],
-      atanh[xx_] -> katanh[xx],
-      cos[xx_]   -> kcos[xx],
-      cosh[xx_]  -> kcosh[xx],
-      sin[xx_]   -> ksin[xx],
-      sinh[xx_]  -> ksinh[xx],
-      tan[xx_]   -> ktan[xx],
-      tanh[xx_]  -> ktanh[xx],
-      
+
+      acos[x_]    -> kacos[x],
+      acosh[x_]   -> kacosh[x],
+      asin[x_]    -> kasin[x],
+      asinh[x_]   -> kasinh[x],
+      atan[x_]    -> katan[x],
+      atanh[x_]   -> katanh[x],
+      cos[x_]     -> kcos[x],
+      cosh[x_]    -> kcosh[x],
       exp[x_]     -> kexp[x],
       fabs[x_]    -> kfabs[x],
       fmax[x_,y_] -> kfmax[x,y],
       fmin[x_,y_] -> kfmin[x,y],
+      fmod[x_,y_] -> kfmod[x,y],
       isgn[x_]    -> kisgn[x],
       log[x_]     -> klog[x],
       sgn[x_]     -> ksgn[x],
-      sqrt[x_]    -> ksqrt[x]};
+      sin[x_]     -> ksin[x],
+      sinh[x_]    -> ksinh[x],
+      sqrt[x_]    -> ksqrt[x],
+      tan[x_]     -> ktan[x],
+      tanh[x_]    -> ktanh[x]};
 
     expr = expr //. vectoriseRules;
 
     (* Optimise *)
 
     optimiseRules = {
+      kpow[ToReal[x_],y_] -> ToReal[pow[x,y]],
       (* Handle division *)
       kpow[x_,n_Integer] /; n<0 :> kdiv[ToReal[1],kpow[x,-n]],
-
       (* Implement integer powers efficiently *)
       kpow[x_,0] -> 1,
       kpow[x_,1] -> x,
       kpow[x_,n_Integer] /; n>1 && Mod[n,2]==0 :> kmul[kpow[x,n/2],kpow[x,n/2]],
       kpow[x_,n_Integer] /; n>1 && Mod[n,2]==1 :> kmul[x,kpow[x,n-1]],
 
-      kmul[x_,kpow[y_,-1]] -> kdiv[x,y],
-      kmul[x_,kpow[y_,-2]] -> kdiv[x,kmul[y,y]],
+      (* kmul[x_,kpow[y_,ToReal[-1]]] -> kdiv[x,y], *)
+      (* kmul[x_,kpow[y_,ToReal[-2]]] -> kdiv[x,kmul[y,y]], *)
 
-      kpow[x_,(1/2)|0.5]     -> ksqrt[x],
-      kpow[x_,(-1/2)|(-0.5)] -> kdiv[ToReal[1],ksqrt[x]],
+      kpow[x_,a_] /; a==1/2  :> ksqrt[x],
+      kpow[x_,a_] /; a==-1/2 :> kdiv[ToReal[1],ksqrt[x]],
 
       kneg[ToReal[a_]]      -> ToReal[-a],
       kmul[ToReal[-1],x_]   -> kneg[x],
@@ -119,7 +123,8 @@ DefFn[
       kmul[x_,ToReal[-1]]   -> kneg[x],
       kmul[x_,ToReal[-1.0]] -> kneg[x],
       kneg[kneg[x_]]        -> x,
-      
+
+      (* expr:kadd[x_,y_] /; !OrderedQ[expr] :> Sort[expr], *)
       kadd[ToReal[0],x_]             -> x,
       kadd[ToReal[0.0],x_]           -> x,
       kadd[x_,ToReal[0]]             -> x,
@@ -137,13 +142,15 @@ DefFn[
       ksub[x_,x_]                    -> ToReal[0],
       kadd[ToReal[a_],ToReal[b_]]    -> ToReal[a+b],
       ksub[ToReal[a_],ToReal[b_]]    -> ToReal[a-b],
-      kadd[x:Except[_ToReal],ToReal[a_]] -> kadd[ToReal[a],x],
+      kadd[x:Except[_ToReal],
+           ToReal[a_]]               -> kadd[ToReal[a],x],
       kadd[kadd[ToReal[a_],x_],y_]   -> kadd[ToReal[a],kadd[x,y]],
       kadd[kadd[ToReal[a_],x_],
            kadd[ToReal[b_],y_]]      -> kadd[ToReal[kadd[a,b]],kadd[x,y]],
       kadd[x:Except[_ToReal],
            kadd[ToReal[a_],y_]]      -> kadd[ToReal[a],kadd[x,y]],
       
+      (* expr:kadd[x_,y_] /; !OrderedQ[expr] :> Sort[expr], *)
       kmul[ToReal[0],x_]             -> ToReal[0],
       kmul[ToReal[0.0],x_]           -> ToReal[0],
       kmul[x_,ToReal[0]]             -> ToReal[0],
@@ -170,32 +177,57 @@ DefFn[
       kdiv[kneg[x_],y_]              -> kneg[kdiv[x,y]],
       kdiv[x_,kneg[y_]]              -> kneg[kdiv[x,y]],
       kdiv[x_,x_]                    -> ToReal[1],
-      kmul[ToReal[a_],ToReal[b_]]    -> ToReal[a b],
-      (* kdiv[ToReal[a_],ToReal[b_]]    -> ToReal[a/b], *)
-      kmul[x:Except[_ToReal],ToReal[a_]] -> kmul[ToReal[a],x],
-      kdiv[x:Except[_ToReal],ToReal[y_]] -> kmul[ToReal[1/y],x],
+      kmul[ToReal[a_],ToReal[b_]]    -> ToReal[a*b],
+      kdiv[ToReal[a_],ToReal[b_]]    -> ToReal[a/b],
+      kmul[x:Except[_ToReal],
+           ToReal[a_]]               -> kmul[ToReal[a],x],
+      kdiv[x:Except[_ToReal],
+           ToReal[y_]]               -> kmul[ToReal[1/y],x],
       kmul[kmul[ToReal[a_],x_],y_]   -> kmul[ToReal[a],kmul[x,y]],
       kmul[kmul[ToReal[a_],x_],
            kmul[ToReal[b_],y_]]      -> kmul[ToReal[a*b],kmul[x,y]],
       kmul[x:Except[_ToReal],
            kmul[ToReal[a_],y_]]      -> kmul[ToReal[a],kmul[x,y]],
       
-      kasin[kneg[xx_]]           -> kneg[kasin[xx]],
-      kasinh[kneg[xx_]]          -> kneg[kasinh[xx]],
-      katan[kneg[xx_]]           -> kneg[katan[xx]],
-      katanh[kneg[xx_]]          -> kneg[katanh[xx]],
-      kcos[kneg[xx_]]            -> kcos[xx],
-      kcosh[kneg[xx_]]           -> kcosh[xx],
-      ksin[kneg[xx_]]            -> kneg[ksin[xx]],
-      ksinh[kneg[xx_]]           -> kneg[ksinh[xx]],
-      ktan[kneg[xx_]]            -> kneg[ktan[xx]],
-      ktanh[kneg[xx_]]           -> kneg[ktanh[xx]],
-      kfmax[kneg[xx_],kneg[yy_]] -> kneg[kfmin[xx,yy]],
-      kfmin[kneg[xx_],kneg[yy_]] -> kneg[kfmax[xx,yy]],
-      kfabs[kneg[xx_]]           -> kfabs[xx],
-      kfnabs[kneg[xx_]]          -> kfnabs[xx],
-      kneg[kfabs[xx_]]           -> kfnabs[xx],
-      kneg[kfnabs[xx_]]          -> kfabs[xx]};
+      kacos[ToReal[x_]]            -> ToReal[acos[x]],
+      kacosh[ToReal[x_]]           -> ToReal[acosh[x]],
+      kasin[ToReal[x_]]            -> ToReal[asin[x]],
+      kasinh[ToReal[x_]]           -> ToReal[asinh[x]],
+      katan[ToReal[x_]]            -> ToReal[atan[x]],
+      katanh[ToReal[x_]]           -> ToReal[atanh[x]],
+      kcos[ToReal[x_]]             -> ToReal[cos[x]],
+      kcosh[ToReal[x_]]            -> ToReal[cosh[x]],
+      kexp[ToReal[x_]]             -> ToReal[exp[x]],
+      kfabs[ToReal[x_]]            -> ToReal[fabs[x]],
+      kfmax[ToReal[x_],ToReal[y_]] -> ToReal[fmax[x,y]],
+      kfmin[ToReal[x_],ToReal[y_]] -> ToReal[fmin[x,y]],
+      kfmod[ToReal[x_],ToReal[y_]] -> ToReal[fmod[x,y]],
+      kfnabs[ToReal[x_]]           -> ToReal[-fabs[x]],
+      kisgn[ToReal[x_]]            -> ToReal[isgn[x]],
+      klog[ToReal[x_]]             -> ToReal[log[x]],
+      ksgn[ToReal[x_]]             -> ToReal[sgn[x]],
+      ksin[ToReal[x_]]             -> ToReal[sin[x]],
+      ksinh[ToReal[x_]]            -> ToReal[sinh[x]],
+      ksqrt[ToReal[x_]]            -> ToReal[sqrt[x]],
+      ktan[ToReal[x_]]             -> ToReal[tan[x]],
+      ktanh[ToReal[x_]]            -> ToReal[tanh[x]],
+
+      kasin[kneg[x_]]          -> kneg[kasin[x]],
+      kasinh[kneg[x_]]         -> kneg[kasinh[x]],
+      katan[kneg[x_]]          -> kneg[katan[x]],
+      katanh[kneg[x_]]         -> kneg[katanh[x]],
+      kcos[kneg[x_]]           -> kcos[x],
+      kcosh[kneg[x_]]          -> kcosh[x],
+      kfabs[kneg[x_]]          -> kfabs[x],
+      kfmax[kneg[x_],kneg[y_]] -> kneg[kfmin[x,y]],
+      kfmin[kneg[x_],kneg[y_]] -> kneg[kfmax[x,y]],
+      kfnabs[kneg[x_]]         -> kfnabs[x],
+      kneg[kfabs[x_]]          -> kfnabs[x],
+      kneg[kfnabs[x_]]         -> kfabs[x],
+      ksin[kneg[x_]]           -> kneg[ksin[x]],
+      ksinh[kneg[x_]]          -> kneg[ksinh[x]],
+      ktan[kneg[x_]]           -> kneg[ktan[x]],
+      ktanh[kneg[x_]]          -> kneg[ktanh[x]]};
 
     (* Print["Optimising:"]; *)
     (* Module[{exprOld = Null}, *)
@@ -207,11 +239,6 @@ DefFn[
     (*   Print["Done optimising"]]; *)
 
     expr = expr //. optimiseRules;
-
-    (* The above optimisations introduce divisions and multiplications
-       of unvectorised quantities which Mathematica sometimes converts
-       into Power.  Hence, we need to convert these back to pow. *)
-    expr = expr //. {x:ToReal[_] :> (x /. {Power[y_, power_] :> pow[y,power]})};
 
     (* FMA (fused multiply-add) *)
     (* kmadd (x,y,z) =   xy+z
@@ -235,24 +262,26 @@ DefFn[
     (* Apply some transformations to scalar expressions *)
 
     scalarRules = {
-      ToReal[x_] :> ToReal[x//.scalarRules],
-      IfThen[cond_, x_, y_] :> IfThen[cond//.scalarRules, x, y],
-      
+      (* ToReal[x_] :> ToReal[x//.scalarRules], *)
+      (* IfThen[cond_, x_, y_] :> IfThen[cond//.scalarRules, x, y], *)
+      (* kpow[x_,y_] :> kpow[x, y//.scalarRules], *)
+
+      (* Mod[ToReal[x_],ToReal[y_]] -> ToReal[Mod[x,y]], *)
+      (* x_ ^ y_ :> pow[x//.scalarRules, y//.scalarRules], *)
+      (* pow[x_,y_] :> pow[x//.scalarRules, y//.scalarRules], *)
+      x_ ^ y_ -> pow[x,y],
+
       (* don't generate large integer constants *)
-      x_Integer /; Abs[x]>10^10 :> 1.0*x,
+      x_Integer /; Abs[x]>=2^31 :> 1.0*x,
       (* generate sufficient precision *)
       x_Rational :> N[x,30],
       Pi -> N[Pi,30],
       E  -> N[E,30]};
     
     expr = expr //. scalarRules;
-    
-    expr = expr /. {
-      x:(kmul|kadd)[a_,b_] /; !OrderedQ[x] :> Sort[x]};
 
     If[Cases[expr, _Power, Infinity] =!= {},
       ThrowError["Power found in " <> ToString[expr,InputForm]]];
-
 
     Return[expr]]];
 

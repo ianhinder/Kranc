@@ -139,7 +139,7 @@ DefFn[
      CommentedBlock[
        "Loop over all grid points in the current tile",
        {
-         "for (ptrdiff_t off = 0; off < tsz; off += vs) {\n",
+         "for (ptrdiff_t off = 0; off < tsz; off += tdi*vs) {\n",
          IndentBlock[block],
          "}\n"
        }],
@@ -162,7 +162,15 @@ DefFn[
          "{\n",
          IndentBlock[
            {DefineConstant["index", "ptrdiff_t", "di*i + dj*j + dk*k"],
-            If[tile,
+            If[OptionValue[UseVectors],
+               {"const CCTK_REAL_VEC cctkIdx1 CCTK_ATTRIBUTE_UNUSED = kadd(ToReal(i), vec_index);\n",
+                "const CCTK_REAL_VEC cctkIdx2 CCTK_ATTRIBUTE_UNUSED = ToReal(j);\n",
+                "const CCTK_REAL_VEC cctkIdx3 CCTK_ATTRIBUTE_UNUSED = ToReal(k);\n"
+               },
+               {"const CCTK_REAL cctkIdx1 CCTK_ATTRIBUTE_UNUSED = ToReal(i);\n",
+                "const CCTK_REAL cctkIdx2 CCTK_ATTRIBUTE_UNUSED = ToReal(j);\n",
+                "const CCTK_REAL cctkIdx3 CCTK_ATTRIBUTE_UNUSED = ToReal(k);\n"}],
+            If[tile && OptionValue[UseVectors],
                {"const int ti CCTK_ATTRIBUTE_UNUSED = i - kd.tile_imin[0];\n",
                 "const int tj CCTK_ATTRIBUTE_UNUSED = j - kd.tile_imin[1];\n",
                 "const int tk CCTK_ATTRIBUTE_UNUSED = k - kd.tile_imin[2];\n"},
@@ -270,6 +278,7 @@ DefFn[
       Max[xx_, yy__] :> fmax[xx, Max[yy]],
       Min[xx_, yy__] :> fmin[xx, Min[yy]],
       Min3[xx_, yy_, zz_] :> fmin[fmin[xx, yy], zz],
+      Mod[xx_, yy_] -> fmod[xx, yy],
       Abs[x_] -> fabs[x],
       Sign[x_] -> isgn[x],
       IntAbs[x_] -> abs[x]};

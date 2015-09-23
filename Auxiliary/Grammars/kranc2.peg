@@ -1,10 +1,12 @@
 skipper = \b([ \t\n\r]+|\#.*)*
-int = [0-9]+
+int = -?[0-9]+
 end = ([ \t]+|\#.*)*\r*\n
 quote = "[^"]*"
 type = real|integer|keyword|boolean
 keywords = to|default
-name = (?!D|{keywords}\b)[A-Za-z][A-Za-z0-9]*
+barename = (?!D|{keywords}\b)[A-Za-z][A-Za-z0-9]*
+name = \b(?![DO]|{keywords}\b)[A-Za-z][A-Za-z0-9]*
+bracket = \[ {expr} (, {expr} (, {expr} |)|)\]
 
 uname = [A-Za-z][A-Za-z0-9_]*
 lower_index = ({index_symbol}|\({index_expr}(,{index_expr})*\))
@@ -13,9 +15,9 @@ indices = (\_{lower_index}+|\^{upper_index}+)*
 index_symbol = [a-zA-Z]'*|[0-9]
 index_op = [+-]
 index_expr = {index_symbol}({index_op}{int}|)
-tensor = {name}{indices}
+tensor = {name}{indices}( {bracket}|)
 tname = {tensor}|{name}
-dname = D[a-z0-9]*
+dname = [DO][a-z0-9]*
 rawtext = ((?=\}\}){brk}|.)*
 rawmath = @m\{\{{rawtext}\}\}
 rawc = @c\{\{{rawtext}\}\}
@@ -26,14 +28,14 @@ neg = -
 value = {rawc}|{rawmath}|{func}|{dtensor}|{tensor}|{number}|\( {expr} \)
 pow = {value}( \*\* {value}|)
 mulop = [*/%]
-mulimp = [ \t]*
+mulimp = [ \t]*(?!-)
 mul = {pow}( {mulop} {pow}|{mulimp}{pow})*
 addop = [+-]
 mexpr = {mul}( {addop} {mul})*
 expr = {neg}?{mexpr}( \? {mexpr} : {mexpr})?
 eqn = ({dtensor}|{tensor}) \= {expr}{-end}
 doper = {dname}{indices}
-deqn = {doper} \= {expr}{-end}
+deqn = {doper} {barename} \= {expr}{-end}
 eqns = {eqn}( {eqn})*
 deqns = {deqn}( {deqn})*
 at_or_in = (at|in)
@@ -53,5 +55,5 @@ feature = loopcontrol|vectors|opencl|jacobian|cse|cakernel
 use = use[ \t]+({feature}[ \t]*)+
 disable = disable[ \t]+({feature}[ \t]*)+
 implement = implement[ \t]+{uname}{-end}
-derivatives = begin[ \t]+derivatives{-end} {deqns} end[ \t]+derivatives
-thorn = {-skipper}begin[ ]+thorn {uname}{-end}( {calculation}| {parameters}| {variables}| {temporaries}| {derivatives}| {option})* end[ ]+thorn
+operators = begin[ \t]+operators{-end} {deqns} end[ \t]+operators
+thorn = {-skipper}begin[ ]+thorn {uname}{-end}( {calculation}| {parameters}| {variables}| {temporaries}| {operators}| {option})* end[ ]+thorn

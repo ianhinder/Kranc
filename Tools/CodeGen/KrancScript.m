@@ -46,6 +46,7 @@ DefFn[
 process[h_[args___]] :=
   Module[
     {},
+    Print[args];
     Print["No handler for ", h@@Map[ToString[Head[#]]&,{args}]];
     (* Print["Full expression is: ", HoldForm[h[args]]]; *)
     ThrowError["Failed to parse script"]];
@@ -58,7 +59,7 @@ AddTmpCalcs[eqns_] := Module[{tmpeqns={}},
 process[thorn:"thorn"[content___]] :=
   Module[
     {calcs = {}, name, parameters = {}, variables = {}, temporaries = {Global`boundx,Global`boundy,Global`boundz}, tensors, kernels,
-     nonScalars, tensorRule, withInds, options = {}, derivatives = {}, bounds, iter, position, pos},
+     nonScalars, tensorRule, withInds, options = {}, operators = {}, bounds, iter, position, pos},
     
     Do[Switch[el,
               "calculation"[___], AppendTo[calcs,process[el]],
@@ -69,10 +70,11 @@ process[thorn:"thorn"[content___]] :=
               "parameters"[__], parameters = Join[parameters,List@@Map[process,el]],
               "variables"[__], variables = Join[variables,List@@Map[process,el]],
               "temporaries"[__], temporaries = Join[temporaries,List@@Map[process,el]],
-              "derivatives"[__], (* derivatives = *) Join[derivatives,process[el]],
+              "operators"[__], operators = Join[operators,process[el]],
               "option"[__], options = Join[options, process[el]],
               _, ThrowError["Unrecognised element '"<>Head[el]<>"' in thorn"]],
        {el, {content}}];
+    Map[GenOp,operators];
 
     bounds = {
       Global`boundx->"bound_x",
@@ -103,6 +105,8 @@ process[thorn:"thorn"[content___]] :=
 
     SetEnhancedTimes[False];
 
+    (* Need to do something about derives here *)
+    derivatives = {};
     options = Join[{RealParameters -> parameters, Calculations -> calcs, Variables -> variables, Shorthands -> temporaries} /. tensorRule,
                    {PartialDerivatives -> derivatives},
                    options];
@@ -141,6 +145,22 @@ process["eqn"[lhs_,rhs_]] := Module[{name,eqs}, process[lhs] -> process[rhs]];
 
 process["tensor"["name"[k_],"indices"[]]] := ToExpression[If[Names[k] === {}, "Global`"<>k, k]];
 
+process["tensor"["name"[nm_],"indices"[ind___],"bracket"[br1_,br2_,br3_]]] :=
+  Module[{n1,n2,n3},
+  n1 = process[br1];
+  n2 = process[br2];
+  n3 = process[br3];
+  I3D[process["tensor"["name"[nm],"indices"[ind]]],n1,n2,n3]]
+
+(*
+process["tensor"["name"[nm_],"indices"[ind___],"bracket"[br1_]]] :=
+  Module[{n1,n2,n3,br},
+  n1 = process[br1];
+  br = SetIndex[br1]; 
+  Print["SetIndex=",IndexWasSet," br=",br];
+  I3D[process["tensor"["name"[nm],"indices"[ind]]],n1,n2,n3]]
+  *)
+
 builtIns = {"true" -> True,
             "false" -> False,
             "PI" -> Pi};
@@ -157,7 +177,7 @@ process["tensor"["name"[k_],inds_]] :=
 
 fprint[x_] := (Print[x//InputForm]; x);
 
-(* Simple derivative rules *)
+(* Simple operator rules *)
 TempNum = 1
 Clear[PDiv,MakeTemp,dtens];
 MakeTemp[x1_,inds_] := Module[{tmpnm,inds2,tensorAST},
@@ -320,9 +340,10 @@ process["option"["use"[features__]]] :=
 process["option"["disable"[features__]]] :=
   Map[(lookup[flags,#] -> False) &,{features}/.(("feature"[n_]):>n)];
 
-(* Derivatives *)
+(* Operators *)
 
-process[h:"derivatives"["deqns"[eqs___]]] :=
+(* deqn[doper, name[xdiv], expr] *)
+process[h:"operators"["deqns"[eqs___]]] :=
   Map[process, {eqs}];
 
 process[d:"deqn"[___]] :=
@@ -330,8 +351,94 @@ process[d:"deqn"[___]] :=
     Print["(deqn) No handler for ", d];
     ThrowError["Failed to parse script"]];
 
+replaceInd[indices_,vals_] := Module[{i},
+  Table[Rule[indices[[i]],vals[[i]]],{i,1,Length[vals]}]]
+
+indexes[args_String] := Module[{arr,n,perm,i},
+  arr=DeleteDuplicates[StringCases[args,RegularExpression["[a-w]"]]];
+  n=Length[arr];
+  perm=DeleteCases[Permutations[{"x","y","z"},n],_?(Length[#] != n&)];
+  Table[StringReplace[args,
+    replaceInd[arr,perm[[i]]]]
+    ,{i,1,Length[perm]}]
+  ];
+
+IsIndex[arg_] := Length[StringCases[arg,RegularExpression["^[a-z]$"]]]===1;
+
+CombineIndex[arg_] := arg
+CombineIndex[Null,arg_] := CombineIndex[arg]
+CombineIndex[arg_,Null] := CombineIndex[arg]
+CombineIndex[Null,Null,arg_] := CombineIndex[arg]
+CombineIndex[Null,arg_,Null] := CombineIndex[arg]
+CombineIndex[arg_,Null,Null] := CombineIndex[arg]
+
+GetIndex[arg_] := ThrowError["GetIndexError: "<>ToString[arg]];
+GetIndex["name"[ind_?IsIndex]] := ind;
+GetIndex[_String[_String]] := Null;
+GetIndex[vc_[]] := Null;
+GetIndex[vc_[arg1_,arg2_]] := CombineIndex[GetIndex[arg1],GetIndex[arg2]];
+GetIndex[vc_[arg1_,arg2_,arg3_]] := CombineIndex[GetIndex[arg1],GetIndex[arg2],GetIndex[arg3]];
+
+SetIndex[arg_] := ThrowError["SetIndexError: "<>ToString[arg]];
+SetIndex["name"[ind_?IsIndex]] := Module[{},IndexWasSet := ind;"number"["0"]];
+SetIndex[vc_[arg_]] := vc[SetIndex[arg]];
+SetIndex[vc_] := vc;
+SetIndex[vc_[]] := vc[];
+SetIndex[vc_[arg1_,arg2_]] := vc[SetIndex[arg1],SetIndex[arg2]];
+SetIndex[vc_[arg1_,arg2_,arg3_]] := vc[SetIndex[arg1],SetIndex[arg2],SetIndex[arg3]];
+
+LookupTwo[val_,{},_] := Null;
+LookupTwo[val_,_,{}] := Null;
+LookupTwo[val_,{h1_,t1___},{h2_,t2___}] := If[val === h1,h2,LookupTwo[val,{t1},{t2}]];
+
+NewBracket[expr_,arr_,perm_] :=
+  Module[{indxLet,indx,br,res,i,expt},
+    expt = (expr /.
+      "name"[ind_?IsIndex] :> (indxLet=ind;"number"["0"]))
+        /. "tensor"["number"["0"],"indices"[]] :> "number"["0"];
+    indx = LookupTwo[indxLet,arr,perm];
+    res=Apply["bracket",Table[
+      If[i==indx,expt,"number"["0"]],{i,1,3}]];
+    Return[res]
+  ];
+
+IndexRules[ar_,pm_] := Module[{i},
+  Table[Rule["lower_index"["index_symbol"[ar[[i]]]],"number"[ ToString[pm[[i]]] ]],{i,1,Length[ar]}]]
+
+GenArr["indices"[ind__]] := StringJoin[Map[GenArr,{ind}]];
+GenArr["lower_index"[ind_]] := GenArr[ind];
+GenArr["upper_index"[ind_]] := GenArr[ind];
+GenArr["index_symbol"[letter_]] := letter;
+GenArr[ind_] := ThrowError["GenArr "<>ToString[ind]];
+GenOp[operator[dn_,ind_,nm_,ex_]] :=
+  Module[{arr,perm,permno,str,uniqarr,uniqperm},
+    arr=GenArr[ind];
+    uniqarr=RemoveDuplicates[StringSplit[arr,""]];
+    perm=indexes[arr];
+    Print["arr=",arr," perm=",perm," u=",uniqarr];
+    For[i=1,i<=Length[perm],i++,
+      uniqperm = Map[ToExpression,RemoveDuplicates[StringSplit[StringReplace[perm[[i]],{"x"->"1","y"->"2","z"->"3"}],""]]];
+      Print[uniqarr," => ",uniqperm];
+
+      ex2 = ex /. "bracket"[br_] :> NewBracket[br,uniqarr,uniqperm];
+      (*ex2 = ex /. "bracket"[br1_] :> NewBracket[br1,br2,uniqarr,uniqperm];*)
+      ex2 = ex2 /. IndexRules[uniqarr,uniqperm];
+      ex2 = ex2 /.
+        "tensor"["name"["del"], "indices"["number"[nu_]]] :>
+          "tensor"["name"[{"dx","dy","dz"}[[ToExpression[nu]]]],"indices"[]];
+
+      permno=StringJoin[Riffle[StringCases[StringReplace[perm[[i]],{"x"->"1","y"->"2","z"->"3"}],RegularExpression["[1-3]"]],","]];
+      str=dn<>"["<>nm<>"_,"<>permno<>"] = "<>ToString[InputForm[process[ex2]]];
+      Print["str=",str];
+
+      ToExpression[str];
+    ]];
+
 process["tname"[tens_]] := process[tens]
-process["deqn"["doper"["dname"[dn_],"indices"[ind__]],"expr"[ex_]]] := "";
+process["deqn"["doper"["dname"[dn_],ind:"indices"[__]],"barename"[nm_],"expr"[ex_]]] := 
+  Module[{},
+    operator[dn,ind,nm,ex]]
+
 process["deqn"[("dtensor"["dname"[dname_],
                           "tensor"["name"[tName_],
                                    "indices"[tinds___]]]),

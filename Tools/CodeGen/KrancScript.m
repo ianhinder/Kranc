@@ -345,7 +345,7 @@ process[d:"deqn"[___]] :=
 replaceInd[indices_,vals_] := Module[{i},
   Table[Rule[indices[[i]],vals[[i]]],{i,1,Length[vals]}]]
 
-indexes[args_] := Module[{arr,n,perm,i},
+CreatePermutations[args_] := Module[{arr,n,perm,i},
   arr=DeleteDuplicates[args];
   n=Length[arr];
   perm=DeleteCases[Permutations[{"x","y","z"},n],_?(Length[#] != n&)];
@@ -387,7 +387,7 @@ NewBracket[dn_,expr_,arr_,perm_,pos_] :=
       "name"[ind_?IsIndex] :> (AppendTo[indxLet,ind];"number"["0"]))
         /. "tensor"["number"["0"],"indices"[]] :> "number"["0"];
     indxLet=RemoveDuplicates[indxLet];
-    If[Length[indxLet]>1,ThrowError["Multiple indexes used together ("<>StringJoin[Riffle[indxLet,","]]<>") in definition ("<>dn<>")"]];
+    If[Length[indxLet]>1,ThrowError["Multiple indices used together ("<>StringJoin[Riffle[indxLet,","]]<>") in definition ("<>dn<>")"]];
     If[Length[indxLet]==0,
       indx = pos,
       indxLet=indxLet[[1]];
@@ -419,7 +419,7 @@ GenOp[operator[dn_,ind_,nm_,ex_]] :=
   Module[{arr,perm,permno,str,uniqarr,uniqperm,ex2},
     arr=GenArr[ind];
     uniqarr=RemoveDuplicates[arr];
-    perm=indexes[arr];
+    perm=CreatePermutations[arr];
     For[i=1,i<=Length[perm],i++,
       uniqperm = Map[ToExpression,RemoveDuplicates[StringSplit[StringReplace[perm[[i]],{"x"->"1","y"->"2","z"->"3"}],""]]];
 

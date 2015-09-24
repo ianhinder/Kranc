@@ -345,8 +345,8 @@ process[d:"deqn"[___]] :=
 replaceInd[indices_,vals_] := Module[{i},
   Table[Rule[indices[[i]],vals[[i]]],{i,1,Length[vals]}]]
 
-indexes[args_String] := Module[{arr,n,perm,i},
-  arr=DeleteDuplicates[StringCases[args,RegularExpression["[a-w]"]]];
+indexes[args_] := Module[{arr,n,perm,i},
+  arr=DeleteDuplicates[args];
   n=Length[arr];
   perm=DeleteCases[Permutations[{"x","y","z"},n],_?(Length[#] != n&)];
   Table[StringReplace[args,
@@ -410,7 +410,7 @@ ApplyBrackets[dn_,uniqarr_,uniqperm_,br1_,br2_,br3_] := CombineBrackets[
 IndexRules[ar_,pm_] := Module[{i},
   Table[Rule["lower_index"["index_symbol"[ar[[i]]]],"number"[ ToString[pm[[i]]] ]],{i,1,Length[ar]}]]
 
-GenArr["indices"[ind__]] := StringJoin[Map[GenArr,{ind}]];
+GenArr["indices"[ind__]] := Map[GenArr,{ind}];
 GenArr["lower_index"[ind_]] := GenArr[ind];
 GenArr["upper_index"[ind_]] := GenArr[ind];
 GenArr["index_symbol"[letter_]] := letter;
@@ -418,7 +418,7 @@ GenArr[ind_] := ThrowError["GenArr "<>ToString[ind]];
 GenOp[operator[dn_,ind_,nm_,ex_]] :=
   Module[{arr,perm,permno,str,uniqarr,uniqperm,ex2},
     arr=GenArr[ind];
-    uniqarr=RemoveDuplicates[StringSplit[arr,""]];
+    uniqarr=RemoveDuplicates[arr];
     perm=indexes[arr];
     For[i=1,i<=Length[perm],i++,
       uniqperm = Map[ToExpression,RemoveDuplicates[StringSplit[StringReplace[perm[[i]],{"x"->"1","y"->"2","z"->"3"}],""]]];

@@ -152,15 +152,6 @@ process["tensor"["name"[nm_],"indices"[ind___],"bracket"[br1_,br2_,br3_]]] :=
   n3 = process[br3];
   I3D[process["tensor"["name"[nm],"indices"[ind]]],n1,n2,n3]]
 
-(*
-process["tensor"["name"[nm_],"indices"[ind___],"bracket"[br1_]]] :=
-  Module[{n1,n2,n3,br},
-  n1 = process[br1];
-  br = SetIndex[br1]; 
-  Print["SetIndex=",IndexWasSet," br=",br];
-  I3D[process["tensor"["name"[nm],"indices"[ind]]],n1,n2,n3]]
-  *)
-
 builtIns = {"true" -> True,
             "false" -> False,
             "PI" -> Pi};
@@ -365,28 +356,6 @@ indexes[args_String] := Module[{arr,n,perm,i},
 
 IsIndex[arg_] := Length[StringCases[arg,RegularExpression["^[a-z]$"]]]===1;
 
-CombineIndex[arg_] := arg
-CombineIndex[Null,arg_] := CombineIndex[arg]
-CombineIndex[arg_,Null] := CombineIndex[arg]
-CombineIndex[Null,Null,arg_] := CombineIndex[arg]
-CombineIndex[Null,arg_,Null] := CombineIndex[arg]
-CombineIndex[arg_,Null,Null] := CombineIndex[arg]
-
-GetIndex[arg_] := ThrowError["GetIndexError: "<>ToString[arg]];
-GetIndex["name"[ind_?IsIndex]] := ind;
-GetIndex[_String[_String]] := Null;
-GetIndex[vc_[]] := Null;
-GetIndex[vc_[arg1_,arg2_]] := CombineIndex[GetIndex[arg1],GetIndex[arg2]];
-GetIndex[vc_[arg1_,arg2_,arg3_]] := CombineIndex[GetIndex[arg1],GetIndex[arg2],GetIndex[arg3]];
-
-SetIndex[arg_] := ThrowError["SetIndexError: "<>ToString[arg]];
-SetIndex["name"[ind_?IsIndex]] := Module[{},IndexWasSet := ind;"number"["0"]];
-SetIndex[vc_[arg_]] := vc[SetIndex[arg]];
-SetIndex[vc_] := vc;
-SetIndex[vc_[]] := vc[];
-SetIndex[vc_[arg1_,arg2_]] := vc[SetIndex[arg1],SetIndex[arg2]];
-SetIndex[vc_[arg1_,arg2_,arg3_]] := vc[SetIndex[arg1],SetIndex[arg2],SetIndex[arg3]];
-
 LookupTwo[val_,{},_] := Null;
 LookupTwo[val_,_,{}] := Null;
 LookupTwo[val_,{h1_,t1___},{h2_,t2___}] := If[val === h1,h2,LookupTwo[val,{t1},{t2}]];
@@ -419,13 +388,10 @@ NewBracket[dn_,expr_,arr_,perm_,pos_] :=
         /. "tensor"["number"["0"],"indices"[]] :> "number"["0"];
     indxLet=RemoveDuplicates[indxLet];
     If[Length[indxLet]>1,ThrowError["Multiple indexes used together ("<>StringJoin[Riffle[indxLet,","]]<>") in definition ("<>dn<>")"]];
-    Print["indxLet=",indxLet];
     If[Length[indxLet]==0,
       indx = pos,
-      Print["Got here: ",indxLet," ",Length[indxLet]];
       indxLet=indxLet[[1]];
       indx = LookupTwo[indxLet,arr,perm]];
-    Print["indx=",indx];
     If[indx == Null,ThrowError["Undefined Index ("<>indx<>") used in definition ("<>dn<>")"]];
     res = {dn,indx,expt};
     Return[res];
@@ -454,10 +420,8 @@ GenOp[operator[dn_,ind_,nm_,ex_]] :=
     arr=GenArr[ind];
     uniqarr=RemoveDuplicates[StringSplit[arr,""]];
     perm=indexes[arr];
-    Print["arr=",arr," perm=",perm," u=",uniqarr];
     For[i=1,i<=Length[perm],i++,
       uniqperm = Map[ToExpression,RemoveDuplicates[StringSplit[StringReplace[perm[[i]],{"x"->"1","y"->"2","z"->"3"}],""]]];
-      Print[uniqarr," => ",uniqperm];
 
       ex2 = ex /. "bracket"[br__] :> ApplyBrackets[dn,uniqarr,uniqperm,br];
       ex2 = ex2 /. IndexRules[uniqarr,uniqperm];
@@ -466,13 +430,8 @@ GenOp[operator[dn_,ind_,nm_,ex_]] :=
           "tensor"["name"[{"dx","dy","dz"}[[ToExpression[nu]]]],"indices"[]];
 
       permno=StringJoin[Riffle[StringCases[StringReplace[perm[[i]],{"x"->"1","y"->"2","z"->"3"}],RegularExpression["[1-3]"]],","]];
-      Print["dn=",dn];
-      Print["nm=",nm];
-      Print["permno=",permno];
       ex2 = ToString[InputForm[process[ex2]]];
-      Print["ex2=",ex2];
       str=dn<>"["<>nm<>"_,"<>permno<>"] = "<>ex2;
-      Print["str=",str];
 
       ToExpression[str];
     ]];

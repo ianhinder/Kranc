@@ -345,6 +345,11 @@ process[d:"deqn"[___]] :=
 replaceInd[indices_,vals_] := Module[{i},
   Table[Rule[indices[[i]],vals[[i]]],{i,1,Length[vals]}]]
 
+(* If the programmer defines a custom operator and
+   uses letters like i,j,k for the indices, then we
+   need to generate a permutation of all mappings
+   of these letters to unique dimensions, e.g.
+   i,j = x,y, or i,j = x,z. *)
 CreatePermutations[args_] := Module[{arr,n,perm,i},
   arr=DeleteDuplicates[args];
   n=Length[arr];
@@ -354,12 +359,18 @@ CreatePermutations[args_] := Module[{arr,n,perm,i},
     ,{i,1,Length[perm]}]
   ];
 
+(* Determine whether the arg is a possible index symbol. *)
 IsIndex[arg_] := Length[StringCases[arg,RegularExpression["^[a-z]$"]]]===1;
 
+(* Use two lists as a kind of map. If val is in position i of the
+   first list, return the value at position i in the second list. *)
 LookupTwo[val_,{},_] := Null;
 LookupTwo[val_,_,{}] := Null;
 LookupTwo[val_,{h1_,t1___},{h2_,t2___}] := If[val === h1,h2,LookupTwo[val,{t1},{t2}]];
 
+(* Consumes output of NewBracket calls, combining them to form a 3-index
+   input to the "bracket"[] symbol in the final, dimension specific version
+   of a custom defined operator. *)
 CombineBrackets[{dn_,n_,arg_}] := Module[{i},
   Apply["bracket",Table[
     If[n == i,arg,"number"["0"]],
@@ -380,6 +391,10 @@ CombineBrackets[{dn1_,n1_,arg1_},{dn2_,n2_,arg2_},{dn3_,n3_,arg3_}] := Module[{i
         If[n3 == i,arg3,"number"["0"]]]],
     {i,1,3}]]];
 
+(* Process a single argument to a custom defined bracket, determining
+   which position the argument is at (indx), and what the contents at
+   that position are (expt). The value dn is passed through for use in
+   error messages. *)
 NewBracket[dn_,expr_,arr_,perm_,pos_] :=
   Module[{indxLet,indx,br,res,i,expt},
     indxLet={};
@@ -397,6 +412,10 @@ NewBracket[dn_,expr_,arr_,perm_,pos_] :=
     Return[res];
   ];
 
+(* Used to combine all 3 possible versions of arguments to "bracket"[].
+   The result of this will be something of the form "bracket"[v1,v2,v3],
+   where v1, v2, and v3 are expressions where the indices have been
+   substituted with 0. *)
 ApplyBrackets[dn_,uniqarr_,uniqperm_,br_] := CombineBrackets[
   NewBracket[dn,br,uniqarr,uniqperm,1]];
 ApplyBrackets[dn_,uniqarr_,uniqperm_,br1_,br2_] := CombineBrackets[
@@ -407,14 +426,20 @@ ApplyBrackets[dn_,uniqarr_,uniqperm_,br1_,br2_,br3_] := CombineBrackets[
   NewBracket[dn,br2,uniqarr,uniqperm,2],
   NewBracket[dn,br3,uniqarr,uniqperm,3]];
 
-IndexRules[ar_,pm_] := Module[{i},
+(* Create a set of rules for converting indexes to numbers, e.g. {i -> 1,j -> 2} *)
+IndexSubstitutionRules[ar_,pm_] := Module[{i},
   Table[Rule["lower_index"["index_symbol"[ar[[i]]]],"number"[ ToString[pm[[i]]] ]],{i,1,Length[ar]}]]
 
+(* Generate an array of indices from an index expression. *)
 GenArr["indices"[ind__]] := Map[GenArr,{ind}];
 GenArr["lower_index"[ind_]] := GenArr[ind];
 GenArr["upper_index"[ind_]] := GenArr[ind];
 GenArr["index_symbol"[letter_]] := letter;
 GenArr[ind_] := ThrowError["GenArr "<>ToString[ind]];
+
+(* Generate all the index specific versions of user defined operators.
+   These definitions go into the global Mathematica variable space when
+   ToExpression[] is evaluated. *)
 GenOp[operator[dn_,ind_,nm_,ex_]] :=
   Module[{arr,perm,permno,str,uniqarr,uniqperm,ex2},
     arr=GenArr[ind];
@@ -424,7 +449,8 @@ GenOp[operator[dn_,ind_,nm_,ex_]] :=
       uniqperm = Map[ToExpression,RemoveDuplicates[StringSplit[StringReplace[perm[[i]],{"x"->"1","y"->"2","z"->"3"}],""]]];
 
       ex2 = ex /. "bracket"[br__] :> ApplyBrackets[dn,uniqarr,uniqperm,br];
-      ex2 = ex2 /. IndexRules[uniqarr,uniqperm];
+      ex2 = ex2 /. IndexSubstitutionRules[uniqarr,uniqperm];
+      (* TODO: I feel like this transformation should happen elsewhere in teh codebase. Substitute del[1]->x, etc. *)
       ex2 = ex2 /.
         "tensor"["name"["del"], "indices"["number"[nu_]]] :>
           "tensor"["name"[{"dx","dy","dz"}[[ToExpression[nu]]]],"indices"[]];

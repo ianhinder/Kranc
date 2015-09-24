@@ -391,12 +391,18 @@ LookupTwo[val_,{},_] := Null;
 LookupTwo[val_,_,{}] := Null;
 LookupTwo[val_,{h1_,t1___},{h2_,t2___}] := If[val === h1,h2,LookupTwo[val,{t1},{t2}]];
 
-NewBracket[expr_,arr_,perm_] :=
+NewBracket[dn_,expr_,arr_,perm_] :=
   Module[{indxLet,indx,br,res,i,expt},
+    indxLet={};
     expt = (expr /.
-      "name"[ind_?IsIndex] :> (indxLet=ind;"number"["0"]))
+      "name"[ind_?IsIndex] :> (AppendTo[indxLet,ind];"number"["0"]))
         /. "tensor"["number"["0"],"indices"[]] :> "number"["0"];
+    indxLet=RemoveDuplicates[indxLet];
+    Print["len=",Length[indxLet]];
+    If[Length[indxLet]>1,ThrowError["Multiple indexes used together ("<>Riffle[indxLet,","]<>") in definition ("<>dn<>")"]];
+    indxLet=indxLet[[1]];
     indx = LookupTwo[indxLet,arr,perm];
+    If[indx == Null,ThrowError["Undefined Index ("<>indxLet<>") used in definition ("<>dn<>")"]];
     res=Apply["bracket",Table[
       If[i==indx,expt,"number"["0"]],{i,1,3}]];
     Return[res]
@@ -420,8 +426,7 @@ GenOp[operator[dn_,ind_,nm_,ex_]] :=
       uniqperm = Map[ToExpression,RemoveDuplicates[StringSplit[StringReplace[perm[[i]],{"x"->"1","y"->"2","z"->"3"}],""]]];
       Print[uniqarr," => ",uniqperm];
 
-      ex2 = ex /. "bracket"[br_] :> NewBracket[br,uniqarr,uniqperm];
-      (*ex2 = ex /. "bracket"[br1_] :> NewBracket[br1,br2,uniqarr,uniqperm];*)
+      ex2 = ex /. "bracket"[br_] :> NewBracket[dn,br,uniqarr,uniqperm];
       ex2 = ex2 /. IndexRules[uniqarr,uniqperm];
       ex2 = ex2 /.
         "tensor"["name"["del"], "indices"["number"[nu_]]] :>

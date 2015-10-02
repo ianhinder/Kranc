@@ -146,11 +146,12 @@ process["eqn"[lhs_,rhs_]] := Module[{name,eqs}, process[lhs] -> process[rhs]];
 process["tensor"["name"[k_],"indices"[]]] := ToExpression[If[Names[k] === {}, "Global`"<>k, k]];
 
 process["tensor"["name"[nm_],"indices"[ind___],"bracket"[br1_,br2_,br3_]]] :=
-  Module[{n1,n2,n3},
+  Module[{n1,n2,n3,var},
   n1 = process[br1];
   n2 = process[br2];
   n3 = process[br3];
-  I3D[process["tensor"["name"[nm],"indices"[ind]]],n1,n2,n3]]
+  var = process["tensor"["name"[nm],"indices"[ind]]];
+  I3D[var,n1,n2,n3]]
 
 builtIns = {"true" -> True,
             "false" -> False,
@@ -457,7 +458,8 @@ GenOp[operator[dn_,ind_,nm_,ex_]] :=
 
       permno=StringJoin[Riffle[StringCases[StringReplace[perm[[i]],{"x"->"1","y"->"2","z"->"3"}],RegularExpression["[1-3]"]],","]];
       ex2 = ToString[InputForm[process[ex2]]];
-      str=dn<>"["<>nm<>"_,"<>permno<>"] = "<>ex2;
+      (* TODO: This is kind of hacky *)
+      str=dn<>"["<>nm<>"_,"<>permno<>"] := "<>ex2<>" /. I3D[v_,args__] :> I3D[Global`RawMath[ToString[v]],args]";
 
       ToExpression[str];
     ]];

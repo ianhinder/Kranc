@@ -372,7 +372,8 @@ chemoraQuoteArguments[args_List]:=
 chemoraExpandRulesSeqNum = 1;
 
 chemoraExpandRules =
-   { Rule[lhs_,IfThen[Parameter[cond_]|cond_,ifpart_,elsepart_]] :>
+   { Global`RawMath[op_] -> op,
+     Rule[lhs_,IfThen[Parameter[cond_]|cond_,ifpart_,elsepart_]] :>
         Sequence@@Module[{lhs1,lhs2},
           lhs1 = Symbol[ ToString[lhs] <> "xxxI" ];
           lhs2 = Symbol[ ToString[lhs] <> "xxxE" ];
@@ -388,7 +389,8 @@ chemoraExpandRules =
           lhs2 = Symbol[ ToString[lhs] <> "xDiffOpx" <> ToString[seq] ];
                     { lhs2 -> ChemoraNDO["_"<>h2], lhs -> h1[op1,lhs2,op3] }],
      Rule[lhs_, h1_[op1___,
-                    h2_?(Not[MemberQ[{Parameter},#]]&)[op2__],op3___]] :>
+                    h2_?(Not[MemberQ[{Parameter,Global`RawMath},#]]&)[op2__],
+                    op3___]] :>
         Sequence@@Module[{lhs2, seq = chemoraExpandRulesSeqNum++},
           lhs2 = Symbol[ ToString[lhs] <> "x" <> 
                          ToString[h2] <> "x" <> ToString[seq] ];
@@ -414,7 +416,7 @@ chemoraCExpressionEQstr[lhs_->ChemoraNDO[rhs_]]:=
           <> StringJoin[chemoraQuote[#] <> ", " & /@ offsetsRaw ]
           <> ");\n"];
 
-chemoraCExpressionEQstr[lhs_->ChemoraNOffset[gf_,di_,dj_,dk_]]:=
+chemoraCExpressionEQstr[lhs_->(I3D|ChemoraNOffset)[gf_,di_,dj_,dk_]]:=
   Module[{},
      " assign_from_offset_load("
           <> chemoraQuote[lhs] <> ", "

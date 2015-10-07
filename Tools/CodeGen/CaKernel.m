@@ -187,6 +187,14 @@ DefFn[CaKernelCode[calc_List,opts___] :=
                        InitFDVariables -> CaKernelInitialiseFDVariables[],
                        MacroPointer -> False}];
 
+    (* Process stencils *)
+    calc2 = calc2 /.
+      I3D[gf_,n1_,n2_,n3_] :>
+        "I3D("<>ToString[gf]<>","<>
+                ToString[n1]<>","<>
+                ToString[n2]<>","<>
+                ToString[n3]<>")";
+
     (* Kranc Tiling is not supported for CaKernel thorns *)
     calc2 = mapReplaceAdd[calc2, Tile, False];
 

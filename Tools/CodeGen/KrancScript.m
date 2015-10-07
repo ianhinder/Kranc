@@ -451,7 +451,7 @@ GenOp[operator[dn_,ind_,nm_,ex_]] :=
 
       ex2 = ex /. "bracket"[br__] :> ApplyBrackets[dn,uniqarr,uniqperm,br];
       ex2 = ex2 /. IndexSubstitutionRules[uniqarr,uniqperm];
-      (* TODO: I feel like this transformation should happen elsewhere in teh codebase. Substitute del[1]->x, etc. *)
+      (* TODO: I feel like this transformation should happen elsewhere in the codebase. Substitute del[1]->x, etc. *)
       ex2 = ex2 /.
         "tensor"["name"["del"], "indices"["number"[nu_]]] :>
           "tensor"["name"[{"dx","dy","dz"}[[ToExpression[nu]]]],"indices"[]];
@@ -459,7 +459,7 @@ GenOp[operator[dn_,ind_,nm_,ex_]] :=
       permno=StringJoin[Riffle[StringCases[StringReplace[perm[[i]],{"x"->"1","y"->"2","z"->"3"}],RegularExpression["[1-3]"]],","]];
       ex2 = ToString[InputForm[process[ex2]]];
       (* TODO: This is kind of hacky *)
-      str=dn<>"["<>nm<>"_,"<>permno<>"] := "<>ex2<>" /. I3D[v_,args__] :> I3D[Global`RawMath[ToString[v]],args]";
+      str=dn<>"["<>nm<>"_,"<>permno<>"] := "<>ex2;
 
       ToExpression[str];
     ]];

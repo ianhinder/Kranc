@@ -372,8 +372,7 @@ chemoraQuoteArguments[args_List]:=
 chemoraExpandRulesSeqNum = 1;
 
 chemoraExpandRules =
-   { Global`RawMath[op_] -> op,
-     Rule[lhs_,IfThen[Parameter[cond_]|cond_,ifpart_,elsepart_]] :>
+   { Rule[lhs_,IfThen[Parameter[cond_]|cond_,ifpart_,elsepart_]] :>
         Sequence@@Module[{lhs1,lhs2},
           lhs1 = Symbol[ ToString[lhs] <> "xxxI" ];
           lhs2 = Symbol[ ToString[lhs] <> "xxxE" ];
@@ -383,13 +382,14 @@ chemoraExpandRules =
      Rule[lhs_, chemoraIfElse[Parameter[cond_],rest___]] :>
         lhs -> chemoraIfElse[cond,rest],
      Rule[lhs_, h1_[op1___,
-                    h2_String?(StringMatchQ[#,RegularExpression["^KRANC.*"]]&),
+                    h2_String?(StringMatchQ[#,RegularExpression["I3D\\(.*"]]&),
                     op3___]] :>
         Sequence@@Module[{lhs2, seq = chemoraExpandRulesSeqNum++},
-          lhs2 = Symbol[ ToString[lhs] <> "xDiffOpx" <> ToString[seq] ];
-                    { lhs2 -> ChemoraNDO["_"<>h2], lhs -> h1[op1,lhs2,op3] }],
+          lhs2 = Symbol[ ToString[lhs] <> "xOffsetLd" <> ToString[seq] ];
+                    { lhs2 -> ChemoraI3DParse["_"<>h2],
+                      lhs -> h1[op1,lhs2,op3] }],
      Rule[lhs_, h1_[op1___,
-                    h2_?(Not[MemberQ[{Parameter,Global`RawMath},#]]&)[op2__],
+                    h2_?(Not[MemberQ[{Parameter},#]]&)[op2__],
                     op3___]] :>
         Sequence@@Module[{lhs2, seq = chemoraExpandRulesSeqNum++},
           lhs2 = Symbol[ ToString[lhs] <> "x" <> 
@@ -402,19 +402,13 @@ chemoraExpandRules =
                     { lhs2 -> h1[op1,op2], lhs -> h1[lhs2,op3] } ]
      }
 
-chemoraCExpressionEQstr[lhs_->ChemoraNDO[rhs_]]:=
-   Module[{offsetsRaw},
-     offsetsRaw =
-        StringCases
+chemoraCExpressionEQstr[lhs_->ChemoraI3DParse[rhs_]]:= Module[
+   { argsRaw = StringCases
         [ rhs,
           RegularExpression[
-            "^_KRANC_GFOFFSET3D\\(u,([^,]+),([^,]+),([^,]+)\\)"]
-             :> ToExpression /@ {"$1","$2","$3"} ] // Flatten;
-     " assign_from_offset_load("
-          <> chemoraQuote[lhs] <> ", "
-          <> "grid_function_name_placeholder,"
-          <> StringJoin[chemoraQuote[#] <> ", " & /@ offsetsRaw ]
-          <> ");\n"];
+            "_I3D\\(([^,]+),([^,]+),([^,]+),([^,]+)\\)"]
+             :> ToExpression /@ {"$1","$2","$3","$3"} ] // Flatten },
+    chemoraCExpressionEQstr[ lhs -> (ChemoraNOffset@@argsRaw) ] ];
 
 chemoraCExpressionEQstr[lhs_->(I3D|ChemoraNOffset)[gf_,di_,dj_,dk_]]:=
   Module[{},

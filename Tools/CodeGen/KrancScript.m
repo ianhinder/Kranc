@@ -43,11 +43,18 @@ DefFn[
     processed = process[thorn]
 ]];
 
-process[h_[args___]] :=
+processAbbrev[h_[args___]] := h@@Map[ToString[Head[#]]&,{args}];
+processAbbrev[h_] := ToString[h];
+process[h__] :=
+  Module[
+    {},
+    Print["No handler for ",Map[processAbbrev,{h}]];
+    ThrowError["Failed to parse script"]];
+process[h_] :=
   Module[
     {},
     Print[args];
-    Print["No handler for ", h@@Map[ToString[Head[#]]&,{args}],h,args];
+    Print["No handler for ", processAbbrev[h]];
     (* Print["Full expression is: ", HoldForm[h[args]]]; *)
     ThrowError["Failed to parse script"]];
 
@@ -224,10 +231,26 @@ process["func"["name"[name_],exprs__]] :=
        (* If it's not a function call, it's an explicit multiply *)
        process["mul"["mexpr"["mul"["pow"["value"["tensor"["name"[name],"indices"[]]]]]],"mulop"["*"],"mexpr"[exprs]]]]];
 
+Global`RawList[a___,Global`RawList[b__],c___] := Global`RawList[a,b,c];
+
+process["nexpr"["mexpr"[mul__]]] := process["mexpr"[mul]];
+process["nexpr"["neg"[_], "mexpr"[mul__]]] := -process["mexpr"[mul]];
+process["expr"["nexpr"[nx__]]] := process["nexpr"[nx]];
 process["mexpr"[mul_]] := process[mul];
 process["mexpr"[]] := 0;
+process["ifexpr"[cond_, opt1_, opt2_]] := Global`RawList[
+  process[cond]," ? ",process[opt1]," : ",process[opt2]];
+
+process["coexpr"["cexpr"[cexpr__]]] := Global`RawList["(",process["cexpr"[cexpr]],")"];
+process["cexpr"[cargs__]] := process[cargs];
+process[v1_, "logop"[logop_], v2__] := 
+  Global`RawList[process[v1]," ",logop," ",process[v2]];
+process["coexpr"[v1_, "cmpop"[cmpop_], v2_]] := 
+  Global`RawList[process[v1]," ",cmpop," ",process[v2]];
 
 (* Addition, subtraction, multiplication and division are all left-associative *)
+process["mexpr"[a_,"addop"["+"],b_]] := process[a] + process[b];
+process["mexpr"[a_,"addop"["-"],b_]] := process[a] - process[b];
 process["mexpr"[cs___, a_, "addop"["+"], b_]] := process["mexpr"[cs,a]] + process[b];
 process["mexpr"[cs___, a_, "addop"["-"], b_]] := process["mexpr"[cs,a]] - process[b];
 
@@ -239,6 +262,7 @@ process["mul"[]] := 1;
 process["mul"[cs___, a_, "mulop"["*"], b_]] := process["mul"[cs,a]] * process[b];
 process["mul"[cs___, a_, "mulimp"[___], b_]] := process["mul"[cs,a]] * process[b];
 process["mul"[cs___, a_, "mulop"["/"], b_]] := process["mul"[cs,a]] / process[b];
+process["mexpr"["expr"[ex1_],"expr"[ex2_]]] := ThrowError[ToString[InputForm[ex1]]<> " :: "<>ToString[InputForm[ex2]]];
 
 process["pow"[a_,b_]] := process[a]^process[b];
 process["pow"[a_]] := process[a];

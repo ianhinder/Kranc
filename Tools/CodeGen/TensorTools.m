@@ -1331,7 +1331,7 @@ CheckTensors[TTTensorProduct[x_,y_]] :=
     ys = freesIn[y];
 
     If[!(Intersection[xs,ys] === {}),
-       ThrowError["Tensor expressions have conflicting indices: ", x, y, xs, ys]];
+       ThrowError["Tensor expressions have conflicting indices: x=", x, "y=", y, "xs=", xs, "ys=", ys, "ix=",Intersection[xs,ys]]];
     True];
 
 CheckTensors[x_ + y_] :=

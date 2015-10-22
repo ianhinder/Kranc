@@ -3,8 +3,8 @@ int = -?[0-9]+
 end = ([ \t]+|\#.*)*\r*\n
 quote = "[^"]*"
 type = real|integer|keyword|boolean
-keywords = to|default
-barename = (?!D|{keywords}\b)[A-Za-z][A-Za-z0-9]*
+keywords = to|default|if|then|else|end|begin|and|or
+barename = \b(?!D{keywords}\b)[A-Za-z][A-Za-z0-9]*
 name = \b(?![DO]|{keywords}\b)[A-Za-z][A-Za-z0-9]*
 bracket = \[ {expr} (, {expr} (, {expr} |)|)\]
 
@@ -25,14 +25,21 @@ dtensor = {dname}{indices}? {tensor}
 number = -?[0-9]+(\.[0-9]*|)([eEdD][+-]?[0-9]+|)
 func = {name} \( ({expr}( , {expr})*|) \)
 neg = -
-value = {rawc}|{rawmath}|{func}|{dtensor}|{tensor}|{number}|\( {expr} \)
+value = {rawc}|{rawmath}|{func}|{dtensor}|{tensor}|{number}|{ifexpr}|\( {expr} \)
 pow = {value}( \*\* {value}|)
 mulop = [*/%]
 mulimp = [ \t]*(?!-)
 mul = {pow}( {mulop} {pow}|{mulimp}{pow})*
 addop = [+-]
 mexpr = {mul}( {addop} {mul})*
-expr = {neg}?{mexpr}( \? {mexpr} : {mexpr})?
+nexpr = {neg}?{mexpr}
+cmpop = (<=?|>=?|==|!=)
+coexpr = {nexpr} {cmpop} {nexpr}|\( {cexpr} \)
+logop = and|or
+cexpr = {coexpr}( {logop} {coexpr})*
+#ifexpr = {cexpr} \? {nexpr} : {nexpr} 
+ifexpr = if {cexpr} then {nexpr} else {nexpr} 
+expr = {nexpr}
 eqn = ({dtensor}|{tensor}) \= {expr}{-end}
 doper = {dname}{indices}
 deqn = {doper} {barename} \= {expr}{-end}

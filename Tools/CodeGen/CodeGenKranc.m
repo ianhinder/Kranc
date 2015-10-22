@@ -224,6 +224,7 @@ DefFn[
     mathematicaToCRules = {
       Power[E, power_] -> exp[power],
       Global`RawMath[x_] -> x,
+      Global`RawList[xargs__] :> StringJoin[Map[ToString,{xargs}]],
       Log[x_] -> log[x],
       (* Power[x_, n_Integer] -> pown[x,n], *)
       Power[x_, power_] -> pow[x,power],
@@ -293,7 +294,7 @@ DefFn[AssignVariableFromExpression[dest_, expr_, declare_, vectorise_, noSimplif
   Module[{type, exprCode, code},
     type =
     If[OptionValue[Type] === Automatic,
-      If[StringMatchQ[ToString[dest], "dir*"], "ptrdiff_t", DataType[]],
+      If[StringMatchQ[ToString[dest], "dir*"], (Print["WARNING: "<>ToString[dest]<>" is being interpreted as type ptrdiff_t because it's name starts with dir"];ptrdiff_t), DataType[]],
       OptionValue[Type]];
     exprCode = GenerateCodeFromExpression[expr, vectorise, noSimplify];
     CountOperations[expr];

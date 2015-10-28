@@ -407,7 +407,7 @@ chemoraCExpressionEQstr[lhs_->ChemoraI3DParse[rhs_]]:= Module[
         [ rhs,
           RegularExpression[
             "_I3D\\(([^,]+),([^,]+),([^,]+),([^,]+)\\)"]
-             :> ToExpression /@ {"$1","$2","$3","$3"} ] // Flatten },
+             :> ToExpression /@ {"$1","$2","$3","$4"} ] // Flatten },
     chemoraCExpressionEQstr[ lhs -> (ChemoraNOffset@@argsRaw) ] ];
 
 chemoraCExpressionEQstr[lhs_->(I3D|ChemoraNOffset)[gf_,di_,dj_,dk_]]:=

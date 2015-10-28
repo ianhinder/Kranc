@@ -25,21 +25,20 @@ dtensor = {dname}{indices}? {tensor}
 number = -?[0-9]+(\.[0-9]*|)([eEdD][+-]?[0-9]+|)
 func = {name} \( ({expr}( , {expr})*|) \)
 neg = -
-value = {rawc}|{rawmath}|{func}|{dtensor}|{tensor}|{number}|{ifexpr}|\( {expr} \)
+value = {neg}?({rawc}|{rawmath}|{func}|{dtensor}|{tensor}|{number}|{ifexpr}|\( {expr} \))
 pow = {value}( \*\* {value}|)
 mulop = [*/%]
 mulimp = [ \t]*(?!-)
 mul = {pow}( {mulop} {pow}|{mulimp}{pow})*
 addop = [+-]
 mexpr = {mul}( {addop} {mul})*
-nexpr = {neg}?{mexpr}
+expr = {mexpr}
 cmpop = (<=?|>=?|==|!=)
-coexpr = {nexpr} {cmpop} {nexpr}|\( {cexpr} \)
+coexpr = {mexpr} {cmpop} {mexpr}|\( {cexpr} \)
 logop = and|or
 cexpr = {coexpr}( {logop} {coexpr})*
-#ifexpr = {cexpr} \? {nexpr} : {nexpr} 
-ifexpr = if {cexpr} then {nexpr} else {nexpr} 
-expr = {nexpr}
+#ifexpr = {cexpr} \? {mexpr} : {mexpr} 
+ifexpr = if {cexpr} then {mexpr} else {mexpr} 
 eqn = ({dtensor}|{tensor}) \= {expr}{-end}
 doper = {dname}{indices}
 deqn = {doper} {barename} \= {expr}{-end}

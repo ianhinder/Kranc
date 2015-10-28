@@ -53,7 +53,7 @@ process[h__] :=
 process[h_] :=
   Module[
     {},
-    Print[args];
+    Print[h];
     Print["No handler for ", processAbbrev[h]];
     (* Print["Full expression is: ", HoldForm[h[args]]]; *)
     ThrowError["Failed to parse script"]];
@@ -233,9 +233,7 @@ process["func"["name"[name_],exprs__]] :=
 
 Global`RawList[a___,Global`RawList[b__],c___] := Global`RawList[a,b,c];
 
-process["nexpr"["mexpr"[mul__]]] := process["mexpr"[mul]];
-process["nexpr"["neg"[_], "mexpr"[mul__]]] := -process["mexpr"[mul]];
-process["expr"["nexpr"[nx__]]] := process["nexpr"[nx]];
+process["value"["neg"[_],arg_]] := -process[arg];
 process["mexpr"[mul_]] := process[mul];
 process["mexpr"[]] := 0;
 process["ifexpr"[cond_, opt1_, opt2_]] := Global`RawList[

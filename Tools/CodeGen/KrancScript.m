@@ -236,15 +236,24 @@ Global`RawList[a___,Global`RawList[b__],c___] := Global`RawList[a,b,c];
 process["value"["neg"[_],arg_]] := -process[arg];
 process["mexpr"[mul_]] := process[mul];
 process["mexpr"[]] := 0;
-process["ifexpr"[cond_, opt1_, opt2_]] := Global`RawList[
-  process[cond]," ? ",process[opt1]," : ",process[opt2]];
+process["ifexpr"[cond_, opt1_, opt2_]] :=
+   IfThen[ process[cond], process[opt1], process[opt2] ];
 
 process["coexpr"["cexpr"[cexpr__]]] := Global`RawList["(",process["cexpr"[cexpr]],")"];
 process["cexpr"[cargs__]] := process[cargs];
 process[v1_, "logop"[logop_], v2__] := 
   Global`RawList[process[v1]," ",logop," ",process[v2]];
-process["coexpr"[v1_, "cmpop"[cmpop_], v2_]] := 
-  Global`RawList[process[v1]," ",cmpop," ",process[v2]];
+
+process["coexpr"[v1_, "cmpop"[cmpop_], v2_]] :=
+   Module[
+     { opMap = { "<"  -> Less,         "<=" -> LessEqual,
+                 "==" -> Equal,        "!=" -> Unequal,
+                 ">=" -> GreaterEqual, ">"  -> Greater },
+       mappedOp },
+     mappedOp = cmpop /. opMap;
+     If[ StringQ[mappedOp],
+         ThrowError["Unrecognized comparison operator: " <> cmpop] ];
+     mappedOp[ process[v1], process[v2] ] ];
 
 (* Addition, subtraction, multiplication and division are all left-associative *)
 process["mexpr"[a_,"addop"["+"],b_]] := process[a] + process[b];

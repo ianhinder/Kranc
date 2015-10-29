@@ -294,7 +294,7 @@ DefFn[AssignVariableFromExpression[dest_, expr_, declare_, vectorise_, noSimplif
   Module[{type, exprCode, code},
     type =
     If[OptionValue[Type] === Automatic,
-      If[StringMatchQ[ToString[dest], "dir*"], (Print["WARNING: "<>ToString[dest]<>" is being interpreted as type ptrdiff_t because it's name starts with dir"];ptrdiff_t), DataType[]],
+      If[StringMatchQ[ToString[dest], "dir*"], (Print["WARNING: "<>ToString[dest]<>" is being interpreted as type ptrdiff_t because its name starts with dir"];"ptrdiff_t"), DataType[]],
       OptionValue[Type]];
     exprCode = GenerateCodeFromExpression[expr, vectorise, noSimplify];
     CountOperations[expr];

@@ -130,6 +130,15 @@ void AssertGroupStorage(cGH const * restrict const cctkGH,
 #define VanLeer(x, y)  ((x) * (y) < 0 ? 0 : (Min3(2*fabs(x),2*fabs(y),0.5*(fabs(x)+fabs(y)))*Sign((x)+(y))))
 #define StepFunction(x) ((x)>0)
 
+
+/*********************************************************************
+ * Macros used in Chemora expressions
+ *********************************************************************/
+
+#define ChemoraOpEqual(a,b) ((a)==(b))
+#define ChemoraOpNotEqual(a,b) ((a)!=(b))
+
+
 /*********************************************************************
  * Numerical constants not defined in C++
  *********************************************************************/

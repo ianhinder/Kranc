@@ -246,9 +246,9 @@ process[v1_, "logop"[logop_], v2__] :=
 
 process["coexpr"[v1_, "cmpop"[cmpop_], v2_]] :=
    Module[
-     { opMap = { "<"  -> Less,         "<=" -> LessEqual,
-                 "==" -> Equal,        "!=" -> Unequal,
-                 ">=" -> GreaterEqual, ">"  -> Greater },
+     { opMap = { "<"  -> Less,           "<=" -> LessEqual,
+                 "==" -> ChemoraOpEqual, "!=" -> ChemoraOpNotEqual,
+                 ">=" -> GreaterEqual,   ">"  -> Greater },
        mappedOp },
      mappedOp = cmpop /. opMap;
      If[ StringQ[mappedOp],

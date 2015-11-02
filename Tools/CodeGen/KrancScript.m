@@ -231,18 +231,22 @@ process["func"["name"[name_],exprs__]] :=
        (* If it's not a function call, it's an explicit multiply *)
        process["mul"["mexpr"["mul"["pow"["value"["tensor"["name"[name],"indices"[]]]]]],"mulop"["*"],"mexpr"[exprs]]]]];
 
-Global`RawList[a___,Global`RawList[b__],c___] := Global`RawList[a,b,c];
-
 process["value"["neg"[_],arg_]] := -process[arg];
 process["mexpr"[mul_]] := process[mul];
 process["mexpr"[]] := 0;
 process["ifexpr"[cond_, opt1_, opt2_]] :=
    IfThen[ process[cond], process[opt1], process[opt2] ];
 
-process["coexpr"["cexpr"[cexpr__]]] := Global`RawList["(",process["cexpr"[cexpr]],")"];
-process["cexpr"[cargs__]] := process[cargs];
-process[v1_, "logop"[logop_], v2__] := 
-  Global`RawList[process[v1]," ",logop," ",process[v2]];
+process["coexpr"["cexpr"[cexpr__]]] := process["cexpr"[cexpr]];
+
+process["cexpr"[Longest[v1__], "logop"["or"], v2__]] :=
+   ChemoraOpOr[ process["cexpr"[v1]], process["cexpr"[v2]] ];
+
+process["cexpr"[Longest[v1__], "logop"["and"], v2__]] :=
+   ChemoraOpAnd[ process["cexpr"[v1]], process["cexpr"[v2]] ];
+
+process["cexpr"[carg_]] := process[carg];
+
 
 process["coexpr"[v1_, "cmpop"[cmpop_], v2_]] :=
    Module[

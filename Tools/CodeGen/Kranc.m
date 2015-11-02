@@ -172,6 +172,7 @@ ConditionExpression;
 { ChemoraContents,
 
   ChemoraOpEqual, ChemoraOpNotEqual,
+  ChemoraOpAnd, ChemoraOpOr,
 
   chemoraQuote,
   ChemoraNOffset };

@@ -137,6 +137,8 @@ void AssertGroupStorage(cGH const * restrict const cctkGH,
 
 #define ChemoraOpEqual(a,b) ((a)==(b))
 #define ChemoraOpNotEqual(a,b) ((a)!=(b))
+#define ChemoraOpAnd(a,b) ((a)&&(b))
+#define ChemoraOpOr(a,b) ((a)||(b))
 
 
 /*********************************************************************

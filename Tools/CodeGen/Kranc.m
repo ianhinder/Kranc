@@ -171,8 +171,16 @@ ConditionExpression;
 
 { ChemoraContents,
 
+  (* Function heads for C operators.  In some cases the MMA equivalent
+     can't be used because it will be expanded. (For example, Equal["a",0]
+     expands to False.)  *)
   ChemoraOpEqual, ChemoraOpNotEqual,
   ChemoraOpAnd, ChemoraOpOr,
+
+  (* Library functions recognized by Chemora which hopefully can
+     coexist with the rest of Kranc.  *)
+
+  copysign,
 
   chemoraQuote,
   ChemoraNOffset };

@@ -226,6 +226,7 @@ process["func"["name"[name_],exprs__]] :=
            "atan" -> ArcTan, "asin" -> ArcSin, "acos" -> ArcCos,
            "sinh" -> Sinh, "cosh" -> Cosh, "tanh" -> Tanh,
            (* "if" -> IfThen, *) "max" -> Max, "min" -> Min,
+           "copysign" -> copysign,
            "abs"->Abs,"sqrt" -> Sqrt, "exp" -> Exp};
     If[MemberQ[First/@fns,name], (name/.fns)@@Map[process,{exprs}],
        (* If it's not a function call, it's an explicit multiply *)

@@ -217,7 +217,7 @@ process[(pos:("lower_index"|"upper_index"))["index_symbol"[i_]]] :=
      ToExpression[i],
      TensorIndex[i, If[pos==="lower_index","l","u"]]];
 
-process["func"["name"[name_],exprs__]] :=
+process["func"["fname"[name_],exprs__]] :=
   Module[
     {fns},
     fns = {"sin" -> Sin, "cos" -> Cos,
@@ -229,8 +229,7 @@ process["func"["name"[name_],exprs__]] :=
            "copysign" -> copysign,
            "abs"->Abs,"sqrt" -> Sqrt, "exp" -> Exp};
     If[MemberQ[First/@fns,name], (name/.fns)@@Map[process,{exprs}],
-       (* If it's not a function call, it's an explicit multiply *)
-       process["mul"["mexpr"["mul"["pow"["value"["tensor"["name"[name],"indices"[]]]]]],"mulop"["*"],"mexpr"[exprs]]]]];
+      ThrowError["Function "<>name<>" is not yet supported"]]];
 
 process["value"["neg"[_],arg_]] := -process[arg];
 process["mexpr"[mul_]] := process[mul];

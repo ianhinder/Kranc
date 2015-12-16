@@ -1169,6 +1169,8 @@ etc.
 \section{TensorTools Commands}
 \label{ch:ref:sec:tensortools}
 
+The following commands are independent of Kranc
+
 \begin{center}
   \begin{tabularx}{\tablewidth}{|l|X|}
     \hline
@@ -1275,6 +1277,31 @@ etc.
     removes any duplicated elements from list.  Useful with
     MakeExplicit where some of the tensor symmetries cause duplicates
     to be created\\
+    \hline
+  \end{tabularx}
+\end{center}
+
+The following commands are Kranc-specific additions to TensorTools
+
+\begin{center}
+  \begin{tabularx}{\tablewidth}{|l|X|}
+    \hline
+    \bf Function Prototype & \bf Description\\
+    \hline
+    ReflectionSymmetries & 
+    produces a list of reflection symmetries of a tensor\\
+    \hline
+    ExpandComponents[expr] &
+    converts an expression containing abstract indices into one
+    containing components instead\\
+    \hline
+    IncludeCharacter & 
+    an option for makeExplicit which specifies whether the character
+    should also be included in the generated variable names\\
+    \hline
+    TensorCharacterString[tensor[inds]] &
+    returns a string consisting of a sequence of U's and D's
+    representing the character of tensor\\
     \hline
   \end{tabularx}
 \end{center}

@@ -1,6 +1,7 @@
 \documentclass{report}
 
 \usepackage{tabularx}
+\usepackage{ltablex}
 \usepackage{graphicx}
 \usepackage{alltt}
 \usepackage{hyperref}
@@ -1162,5 +1163,118 @@ writing files to storage and parsing the Kranc structures necessary
 for writing parameter configuration files, grid function definitions
 etc.
 
+\chapter{Reference}
+
+\section{TensorTools Commands}
+
+\begin{center}
+  \begin{tabularx}{\tablewidth}{|l|X|}
+    \hline
+    \bf Function Prototype & \bf Description\\
+    \hline
+    DefineTensor[kernel] & 
+    registers kernel as a TensorTools tensor kernel\\
+    \hline
+    DefineDerivative[pd] & 
+    registers a symbol to be used as a derivative operator\\
+    \hline
+    MakeExplicit[x] & 
+    converts an expression x containing abstract indices into one containing 
+    components instead\\
+    \hline
+    AssertSymmetricIncreasing[tensor] & 
+    indicates that when the two-component tensor (e.g. T[la,lb]) is
+    represented as components, no distinction should be made between
+    the two orderings of the indices, and the decreasing order is to
+    be preferred\\
+    \hline
+
+    AssertSymmetricDecreasing[tensor] & 
+    indicates that when the two-component tensor (e.g. T[la,lb]) is
+    represented as components, no distinction should be made between
+    the two orderings of the indices, and the increasing order is to
+    be preferred.\\
+    \hline 
+    PD[x,i1, i2, ...] & 
+    represents the partial derivative of x with respect to the indices
+    i1, i2, ...\\
+    \hline 
+    Lie[x,V] & 
+    is the Lie derivative of expression x with respect to the
+    TensorTools vector V (specified without an index)\\
+    \hline 
+    FD[x,i1, i2, ...] & 
+    represents the local partial derivative of x with respect to the
+    indices i1, i2, ...\\
+    \hline 
+    MatrixOfComponents[tensor] &
+    returns a matrix of the components of a two-tensor\\
+    \hline
+    Tensor[kernel, index, ...] &
+    represents a TensorTools tensor\\
+    \hline
+    TensorIndex[type, label] &
+    represents a TensorTools tensor index\\
+    \hline
+    TTTensorProduct[x, y, ...] &
+    represents a product of expressions which has already been checked 
+    for duplicated dummy indices\\
+    \hline
+    MakeLocalSymbol[s] &
+    creates a symbol in the current context consisting of the symbol s 
+    suffixed with the letter L\\
+    \hline
+    MatrixInverse[tensor] &
+    converts a tensor component (eg T[1,3]) into the 1,3 component of $T^(-1)$\\
+    \hline
+    CDtoPD[x] &
+    converts all covariant derivatives in x registered using 
+    DefineConnection into partial derivatives\\
+    \hline
+    LieToPD[x] &
+    converts all Lie derivatives in x\\
+    \hline
+    PDtoFD[x] &
+    converts all partial derivatives in x into local partial derivatives\\
+    \hline
+    DefineConnection[cd, pd, ch] &
+    registers a connection with TensorTools.  The covariant derivative
+    operator will be cd, the partial derivative operator will be pd,
+    and the Christoffel symbol will be ch\\
+    \hline
+    DefineJacobian[pd, fd, J, iJ, dJ] &
+    registers a Jacobian with TensorTools.  The partial derivative
+    operator will be pd, the local partial derivative operator will be
+    fd, and the Jacobian, its inverse, and its derivative will be J,
+    iJ, and dJ, respectively\\
+    \hline
+    ResetJacobians & unregisters all Jacobians\\
+    \hline
+    KD[x,y] &
+    is the Kronecker delta symbol.  It can be given tensorial or
+    numerical indices\\
+    \hline
+    Eps[i,j,...] &
+    is the alternating symbol.  It can be given tensorial or numerical
+    indices\\
+    \hline
+    Zero3[i,j,k] &
+    is zero\\
+    \hline
+    Euc[i,j] &
+    is the Euclidian metric.  It can be given tensorial or numerical
+    indices\\
+    \hline
+    SetEnhancedTime[boolean] &
+    enables or disabled automatic checking and relabelling of products
+    for duplicated dummy indices\\
+    \hline
+    RemoveDuplicates[list] &
+    removes any duplicated elements from list.  Useful with
+    MakeExplicit where some of the tensor symmetries cause duplicates
+    to be created\\
+    \hline
+  \end{tabularx}
+\end{center}
 
 \end{document}

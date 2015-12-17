@@ -134,13 +134,21 @@ DefFn[
       Error["Internal error: Invalid stencil size"]];
     MatchQ[stencilSize, {0,0,0}]]];
 
+CombineStencils[{i1_,j1_,k1_},I3D[i2_,j2_,k2_]] :=
+  {Max[i1,Abs[i2]],Max[j1,Abs[j2]],Max[k1,Abs[k2]]};
+CombineStencils[arg1_,{}] := arg1;
+CombineStencils[arg1_,{arg2_,arg3___}] :=
+  CombineStencils[CombineStencils[arg1,arg2],{arg3}];
+
 DefFn[
   CalculationStencilSize[calc_List] :=
   Module[
-    {pddefs, eqs, stencilSize},
+    {pddefs, eqs, stencilSize, explicit, name, i, j, k},
 
     pddefs = lookup[calc, PartialDerivatives, {}];
     eqs    = lookup[calc, Equations];
+    explicit = {};
+    calc /. I3D[name_,i_?NumberQ,j_?NumberQ,k_?NumberQ] :> (AppendTo[explicit,I3D[i,j,k]];I3D[name,i,j,k]);
 
     stencilSize = StencilSize[pddefs, eqs, "not needed", {} (*ZeroDimensions*),
                               lookupDefault[calc, IntParameters, {}]];
@@ -150,6 +158,7 @@ DefFn[
     If[!VectorQ[stencilSize],
        stencilSize = MapThread[Max,Map[Last,stencilSize[[2]]]]];
     (* TODO: decide what to do about stencil sizes that depend on runtime parameters *)
+    stencilSize = CombineStencils[stencilSize,explicit];
     stencilSize]];
 
 DefFn[

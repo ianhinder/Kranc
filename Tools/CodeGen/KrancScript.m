@@ -149,6 +149,11 @@ process[calc:"calculation"[content___]] :=
      Where -> where}];
 
 process["eqn"[lhs_,rhs_]] := Module[{name,eqs}, process[lhs] -> process[rhs]];
+(*
+process["tensor"["name"["Opast"],"indices"[ind___],follow___]] := Print["ind=",InputForm[ind]," follow=",InputForm[follow]];
+process["tensor"["name"["Opast"],"indices"[ind___]],follow__] := Print["ind2=",InputForm[ind]," follow=",InputForm[follow]];
+*)
+process["Opast"["tensor"["name"[nm_], "indices"[]]]] := ToExpression[nm<>"Opast"];
 
 process["tensor"["name"[k_],"indices"[]]] := ToExpression[If[Names[k] === {}, "Global`"<>k, k]];
 
@@ -194,6 +199,8 @@ MakeTemp[x1__] :=
 process["dtensor"["dname"[dname_],inds_,"tensor"[tensor__]]] := ToExpression[dname][process["tensor"[tensor]],Sequence@@process[inds]];
 
 process["dtensor"["dname"["D"],inds_,"tensor"[tensor__]]] := PD[process["tensor"[tensor]],Sequence@@process[inds]];
+(* dtensor[dname[Opast], tensor[name[pi], indices[]]] *)
+process["dtensor"["dname"["Opast"],"tensor"["name"[name_],"indices"[]]]] := process["tensor"["name"[name<>"Opast"],"indices"[]]];
 process["dtensor"["dname"["D"],inds_,"expr"[tensor__]]] := Module[{summed,tmp,tmpAST,procexpr,result},
   procexpr =process["expr"[tensor]];
   tmparray=MakeTemp[procexpr];

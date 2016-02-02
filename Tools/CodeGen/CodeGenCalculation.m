@@ -582,7 +582,6 @@ DefFn[
     If[useJacobian, JacobianSymbols[], {}]];
 
   unknownSymbols = Complement[allSymbols, knownSymbols];
-  (* Print["knownSymbols=",knownSymbols]; *)
 
   unknownSymbols /.
     {{} :> True,
@@ -738,6 +737,11 @@ HasBadDeriv[eqn_,shorts_] :=
           "The cacluation "<>ToString[eqn]<>
           " contains the derivative of a temporary (" <>
           ToString[arg] <> "). This isn't allowed."]];
+
+NoPast[x_] :=
+  StringReplace[x,"Opast\""->"\""];
+PastTL[x_] :=
+  If[StringMatchQ[ToString[x],"*Opast"],"1","0"];
 
 DefFn[
   equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, odeGroups_, pddefs_,
@@ -897,8 +901,8 @@ DefFn[
     mapRefAppend[cleancalc,ChemoraContents,
      StringJoin[ " assign_from_gf_load(" 
                  <> chemoraQuote[localName[#]] <> ", "
-                 <> chemoraQuote[#]
-                 <> ");\n" &
+                 <> NoPast[chemoraQuote[#]] <> ", "
+                 <> PastTL[#] <> ");\n" &
                  /@ gfsInRHS ]];
 
     Module[{sortedgfds},

@@ -63,6 +63,16 @@ AddTmpCalcs[eqns_] := Module[{tmpeqns={}},
   Join[eqns,tmpeqns]
 ];
 
+Global`KrancProjectionInfo[_] := False;
+ZeroLength[x_String] := StringLength[x]===0;
+process["projected_var"["name"[nm_], "x"[xv___], "y"[yv___], "z"[zv___]]] :=
+  Module[{vsizes,var},
+    vsizes = DeleteCases[{xv,yv,zv},_?ZeroLength];
+    var = ToExpression[nm];
+    Global`KrancProjectionInfo[var] = {Global`Sizes->vsizes};
+    Return[var];
+  ];
+
 process[thorn:"thorn"[content___]] :=
   Module[
     {calcs = {}, name, parameters = {}, variables = {}, temporaries = {Global`boundx,Global`boundy,Global`boundz}, tensors, kernels,

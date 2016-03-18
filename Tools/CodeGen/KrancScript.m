@@ -292,6 +292,8 @@ process["mul"[cs___, a_, "mulimp"[___], b_]] := process["mul"[cs,a]] * process[b
 process["mul"[cs___, a_, "mulop"["/"], b_]] := process["mul"[cs,a]] / process[b];
 process["mexpr"["expr"[ex1_],"expr"[ex2_]]] := ThrowError[ToString[InputForm[ex1]]<> " :: "<>ToString[InputForm[ex2]]];
 
+process["pow"["neg"[_],a_,b_]] := -process[a]^process[b];
+process["pow"["neg"[_],a_]] := -process[a];
 process["pow"[a_,b_]] := process[a]^process[b];
 process["pow"[a_]] := process[a];
 

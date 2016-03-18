@@ -58,6 +58,11 @@ Begin["`Private`"];
   {... sameish}
 
 *)
+EndsWith[str_,ending_] := StringCases[str,RegularExpression[ending<>"$"]] === {ending};
+HasOpast[arg_] := Module[{flag=False},
+  arg /. (KrancGroup->nm_) :> If[EndsWith[nm,"Opast_group"],flag=True];
+  Return[flag];
+  ]
 
 (* Given a storage group structure defined above, return a CodeGen
    structure for inclusion in the schedule.ccl file to allocate
@@ -66,6 +71,8 @@ groupStorage[spec_] :=
   Module[
     {tls = lookup[spec,Timelevels],
      group = lookup[spec, KrancGroup]},
+    Print["SPEC:",InputForm[spec]];
+    If[HasOpast[spec],Return[""]];
     Which[
       IntegerQ[tls],
       {"STORAGE: ", group, "[", tls, "]\n"},
@@ -99,6 +106,8 @@ scheduleUnconditionalFunction[spec_] :=
          "TAGS: " <> lookup[spec, Tags] <> "\n",
          ""],
 
+      (* BoundaryWithGhosts *)
+      (* InteriorBoundaryGhosts -> 7 options *)
       translateRegion[r_] := Switch[r,
                                     Everywhere, "Everywhere",
                                     Interior, "Interior",
@@ -107,10 +116,16 @@ scheduleUnconditionalFunction[spec_] :=
                                     BoundaryNoSync, "Boundary",
                                     Automatic,"Interior", (* TODO: is this right? *)
                                     _, "ERROR(" <> ToString[r] <> ")"];
+
+      (* Strip out past time levels *)
+      spec2 = spec /. (RequiredGroups->li_List) :> (
+        RequiredGroups->DeleteCases[li,x_ /; StringMatchQ[x,"*Opast"]]
+        );
+
       Map[{"READS: ", #, "(",
            translateRegion[lookupDefault[spec, RequiredRegion, "ERROR"]],
            ")\n"} &,
-          lookupDefault[spec, RequiredGroups, {}]],
+          lookupDefault[spec2, RequiredGroups, {}]],
       Map[{"WRITES: ", #, "(",
            translateRegion[lookupDefault[spec, ProvidedRegion, "ERROR"]],
            ")\n"} &,

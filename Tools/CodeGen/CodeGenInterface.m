@@ -45,9 +45,16 @@ A 'tag' is of the form {"tensortypealias" -> "Scalar"}
 
  *)
 
+EndsWith[str_,ending_] := StringCases[str,RegularExpression[ending<>"$"]] === {ending};
+HasOpast[arg_] := Module[{flag=False},
+  arg /. (Name->nm_) :> If[EndsWith[nm,"Opast_group"],flag=True];
+  Return[flag];
+  ]
+
 (* Given the specification of a group structure, return a CodeGen
    block for the interface.ccl file to define that group *)
-interfaceGroupBlock[spec_] :=
+interfaceGroupBlock[spec_] := Module[{},
+  If[ HasOpast[spec], Return[""]];
   {lookup[spec, Visibility], ":\n",
    lookup[spec, VariableType], " ", lookup[spec, Name], 
      " type=", lookup[spec,GridType],
@@ -57,7 +64,7 @@ interfaceGroupBlock[spec_] :=
      If[mapContains[spec,Size], {" size=", lookup[spec,Size] }, ""], 
      "\n",
    SuffixedCBlock[{CommaNewlineSeparated[lookup[spec, Variables]],"\n"}, 
-                  "\"" <> lookup[spec, Comment] <> "\""]};
+                  "\"" <> lookup[spec, Comment] <> "\""]}];
 
 interfaceTag[tagName_String -> tagValue_String] :=
   tagName <> "=" <> "\"" <> tagValue <> "\"";

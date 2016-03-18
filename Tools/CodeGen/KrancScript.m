@@ -63,6 +63,16 @@ AddTmpCalcs[eqns_] := Module[{tmpeqns={}},
   Join[eqns,tmpeqns]
 ];
 
+Global`KrancProjectionInfo[_] := False;
+ZeroLength[x_String] := StringLength[x]===0;
+process["projected_var"["name"[nm_], "x"[xv___], "y"[yv___], "z"[zv___]]] :=
+  Module[{vsizes,var},
+    vsizes = DeleteCases[{xv,yv,zv},_?ZeroLength];
+    var = ToExpression[nm];
+    Global`KrancProjectionInfo[var] = {Global`Sizes->vsizes};
+    Return[var];
+  ];
+
 process[thorn:"thorn"[content___]] :=
   Module[
     {calcs = {}, name, parameters = {}, variables = {}, temporaries = {Global`boundx,Global`boundy,Global`boundz}, tensors, kernels,
@@ -149,6 +159,11 @@ process[calc:"calculation"[content___]] :=
      Where -> where}];
 
 process["eqn"[lhs_,rhs_]] := Module[{name,eqs}, process[lhs] -> process[rhs]];
+(*
+process["tensor"["name"["Opast"],"indices"[ind___],follow___]] := Print["ind=",InputForm[ind]," follow=",InputForm[follow]];
+process["tensor"["name"["Opast"],"indices"[ind___]],follow__] := Print["ind2=",InputForm[ind]," follow=",InputForm[follow]];
+*)
+process["Opast"["tensor"["name"[nm_], "indices"[]]]] := ToExpression[nm<>"Opast"];
 
 process["tensor"["name"[k_],"indices"[]]] := ToExpression[If[Names[k] === {}, "Global`"<>k, k]];
 
@@ -194,6 +209,8 @@ MakeTemp[x1__] :=
 process["dtensor"["dname"[dname_],inds_,"tensor"[tensor__]]] := ToExpression[dname][process["tensor"[tensor]],Sequence@@process[inds]];
 
 process["dtensor"["dname"["D"],inds_,"tensor"[tensor__]]] := PD[process["tensor"[tensor]],Sequence@@process[inds]];
+(* dtensor[dname[Opast], tensor[name[pi], indices[]]] *)
+process["dtensor"["dname"["Opast"],"tensor"["name"[name_],"indices"[]]]] := process["tensor"["name"[name<>"Opast"],"indices"[]]];
 process["dtensor"["dname"["D"],inds_,"expr"[tensor__]]] := Module[{summed,tmp,tmpAST,procexpr,result},
   procexpr =process["expr"[tensor]];
   tmparray=MakeTemp[procexpr];
@@ -275,6 +292,8 @@ process["mul"[cs___, a_, "mulimp"[___], b_]] := process["mul"[cs,a]] * process[b
 process["mul"[cs___, a_, "mulop"["/"], b_]] := process["mul"[cs,a]] / process[b];
 process["mexpr"["expr"[ex1_],"expr"[ex2_]]] := ThrowError[ToString[InputForm[ex1]]<> " :: "<>ToString[InputForm[ex2]]];
 
+process["pow"["neg"[_],a_,b_]] := -process[a]^process[b];
+process["pow"["neg"[_],a_]] := -process[a];
 process["pow"[a_,b_]] := process[a]^process[b];
 process["pow"[a_]] := process[a];
 

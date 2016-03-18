@@ -71,7 +71,6 @@ groupStorage[spec_] :=
   Module[
     {tls = lookup[spec,Timelevels],
      group = lookup[spec, KrancGroup]},
-    Print["SPEC:",InputForm[spec]];
     If[HasOpast[spec],Return[""]];
     Which[
       IntegerQ[tls],

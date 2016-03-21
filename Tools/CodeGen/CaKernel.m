@@ -301,7 +301,14 @@ DefFn[
     c2]];
 
 DefFn[PostProcessExpression[_TargetCaKernel, expr_] :=
-  expr //. {GFLocal[x_] -> I3D[x,0,0,0], ToReal[x_] -> x}];
+  expr //. 
+   { GFLocal[gf_] :>
+       Module[{info = Global`KrancProjectionInfo[gf]},
+         If[ info === False,
+             I3D[gf,0,0,0],
+             "IVD"[gf, "cak__AX_" <> StringJoin[Global`Sizes/.info]] ] ],
+     ToReal[x_] -> x }
+   ];
 
 End[];
 

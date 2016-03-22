@@ -106,6 +106,8 @@ scheduleUnconditionalFunction[spec_] :=
          "TAGS: " <> lookup[spec, Tags] <> "\n",
          ""],
 
+      (* BoundaryWithGhosts *)
+      (* InteriorBoundaryGhosts -> 7 options *)
       translateRegion[r_] := Switch[r,
                                     Everywhere, "Everywhere",
                                     Interior, "Interior",

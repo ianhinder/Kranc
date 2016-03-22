@@ -744,19 +744,13 @@ PastTL[x_] :=
   If[StringMatchQ[ToString[x],"*Opast"],"1","0"];
 
 gfMakeAssign[gf_] :=
-  Module[{res="unset",sizes,info},
-  info = Global`KrancProjectionInfo[gf];
-  If[info === False,
-     res=StringJoin[ " assign_from_gf_load(" 
-                 <> chemoraQuote[localName[gf]] <> ", "
-                 <> NoPast[chemoraQuote[gf]] <> ", "
-                 <> PastTL[gf] <> ");\n"],
-     sizes=Global`Sizes /. info;
-     res=StringJoin[ " assign_from_gf_load_"<>StringJoin[sizes]<>"_only(" 
-                 <> chemoraQuote[localName[gf]] <> ", "
-                 <> NoPast[chemoraQuote[gf]] <> ", "
-                 <> PastTL[gf] <> ");\n"]];
-  Return[res]];
+  Module[{info = Global`KrancProjectionInfo[gf]},
+    " assign_from_gf_load" <> "("
+       <> chemoraQuote[localName[gf]] <> ", "
+       <> NoPast[chemoraQuote[gf]] <> ", "
+       <> PastTL[gf] <> ", "
+       <> "AX_" <> If[ info === False, "xyz", StringJoin[Global`Sizes/.info] ]
+       <> ");\n"]
 
 DefFn[
   equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, odeGroups_, pddefs_,

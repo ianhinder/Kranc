@@ -350,7 +350,7 @@ DefFn[
                          {inds}]]
     },
     {
-      "unsigned char "<>gfdn<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_CACHELINE_SIZE * sizeof(CCTK_REAL));\n",
+      "unsigned char "<>gfdn<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n",
       "stencil_dg_dim3_dir"<>indstr<>"<dgop_"<>pdn<>">(&((const unsigned char *)"<>gfn<>")[off1], "<>gfdn<>"T, "<>dxistr<>"dj, dk);\n"
     }]];
 

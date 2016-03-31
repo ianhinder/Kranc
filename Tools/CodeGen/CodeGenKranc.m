@@ -167,9 +167,9 @@ DefFn[
                 "const CCTK_REAL_VEC cctkIdx2 CCTK_ATTRIBUTE_UNUSED = ToReal(j);\n",
                 "const CCTK_REAL_VEC cctkIdx3 CCTK_ATTRIBUTE_UNUSED = ToReal(k);\n"
                },
-               {"const CCTK_REAL cctkIdx1 CCTK_ATTRIBUTE_UNUSED = ToReal(i);\n",
-                "const CCTK_REAL cctkIdx2 CCTK_ATTRIBUTE_UNUSED = ToReal(j);\n",
-                "const CCTK_REAL cctkIdx3 CCTK_ATTRIBUTE_UNUSED = ToReal(k);\n"}],
+               {"const CCTK_REAL cctkIdx1 CCTK_ATTRIBUTE_UNUSED = i;\n",
+                "const CCTK_REAL cctkIdx2 CCTK_ATTRIBUTE_UNUSED = j;\n",
+                "const CCTK_REAL cctkIdx3 CCTK_ATTRIBUTE_UNUSED = k;\n"}],
             If[tile && OptionValue[UseVectors],
                {"const int ti CCTK_ATTRIBUTE_UNUSED = i - kd.tile_imin[0];\n",
                 "const int tj CCTK_ATTRIBUTE_UNUSED = j - kd.tile_imin[1];\n",

@@ -151,8 +151,10 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
        "constexpr ptrdiff_t order = "<>ToString[OptionValue[DGOrder]]<>";\n",
        "\n",
        "// Define stencil operators\n",
-       "typedef dgop_derivs<order, int> dgop_PD;\n",
+       "typedef dgop_derivs<order> dgop_PD;\n",
+       "typedef dgop_filter<order> dgop_Filter;\n",
        "static_assert(dgop_PD::order == order, \"\")\n";
+       "static_assert(dgop_Filter::order == order, \"\")\n";
        "\n",
        "// Determine tile shape from stencil\n",
        "constexpr ptrdiff_t npoints_i = order + 1;\n",
@@ -191,7 +193,8 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
        "constexpr ptrdiff_t vs = CCTK_REAL_VEC_SIZE;\n",
        "\n",
        "// Padded tile shape (in grid points)\n",
-       "constexpr ptrdiff_t tni = alignup(npoints_i, vs);\n",
+       "// constexpr ptrdiff_t tni = alignup(npoints_i, vs);\n",
+       "constexpr ptrdiff_t tni = npoints_i;\n",
        "constexpr ptrdiff_t tnj = npoints_j;\n",
        "constexpr ptrdiff_t tnk = npoints_k;\n",
        "\n",
@@ -199,7 +202,8 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
        "constexpr ptrdiff_t tdi = sizeof(CCTK_REAL);\n",
        "constexpr ptrdiff_t tdj = tdi * tni;\n",
        "constexpr ptrdiff_t tdk = tdj * tnj;\n",
-       "constexpr ptrdiff_t tsz = tdk * tnk;\n",
+       "// constexpr ptrdiff_t tsz = tdk * tnk;\n",
+       "constexpr ptrdiff_t tsz = alignup(tdk * tnk, CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n",
        "\n",
        #
      }] &;
@@ -903,22 +907,31 @@ DefFn[
         assignLocalFunctions[gs, False, False, False, ArrayName];
 
       generateTileDefinition[gf_] :=
-      "unsigned char "<>ToString[gf]<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_CACHELINE_SIZE * sizeof(CCTK_REAL));\n";
+      "unsigned char "<>ToString[gf]<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n";
 
       generateTileLoad[gf:(_String|_Symbol)] :=
       Module[
         {gfn = ToString[gf],
          jcgfs = JacobianConditionalGridFunctions[],
-         decl, load, isjac, maybeload},
-        decl = {"unsigned char "<>gfn<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_CACHELINE_SIZE * sizeof(CCTK_REAL));\n"};
+         decl, load, isjac, jaccond, ishydro, hydrocond, maybeload},
+        decl = {"unsigned char "<>gfn<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n"};
         load = {"assert("<>gfn<>"!=NULL);\n",
                 "load_dg_dim3<dgop_PD>(&((const unsigned char *)"<>gfn<>")[off1], "<>gfn<>"T, dj, dk);\n"};
         isjac = StringMatchQ[gfn, jcgfs[[1]]];
-        maybeload = If[isjac,
-                       {"if ("<>jcgfs[[2]]<>") {\n",
-                        IndentBlock[load],
-                        "}\n"},
-                       load];
+        jaccond = jcgfs[[2]];
+        ishydro = StringMatchQ[gfn, "eT" ~~ _ ~~ _];
+        hydrocond = ("assume_stress_energy_state>=0 ? "<>
+                     "assume_stress_energy_state : *stress_energy_state");
+        maybeload = Which[isjac,
+                          {"if ("<>jaccond<>") {\n",
+                           IndentBlock[load],
+                           "}\n"},
+                          ishydro,
+                          {"if ("<>hydrocond<>") {\n",
+                           IndentBlock[load],
+                           "}\n"},
+                          True,
+                          load];
         {decl, maybeload}];
 
       generateTileStore[gf:(_String|_Symbol)] :=

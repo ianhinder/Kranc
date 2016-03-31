@@ -4,6 +4,7 @@
 #include <vectors.h>
 #include <cctk.h>
 
+#include <cassert>
 #include <cstddef>
 #include <type_traits>
 
@@ -19,12 +20,14 @@ using std::size_t;
 /******************************************************************************/
 /* Evaluate an if condition at compile time */
 
-template <bool C, typename F>
-inline typename std::enable_if<!C, void>::type if_c(const F &f) {}
-
-template <bool C, typename F>
-inline typename std::enable_if<C, void>::type if_c(const F &f) {
+template <bool C, typename F, typename G>
+inline typename std::enable_if<C, void>::type cond(const F &f, const G &g) {
   f();
+}
+
+template <bool C, typename F, typename G>
+inline typename std::enable_if<!C, void>::type cond(const F &f, const G &g) {
+  g();
 }
 
 /******************************************************************************/
@@ -35,12 +38,22 @@ inline typename std::enable_if<C, void>::type if_c(const F &f) {
 // expected to be function object, such as a lamda expression.
 
 template <ptrdiff_t I, ptrdiff_t N, ptrdiff_t S = 1, typename F>
-inline typename std::enable_if<(I >= N), void>::type repeat_n(const F &f) {}
+inline typename std::enable_if<(I >= N), void>::type loop(const F &f) {}
 
 template <ptrdiff_t I, ptrdiff_t N, ptrdiff_t S = 1, typename F>
-inline typename std::enable_if<(I < N), void>::type repeat_n(const F &f) {
+inline typename std::enable_if<(I < N), void>::type loop(const F &f) {
   f(I);
-  repeat_n<I + S, N, S>(f);
+  loop<I + S, N, S>(f);
+}
+
+template <ptrdiff_t I, ptrdiff_t N, ptrdiff_t S = 1, typename F>
+inline typename std::enable_if<(I >= N), bool>::type all_true(const F &f) {
+  return true;
+}
+
+template <ptrdiff_t I, ptrdiff_t N, ptrdiff_t S = 1, typename F>
+inline typename std::enable_if<(I < N), bool>::type all_true(const F &f) {
+  return f(I) && all_true<I + S, N, S>(f);
 }
 
 /******************************************************************************/
@@ -83,16 +96,16 @@ constexpr CCTK_REAL &getelt(unsigned char *restrict const ptr,
 struct fdop_order4_d1 {
   constexpr static const ptrdiff_t stencil_radius = 2;
   typedef const CCTK_REAL coeffs_t[2 * stencil_radius + 1];
-  constexpr static coeffs_t coeffs = {-1.0 / 12.0, 8.0 / 12.0, 0, -8.0 / 12.0,
-                                      1.0 / 12.0};
+  constexpr static const coeffs_t coeffs =
+      {-1.0 / 12.0, 8.0 / 12.0, 0, -8.0 / 12.0, 1.0 / 12.0};
 };
 constexpr typename fdop_order4_d1::coeffs_t fdop_order4_d1::coeffs;
 
 struct fdop_order4_d2 {
   constexpr static const ptrdiff_t stencil_radius = 2;
   typedef const CCTK_REAL coeffs_t[2 * stencil_radius + 1];
-  constexpr static coeffs_t coeffs = {-1.0 / 12.0, 16.0 / 12.0, -30.0 / 12.0,
-                                      16.0 / 12.0, -1.0 / 12.0};
+  constexpr static const coeffs_t coeffs =
+      {-1.0 / 12.0, 16.0 / 12.0, -30.0 / 12.0, 16.0 / 12.0, -1.0 / 12.0};
 };
 constexpr typename fdop_order4_d2::coeffs_t fdop_order4_d2::coeffs;
 */
@@ -373,26 +386,38 @@ void stencil_odd_dim3_dir02(const unsigned char *restrict const u,
 // defines a fourth order accurate first derivative:
 
 /*
-struct dgop_order4 {
+template <> struct dgop_derivs<4> {
   constexpr static const ptrdiff_t order = 4;
-  typedef const CCTK_REAL
-      coeffs_t[order + 3][alignup(order + 1, CCTK_REAL_VEC_SIZE)];
-  constexpr static coeffs_t coeffs CCTK_ATTRIBUTE_ALIGNED(
-      CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL)) = {
-      {-5, 0, 0, 0, 0},
-      {0, -1.24099025303098285784871934219, 0.375000000000000000000000000000,
-       -0.259009746969017142151280657815, 0.50000000000000000000000000000},
-      {6.7565024887242400038430275297, 0, -1.33658457769545333525484709817,
-       0.76376261582597333443134119895, -1.41016417794242666282363913699},
-      {-2.66666666666666666666666666667, 1.74574312188793905012877988332, 0,
-       -1.74574312188793905012877988332, 2.66666666666666666666666666667},
-      {1.41016417794242666282363913699, -0.76376261582597333443134119895,
-       1.33658457769545333525484709817, 0, -6.7565024887242400038430275297},
-      {-0.50000000000000000000000000000, 0.259009746969017142151280657815,
-       -0.375000000000000000000000000000, 1.24099025303098285784871934219, 0},
-      {0, 0, 0, 0, -5}};
+  constexpr static const ptrdiff_t npoints = order + 1;
+  constexpr static const ptrdiff_t nmin = -1;
+  constexpr static const ptrdiff_t nmax = npoints + 1;
+  constexpr static const ptrdiff_t ncoeffs = nmax - nmin;
+  typedef const CCTK_REAL coeffs_t[ncoeffs][alignup(
+      npoints, CCTK_REAL_VEC_SIZE)] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE *
+                                                           sizeof(CCTK_REAL));
+  // n: stencil point, i: grid point (in element)
+  static CCTK_ATTRIBUTE_ALWAYS_INLINE const CCTK_REAL &coeff(std::ptrdiff_t n,
+                                                             std::ptrdiff_t i) {
+    constexpr static coeffs_t the_coeffs = {
+        {-5, 0, 0, 0, 0},
+        {0, -1.24099025303098285784871934219, 0.375000000000000000000000000000,
+         -0.259009746969017142151280657815, 0.50000000000000000000000000000},
+        {6.7565024887242400038430275297, 0, -1.33658457769545333525484709817,
+         0.76376261582597333443134119895, -1.41016417794242666282363913699},
+        {-2.66666666666666666666666666667, 1.74574312188793905012877988332, 0,
+         -1.74574312188793905012877988332, 2.66666666666666666666666666667},
+        {1.41016417794242666282363913699, -0.76376261582597333443134119895,
+         1.33658457769545333525484709817, 0, -6.7565024887242400038430275297},
+        {-0.50000000000000000000000000000, 0.259009746969017142151280657815,
+         -0.375000000000000000000000000000, 1.24099025303098285784871934219, 0},
+        {0, 0, 0, 0, 5}};
+    static_assert(sizeof the_coeffs / sizeof *the_coeffs == ncoeffs, "");
+    static_assert(sizeof *the_coeffs / sizeof **the_coeffs >= npoints, "");
+    // assert(n >= nmin && n < nmax);
+    // assert(i >= 0 && i < npoints);
+    return the_coeffs[n - nmin][i];
+  }
 };
-constexpr dgop_order4::coeffs_t dgop_order4::coeffs;
 */
 
 // Note that the explicit definition of the stencil coefficients after
@@ -407,7 +432,8 @@ CCTK_ATTRIBUTE_NOINLINE void load_dg_dim3(const unsigned char *restrict const u,
                                           const ptrdiff_t dk) {
   constexpr ptrdiff_t vs = CCTK_REAL_VEC_SIZE;
   constexpr ptrdiff_t di = sizeof(CCTK_REAL);
-  constexpr ptrdiff_t dni = alignup(dgop::order + 1, CCTK_REAL_VEC_SIZE);
+  // constexpr ptrdiff_t dni = alignup(dgop::order + 1, CCTK_REAL_VEC_SIZE);
+  constexpr ptrdiff_t dni = dgop::order + 1;
   constexpr ptrdiff_t dnj = dgop::order + 1;
   constexpr ptrdiff_t ddi = di;
   constexpr ptrdiff_t ddj = ddi * dni;
@@ -417,8 +443,10 @@ CCTK_ATTRIBUTE_NOINLINE void load_dg_dim3(const unsigned char *restrict const u,
       for (ptrdiff_t i = 0; i < dgop::order + 1; i += vs) {
         const ptrdiff_t offset = i * di + j * dj + k * dk;
         const ptrdiff_t doffset = i * ddi + j * ddj + k * ddk;
+        vec_store_partial_prepare_fixed(i, 0, dgop::order + 1);
         const CCTK_REAL_VEC s = vec_loadu(getelt(u, offset));
-        vec_store(getelt(du, doffset), s);
+        // vec_store(getelt(du, doffset), s);
+        vec_storeu_partial(getelt(du, doffset), s);
       }
     }
   }
@@ -431,7 +459,8 @@ store_dg_dim3(unsigned char *restrict const u,
               const ptrdiff_t dk) {
   constexpr ptrdiff_t vs = CCTK_REAL_VEC_SIZE;
   constexpr ptrdiff_t di = sizeof(CCTK_REAL);
-  constexpr ptrdiff_t dni = alignup(dgop::order + 1, CCTK_REAL_VEC_SIZE);
+  // constexpr ptrdiff_t dni = alignup(dgop::order + 1, CCTK_REAL_VEC_SIZE);
+  constexpr ptrdiff_t dni = dgop::order + 1;
   constexpr ptrdiff_t dnj = dgop::order + 1;
   constexpr ptrdiff_t ddi = di;
   constexpr ptrdiff_t ddj = ddi * dni;
@@ -442,7 +471,8 @@ store_dg_dim3(unsigned char *restrict const u,
         const ptrdiff_t offset = i * di + j * dj + k * dk;
         const ptrdiff_t doffset = i * ddi + j * ddj + k * ddk;
         vec_store_partial_prepare_fixed(i, 0, dgop::order + 1);
-        const CCTK_REAL_VEC s = vec_load(getelt(du, doffset));
+        // const CCTK_REAL_VEC s = vec_load(getelt(du, doffset));
+        const CCTK_REAL_VEC s = vec_loadu(getelt(du, doffset));
         vec_storeu_partial(getelt(u, offset), s);
       }
     }
@@ -456,33 +486,26 @@ stencil_dg_dim3_dir0(const unsigned char *restrict const u,
                      const ptrdiff_t dj, const ptrdiff_t dk) {
   constexpr ptrdiff_t vs = CCTK_REAL_VEC_SIZE;
   constexpr ptrdiff_t di = sizeof(CCTK_REAL);
-  constexpr ptrdiff_t dni = alignup(dgop::order + 1, CCTK_REAL_VEC_SIZE);
-  constexpr ptrdiff_t dnj = dgop::order + 1;
+  // constexpr ptrdiff_t dni = alignup(dgop::npoints, CCTK_REAL_VEC_SIZE);
+  constexpr ptrdiff_t dni = dgop::npoints;
+  constexpr ptrdiff_t dnj = dgop::npoints;
   constexpr ptrdiff_t ddi = di;
   constexpr ptrdiff_t ddj = ddi * dni;
   constexpr ptrdiff_t ddk = ddj * dnj;
-  static_assert(sizeof dgop::coeffs / sizeof *dgop::coeffs == dgop::order + 3,
-                "");
-  static_assert(sizeof *dgop::coeffs / sizeof **dgop::coeffs >= dgop::order + 1,
-                "");
-  for (ptrdiff_t k = 0; k < dgop::order + 1; ++k) {
-    for (ptrdiff_t j = 0; j < dgop::order + 1; ++j) {
+  for (ptrdiff_t k = 0; k < dgop::npoints; ++k) {
+    // unroll i loop
+    for (ptrdiff_t j = 0; j < dgop::npoints; ++j) {
       const ptrdiff_t offset0 = j * dj + k * dk;
-      for (ptrdiff_t i = 0; i < dgop::order + 1; i += vs) {
+      loop<0, dgop::npoints, vs>([&](ptrdiff_t i) {
         const ptrdiff_t doffset = i * ddi + j * ddj + k * ddk;
+        vec_store_partial_prepare_fixed(i, 0, dgop::npoints);
         CCTK_REAL_VEC s = vec_set1(0.0);
-        for (ptrdiff_t n = -1; n < dgop::order + 2; ++n) {
-          // bool allzero = false;
-          // for (ptrdiff_t ii = i; ii < i + vs; ++ii) {
-          //   allzero = allzero && dgop::coeffs[n + 1][ii] == 0.0;
-          // }
-          // if (!allzero) {
-          const CCTK_REAL_VEC cs = vec_load(dgop::coeffs[n + 1][i]);
+        for (ptrdiff_t n = dgop::nmin; n < dgop::nmax; ++n) {
+          const CCTK_REAL_VEC cs = vec_load(dgop::coeff(n, i));
           s = kmadd(cs, vec_set1(getelt(u, offset0 + n * di)), s);
-          // }
         }
-        vec_store(getelt(du, doffset), kmul(f, s));
-      }
+        vec_storeu_partial(getelt(du, doffset), kmul(f, s));
+      });
     }
   }
 }
@@ -494,24 +517,22 @@ stencil_dg_dim3_dir1(const unsigned char *restrict const u,
                      const ptrdiff_t dj, const ptrdiff_t dk) {
   constexpr ptrdiff_t vs = CCTK_REAL_VEC_SIZE;
   constexpr ptrdiff_t di = sizeof(CCTK_REAL);
-  constexpr ptrdiff_t dni = alignup(dgop::order + 1, CCTK_REAL_VEC_SIZE);
-  constexpr ptrdiff_t dnj = dgop::order + 1;
+  // constexpr ptrdiff_t dni = alignup(dgop::npoints, CCTK_REAL_VEC_SIZE);
+  constexpr ptrdiff_t dni = dgop::npoints;
+  constexpr ptrdiff_t dnj = dgop::npoints;
   constexpr ptrdiff_t ddi = di;
   constexpr ptrdiff_t ddj = ddi * dni;
   constexpr ptrdiff_t ddk = ddj * dnj;
-  static_assert(sizeof dgop::coeffs / sizeof *dgop::coeffs == dgop::order + 3,
-                "");
-  static_assert(sizeof *dgop::coeffs / sizeof **dgop::coeffs >= dgop::order + 1,
-                "");
-  for (ptrdiff_t k = 0; k < dgop::order + 1; ++k) {
+  for (ptrdiff_t k = 0; k < dgop::npoints; ++k) {
     // unroll j loop
-    repeat_n<0, dgop::order + 1>([=](ptrdiff_t j) {
-      for (ptrdiff_t i = 0; i < dgop::order + 1; i += vs) {
+    loop<0, dgop::npoints>([&](ptrdiff_t j) {
+      for (ptrdiff_t i = 0; i < dgop::npoints; i += vs) {
         const ptrdiff_t offset0 = i * di + k * dk;
         const ptrdiff_t doffset = i * ddi + j * ddj + k * ddk;
+        vec_store_partial_prepare_fixed(i, 0, dgop::npoints);
         CCTK_REAL_VEC s = vec_set1(0.0);
-        for (ptrdiff_t n = -1; n < dgop::order + 2; ++n) {
-          const CCTK_REAL c = dgop::coeffs[n + 1][j];
+        for (ptrdiff_t n = dgop::nmin; n < dgop::nmax; ++n) {
+          const CCTK_REAL c = dgop::coeff(n, j);
           if (c != 0.0) {
             // We could use an aligned access if grid functions are
             // suitably aligned, and if the element size is a multiple
@@ -519,7 +540,7 @@ stencil_dg_dim3_dir1(const unsigned char *restrict const u,
             s = kmadd(vec_set1(c), vec_loadu(getelt(u, offset0 + n * dj)), s);
           }
         }
-        vec_store(getelt(du, doffset), kmul(f, s));
+        vec_storeu_partial(getelt(du, doffset), kmul(f, s));
       }
     });
   }
@@ -532,24 +553,22 @@ stencil_dg_dim3_dir2(const unsigned char *restrict const u,
                      const ptrdiff_t dj, const ptrdiff_t dk) {
   constexpr ptrdiff_t vs = CCTK_REAL_VEC_SIZE;
   constexpr ptrdiff_t di = sizeof(CCTK_REAL);
-  constexpr ptrdiff_t dni = alignup(dgop::order + 1, CCTK_REAL_VEC_SIZE);
-  constexpr ptrdiff_t dnj = dgop::order + 1;
+  // constexpr ptrdiff_t dni = alignup(dgop::npoints, CCTK_REAL_VEC_SIZE);
+  constexpr ptrdiff_t dni = dgop::npoints;
+  constexpr ptrdiff_t dnj = dgop::npoints;
   constexpr ptrdiff_t ddi = di;
   constexpr ptrdiff_t ddj = ddi * dni;
   constexpr ptrdiff_t ddk = ddj * dnj;
-  static_assert(sizeof dgop::coeffs / sizeof *dgop::coeffs == dgop::order + 3,
-                "");
-  static_assert(sizeof *dgop::coeffs / sizeof **dgop::coeffs >= dgop::order + 1,
-                "");
-  for (ptrdiff_t j = 0; j < dgop::order + 1; ++j) {
+  for (ptrdiff_t j = 0; j < dgop::npoints; ++j) {
     // unroll k loop
-    repeat_n<0, dgop::order + 1>([=](const ptrdiff_t k) {
-      for (ptrdiff_t i = 0; i < dgop::order + 1; i += vs) {
+    loop<0, dgop::npoints>([&](const ptrdiff_t k) {
+      for (ptrdiff_t i = 0; i < dgop::npoints; i += vs) {
         const ptrdiff_t offset0 = i * di + j * dj;
         const ptrdiff_t doffset = i * ddi + j * ddj + k * ddk;
+        vec_store_partial_prepare_fixed(i, 0, dgop::npoints);
         CCTK_REAL_VEC s = vec_set1(0.0);
-        for (ptrdiff_t n = -1; n < dgop::order + 2; ++n) {
-          const CCTK_REAL c = dgop::coeffs[n + 1][k];
+        for (ptrdiff_t n = dgop::nmin; n < dgop::nmax; ++n) {
+          const CCTK_REAL c = dgop::coeff(n, k);
           if (c != 0.0) {
             // We could use an aligned access if grid functions are
             // suitably aligned, and if the element size is a multiple
@@ -557,149 +576,367 @@ stencil_dg_dim3_dir2(const unsigned char *restrict const u,
             s = kmadd(vec_set1(c), vec_loadu(getelt(u, offset0 + n * dk)), s);
           }
         }
-        vec_store(getelt(du, doffset), kmul(f, s));
+        vec_storeu_partial(getelt(du, doffset), kmul(f, s));
       }
     });
   }
 }
 
-// template <typename dgop>
-// void stencil_dg_dim3_dir2(const unsigned char *restrict const u,
-//                           unsigned char *restrict const du,
-//                           const CCTK_REAL_VEC f, const ptrdiff_t dj,
-//                           const ptrdiff_t dk) {
-//   stencil_dg_dim3_dir1<dgop>(u, du, f, dk, dj);
-// }
-
 ////////////////////////////////////////////////////////////////////////////////
 
 // TODO: Auto-generate this, and don't declare it here, and change the names
 
-// Note: These types are templates so that the static definitions of the
-// coefficients can be placed here into a header file. Otherwise, they would
-// need to go into a source file.
-
 // Should we change the normalization to include a factor 2/(order+1)?
 
-template <std::size_t P, typename T> struct dgop_derivs;
+template <std::size_t P> struct dgop_derivs;
+template <std::size_t P> struct dgop_filter;
 
-template <typename T> struct dgop_derivs<2, T> {
+// order 2
+
+template <> struct dgop_derivs<2> {
   constexpr static const ptrdiff_t order = 2;
-  typedef const CCTK_REAL
-      coeffs_t[order + 3][alignup(order + 1, CCTK_REAL_VEC_SIZE)];
-  constexpr static coeffs_t coeffs
-      CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE *
-                             sizeof(CCTK_REAL)) = {{-1.5, 0, 0},
-                                                   {0, -0.5, 0.5},
-                                                   {2.0, 0, -2.0},
-                                                   {-0.5, 0.5, 0},
-                                                   {0, 0, 1.5}};
+  constexpr static const ptrdiff_t npoints = order + 1;
+  constexpr static const ptrdiff_t nmin = -1;
+  constexpr static const ptrdiff_t nmax = npoints + 1;
+  constexpr static const ptrdiff_t ncoeffs = nmax - nmin;
+  typedef const CCTK_REAL coeffs_t[ncoeffs][alignup(
+      npoints, CCTK_REAL_VEC_SIZE)] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE *
+                                                           sizeof(CCTK_REAL));
+  // n: stencil point, i: grid point (in element)
+  static CCTK_ATTRIBUTE_ALWAYS_INLINE const CCTK_REAL &coeff(std::ptrdiff_t n,
+                                                             std::ptrdiff_t i) {
+    constexpr static coeffs_t the_coeffs = {{-1.5, 0, 0},
+                                            {0, -0.5, 0.5},
+                                            {2.0, 0, -2.0},
+                                            {-0.5, 0.5, 0},
+                                            {0, 0, 1.5}};
+    static_assert(sizeof the_coeffs / sizeof *the_coeffs == ncoeffs, "");
+    static_assert(sizeof *the_coeffs / sizeof **the_coeffs >= npoints, "");
+    // assert(n >= nmin && n < nmax);
+    // assert(i >= 0 && i < npoints);
+    return the_coeffs[n - nmin][i];
+  }
 };
-template <typename T>
-constexpr typename dgop_derivs<2, T>::coeffs_t dgop_derivs<2, T>::coeffs;
 
-template <typename T> struct dgop_derivs<4, T> {
+template <> struct dgop_filter<2> {
+  constexpr static const ptrdiff_t order = 2;
+  constexpr static const ptrdiff_t npoints = order + 1;
+  constexpr static const ptrdiff_t nmin = 0;
+  constexpr static const ptrdiff_t nmax = npoints;
+  constexpr static const ptrdiff_t ncoeffs = nmax - nmin;
+  typedef const CCTK_REAL coeffs_t[ncoeffs][alignup(
+      npoints, CCTK_REAL_VEC_SIZE)] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE *
+                                                           sizeof(CCTK_REAL));
+  // n: stencil point, i: grid point (in element)
+  static CCTK_ATTRIBUTE_ALWAYS_INLINE const CCTK_REAL &coeff(std::ptrdiff_t n,
+                                                             std::ptrdiff_t i) {
+    constexpr static coeffs_t the_coeffs = {
+        {0.666666666666666666666666666667, 0.166666666666666666666666666667,
+         -0.333333333333333333333333333333},
+        {0.666666666666666666666666666667, 0.666666666666666666666666666667,
+         0.666666666666666666666666666667},
+        {-0.333333333333333333333333333333, 0.166666666666666666666666666667,
+         0.666666666666666666666666666667}};
+    static_assert(sizeof the_coeffs / sizeof *the_coeffs == ncoeffs, "");
+    static_assert(sizeof *the_coeffs / sizeof **the_coeffs >= npoints, "");
+    // assert(n >= nmin && n < nmax);
+    // assert(i >= 0 && i < npoints);
+    return the_coeffs[n - nmin][i];
+  }
+};
+
+// order 4
+
+template <> struct dgop_derivs<4> {
   constexpr static const ptrdiff_t order = 4;
-  typedef const CCTK_REAL
-      coeffs_t[order + 3][alignup(order + 1, CCTK_REAL_VEC_SIZE)];
-  constexpr static coeffs_t coeffs CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE *
-                                                          sizeof(CCTK_REAL)) = {
-      {-5, 0, 0, 0, 0},
-      {0, -1.24099025303098285784871934219, 0.375000000000000000000000000000,
-       -0.259009746969017142151280657815, 0.50000000000000000000000000000},
-      {6.7565024887242400038430275297, 0, -1.33658457769545333525484709817,
-       0.76376261582597333443134119895, -1.41016417794242666282363913699},
-      {-2.66666666666666666666666666667, 1.74574312188793905012877988332, 0,
-       -1.74574312188793905012877988332, 2.66666666666666666666666666667},
-      {1.41016417794242666282363913699, -0.76376261582597333443134119895,
-       1.33658457769545333525484709817, 0, -6.7565024887242400038430275297},
-      {-0.50000000000000000000000000000, 0.259009746969017142151280657815,
-       -0.375000000000000000000000000000, 1.24099025303098285784871934219, 0},
-      {0, 0, 0, 0, 5}};
+  constexpr static const ptrdiff_t npoints = order + 1;
+  constexpr static const ptrdiff_t nmin = -1;
+  constexpr static const ptrdiff_t nmax = npoints + 1;
+  constexpr static const ptrdiff_t ncoeffs = nmax - nmin;
+  typedef const CCTK_REAL coeffs_t[ncoeffs][alignup(
+      npoints, CCTK_REAL_VEC_SIZE)] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE *
+                                                           sizeof(CCTK_REAL));
+  // n: stencil point, i: grid point (in element)
+  static CCTK_ATTRIBUTE_ALWAYS_INLINE const CCTK_REAL &coeff(std::ptrdiff_t n,
+                                                             std::ptrdiff_t i) {
+    constexpr static coeffs_t the_coeffs = {
+        {-5, 0, 0, 0, 0},
+        {0, -1.24099025303098285784871934219, 0.375000000000000000000000000000,
+         -0.259009746969017142151280657815, 0.50000000000000000000000000000},
+        {6.7565024887242400038430275297, 0, -1.33658457769545333525484709817,
+         0.76376261582597333443134119895, -1.41016417794242666282363913699},
+        {-2.66666666666666666666666666667, 1.74574312188793905012877988332, 0,
+         -1.74574312188793905012877988332, 2.66666666666666666666666666667},
+        {1.41016417794242666282363913699, -0.76376261582597333443134119895,
+         1.33658457769545333525484709817, 0, -6.7565024887242400038430275297},
+        {-0.50000000000000000000000000000, 0.259009746969017142151280657815,
+         -0.375000000000000000000000000000, 1.24099025303098285784871934219, 0},
+        {0, 0, 0, 0, 5}};
+    static_assert(sizeof the_coeffs / sizeof *the_coeffs == ncoeffs, "");
+    static_assert(sizeof *the_coeffs / sizeof **the_coeffs >= npoints, "");
+    // assert(n >= nmin && n < nmax);
+    // assert(i >= 0 && i < npoints);
+    return the_coeffs[n - nmin][i];
+  }
 };
-template <typename T>
-constexpr typename dgop_derivs<4, T>::coeffs_t dgop_derivs<4, T>::coeffs;
 
-template <typename T> struct dgop_derivs<6, T> {
+template <> struct dgop_filter<4> {
+  constexpr static const ptrdiff_t order = 4;
+  constexpr static const ptrdiff_t npoints = order + 1;
+  constexpr static const ptrdiff_t nmin = 0;
+  constexpr static const ptrdiff_t nmax = npoints;
+  constexpr static const ptrdiff_t ncoeffs = nmax - nmin;
+  typedef const CCTK_REAL coeffs_t[ncoeffs][alignup(
+      npoints, CCTK_REAL_VEC_SIZE)] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE *
+                                                           sizeof(CCTK_REAL));
+  // n: stencil point, i: grid point (in element)
+  static CCTK_ATTRIBUTE_ALWAYS_INLINE const CCTK_REAL &coeff(std::ptrdiff_t n,
+                                                             std::ptrdiff_t i) {
+    constexpr static coeffs_t the_coeffs = {
+        {0.800000000000000000000000000000, 0.0857142857142857142857142857143,
+         -0.0750000000000000000000000000000, 0.0857142857142857142857142857143,
+         -0.200000000000000000000000000000},
+        {0.466666666666666666666666666667, 0.800000000000000000000000000000,
+         0.175000000000000000000000000000, -0.200000000000000000000000000000,
+         0.466666666666666666666666666667},
+        {-0.533333333333333333333333333333, 0.228571428571428571428571428571,
+         0.800000000000000000000000000000, 0.228571428571428571428571428571,
+         -0.533333333333333333333333333333},
+        {0.466666666666666666666666666667, -0.200000000000000000000000000000,
+         0.175000000000000000000000000000, 0.800000000000000000000000000000,
+         0.466666666666666666666666666667},
+        {-0.200000000000000000000000000000, 0.0857142857142857142857142857143,
+         -0.0750000000000000000000000000000, 0.0857142857142857142857142857143,
+         0.800000000000000000000000000000}};
+    static_assert(sizeof the_coeffs / sizeof *the_coeffs == ncoeffs, "");
+    static_assert(sizeof *the_coeffs / sizeof **the_coeffs >= npoints, "");
+    // assert(n >= nmin && n < nmax);
+    // assert(i >= 0 && i < npoints);
+    return the_coeffs[n - nmin][i];
+  }
+};
+
+// order 6
+
+template <> struct dgop_derivs<6> {
   constexpr static const ptrdiff_t order = 6;
-  typedef const CCTK_REAL
-      coeffs_t[order + 3][alignup(order + 1, CCTK_REAL_VEC_SIZE)];
-  constexpr static coeffs_t coeffs CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE *
-                                                          sizeof(CCTK_REAL)) = {
-      {-10.5, 0, 0, 0, 0, 0, 0},
-      {0, -2.44292601424428961264353508344, 0.62525666551534211425476493044,
-       -0.312500000000000000000000000000, 0.226099400942574651735810251280,
-       -0.226611870395445335165221916464, 0.50000000000000000000000000000},
-      {14.2015766029198161670816977260, 0, -2.21580428316997131363803034549,
-       0.90754447126882091882027943320, -0.61639083551757952864611929469,
-       0.60224717963578568466640341307, -1.31737343570243448845609847333},
-      {-5.6689852255455078785754090169, 3.45582821429428513260129789155, 0,
-       -2.00696924058875308957204950201, 1.06644190400637468973550663446,
-       -0.96133979728871166671127688438, 2.04996481307674277696238718244},
-      {3.20000000000000000000000000000, -1.59860668809836683716785819589,
-       2.26669808708599901220846300609, 0, -2.26669808708599901220846300609,
-       1.59860668809836683716785819589, -3.20000000000000000000000000000},
-      {-2.04996481307674277696238718244, 0.96133979728871166671127688438,
-       -1.06644190400637468973550663446, 2.00696924058875308957204950201, 0,
-       -3.45582821429428513260129789155, 5.6689852255455078785754090169},
-      {1.31737343570243448845609847333, -0.60224717963578568466640341307,
-       0.61639083551757952864611929469, -0.90754447126882091882027943320,
-       2.21580428316997131363803034549, 0, -14.2015766029198161670816977260},
-      {-0.50000000000000000000000000000, 0.226611870395445335165221916464,
-       -0.226099400942574651735810251280, 0.312500000000000000000000000000,
-       -0.62525666551534211425476493044, 2.44292601424428961264353508344, 0},
-      {0, 0, 0, 0, 0, 0, 10.5}};
+  constexpr static const ptrdiff_t npoints = order + 1;
+  constexpr static const ptrdiff_t nmin = -1;
+  constexpr static const ptrdiff_t nmax = npoints + 1;
+  constexpr static const ptrdiff_t ncoeffs = nmax - nmin;
+  typedef const CCTK_REAL coeffs_t[ncoeffs][alignup(
+      npoints, CCTK_REAL_VEC_SIZE)] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE *
+                                                           sizeof(CCTK_REAL));
+  // n: stencil point, i: grid point (in element)
+  static CCTK_ATTRIBUTE_ALWAYS_INLINE const CCTK_REAL &coeff(std::ptrdiff_t n,
+                                                             std::ptrdiff_t i) {
+    constexpr static coeffs_t the_coeffs = {
+        {-10.5, 0, 0, 0, 0, 0, 0},
+        {0, -2.44292601424428961264353508344, 0.62525666551534211425476493044,
+         -0.312500000000000000000000000000, 0.226099400942574651735810251280,
+         -0.226611870395445335165221916464, 0.50000000000000000000000000000},
+        {14.2015766029198161670816977260, 0, -2.21580428316997131363803034549,
+         0.90754447126882091882027943320, -0.61639083551757952864611929469,
+         0.60224717963578568466640341307, -1.31737343570243448845609847333},
+        {-5.6689852255455078785754090169, 3.45582821429428513260129789155, 0,
+         -2.00696924058875308957204950201, 1.06644190400637468973550663446,
+         -0.96133979728871166671127688438, 2.04996481307674277696238718244},
+        {3.20000000000000000000000000000, -1.59860668809836683716785819589,
+         2.26669808708599901220846300609, 0, -2.26669808708599901220846300609,
+         1.59860668809836683716785819589, -3.20000000000000000000000000000},
+        {-2.04996481307674277696238718244, 0.96133979728871166671127688438,
+         -1.06644190400637468973550663446, 2.00696924058875308957204950201, 0,
+         -3.45582821429428513260129789155, 5.6689852255455078785754090169},
+        {1.31737343570243448845609847333, -0.60224717963578568466640341307,
+         0.61639083551757952864611929469, -0.90754447126882091882027943320,
+         2.21580428316997131363803034549, 0, -14.2015766029198161670816977260},
+        {-0.50000000000000000000000000000, 0.226611870395445335165221916464,
+         -0.226099400942574651735810251280, 0.312500000000000000000000000000,
+         -0.62525666551534211425476493044, 2.44292601424428961264353508344, 0},
+        {0, 0, 0, 0, 0, 0, 10.5}};
+    static_assert(sizeof the_coeffs / sizeof *the_coeffs == ncoeffs, "");
+    static_assert(sizeof *the_coeffs / sizeof **the_coeffs >= npoints, "");
+    // assert(n >= nmin && n < nmax);
+    // assert(i >= 0 && i < npoints);
+    return the_coeffs[n - nmin][i];
+  }
 };
-template <typename T>
-constexpr typename dgop_derivs<6, T>::coeffs_t dgop_derivs<6, T>::coeffs;
 
-template <typename T> struct dgop_derivs<8, T> {
-  constexpr static const ptrdiff_t order = 8;
-  typedef const CCTK_REAL
-      coeffs_t[order + 3][alignup(order + 1, CCTK_REAL_VEC_SIZE)];
-  constexpr static coeffs_t coeffs
-      CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL)) = {
-          {-18, 0, 0, 0, 0, 0, 0, 0, 0},
-          {0, -4.0870137020336765889793098481, 0.98536009007450695190732750513,
-           -0.44461344928109063495515603300, 0.273437500000000000000000000000,
-           -0.207734512035597178904197341203, 0.189655591978356440316554839705,
-           -0.215654018702498989385219122479, 0.50000000000000000000000000000},
-          {24.3497451715930658264745651379, 0, -3.4883587534344548411598315601,
-           1.28796075006390654800826405148, -0.74178239791625424057639927034,
-           0.54730016053405140028685858270, -0.49235093831550741871977538918,
-           0.55570498128371678540266599324, -1.28483063269958833334100425314},
-          {-9.7387016572115472650292513563, 5.7868058166373116740903723405, 0,
-           -2.83445891207942039532716103713, 1.26941308635814953242157409323,
-           -0.85572618509267540469369404148, 0.73834927719038611665282848824,
-           -0.81675638174138587811723062895, 1.87444087344698324367585844334},
-          {5.5449639069493784995607676809, -2.69606544031405602899382047687,
-           3.5766809401256153210044855557, 0, -2.65931021757391799292835532816,
-           1.37696489376051208934447138421, -1.07980381128263048444543497939,
-           1.14565373845513231901250100842, -2.59074567655935499218591558478},
-          {-3.6571428571428571428571428571, 1.66522164500538518079547523473,
-           -1.71783215719506277794780854135, 2.85191596846289538830749160288, 0,
-           -2.85191596846289538830749160288, 1.71783215719506277794780854135,
-           -1.66522164500538518079547523473, 3.6571428571428571428571428571},
-          {2.59074567655935499218591558478, -1.14565373845513231901250100842,
-           1.07980381128263048444543497939, -1.37696489376051208934447138421,
-           2.65931021757391799292835532816, 0, -3.5766809401256153210044855557,
-           2.69606544031405602899382047687, -5.5449639069493784995607676809},
-          {-1.87444087344698324367585844334, 0.81675638174138587811723062895,
-           -0.73834927719038611665282848824, 0.85572618509267540469369404148,
-           -1.26941308635814953242157409323, 2.83445891207942039532716103713, 0,
-           -5.7868058166373116740903723405, 9.7387016572115472650292513563},
-          {1.28483063269958833334100425314, -0.55570498128371678540266599324,
-           0.49235093831550741871977538918, -0.54730016053405140028685858270,
-           0.74178239791625424057639927034, -1.28796075006390654800826405148,
-           3.4883587534344548411598315601, 0, -24.3497451715930658264745651379},
-          {-0.50000000000000000000000000000, 0.215654018702498989385219122479,
-           -0.189655591978356440316554839705, 0.207734512035597178904197341203,
-           -0.273437500000000000000000000000, 0.44461344928109063495515603300,
-           -0.98536009007450695190732750513, 4.0870137020336765889793098481, 0},
-          {0, 0, 0, 0, 0, 0, 0, 0, 18}};
+template <> struct dgop_filter<6> {
+  constexpr static const ptrdiff_t order = 6;
+  constexpr static const ptrdiff_t npoints = order + 1;
+  constexpr static const ptrdiff_t nmin = 0;
+  constexpr static const ptrdiff_t nmax = npoints;
+  constexpr static const ptrdiff_t ncoeffs = nmax - nmin;
+  typedef const CCTK_REAL coeffs_t[ncoeffs][alignup(
+      npoints, CCTK_REAL_VEC_SIZE)] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE *
+                                                           sizeof(CCTK_REAL));
+  // n: stencil point, i: grid point (in element)
+  static CCTK_ATTRIBUTE_ALWAYS_INLINE const CCTK_REAL &coeff(std::ptrdiff_t n,
+                                                             std::ptrdiff_t i) {
+    constexpr static coeffs_t the_coeffs = {
+        {0.857142857142857142857142857143, 0.0592500657683036564271051904732,
+         -0.0474436903255645773243897241214, 0.0446428571428571428571428571429,
+         -0.0474436903255645773243897241214, 0.0592500657683036564271051904732,
+         -0.142857142857142857142857142857},
+        {0.344441191763598831375069397121, 0.857142857142857142857142857143,
+         0.114390928661804110748223308384, -0.107637872426124634804709186600,
+         0.114390928661804110748223308384, -0.142857142857142857142857142857,
+         0.344441191763598831375069397121},
+        {-0.430155477477884545660783682835, 0.178407182318125050999120257141,
+         0.857142857142857142857142857143, 0.134423586711838920518994900886,
+         -0.142857142857142857142857142857, 0.178407182318125050999120257141,
+         -0.430155477477884545660783682835},
+        {0.457142857142857142857142857143, -0.189600210458571700566736609514,
+         0.151819809041806647438047117188, 0.857142857142857142857142857143,
+         0.151819809041806647438047117188, -0.189600210458571700566736609514,
+         0.457142857142857142857142857143},
+        {-0.430155477477884545660783682835, 0.178407182318125050999120257141,
+         -0.142857142857142857142857142857, 0.134423586711838920518994900886,
+         0.857142857142857142857142857143, 0.178407182318125050999120257141,
+         -0.430155477477884545660783682835},
+        {0.344441191763598831375069397121, -0.142857142857142857142857142857,
+         0.114390928661804110748223308384, -0.107637872426124634804709186600,
+         0.114390928661804110748223308384, 0.857142857142857142857142857143,
+         0.344441191763598831375069397121},
+        {-0.142857142857142857142857142857, 0.0592500657683036564271051904732,
+         -0.0474436903255645773243897241214, 0.0446428571428571428571428571429,
+         -0.0474436903255645773243897241214, 0.0592500657683036564271051904732,
+         0.857142857142857142857142857143}};
+    static_assert(sizeof the_coeffs / sizeof *the_coeffs == ncoeffs, "");
+    static_assert(sizeof *the_coeffs / sizeof **the_coeffs >= npoints, "");
+    // assert(n >= nmin && n < nmax);
+    // assert(i >= 0 && i < npoints);
+    return the_coeffs[n - nmin][i];
+  }
 };
-template <typename T>
-constexpr typename dgop_derivs<8, T>::coeffs_t dgop_derivs<8, T>::coeffs;
+
+// order 8
+
+template <> struct dgop_derivs<8> {
+  constexpr static const ptrdiff_t order = 8;
+  constexpr static const ptrdiff_t npoints = order + 1;
+  constexpr static const ptrdiff_t nmin = -1;
+  constexpr static const ptrdiff_t nmax = npoints + 1;
+  constexpr static const ptrdiff_t ncoeffs = nmax - nmin;
+  typedef const CCTK_REAL coeffs_t[ncoeffs][alignup(
+      npoints, CCTK_REAL_VEC_SIZE)] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE *
+                                                           sizeof(CCTK_REAL));
+  // n: stencil point, i: grid point (in element)
+  static CCTK_ATTRIBUTE_ALWAYS_INLINE const CCTK_REAL &coeff(std::ptrdiff_t n,
+                                                             std::ptrdiff_t i) {
+    constexpr static coeffs_t the_coeffs = {
+        {-18, 0, 0, 0, 0, 0, 0, 0, 0},
+        {0, -4.0870137020336765889793098481, 0.98536009007450695190732750513,
+         -0.44461344928109063495515603300, 0.273437500000000000000000000000,
+         -0.207734512035597178904197341203, 0.189655591978356440316554839705,
+         -0.215654018702498989385219122479, 0.50000000000000000000000000000},
+        {24.3497451715930658264745651379, 0, -3.4883587534344548411598315601,
+         1.28796075006390654800826405148, -0.74178239791625424057639927034,
+         0.54730016053405140028685858270, -0.49235093831550741871977538918,
+         0.55570498128371678540266599324, -1.28483063269958833334100425314},
+        {-9.7387016572115472650292513563, 5.7868058166373116740903723405, 0,
+         -2.83445891207942039532716103713, 1.26941308635814953242157409323,
+         -0.85572618509267540469369404148, 0.73834927719038611665282848824,
+         -0.81675638174138587811723062895, 1.87444087344698324367585844334},
+        {5.5449639069493784995607676809, -2.69606544031405602899382047687,
+         3.5766809401256153210044855557, 0, -2.65931021757391799292835532816,
+         1.37696489376051208934447138421, -1.07980381128263048444543497939,
+         1.14565373845513231901250100842, -2.59074567655935499218591558478},
+        {-3.6571428571428571428571428571, 1.66522164500538518079547523473,
+         -1.71783215719506277794780854135, 2.85191596846289538830749160288, 0,
+         -2.85191596846289538830749160288, 1.71783215719506277794780854135,
+         -1.66522164500538518079547523473, 3.6571428571428571428571428571},
+        {2.59074567655935499218591558478, -1.14565373845513231901250100842,
+         1.07980381128263048444543497939, -1.37696489376051208934447138421,
+         2.65931021757391799292835532816, 0, -3.5766809401256153210044855557,
+         2.69606544031405602899382047687, -5.5449639069493784995607676809},
+        {-1.87444087344698324367585844334, 0.81675638174138587811723062895,
+         -0.73834927719038611665282848824, 0.85572618509267540469369404148,
+         -1.26941308635814953242157409323, 2.83445891207942039532716103713, 0,
+         -5.7868058166373116740903723405, 9.7387016572115472650292513563},
+        {1.28483063269958833334100425314, -0.55570498128371678540266599324,
+         0.49235093831550741871977538918, -0.54730016053405140028685858270,
+         0.74178239791625424057639927034, -1.28796075006390654800826405148,
+         3.4883587534344548411598315601, 0, -24.3497451715930658264745651379},
+        {-0.50000000000000000000000000000, 0.215654018702498989385219122479,
+         -0.189655591978356440316554839705, 0.207734512035597178904197341203,
+         -0.273437500000000000000000000000, 0.44461344928109063495515603300,
+         -0.98536009007450695190732750513, 4.0870137020336765889793098481, 0},
+        {0, 0, 0, 0, 0, 0, 0, 0, 18}};
+    static_assert(sizeof the_coeffs / sizeof *the_coeffs == ncoeffs, "");
+    static_assert(sizeof *the_coeffs / sizeof **the_coeffs >= npoints, "");
+    // assert(n >= nmin && n < nmax);
+    // assert(i >= 0 && i < npoints);
+    return the_coeffs[n - nmin][i];
+  }
+};
+
+template <> struct dgop_filter<8> {
+  constexpr static const ptrdiff_t order = 8;
+  constexpr static const ptrdiff_t npoints = order + 1;
+  constexpr static const ptrdiff_t nmin = 0;
+  constexpr static const ptrdiff_t nmax = npoints;
+  constexpr static const ptrdiff_t ncoeffs = nmax - nmin;
+  typedef const CCTK_REAL coeffs_t[ncoeffs][alignup(
+      npoints, CCTK_REAL_VEC_SIZE)] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE *
+                                                           sizeof(CCTK_REAL));
+  // n: stencil point, i: grid point (in element)
+  static CCTK_ATTRIBUTE_ALWAYS_INLINE const CCTK_REAL &coeff(std::ptrdiff_t n,
+                                                             std::ptrdiff_t i) {
+    constexpr static coeffs_t the_coeffs = {
+        {0.888888888888888888888888888889, 0.0455211606969650020027066489336,
+         -0.0353430840776206841828537168104, 0.0314629490216813232057880935178,
+         -0.0303819444444444444444444444444, 0.0314629490216813232057880935178,
+         -0.0353430840776206841828537168104, 0.0455211606969650020027066489336,
+         -0.111111111111111111111111111111},
+        {0.271207474135623109302621175412, 0.888888888888888888888888888889,
+         0.0862677770476901817810095172497, -0.0767968823972525928639268958777,
+         0.0741582937089594439499354776518, -0.0767968823972525928639268958777,
+         0.0862677770476901817810095172497, -0.111111111111111111111111111111,
+         0.271207474135623109302621175412},
+        {-0.349309612744378161211946528958, 0.143108811132583070906865188684,
+         0.888888888888888888888888888889, 0.0989127948470365326215231138956,
+         -0.0955143472347909034563916290121, 0.0989127948470365326215231138956,
+         -0.111111111111111111111111111111, 0.143108811132583070906865188684,
+         -0.349309612744378161211946528958},
+        {0.392387852894469337623611067832, -0.160757554564315822603410027413,
+         0.124813771882976578875887821411, 0.888888888888888888888888888889,
+         0.107293553525831459506456151360, -0.111111111111111111111111111111,
+         0.124813771882976578875887821411, -0.160757554564315822603410027413,
+         0.392387852894469337623611067832},
+        {-0.406349206349206349206349206349, 0.166477387691757721609898601814,
+         -0.129254707483869930725865021478, 0.115064499279291696295453599151,
+         0.888888888888888888888888888889, 0.115064499279291696295453599151,
+         -0.129254707483869930725865021478, 0.166477387691757721609898601814,
+         -0.406349206349206349206349206349},
+        {0.392387852894469337623611067832, -0.160757554564315822603410027413,
+         0.124813771882976578875887821411, -0.111111111111111111111111111111,
+         0.107293553525831459506456151360, 0.888888888888888888888888888889,
+         0.124813771882976578875887821411, -0.160757554564315822603410027413,
+         0.392387852894469337623611067832},
+        {-0.349309612744378161211946528958, 0.143108811132583070906865188684,
+         -0.111111111111111111111111111111, 0.0989127948470365326215231138956,
+         -0.0955143472347909034563916290121, 0.0989127948470365326215231138956,
+         0.888888888888888888888888888889, 0.143108811132583070906865188684,
+         -0.349309612744378161211946528958},
+        {0.271207474135623109302621175412, -0.111111111111111111111111111111,
+         0.0862677770476901817810095172497, -0.0767968823972525928639268958777,
+         0.0741582937089594439499354776518, -0.0767968823972525928639268958777,
+         0.0862677770476901817810095172497, 0.888888888888888888888888888889,
+         0.271207474135623109302621175412},
+        {-0.111111111111111111111111111111, 0.0455211606969650020027066489336,
+         -0.0353430840776206841828537168104, 0.0314629490216813232057880935178,
+         -0.0303819444444444444444444444444, 0.0314629490216813232057880935178,
+         -0.0353430840776206841828537168104, 0.0455211606969650020027066489336,
+         0.888888888888888888888888888889}};
+    static_assert(sizeof the_coeffs / sizeof *the_coeffs == ncoeffs, "");
+    static_assert(sizeof *the_coeffs / sizeof **the_coeffs >= npoints, "");
+    // assert(n >= nmin && n < nmax);
+    // assert(i >= 0 && i < npoints);
+    return the_coeffs[n - nmin][i];
+  }
+};
 }
 
 #endif // #ifndef STENCIL_OPS_HH

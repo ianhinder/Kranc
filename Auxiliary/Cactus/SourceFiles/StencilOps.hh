@@ -10,7 +10,7 @@
 
 static_assert(HAVE_CAPABILITY_Vectors, "");
 
-namespace @THORN_NAME @{
+namespace @THORN_NAME@ {
     /******************************************************************************/
     /* Convenient shortcuts */
 

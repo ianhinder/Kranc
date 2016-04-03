@@ -420,6 +420,15 @@ template <> struct dgop_derivs<4> {
 };
 */
 
+// Note that the stencil coefficients are written here are the
+// transpose of those defined in the supplemental materials
+// https://bitbucket.org/Yurlungur/oldg-supplemental
+
+// If D: u_{wide} -> u'_{narrow}
+// where u_{wide} contains u within an element and the boundary data
+// for neighbouring elements and u'_{narrow} is the derivative of u
+// within an element, the coefficients are for Transpose[D]
+
 // Note that the explicit definition of the stencil coefficients after
 // the type definition leads to better code (at least with GCC), as
 // the compiler does not need to make separate copies of the stencil
@@ -590,6 +599,7 @@ stencil_dg_dim3_dir2(const unsigned char *restrict const u,
 
 template <std::size_t P> struct dgop_derivs;
 template <std::size_t P> struct dgop_filter;
+template <std::size_t P> struct dgop_diss;
 
 // order 2
 
@@ -637,6 +647,33 @@ template <> struct dgop_filter<2> {
          0.666666666666666666666666666667},
         {-0.333333333333333333333333333333, 0.166666666666666666666666666667,
          0.666666666666666666666666666667}};
+    static_assert(sizeof the_coeffs / sizeof *the_coeffs == ncoeffs, "");
+    static_assert(sizeof *the_coeffs / sizeof **the_coeffs >= npoints, "");
+    // assert(n >= nmin && n < nmax);
+    // assert(i >= 0 && i < npoints);
+    return the_coeffs[n - nmin][i];
+  }
+};
+
+template <> struct dgop_diss<2> {
+  constexpr static const ptrdiff_t order = 2;
+  constexpr static const ptrdiff_t npoints = order + 1;
+  constexpr static const ptrdiff_t nmin = 0;
+  constexpr static const ptrdiff_t nmax = npoints;
+  constexpr static const ptrdiff_t ncoeffs = nmax - nmin;
+  typedef const CCTK_REAL coeffs_t[ncoeffs][alignup(
+      npoints, CCTK_REAL_VEC_SIZE)] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE *
+                                                           sizeof(CCTK_REAL));
+  // n: stencil point, i: grid point (in element)
+  static CCTK_ATTRIBUTE_ALWAYS_INLINE const CCTK_REAL &coeff(std::ptrdiff_t n,
+                                                             std::ptrdiff_t i) {
+    constexpr static coeffs_t the_coeffs = {
+      {-0.333333333333333333333333333333, 0.166666666666666666666666666667,
+       -0.333333333333333333333333333333},
+      {0.666666666666666666666666666667, -0.333333333333333333333333333333, 
+       0.666666666666666666666666666667},
+      {-0.333333333333333333333333333333, 0.166666666666666666666666666667, 
+       -0.333333333333333333333333333333}};
     static_assert(sizeof the_coeffs / sizeof *the_coeffs == ncoeffs, "");
     static_assert(sizeof *the_coeffs / sizeof **the_coeffs >= npoints, "");
     // assert(n >= nmin && n < nmax);
@@ -708,6 +745,42 @@ template <> struct dgop_filter<4> {
         {-0.200000000000000000000000000000, 0.0857142857142857142857142857143,
          -0.0750000000000000000000000000000, 0.0857142857142857142857142857143,
          0.800000000000000000000000000000}};
+    static_assert(sizeof the_coeffs / sizeof *the_coeffs == ncoeffs, "");
+    static_assert(sizeof *the_coeffs / sizeof **the_coeffs >= npoints, "");
+    // assert(n >= nmin && n < nmax);
+    // assert(i >= 0 && i < npoints);
+    return the_coeffs[n - nmin][i];
+  }
+};
+
+template <> struct dgop_diss<4> {
+  constexpr static const ptrdiff_t order = 4;
+  constexpr static const ptrdiff_t npoints = order + 1;
+  constexpr static const ptrdiff_t nmin = 0;
+  constexpr static const ptrdiff_t nmax = npoints;
+  constexpr static const ptrdiff_t ncoeffs = nmax - nmin;
+  typedef const CCTK_REAL coeffs_t[ncoeffs][alignup(
+      npoints, CCTK_REAL_VEC_SIZE)] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE *
+                                                           sizeof(CCTK_REAL));
+  // n: stencil point, i: grid point (in element)
+  static CCTK_ATTRIBUTE_ALWAYS_INLINE const CCTK_REAL &coeff(std::ptrdiff_t n,
+                                                             std::ptrdiff_t i) {
+    constexpr static coeffs_t the_coeffs = {
+      {-0.200341796875000000000000000000, 0.0858101822480808281251378637108,
+       -0.0750000000000000000000000000000, 0.0856183891804906004462907077178,
+       -0.199658203125000000000000000000},
+      {0.467188770017328953125750591314, -0.200146484375000000000000000000, 
+       0.175000000000000000000000000000, -0.199853515625000000000000000000,
+       0.466144563316004380207582742019},
+      {-0.533333333333333333333333333333, 0.228571428571428571428571428571,
+       -0.200000000000000000000000000000, 0.228571428571428571428571428571,
+       -0.533333333333333333333333333333},
+      {0.466144563316004380207582742019, -0.199853515625000000000000000000, 
+       0.175000000000000000000000000000, -0.200146484375000000000000000000,
+       0.467188770017328953125750591314},
+      {-0.199658203125000000000000000000, 0.0856183891804906004462907077178,
+       -0.0750000000000000000000000000000, 0.0858101822480808281251378637108,
+       -0.200341796875000000000000000000}};
     static_assert(sizeof the_coeffs / sizeof *the_coeffs == ncoeffs, "");
     static_assert(sizeof *the_coeffs / sizeof **the_coeffs >= npoints, "");
     // assert(n >= nmin && n < nmax);

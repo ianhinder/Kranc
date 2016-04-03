@@ -11,10 +11,10 @@
 static_assert(HAVE_CAPABILITY_Vectors, "");
 
 namespace @THORN_NAME@ {
-    /******************************************************************************/
-    /* Convenient shortcuts */
+/******************************************************************************/
+/* Convenient shortcuts */
 
-    using std::ptrdiff_t;
+using std::ptrdiff_t;
 using std::size_t;
 
 /******************************************************************************/

@@ -382,7 +382,8 @@ chemoraExpandRules =
      Rule[lhs_, chemoraIfElse[Parameter[cond_],rest___]] :>
         lhs -> chemoraIfElse[cond,rest],
      Rule[lhs_, h1_[op1___,
-                    h2_String?(StringMatchQ[#,RegularExpression["I3D\\(.*"]]&),
+                    h2_String?(StringMatchQ
+                               [#,RegularExpression["I[3L]D\\(.*"]]&),
                     op3___]] :>
         Sequence@@Module[{lhs2, seq = chemoraExpandRulesSeqNum++},
           lhs2 = Symbol[ ToString[lhs] <> "xOffsetLd" <> ToString[seq] ];
@@ -406,7 +407,7 @@ chemoraCExpressionEQstr[lhs_->ChemoraI3DParse[rhs_]]:= Module[
    { argsRaw = StringCases
         [ rhs,
           RegularExpression[
-            "_I3D\\(([^,]+),([^,]+),([^,]+),([^,]+)\\)"]
+            "_I[3L]D\\(([^,]+),(?:cak[^,]+,)?([^,]+),([^,]+),([^,]+)\\)"]
              :> ToExpression /@ {"$1","$2","$3","$4"} ] // Flatten },
     chemoraCExpressionEQstr[ lhs -> (ChemoraNOffset@@argsRaw) ] ];
 
@@ -744,13 +745,10 @@ PastTL[x_] :=
   If[StringMatchQ[ToString[x],"*Opast"],"1","0"];
 
 gfMakeAssign[gf_] :=
-  Module[{info = Global`KrancProjectionInfo[gf]},
-    " assign_from_gf_load" <> "("
-       <> chemoraQuote[localName[gf]] <> ", "
-       <> NoPast[chemoraQuote[gf]] <> ", "
-       <> PastTL[gf] <> ", "
-       <> "AX_" <> If[ info === False, "xyz", StringJoin[Global`Sizes/.info] ]
-       <> ");\n"]
+    ( " assign_from_gf_load("
+      <> chemoraQuote[localName[gf]] <> ", "
+      <> NoPast[chemoraQuote[gf]] <> ", "
+      <> PastTL[gf] <> ");\n" )
 
 DefFn[
   equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, odeGroups_, pddefs_,
@@ -905,6 +903,15 @@ DefFn[
     gfsInRHS = Complement[gfsInRHS, odeVars];
     gfsInLHS = Complement[gfsInLHS, odeVars];
     gfsOnlyInRHS = Complement[gfsInRHS, gfsInLHS];
+
+    Module[{gf=#,info},
+     info = Global`KrancProjectionInfo[gf];
+     If[ info =!= False,
+       mapRefAppend[cleancalc,ChemoraContents,
+         " assign_gf_axes("
+         <> chemoraQuote[gf] <> ", "
+         <> "AX_" <> StringJoin[Global`Sizes/.info]
+         <> ");\n"] ] ]& /@ gfsInRHS;
 
     mapRefAppend[cleancalc,ChemoraContents, "// gfsInRHS:\n"];
     mapRefAppend[cleancalc,ChemoraContents,

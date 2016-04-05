@@ -190,10 +190,14 @@ DefFn[CaKernelCode[calc_List,opts___] :=
     (* Process stencils *)
     calc2 = calc2 /.
       I3D[gf_,n1_,n2_,n3_] :>
-        "I3D("<>ToString[gf]<>","<>
-                ToString[n1]<>","<>
-                ToString[n2]<>","<>
-                ToString[n3]<>")";
+        Module[{ info = Global`KrancProjectionInfo[gf] },
+          If[ info === False, "I3D", "ILD" ] <>
+          "("<>ToString[gf]<>","<>
+          If[ info === False, "", 
+              "cak__AX_" <> StringJoin[Global`Sizes/.info] <>"," ] <>
+          ToString[n1]<>","<>
+          ToString[n2]<>","<>
+          ToString[n3]<>")" ];
 
     (* Kranc Tiling is not supported for CaKernel thorns *)
     calc2 = mapReplaceAdd[calc2, Tile, False];

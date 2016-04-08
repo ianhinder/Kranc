@@ -90,18 +90,17 @@ DefFn[
   ToString[x] <> "[0]"];
 
 DefFn[
-  InitialiseFDVariables[vectorise:Boolean, dgTile:Boolean] :=
+  InitialiseFDVariables[vectorise:Boolean, dgTile:Boolean, dim_Integer] :=
+  Module[{char},
+  char[c_,i_] := FromCharacterCode[ToCharacterCode[c]+i];
   CommentedBlock[
     "Initialise finite differencing variables",
     {
       If[!dgTile,
         MapThread[Function[{dest,type,val}, AssignVariableFromExpression[dest,val,True,vectorise,dgTile,Const->True,Type->type]],
-              Transpose@{{"di", "ptrdiff_t", "1"},
-               {"dj", "ptrdiff_t", "CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0)"},
-               {"dk", "ptrdiff_t", "CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0)"},
-               {"cdi", "ptrdiff_t", "sizeof(CCTK_REAL) * di"},
-               {"cdj", "ptrdiff_t", "sizeof(CCTK_REAL) * dj"},
-               {"cdk", "ptrdiff_t", "sizeof(CCTK_REAL) * dk"}}],
+              Transpose@Join[{{"di", "ptrdiff_t", "1"}},
+              Table[{"d"<>char["i",i], "ptrdiff_t", "CCTK_GFINDEX"<>ToString[dim]<>"D(cctkGH"<>StringJoin@@Table[If[j==i,",1",",0"],{j,0,dim-1}]<>") - CCTK_GFINDEX"<>ToString[dim]<>"D(cctkGH"<>StringJoin@@Table[",0",dim]<>")"}, {i,1,dim-1}],
+              Table[{"cd"<>char["i",i], "ptrdiff_t", "sizeof(CCTK_REAL) * d"<>char["i",i]}, {i,0,dim-1}]]],
         {}],
 
       MapThread[Function[{dest,type,val}, AssignVariableFromExpression[dest,val,True,vectorise,dgTile,Const->True,Type->type]],
@@ -128,7 +127,7 @@ DefFn[
       AssignVariableFromExpression["kfourthird", 4/3, True, vectorise, dgTile, Const -> True],
       AssignVariableFromExpression["hdxi", 0.5 "dxi", True, vectorise, dgTile, Const -> True],
       AssignVariableFromExpression["hdyi", 0.5 "dyi", True, vectorise, dgTile, Const -> True],
-      AssignVariableFromExpression["hdzi", 0.5 "dzi", True, vectorise, dgTile, Const -> True]}]];
+      AssignVariableFromExpression["hdzi", 0.5 "dzi", True, vectorise, dgTile, Const -> True]}]]];
 
 Options[GenericGridLoop] = Join[ThornOptions, {Tile -> False, DGTile -> False}];
 

@@ -239,13 +239,13 @@ DefFn[
                          {value, lookup[param, AllowedValues]}]]}]]];
 
 DefFn[
-  PrecomputeTiledDerivatives[derivOps_, expr_, zeroDims_] :=
+  PrecomputeTiledDerivatives[derivOps_, expr_, dim_, zeroDims_] :=
   Module[
     {gfds, sortedgfds},
     CountDerivativeOperations[derivOps, expr, zeroDims];
     gfds = GridFunctionDerivativesInExpression[derivOps, expr, zeroDims];
     sortedgfds = Sort[gfds, ordergfds];
-    Map[PrecomputeTiledDerivative, sortedgfds]]];
+    Map[PrecomputeTiledDerivative[#,dim]&, sortedgfds]]];
 
 DefFn[
   ReplaceDerivatives[derivOps_, expr_, precompute_, zeroDims_, macroPointer_] :=
@@ -337,21 +337,24 @@ DefFn[
       AssignVariable[GridFunctionDerivativeName[vargfd], evaluateDerivative[d,macroPointer,dgTile]]]]];
 
 DefFn[
-  PrecomputeTiledDerivative[d:pd_[gf_, inds___]] :=
+  PrecomputeTiledDerivative[d:pd_[gf_, inds___], dim_Integer] :=
   Module[
     {
+      char = FromCharacterCode[ToCharacterCode[#1]+#2]&,
       pdn = ToString[pd],
       gfn = ToString[gf],
       gfdn = ToString[GridFunctionDerivativeName[d]],
       indstr = Apply[StringJoin, Map[ToString[#-1]&, {inds}]],
       dxistr = Apply[StringJoin,
-                     Map[("kmul(" <> {"dxi","dyi","dzi"}[[#]] <> ", " <>
-                          "ToReal(2.0/(order+1))), ")&,
-                         {inds}]]
+                     Map[(", kmul(" <> {"dxi","dyi","dzi","dui"}[[#]] <> ", " <>
+                          "ToReal(2.0/(order+1)))")&,
+                         {inds}]],
+      distr
     },
+    distr = Apply[StringJoin, Table[", d"<>char["i",i], {i,1,dim-1}]];
     {
-      "unsigned char "<>gfdn<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n",
-      "stencil_dg_dim3_dir"<>indstr<>"<dgop_"<>pdn<>">(&((const unsigned char *)"<>gfn<>")[off1], "<>gfdn<>"T, "<>dxistr<>"dj, dk);\n"
+      "unsigned char "<>gfdn<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(/* CCTK_REAL_VEC_SIZE * */ sizeof(CCTK_REAL));\n",
+      "stencil_dg_dim"<>ToString[dim]<>"_dir"<>indstr<>"<dgop_"<>pdn<>">(&((const unsigned char *)"<>gfn<>")[off1], "<>gfdn<>"T"<>dxistr<>distr<>");\n"
     }]];
 
 DefFn[

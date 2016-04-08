@@ -435,7 +435,7 @@ VerifyCalculation[calc_] :=
          SeparatedDerivatives, SeparatedDerivatives2,
          LocalGroups, NoSimplify, UseDGFE, SimpleCode, UseCaKernel,
          UseJacobian,
-         ScheduleGroups, TriggerGroups, ThornName, Tile, DGTile,
+         ScheduleGroups, TriggerGroups, ThornName, Dimensions, Tile, DGTile,
          UseLoopControl};
 
     usedKeys = Map[First, calc];

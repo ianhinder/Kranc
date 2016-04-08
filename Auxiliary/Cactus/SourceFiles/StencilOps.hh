@@ -426,6 +426,44 @@ template <> struct dgop_derivs<4> {
 // coefficients.
 
 template <typename dgop>
+CCTK_ATTRIBUTE_NOINLINE void load_dg_dim1(const unsigned char *restrict const u,
+                                          unsigned char *restrict const du) {
+  constexpr ptrdiff_t vs = CCTK_REAL_VEC_SIZE;
+  constexpr ptrdiff_t di = sizeof(CCTK_REAL);
+  constexpr ptrdiff_t ddi = di;
+  for (ptrdiff_t i = 0; i < dgop::order + 1; i += vs) {
+    const ptrdiff_t offset = i * di;
+    const ptrdiff_t doffset = i * ddi;
+    vec_store_partial_prepare_fixed(i, 0, dgop::order + 1);
+    const CCTK_REAL_VEC s = vec_loadu(getelt(u, offset));
+    // vec_store(getelt(du, doffset), s);
+    vec_storeu_partial(getelt(du, doffset), s);
+  }
+}
+
+template <typename dgop>
+CCTK_ATTRIBUTE_NOINLINE void load_dg_dim2(const unsigned char *restrict const u,
+                                          unsigned char *restrict const du,
+                                          const ptrdiff_t dj) {
+  constexpr ptrdiff_t vs = CCTK_REAL_VEC_SIZE;
+  constexpr ptrdiff_t di = sizeof(CCTK_REAL);
+  // constexpr ptrdiff_t dni = alignup(dgop::order + 1, CCTK_REAL_VEC_SIZE);
+  constexpr ptrdiff_t dni = dgop::order + 1;
+  constexpr ptrdiff_t ddi = di;
+  constexpr ptrdiff_t ddj = ddi * dni;
+  for (ptrdiff_t j = 0; j < dgop::order + 1; ++j) {
+    for (ptrdiff_t i = 0; i < dgop::order + 1; i += vs) {
+      const ptrdiff_t offset = i * di + j * dj;
+      const ptrdiff_t doffset = i * ddi + j * ddj;
+      vec_store_partial_prepare_fixed(i, 0, dgop::order + 1);
+      const CCTK_REAL_VEC s = vec_loadu(getelt(u, offset));
+      // vec_store(getelt(du, doffset), s);
+      vec_storeu_partial(getelt(du, doffset), s);
+    }
+  }
+}
+
+template <typename dgop>
 CCTK_ATTRIBUTE_NOINLINE void load_dg_dim3(const unsigned char *restrict const u,
                                           unsigned char *restrict const du,
                                           const ptrdiff_t dj,
@@ -447,6 +485,37 @@ CCTK_ATTRIBUTE_NOINLINE void load_dg_dim3(const unsigned char *restrict const u,
         const CCTK_REAL_VEC s = vec_loadu(getelt(u, offset));
         // vec_store(getelt(du, doffset), s);
         vec_storeu_partial(getelt(du, doffset), s);
+      }
+    }
+  }
+}
+
+template <typename dgop>
+CCTK_ATTRIBUTE_NOINLINE void
+load_dg_dim4(const unsigned char *restrict const u,
+             unsigned char *restrict const du, const ptrdiff_t dj,
+             const ptrdiff_t dk, const ptrdiff_t dl) {
+  constexpr ptrdiff_t vs = CCTK_REAL_VEC_SIZE;
+  constexpr ptrdiff_t di = sizeof(CCTK_REAL);
+  // constexpr ptrdiff_t dni = alignup(dgop::order + 1, CCTK_REAL_VEC_SIZE);
+  constexpr ptrdiff_t dni = dgop::order + 1;
+  constexpr ptrdiff_t dnj = dgop::order + 1;
+  constexpr ptrdiff_t dnk = dgop::order + 1;
+  constexpr ptrdiff_t ddi = di;
+  constexpr ptrdiff_t ddj = ddi * dni;
+  constexpr ptrdiff_t ddk = ddj * dnj;
+  constexpr ptrdiff_t ddl = ddk * dnk;
+  for (ptrdiff_t l = 0; l < dgop::order + 1; ++l) {
+    for (ptrdiff_t k = 0; k < dgop::order + 1; ++k) {
+      for (ptrdiff_t j = 0; j < dgop::order + 1; ++j) {
+        for (ptrdiff_t i = 0; i < dgop::order + 1; i += vs) {
+          const ptrdiff_t offset = i * di + j * dj + k * dk + l * dl;
+          const ptrdiff_t doffset = i * ddi + j * ddj + k * ddk + l * ddl;
+          vec_store_partial_prepare_fixed(i, 0, dgop::order + 1);
+          const CCTK_REAL_VEC s = vec_loadu(getelt(u, offset));
+          // vec_store(getelt(du, doffset), s);
+          vec_storeu_partial(getelt(du, doffset), s);
+        }
       }
     }
   }
@@ -481,6 +550,37 @@ store_dg_dim3(unsigned char *restrict const u,
 
 template <typename dgop>
 CCTK_ATTRIBUTE_NOINLINE void
+store_dg_dim4(unsigned char *restrict const u,
+              const unsigned char *restrict const du, const ptrdiff_t dj,
+              const ptrdiff_t dk, const ptrdiff_t dl) {
+  constexpr ptrdiff_t vs = CCTK_REAL_VEC_SIZE;
+  constexpr ptrdiff_t di = sizeof(CCTK_REAL);
+  // constexpr ptrdiff_t dni = alignup(dgop::order + 1, CCTK_REAL_VEC_SIZE);
+  constexpr ptrdiff_t dni = dgop::order + 1;
+  constexpr ptrdiff_t dnj = dgop::order + 1;
+  constexpr ptrdiff_t dnk = dgop::order + 1;
+  constexpr ptrdiff_t ddi = di;
+  constexpr ptrdiff_t ddj = ddi * dni;
+  constexpr ptrdiff_t ddk = ddj * dnj;
+  constexpr ptrdiff_t ddl = ddk * dnk;
+  for (ptrdiff_t l = 0; l < dgop::order + 1; ++l) {
+    for (ptrdiff_t k = 0; k < dgop::order + 1; ++k) {
+      for (ptrdiff_t j = 0; j < dgop::order + 1; ++j) {
+        for (ptrdiff_t i = 0; i < dgop::order + 1; i += vs) {
+          const ptrdiff_t offset = i * di + j * dj + k * dk + l * dl;
+          const ptrdiff_t doffset = i * ddi + j * ddj + k * ddk + l * ddl;
+          vec_store_partial_prepare_fixed(i, 0, dgop::order + 1);
+          // const CCTK_REAL_VEC s = vec_load(getelt(du, doffset));
+          const CCTK_REAL_VEC s = vec_loadu(getelt(du, doffset));
+          vec_storeu_partial(getelt(u, offset), s);
+        }
+      }
+    }
+  }
+}
+
+template <typename dgop>
+CCTK_ATTRIBUTE_NOINLINE void
 stencil_dg_dim3_dir0(const unsigned char *restrict const u,
                      unsigned char *restrict const du, const CCTK_REAL_VEC f,
                      const ptrdiff_t dj, const ptrdiff_t dk) {
@@ -506,6 +606,42 @@ stencil_dg_dim3_dir0(const unsigned char *restrict const u,
         }
         vec_storeu_partial(getelt(du, doffset), kmul(f, s));
       });
+    }
+  }
+}
+
+template <typename dgop>
+CCTK_ATTRIBUTE_NOINLINE void
+stencil_dg_dim4_dir0(const unsigned char *restrict const u,
+                     unsigned char *restrict const du, const CCTK_REAL_VEC f,
+                     const ptrdiff_t dj, const ptrdiff_t dk,
+                     const ptrdiff_t dl) {
+  constexpr ptrdiff_t vs = CCTK_REAL_VEC_SIZE;
+  constexpr ptrdiff_t di = sizeof(CCTK_REAL);
+  // constexpr ptrdiff_t dni = alignup(dgop::npoints, CCTK_REAL_VEC_SIZE);
+  constexpr ptrdiff_t dni = dgop::npoints;
+  constexpr ptrdiff_t dnj = dgop::npoints;
+  constexpr ptrdiff_t dnk = dgop::npoints;
+  constexpr ptrdiff_t ddi = di;
+  constexpr ptrdiff_t ddj = ddi * dni;
+  constexpr ptrdiff_t ddk = ddj * dnj;
+  constexpr ptrdiff_t ddl = ddk * dnk;
+  for (ptrdiff_t l = 0; l < dgop::npoints; ++l) {
+    for (ptrdiff_t k = 0; k < dgop::npoints; ++k) {
+      // unroll i loop
+      for (ptrdiff_t j = 0; j < dgop::npoints; ++j) {
+        const ptrdiff_t offset0 = j * dj + k * dk + l * dl;
+        loop<0, dgop::npoints, vs>([&](ptrdiff_t i) {
+          const ptrdiff_t doffset = i * ddi + j * ddj + k * ddk + l * ddl;
+          vec_store_partial_prepare_fixed(i, 0, dgop::npoints);
+          CCTK_REAL_VEC s = vec_set1(0.0);
+          for (ptrdiff_t n = dgop::nmin; n < dgop::nmax; ++n) {
+            const CCTK_REAL_VEC cs = vec_load(dgop::coeff(n, i));
+            s = kmadd(cs, vec_set1(getelt(u, offset0 + n * di)), s);
+          }
+          vec_storeu_partial(getelt(du, doffset), kmul(f, s));
+        });
+      }
     }
   }
 }
@@ -548,6 +684,47 @@ stencil_dg_dim3_dir1(const unsigned char *restrict const u,
 
 template <typename dgop>
 CCTK_ATTRIBUTE_NOINLINE void
+stencil_dg_dim4_dir1(const unsigned char *restrict const u,
+                     unsigned char *restrict const du, const CCTK_REAL_VEC f,
+                     const ptrdiff_t dj, const ptrdiff_t dk,
+                     const ptrdiff_t dl) {
+  constexpr ptrdiff_t vs = CCTK_REAL_VEC_SIZE;
+  constexpr ptrdiff_t di = sizeof(CCTK_REAL);
+  // constexpr ptrdiff_t dni = alignup(dgop::npoints, CCTK_REAL_VEC_SIZE);
+  constexpr ptrdiff_t dni = dgop::npoints;
+  constexpr ptrdiff_t dnj = dgop::npoints;
+  constexpr ptrdiff_t dnk = dgop::npoints;
+  constexpr ptrdiff_t ddi = di;
+  constexpr ptrdiff_t ddj = ddi * dni;
+  constexpr ptrdiff_t ddk = ddj * dnj;
+  constexpr ptrdiff_t ddl = ddk * dnk;
+  for (ptrdiff_t l = 0; l < dgop::npoints; ++l) {
+    for (ptrdiff_t k = 0; k < dgop::npoints; ++k) {
+      // unroll j loop
+      loop<0, dgop::npoints>([&](ptrdiff_t j) {
+        for (ptrdiff_t i = 0; i < dgop::npoints; i += vs) {
+          const ptrdiff_t offset0 = i * di + k * dk + l * dl;
+          const ptrdiff_t doffset = i * ddi + j * ddj + k * ddk + l * ddl;
+          vec_store_partial_prepare_fixed(i, 0, dgop::npoints);
+          CCTK_REAL_VEC s = vec_set1(0.0);
+          for (ptrdiff_t n = dgop::nmin; n < dgop::nmax; ++n) {
+            const CCTK_REAL c = dgop::coeff(n, j);
+            if (c != 0.0) {
+              // We could use an aligned access if grid functions are
+              // suitably aligned, and if the element size is a multiple
+              // of the vector size
+              s = kmadd(vec_set1(c), vec_loadu(getelt(u, offset0 + n * dj)), s);
+            }
+          }
+          vec_storeu_partial(getelt(du, doffset), kmul(f, s));
+        }
+      });
+    }
+  }
+}
+
+template <typename dgop>
+CCTK_ATTRIBUTE_NOINLINE void
 stencil_dg_dim3_dir2(const unsigned char *restrict const u,
                      unsigned char *restrict const du, const CCTK_REAL_VEC f,
                      const ptrdiff_t dj, const ptrdiff_t dk) {
@@ -579,6 +756,88 @@ stencil_dg_dim3_dir2(const unsigned char *restrict const u,
         vec_storeu_partial(getelt(du, doffset), kmul(f, s));
       }
     });
+  }
+}
+
+template <typename dgop>
+CCTK_ATTRIBUTE_NOINLINE void
+stencil_dg_dim4_dir2(const unsigned char *restrict const u,
+                     unsigned char *restrict const du, const CCTK_REAL_VEC f,
+                     const ptrdiff_t dj, const ptrdiff_t dk,
+                     const ptrdiff_t dl) {
+  constexpr ptrdiff_t vs = CCTK_REAL_VEC_SIZE;
+  constexpr ptrdiff_t di = sizeof(CCTK_REAL);
+  // constexpr ptrdiff_t dni = alignup(dgop::npoints, CCTK_REAL_VEC_SIZE);
+  constexpr ptrdiff_t dni = dgop::npoints;
+  constexpr ptrdiff_t dnj = dgop::npoints;
+  constexpr ptrdiff_t dnk = dgop::npoints;
+  constexpr ptrdiff_t ddi = di;
+  constexpr ptrdiff_t ddj = ddi * dni;
+  constexpr ptrdiff_t ddk = ddj * dnj;
+  constexpr ptrdiff_t ddl = ddk * dnk;
+  for (ptrdiff_t l = 0; l < dgop::npoints; ++l) {
+    for (ptrdiff_t j = 0; j < dgop::npoints; ++j) {
+      // unroll k loop
+      loop<0, dgop::npoints>([&](const ptrdiff_t k) {
+        for (ptrdiff_t i = 0; i < dgop::npoints; i += vs) {
+          const ptrdiff_t offset0 = i * di + j * dj + l * dl;
+          const ptrdiff_t doffset = i * ddi + j * ddj + k * ddk + l * ddl;
+          vec_store_partial_prepare_fixed(i, 0, dgop::npoints);
+          CCTK_REAL_VEC s = vec_set1(0.0);
+          for (ptrdiff_t n = dgop::nmin; n < dgop::nmax; ++n) {
+            const CCTK_REAL c = dgop::coeff(n, k);
+            if (c != 0.0) {
+              // We could use an aligned access if grid functions are
+              // suitably aligned, and if the element size is a multiple
+              // of the vector size
+              s = kmadd(vec_set1(c), vec_loadu(getelt(u, offset0 + n * dk)), s);
+            }
+          }
+          vec_storeu_partial(getelt(du, doffset), kmul(f, s));
+        }
+      });
+    }
+  }
+}
+
+template <typename dgop>
+CCTK_ATTRIBUTE_NOINLINE void
+stencil_dg_dim4_dir3(const unsigned char *restrict const u,
+                     unsigned char *restrict const du, const CCTK_REAL_VEC f,
+                     const ptrdiff_t dj, const ptrdiff_t dk,
+                     const ptrdiff_t dl) {
+  constexpr ptrdiff_t vs = CCTK_REAL_VEC_SIZE;
+  constexpr ptrdiff_t di = sizeof(CCTK_REAL);
+  // constexpr ptrdiff_t dni = alignup(dgop::npoints, CCTK_REAL_VEC_SIZE);
+  constexpr ptrdiff_t dni = dgop::npoints;
+  constexpr ptrdiff_t dnj = dgop::npoints;
+  constexpr ptrdiff_t dnk = dgop::npoints;
+  constexpr ptrdiff_t ddi = di;
+  constexpr ptrdiff_t ddj = ddi * dni;
+  constexpr ptrdiff_t ddk = ddj * dnj;
+  constexpr ptrdiff_t ddl = ddk * dnk;
+  for (ptrdiff_t k = 0; k < dgop::npoints; ++k) {
+    for (ptrdiff_t j = 0; j < dgop::npoints; ++j) {
+      // unroll l loop
+      loop<0, dgop::npoints>([&](const ptrdiff_t l) {
+        for (ptrdiff_t i = 0; i < dgop::npoints; i += vs) {
+          const ptrdiff_t offset0 = i * di + j * dj + k * dk;
+          const ptrdiff_t doffset = i * ddi + j * ddj + k * ddk + l * ddl;
+          vec_store_partial_prepare_fixed(i, 0, dgop::npoints);
+          CCTK_REAL_VEC s = vec_set1(0.0);
+          for (ptrdiff_t n = dgop::nmin; n < dgop::nmax; ++n) {
+            const CCTK_REAL c = dgop::coeff(n, l);
+            if (c != 0.0) {
+              // We could use an aligned access if grid functions are
+              // suitably aligned, and if the element size is a multiple
+              // of the vector size
+              s = kmadd(vec_set1(c), vec_loadu(getelt(u, offset0 + n * dl)), s);
+            }
+          }
+          vec_storeu_partial(getelt(du, doffset), kmul(f, s));
+        }
+      });
+    }
   }
 }
 

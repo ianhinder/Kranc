@@ -51,10 +51,10 @@ interfaceGroupBlock[spec_] :=
   {lookup[spec, Visibility], ":\n",
    lookup[spec, VariableType], " ", lookup[spec, Name], 
      " type=", lookup[spec,GridType],
-     " timelevels=", lookup[spec, Timelevels], 
-     If[mapContains[spec,Tags], {" tags='", interfaceTags[lookupDefault[spec,Tags, {}]], "'"}, ""], 
      If[mapContains[spec,Dim], {" dim=", lookup[spec,Dim] }, ""], 
      If[mapContains[spec,Size], {" size=", lookup[spec,Size] }, ""], 
+     " timelevels=", lookup[spec, Timelevels], 
+     If[mapContains[spec,Tags], {" tags='", interfaceTags[lookupDefault[spec,Tags, {}]], "'"}, ""], 
      "\n",
    SuffixedCBlock[{CommaNewlineSeparated[lookup[spec, Variables]],"\n"}, 
                   "\"" <> lookup[spec, Comment] <> "\""]};

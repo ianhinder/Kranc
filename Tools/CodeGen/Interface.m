@@ -28,14 +28,16 @@ Begin["`Private`"];
 
 DefFn[declaredGroupInterfaceStructure[group_List] :=
   Module[
-    {extras, gridType},
+    {extras, gridType, dim},
     extras = GroupExtras[group];
     gridType = lookup[extras, GridType, "GF"];
+    dim = lookup[extras, Dim, 3];
     {
       Name -> groupName[group], 
       VariableType -> "CCTK_REAL",
       Timelevels -> lookup[extras, Timelevels, lookup[extras, InterfaceTimelevels, 1]],
       GridType -> gridType,
+      Dim -> dim,
       Comment -> groupName[group], 
       Visibility -> "public",
       Tags -> GroupTags[group],

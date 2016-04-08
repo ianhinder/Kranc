@@ -76,6 +76,8 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
   opts:OptionsPattern[]] :=
   Block[{$CodeGenTarget = NewObject[TargetC, {"UseVectors" -> OptionValue[UseVectors]}]},
     Module[{calc = First[calcs],
+            dim = OptionValue[Dimensions],
+            char = FromCharacterCode[ToCharacterCode[#1]+#2]&,
             bodyFunction, tiledBodyFunction, dgTiledBodyFunction},
 
   If[!MatchQ[include, _List],
@@ -115,7 +117,7 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
    WithNamespace[thornName, NewlineSeparated[
      {CalculationBoundariesFunction[First[calcs]],
 
-   bodyFunction = DefineFunction[lookup[calc,Name]<>"_Body", "static void", "const cGH* restrict const cctkGH, const int dir, const int face, const CCTK_REAL normal[3], const CCTK_REAL tangentA[3], const CCTK_REAL tangentB[3], const int imin[3], const int imax[3], const int n_subblock_gfs, CCTK_REAL* restrict const subblock_gfs[]",
+   bodyFunction = DefineFunction[lookup[calc,Name]<>"_Body", "static void", "const cGH* restrict const cctkGH, const int dir, const int face, const CCTK_REAL normal["<>ToString[dim]<>"], const CCTK_REAL tangentA["<>ToString[dim]<>"], const CCTK_REAL tangentB["<>ToString[dim]<>"], const int imin["<>ToString[dim]<>"], const int imax["<>ToString[dim]<>"], const int n_subblock_gfs, CCTK_REAL* restrict const subblock_gfs[]",
   {
     "DECLARE_CCTK_ARGUMENTS;\n",
     "DECLARE_CCTK_PARAMETERS;\n\n", 
@@ -129,12 +131,12 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
 
     "const int dir CCTK_ATTRIBUTE_UNUSED = kd.dir;\n",
     "const int face CCTK_ATTRIBUTE_UNUSED = kd.face;\n",
-    "const int imin[3] = {std::max(kd.imin[0], kd.tile_imin[0]),\n",
-    "                     std::max(kd.imin[1], kd.tile_imin[1]),\n",
-    "                     std::max(kd.imin[2], kd.tile_imin[2])};\n",
-    "const int imax[3] = {std::min(kd.imax[0], kd.tile_imax[0]),\n",
-    "                     std::min(kd.imax[1], kd.tile_imax[1]),\n",
-    "                     std::min(kd.imax[2], kd.tile_imax[2])};\n",
+    "const int imin["<>ToString[dim]<>"] = {\n",
+    Table["  std::max(kd.imin["<>ToString[i]<>"], kd.tile_imin["<>ToString[i]<>"]),\n", {i,0,dim-1}],
+    "};\n",
+    "const int imax["<>ToString[dim]<>"] = {\n",
+    Table["  std::min(kd.imax["<>ToString[i]<>"], kd.tile_imax["<>ToString[i]<>"]),\n", {i,0,dim-1}],
+    "};\n",
 
     #
   }] &;
@@ -157,53 +159,39 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
        "static_assert(dgop_Filter::order == order, \"\")\n";
        "\n",
        "// Determine tile shape from stencil\n",
-       "constexpr ptrdiff_t npoints_i = order + 1;\n",
-       "constexpr ptrdiff_t npoints_j = order + 1;\n",
-       "constexpr ptrdiff_t npoints_k = order + 1;\n",
+       Table["constexpr ptrdiff_t npoints_"<>char["i",i]<>" = order + 1;\n", {i,0,dim-1}],
        "\n",
        "// Grid function shape (in grid points)\n",
-       "const ptrdiff_t ni = cctk_lsh[0];\n",
-       "const ptrdiff_t nj = cctk_lsh[1];\n",
-       "const ptrdiff_t nk = cctk_lsh[2];\n",
+       Table["const ptrdiff_t n"<>char["i",i]<>" = cctk_lsh["<>ToString[i]<>"];\n", {i,0,dim-1}],
        "\n",
        "// Check tile shape consistency\n",
-       "assert((ni - 2) % npoints_i == 0);\n",
-       "assert((nj - 2) % npoints_j == 0);\n",
-       "assert((nk - 2) % npoints_k == 0);\n",
+       Table["assert((n"<>char["i",i]<>" - 2) % npoints_"<>char["i",i]<>" == 0);\n", {i,0,dim-1}],
        "\n",
        "// Check function arguments\n",
-       "assert(kd.tile_imax[0] - kd.tile_imin[0] == npoints_i);\n",
-       "assert(kd.tile_imax[1] - kd.tile_imin[1] == npoints_j);\n",
-       "assert(kd.tile_imax[2] - kd.tile_imin[2] == npoints_k);\n",
+       Table["assert(kd.tile_imax["<>ToString[i]<>"] - kd.tile_imin["<>ToString[i]<>"] == npoints_"<>char["i",i]<>");\n", {i,0,dim-1}],
        "\n",
        "// Location of current tile in grid function (in grid points)\n",
-       "const ptrdiff_t i1 = kd.tile_imin[0];\n",
-       "const ptrdiff_t j1 = kd.tile_imin[1];\n",
-       "const ptrdiff_t k1 = kd.tile_imin[2];\n",
+       Table["const ptrdiff_t "<>char["i",i]<>"1 = kd.tile_imin["<>ToString[i]<>"];\n", {i,0,dim-1}],
        "\n",
        "// Grid function strides (in bytes)\n",
        "constexpr ptrdiff_t di = sizeof(CCTK_REAL);\n",
-       "const ptrdiff_t dj = di * cctk_ash[0];\n",
-       "const ptrdiff_t dk = dj * cctk_ash[1];\n",
+       Table["const ptrdiff_t d"<>char["i",i]<>" = d"<>char["i",i-1]<>" * cctk_ash["<>ToString[i-1]<>"];\n", {i,1,dim-1}],
        "\n",
        "// Calculate grid function offset (in bytes)\n",
-       "const ptrdiff_t off1 = i1 * di + j1 * dj + k1 * dk;\n",
+       "const ptrdiff_t off1 ="<>StringJoin@@Table[" + "<>char["i",i]<>"1 * d"<>char["i",i], {i,0,dim-1}]<>";\n",
        "\n",
        "// Vector size (in elements)\n",
        "constexpr ptrdiff_t vs = CCTK_REAL_VEC_SIZE;\n",
        "\n",
        "// Padded tile shape (in grid points)\n",
        "// constexpr ptrdiff_t tni = alignup(npoints_i, vs);\n",
-       "constexpr ptrdiff_t tni = npoints_i;\n",
-       "constexpr ptrdiff_t tnj = npoints_j;\n",
-       "constexpr ptrdiff_t tnk = npoints_k;\n",
+       Table["constexpr ptrdiff_t tn"<>char["i",i]<>" = npoints_"<>char["i",i]<>";\n", {i,0,dim-1}],
        "\n",
        "// Padded tile strides (in bytes)\n",
        "constexpr ptrdiff_t tdi = sizeof(CCTK_REAL);\n",
-       "constexpr ptrdiff_t tdj = tdi * tni;\n",
-       "constexpr ptrdiff_t tdk = tdj * tnj;\n",
+       Table["constexpr ptrdiff_t td"<>char["i",i]<>" = td"<>char["i",i-1]<>" * tn"<>char["i",i-1]<>";\n", {i,1,dim-1}],
        "// constexpr ptrdiff_t tsz = tdk * tnk;\n",
-       "constexpr ptrdiff_t tsz = alignup(tdk * tnk, CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n",
+       "constexpr ptrdiff_t tsz = alignup(td"<>char["i",dim-1]<>" * tn"<>char["i",dim-1]<>", CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n",
        "\n",
        #
      }] &;
@@ -236,7 +224,8 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
                       GFAccessFunction -> ReadGridFunctionInLoop,
                       InitFDVariables -> (InitialiseFDVariables
                                           [OptionValue[UseVectors],
-                                           DGTileCalculationQ[calc]]),
+                                           DGTileCalculationQ[calc],
+                                           OptionValue[Dimensions]]),
                       MacroPointer -> True}];
 
    CreateCalculationFunction[calc, opts]}]]}]}]]];
@@ -386,7 +375,10 @@ DefFn[pdCanonicalOrdering[name_[inds___] -> x_] :=
     If[Length[is] == 2,
       Return[{name[f_,2,1] -> name[f,1,2],
               name[f_,3,1] -> name[f,1,3],
-              name[f_,3,2] -> name[f,2,3]}],
+              name[f_,4,1] -> name[f,1,4],
+              name[f_,3,2] -> name[f,2,3],
+              name[f_,4,2] -> name[f,2,4],
+              name[f_,4,3] -> name[f,3,4]}],
       {}]]];
 
 (* --------------------------------------------------------------------------
@@ -507,16 +499,17 @@ DefFn[
                         gfs, shorts, parameters,
                         {t,
                          cctkOriginSpace1, cctkOriginSpace2, cctkOriginSpace3,
-                         dx,dy,dz,dt, idx,idy,idz,
+                         cctkOriginSpace4,
+                         dx,dy,dz,dw,dt, idx,idy,idz,idw,
                          usejacobian,
                          Pi, E,
-                         cctkIdx1, cctkIdx2, cctkIdx3,
-                         cctkLbnd1, cctkLbnd2, cctkLbnd3,
-                         Symbol["i"], Symbol["j"], Symbol["k"],
-                         Symbol["ti"], Symbol["tj"], Symbol["tk"],
-                         normal1, normal2, normal3,
-                         tangentA1, tangentA2, tangentA3,
-                         tangentB1, tangentB2, tangentB3},
+                         cctkIdx1, cctkIdx2, cctkIdx3, cctkIdx4,
+                         cctkLbnd1, cctkLbnd2, cctkLbnd3, cctkLbnd4,
+                         Symbol["i"], Symbol["j"], Symbol["k"], Symbol["l"],
+                         Symbol["ti"], Symbol["tj"], Symbol["tk"], Symbol["tl"],
+                         normal1, normal2, normal3, normal4,
+                         tangentA1, tangentA2, tangentA3, tangentA4,
+                         tangentB1, tangentB2, tangentB3, tangentB4},
                         If[useJacobian, JacobianSymbols[], {}]];
 
     unknownSymbols = Complement[allSymbols, knownSymbols];
@@ -716,7 +709,8 @@ DefFn[
   equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, odeGroups_,
                pddefs_, where_, addToStencilWidth_, opts:OptionsPattern[]] :=
   Module[
-    {allCode, opCounts,
+    {dim, char,
+     allCode, opCounts,
      useJacobian,
      gridName,
      rhss, lhss,
@@ -742,6 +736,9 @@ DefFn[
      arraysInRHS, arraysInLHS, arraysOnlyInRHS},
 
     InfoMessage[InfoFull, "Equation loop"];
+
+    dim = OptionValue[Dimensions];
+    char[c_,i_] := FromCharacterCode[ToCharacterCode["i"]+i];
 
     {allCode, opCounts} = Reap[
 
@@ -907,16 +904,16 @@ DefFn[
         assignLocalFunctions[gs, False, False, False, ArrayName];
 
       generateTileDefinition[gf_] :=
-      "unsigned char "<>ToString[gf]<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n";
+      "unsigned char "<>ToString[gf]<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(/* CCTK_REAL_VEC_SIZE * */ sizeof(CCTK_REAL));\n";
 
       generateTileLoad[gf:(_String|_Symbol)] :=
       Module[
         {gfn = ToString[gf],
          jcgfs = JacobianConditionalGridFunctions[],
          decl, load, isjac, jaccond, ishydro, hydrocond, maybeload},
-        decl = {"unsigned char "<>gfn<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n"};
+        decl = {"unsigned char "<>gfn<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(/* CCTK_REAL_VEC_SIZE * */ sizeof(CCTK_REAL));\n"};
         load = {"assert("<>gfn<>"!=NULL);\n",
-                "load_dg_dim3<dgop_PD>(&((const unsigned char *)"<>gfn<>")[off1], "<>gfn<>"T, dj, dk);\n"};
+                "load_dg_dim"<>ToString[dim]<>"<dgop_PD>(&((const unsigned char *)"<>gfn<>")[off1], "<>gfn<>"T"<>StringJoin@@Table[", d"<>char["i",i], {i,1,dim-1}]<>");\n"};
         isjac = StringMatchQ[gfn, jcgfs[[1]]];
         jaccond = jcgfs[[2]];
         ishydro = StringMatchQ[gfn, "eT" ~~ _ ~~ _];
@@ -937,7 +934,7 @@ DefFn[
       generateTileStore[gf:(_String|_Symbol)] :=
       {
         "assert("<>ToString[gf]<>"!=NULL);\n",
-        "store_dg_dim3<dgop_PD>(&((unsigned char *)"<>ToString[gf]<>")[off1], "<>ToString[gf]<>"T, dj, dk);\n"
+        "store_dg_dim"<>ToString[dim]<>"<dgop_PD>(&((unsigned char *)"<>ToString[gf]<>")[off1], "<>ToString[gf]<>"T"<>StringJoin@@Table[", d"<>char["i",i], {i,1,dim-1}]<>");\n"
       };
 
       (* separate grid and array variables *)
@@ -972,6 +969,7 @@ DefFn[
            CommentedBlock[
              "Calculate derivatives into tiles",
              PrecomputeTiledDerivatives[defsWithoutShorts, eqsOrdered,
+                                        OptionValue[Dimensions],
                                         OptionValue[ZeroDimensions]]],
            {}],
 

@@ -99,6 +99,7 @@ ThornOptions =
   ExtendedKeywordParameters -> {},
   PartialDerivatives -> {},
   ReflectionSymmetries -> {},
+  Dimensions -> 3,
   ZeroDimensions -> {},
   UseLoopControl -> True,
   UseDGFE -> False,

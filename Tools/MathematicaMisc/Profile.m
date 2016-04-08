@@ -6,6 +6,7 @@ Profile;
 ProfileTime;
 ProfileCount;
 ClearProfile;
+ProfileReportTime;
 Timer;
 GetTimers;
 RemoveTimers;
@@ -23,17 +24,27 @@ ClearProfile[] :=
 SetAttributes[Profile, HoldAll];
 
 Profile[name_, code_] :=
-  Module[{time, result, name2, result2, subTimers},
-    name2 = Evaluate[name];
-    {result2,subTimers} = Reap[{time, result} = AbsoluteTiming[ReleaseHold[code]]];
+  With[{name2=Evaluate[name]},
     If[Head[ProfileTime[name2]] === ProfileTime, ProfileTime[name2] = 0.0];
     If[Head[ProfileCount[name2]] === ProfileCount, ProfileCount[name2] = 0];
-    ProfileTime[name2] += time;
     ProfileCount[name2] += 1;
-    Sow[Timer[name2,time,If[subTimers === {}, {}, subTimers[[1]]]]];
-    result];
-
+    Module[{time,value},
+      {time,value} = AbsoluteTiming[ReleaseHold[code]];
+      ProfileTime[name2] += time;
+      value]];
+    
 (* Profile[n_, x_] := x; *)
+
+ProfileReportTime[] :=
+  Module[{profile},
+    Print["Reporting profile for all functions taking longer than 1s"];
+    Print["Times are inclusive of contained function calls"];
+    profile =
+    Select[Reverse@SortBy[DownValues[ProfileTime], #[[2]] &] /. 
+    HoldPattern -> HoldForm /. ((x_ :> y_) :> {y, x}) /. 
+    ProfileTime[x_] :> x, #[[1]] > 1&]; (* All entries longer than 1 second *)
+
+    Print[ExportString[profile/.HoldForm[x_]:>x, "Table"]]];
 
 (* The code below is a prototype for handling a tree of timer
    information from Profile.  It needs to be tidied up and a good

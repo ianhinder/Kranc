@@ -23,6 +23,7 @@ CatchKrancError;
 ReportFunctionCounts;
 
 $EnableBacktrace = True;
+$EnableProfile;
 
 Begin["`Private`"];
 
@@ -121,6 +122,15 @@ incrementCount[fn_] :=
 
 $stack = {};
 
+SetAttributes[profileWrap, HoldAll];
+If[$EnableProfile === True,
+  Print["Profiling enabled"];
+  profileWrap[x_, y_] :=
+    Profile[x,ReleaseHold@y],
+  (* else *)
+  Print["Profiling disabled"];
+  profileWrap[x_,y_] := ReleaseHold@y];
+
 If[$EnableBacktrace,
   DefFn[def:(fn_[args___] := body_)] :=
   Module[{},
@@ -128,7 +138,7 @@ If[$EnableBacktrace,
     fn[args] :=
     (* This construction using Part avoids introducing an explicit
        temporary with Module which causes a big performance hit. *)
-    (incrementCount[fn]; {StackPush[$stack,fn], Catch[body,_, (StackPop[$stack]; Throw[#1,#2]) &], StackPop[$stack]}[[2]])],
+    profileWrap[ToString[fn], (incrementCount[fn]; {StackPush[$stack,fn], Catch[body,_, (StackPop[$stack]; Throw[#1,#2]) &], StackPop[$stack]}[[2]])]],
 
   (* else *)
 
@@ -136,7 +146,7 @@ If[$EnableBacktrace,
   Module[{},
     ErrorDefinition[fn];
     fn[args] :=
-    (incrementCount[fn]; body)]];
+    profileWrap[ToString[fn], (incrementCount[fn]; body)]]];
 
 reportError[k:KrancError[objects_,stack_], KrancError] :=
   Module[{},

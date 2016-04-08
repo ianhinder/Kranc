@@ -9,6 +9,10 @@ $Path = Join[$Path,
   {Kranc`KrancDirectory <> "/Tools/CodeGen",
    Kranc`KrancDirectory <> "/Tools/MathematicaMisc",
    Kranc`KrancDirectory <> "/Tools/PirahaPeg"}];
+
+If[Environment["KRANCPROFILE"] == "yes",
+  Errors`$EnableProfile = True];
+
 Needs["Errors`"];
 Needs["KrancThorn`"];
 Needs["Profile`"];
@@ -127,7 +131,8 @@ Kranc`Private`loadKrancInput[script_] :=
     FileExtension[script],
     "m",      If[KrancTensor`$KrancTensorPackage === "xTensor",
                      Kranc`Private`get[script],
-                     Get[script]],
+                     Get[script];
+                     If[$EnableProfile===True, ProfileReportTime[]]],
     "kranc",  CreateThornFromKrancScript[script],
     _,        ThrowError["Unknown file extension for "<>script<>
       ".  Recognised extensions are .m and .kranc."]];

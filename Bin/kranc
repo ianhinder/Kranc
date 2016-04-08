@@ -13,15 +13,19 @@ if [ ! -r "$KRANCDIR/Tools/CodeGen" ]; then
 fi
 
 export KRANCVERBOSE=no
+export KRANCPROFILE=no
 
 echo "Using Kranc installation at $KRANCDIR"
 # It would be good to find a portable way to canonicalise KRANCDIR.
 
-while getopts "v" flag
+while getopts "vp" flag
 do
   case $flag in
       "v")
 	  export KRANCVERBOSE=yes
+	  ;;
+      "p")
+	  export KRANCPROFILE=yes
 	  ;;
   esac
 done

@@ -408,7 +408,7 @@ DefFn[
 
 DefFn[
   ComponentDerivativeOperatorMacroDefinition[componentDerivOp:(name_[inds___] -> expr_), vectorise_] :=
-  Module[{macroName, rhs, fnrhs, i = "i", j = "j", k = "k", spacings, spacings2, pat, ss, num, den, newnum, signModifier, quotient, liName, finalDef},
+  Module[{macroName, rhs, fnrhs, dirargs, i = "i", j = "j", k = "k", spacings, spacings2, pat, ss, num, den, newnum, signModifier, quotient, liName, finalDef},
   
     macroName = ComponentDerivativeOperatorMacroName[componentDerivOp];
 
@@ -486,6 +486,10 @@ DefFn[
     rhs = CFormHideStrings[ProcessExpression[rhs /. spacings, vectorise, False]];
     (* Print["rhs=",FullForm[rhs]]; *)
 
+    dirargs = If[StringMatchQ[rhs, RegularExpression[".*\\bdir\\d\\b.*"]],
+                 Map[StringJoin["dir", ToString[#]] &, {1, 2, 3}],
+                 {}];
+
     (* Call another FD operator if we can swap or exchange array indices;
        this will reduce code size.
        We perform two kinds of changes here:
@@ -499,32 +503,32 @@ DefFn[
            Module[{otherOp, otherOpName},
                   otherOp = componentDerivOp[[1]][[0]][2] -> componentDerivOp[[2]];
                   otherOpName = ComponentDerivativeOperatorMacroName[otherOp];
-                  otherOpName<>"_impl(u, "<>liName<>", cdk, cdj)"],
+                  otherOpName<>"_impl("<>Riffle[Join[{"u", liName, "cdk", "cdj"}, dirargs], ", "]<>")"],
            _[1,3],
            Module[{otherOp, otherOpName},
                   otherOp = componentDerivOp[[1]][[0]][1,2] -> componentDerivOp[[2]];
                   otherOpName = ComponentDerivativeOperatorMacroName[otherOp];
-                  otherOpName<>"_impl(u, "<>liName<>", cdk, cdj)"],
+                  otherOpName<>"_impl("<>Riffle[Join[{"u", liName, "cdk", "cdj"}, dirargs], ", "]<>")"],
            _[2,1],
            Module[{otherOp, otherOpName},
                   otherOp = componentDerivOp[[1]][[0]][1,2] -> componentDerivOp[[2]];
                   otherOpName = ComponentDerivativeOperatorMacroName[otherOp];
-                  otherOpName<>"_impl(u, "<>liName<>", cdj, cdk)"],
+                  otherOpName<>"_impl("<>Riffle[Join[{"u", liName, "cdj", "cdk"}, dirargs], ", "]<>")"],
            _[3,1],
            Module[{otherOp, otherOpName},
                   otherOp = componentDerivOp[[1]][[0]][1,2] -> componentDerivOp[[2]];
                   otherOpName = ComponentDerivativeOperatorMacroName[otherOp];
-                  otherOpName<>"_impl(u, "<>liName<>", cdk, cdj)"],
+                  otherOpName<>"_impl("<>Riffle[Join[{"u", liName, "cdk", "cdj"}, dirargs], ", "]<>")"],
            _[3,2],
            Module[{otherOp, otherOpName},
                   otherOp = componentDerivOp[[1]][[0]][2,3] -> componentDerivOp[[2]];
                   otherOpName = ComponentDerivativeOperatorMacroName[otherOp];
-                  otherOpName<>"_impl(u, "<>liName<>", cdj, cdk)"],
+                  otherOpName<>"_impl("<>Riffle[Join[{"u", liName, "cdj", "cdk"}, dirargs], ", "]<>")"],
            _[3,3],
            Module[{otherOp, otherOpName},
                   otherOp = componentDerivOp[[1]][[0]][2,2] -> componentDerivOp[[2]];
                   otherOpName = ComponentDerivativeOperatorMacroName[otherOp];
-                  otherOpName<>"_impl(u, "<>liName<>", cdk, cdj)"],
+                  otherOpName<>"_impl("<>Riffle[Join[{"u", liName, "cdk", "cdj"}, dirargs], ", "]<>")"],
            _,
            rhs];
     
@@ -556,27 +560,14 @@ DefFn[
       "#  define ", macroName, "(u) ", "(", rhs, ")\n",
       "#else\n",
        (* new, differencing operators are static functions *)
-      If[! StringMatchQ[rhs, RegularExpression[".*\\bdir\\d\\b.*"]],
-      {
-        (* simple case, dirN is not used *)
-        "#  define ", macroName, "(u) ", "(", macroName, "_impl(u,", liName, ",cdj,cdk))\n",
-        "static CCTK_REAL ", macroName, "_impl(const CCTK_REAL* restrict const u, const CCTK_REAL ", liName, ", const ptrdiff_t cdj, const ptrdiff_t cdk) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;\n",
-        "static CCTK_REAL ", macroName, "_impl(const CCTK_REAL* restrict const u, const CCTK_REAL ", liName, ", const ptrdiff_t cdj, const ptrdiff_t cdk)\n",
-        "{\n",
-        "  const ptrdiff_t cdi CCTK_ATTRIBUTE_UNUSED = sizeof(CCTK_REAL);\n",
-        "  return ", fnrhs, ";\n",
-        "}\n"
-      },
-      {
-        (* dirN is used *)
-        "#  define ", macroName, "(u) ", "(", macroName, "_impl(u,", liName, ",cdj,cdk,dir1,dir2,dir3))\n",
-        "static CCTK_REAL ", macroName, "_impl(const CCTK_REAL* restrict const u, const CCTK_REAL ", liName, ", const ptrdiff_t cdj, const ptrdiff_t cdk, const ptrdiff_t dir1, const ptrdiff_t dir2, const ptrdiff_t dir3) CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;\n",
-        "static CCTK_REAL ", macroName, "_impl(const CCTK_REAL* restrict const u, const CCTK_REAL ", liName, ", const ptrdiff_t cdj, const ptrdiff_t cdk, const ptrdiff_t dir1, const ptrdiff_t dir2, const ptrdiff_t dir3)\n",
-        "{\n",
-        "  const ptrdiff_t cdi CCTK_ATTRIBUTE_UNUSED = sizeof(CCTK_REAL);\n",
-        "  return ", fnrhs, ";\n",
-        "}\n"
-      }],
+       (* this handles both dirN and non-dirN expressions *)
+      "#  define ", macroName, "(u) ", "(", macroName, "_impl(u,", liName, ",cdj,cdk", Riffle[dirargs, ",", {1, -2, 2}], "))\n",
+      "static CCTK_REAL ", macroName, "_impl(const CCTK_REAL* restrict const u, const CCTK_REAL ", liName, ", ", Riffle[Map["const ptrdiff_t "<># &, Join[{"cdj", "cdk"}, dirargs]], ", "], ") CCTK_ATTRIBUTE_NOINLINE CCTK_ATTRIBUTE_UNUSED;\n",
+      "static CCTK_REAL ", macroName, "_impl(const CCTK_REAL* restrict const u, const CCTK_REAL ", liName, ", ", Riffle[Map["const ptrdiff_t "<># &, Join[{"cdj", "cdk"}, dirargs]], ", "], ")\n",
+      "{\n",
+      "  const ptrdiff_t cdi CCTK_ATTRIBUTE_UNUSED = sizeof(CCTK_REAL);\n",
+      "  return ", fnrhs, ";\n",
+      "}\n",
       "#endif\n"
     }]}];
 

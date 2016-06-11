@@ -183,6 +183,7 @@ ConditionExpression;
   copysign,
 
   chemoraQuote,
+  ChemoraI3DParse,
   ChemoraNOffset };
 
 

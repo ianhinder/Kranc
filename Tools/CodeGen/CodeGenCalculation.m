@@ -381,14 +381,8 @@ chemoraExpandRules =
           ],
      Rule[lhs_, chemoraIfElse[Parameter[cond_],rest___]] :>
         lhs -> chemoraIfElse[cond,rest],
-     Rule[lhs_, h1_[op1___,
-                    h2_String?(StringMatchQ
-                               [#,RegularExpression["I[3L]D\\(.*"]]&),
-                    op3___]] :>
-        Sequence@@Module[{lhs2, seq = chemoraExpandRulesSeqNum++},
-          lhs2 = Symbol[ ToString[lhs] <> "xOffsetLd" <> ToString[seq] ];
-                    { lhs2 -> ChemoraI3DParse["_"<>h2],
-                      lhs -> h1[op1,lhs2,op3] }],
+     h2_String?(StringMatchQ [#,RegularExpression["^I[3L]D\\(.*\\)$"]]&) :>
+      ChemoraI3DParse["_"<>h2],
      Rule[lhs_, h1_[op1___,
                     h2_?(Not[MemberQ[{Parameter},#]]&)[op2__],
                     op3___]] :>

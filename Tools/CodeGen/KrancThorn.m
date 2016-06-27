@@ -142,9 +142,18 @@ DefFn[
   loopControlProcessCode[cIn_Code, opts:OptionsPattern[]] :=
   Module[
     {},
-    If[OptionValue[UseVectors] && !OptionValue[UseLoopControl],
+    If[OptionValue[UseVectors] &&
+       !(OptionValue[UseLoopControl] || OptionValue[UseLoopControlQ]),
+      (* TODO: Is this still true? *)
       ThrowError["UseVectors -> True requires UseLoopControl -> True"]];
     SetObjectField[cIn, "Calculations", SetCalculationLoopControl[#,opts] & /@ GetObjectField[cIn, "Calculations"]]]];
+
+Options[loopControlQProcessCode] = ThornOptions;
+DefFn[
+  loopControlQProcessCode[cIn_Code, opts:OptionsPattern[]] :=
+  Module[
+    {},
+    SetObjectField[cIn, "Calculations", SetCalculationLoopControlQ[#,opts] & /@ GetObjectField[cIn, "Calculations"]]]];
 
 
 (* --------------------------------------------------------------------------
@@ -289,6 +298,12 @@ DefFn[CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPa
        ------------------------------------------------------------------------ *)
 
     c = loopControlProcessCode[c, opts];
+     
+    (* ------------------------------------------------------------------------ 
+       LoopControlQ
+       ------------------------------------------------------------------------ *)
+
+    c = loopControlQProcessCode[c, opts];
      
     (* ------------------------------------------------------------------------ 
        Declared groups

@@ -48,7 +48,9 @@ VerifyNewCalculation;
 TileCalculationQ;
 DGTileCalculationQ;
 CalculationLoopControlQ;
+CalculationLoopControlQQ;
 SetCalculationLoopControl;
+SetCalculationLoopControlQ;
 
 Begin["`Private`"];
 
@@ -436,7 +438,7 @@ VerifyCalculation[calc_] :=
          LocalGroups, NoSimplify, UseDGFE, SimpleCode, UseCaKernel,
          UseJacobian,
          ScheduleGroups, TriggerGroups, ThornName, Tile, DGTile,
-         UseLoopControl};
+         UseLoopControl, UseLoopControlQ};
 
     usedKeys = Map[First, calc];
     unknownKeys = Complement[usedKeys, allowedKeys];
@@ -501,11 +503,20 @@ DefFn[DGTileCalculationQ[calc_] :=
 DefFn[CalculationLoopControlQ[calc_] :=
   lookup[calc,UseLoopControl]];
 
+DefFn[CalculationLoopControlQQ[calc_] :=
+  lookup[calc,UseLoopControlQ]];
+
 Options[SetCalculationLoopControl] = ThornOptions;
 DefFn[SetCalculationLoopControl[calc_, opts:OptionsPattern[]] :=
   mapReplaceAdd[calc, UseLoopControl,
     OptionValue[UseLoopControl] &&
     lookupDefault[calc, UseLoopControl, True] =!= False]];
+
+Options[SetCalculationLoopControlQ] = ThornOptions;
+DefFn[SetCalculationLoopControlQ[calc_, opts:OptionsPattern[]] :=
+  mapReplaceAdd[calc, UseLoopControlQ,
+    OptionValue[UseLoopControlQ] &&
+    lookupDefault[calc, UseLoopControlQ, True] =!= False]];
 
 End[];
 

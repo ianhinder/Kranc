@@ -98,9 +98,11 @@ void AssertGroupStorage(cGH const *restrict const cctkGH, const char *calc,
 /* simple implementation */
 /* #define KRANC_GFOFFSET3D(var,i,j,k) ((var)[di*(i)+dj*(j)+dk*(k)]) */
 /* more efficient implementation for some compilers */
+#ifndef KRANC_GFOFFSET3D
 #define KRANC_GFOFFSET3D(var, i, j, k)                                         \
   (*(CCTK_REAL const *)&(                                                      \
        (char const *)(var))[cdi * (i) + cdj * (j) + cdk * (k)])
+#endif
 
 #define GFOffset(u, di, dj, dk) KRANC_GFOFFSET3D(&(u)[index], di, dj, dk)
 
@@ -108,7 +110,9 @@ void AssertGroupStorage(cGH const *restrict const cctkGH, const char *calc,
  * Macros used in Kranc expressions
  *********************************************************************/
 
+#ifndef IfThen
 #define IfThen(x, y, z) ((x) ? (y) : (z))
+#endif
 #define MinMod(x, y) ((x) * (y) < 0 ? 0 : (fabs((x)) < fabs((y)) ? (x) : (y)))
 #define VanLeer(x, y)                                                          \
   ((x) * (y) < 0 ? 0 : (Min3(2 * fabs(x), 2 * fabs(y),                         \

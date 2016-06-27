@@ -145,20 +145,47 @@ DefFn[
        }],
      CommentedBlock[
        "Loop over the grid points",
-       { (* Circumvent a compiler bug on Blue Gene/Q *)
-         "const int imin0=imin[0];\n",
-         "const int imin1=imin[1];\n",
-         "const int imin2=imin[2];\n",
-         "const int imax0=imax[0];\n",
-         "const int imax1=imax[1];\n",
-         "const int imax2=imax[2];\n",
-         "#pragma omp parallel\n",
-         If[OptionValue[UseVectors], "CCTK_LOOP3STR", "CCTK_LOOP3"],
-         "(", functionName, ",\n",
-         "  i,j,k, imin0,imin1,imin2, imax0,imax1,imax2,\n",
-         "  cctk_ash[0],cctk_ash[1],cctk_ash[2]",
-         If[OptionValue[UseVectors], {",\n", "  vecimin,vecimax, CCTK_REAL_VEC_SIZE"}, ""],
-         ")\n",
+       { If[!OptionValue[UseLoopControlQ],
+         { (* Circumvent a compiler bug on Blue Gene/Q *)
+           "const int imin0=imin[0];\n",
+           "const int imin1=imin[1];\n",
+           "const int imin2=imin[2];\n",
+           "const int imax0=imax[0];\n",
+           "const int imax1=imax[1];\n",
+           "const int imax2=imax[2];\n",
+           "#pragma omp parallel\n",
+           If[OptionValue[UseVectors], "CCTK_LOOP3STR", "CCTK_LOOP3"],
+           "(", functionName, ",\n",
+           "  i,j,k, imin0,imin1,imin2, imax0,imax1,imax2,\n",
+           "  cctk_ash[0],cctk_ash[1],cctk_ash[2]",
+           If[OptionValue[UseVectors], {",\n", "  vecimin,vecimax, CCTK_REAL_VEC_SIZE"}, ""],
+           ")\n"
+         },
+         { (* LoopControlQ enabled *)
+           "typedef LoopControlQ::iarray<3> iarray3;\n",
+           "iarray3 iamin, iamax, iablock, iaash;\n",
+           "for (int d=0; d<3; ++d) {\n",
+           "  iamin[d] = imin[d];\n",
+           "  iamax[d] = imax[d];\n",
+           "  iaash[d] = cctk_ash[d];\n",
+           "}\n",
+           "iablock[0] = block_size_i;\n",
+           "iablock[1] = block_size_j;\n",
+           "iablock[2] = block_size_k;\n",
+           If[!OptionValue[UseVectors],
+              {
+                "rhs_loop(\n",
+                "  [=](const iarray3& ipos) {\n"
+              }, {
+                "rhs_loop_str<CCTK_REAL_VEC_SIZE>(\n",
+                "  [=](const iarray3& imin, const iarray3& imax, const iarray3& ipos) {\n",
+                "    const ptrdiff_t vecimin = imin[0];\n",
+                "    const ptrdiff_t vecimax = imax[0];\n"
+                 }],
+           "    const ptrdiff_t i = ipos[0];\n",
+           "    const ptrdiff_t j = ipos[1];\n",
+           "    const ptrdiff_t k = ipos[2];\n"
+         }],
          "{\n",
          IndentBlock[
            {DefineConstant["index", "ptrdiff_t", "di*i + dj*j + dk*k"],
@@ -177,8 +204,14 @@ DefFn[
                {}],
             block}],
          "}\n",
-         If[OptionValue[UseVectors], "CCTK_ENDLOOP3STR", "CCTK_ENDLOOP3"] <>
-         "(", functionName, ");\n" 
+         If[!OptionValue[UseLoopControlQ],
+         {
+           If[OptionValue[UseVectors], "CCTK_ENDLOOP3STR", "CCTK_ENDLOOP3"] <>
+           "(", functionName, ");\n"
+         }, {
+           "  },\n",
+           "  cctkGH, iamin, iamax, iablock, iaash);\n"
+         }]
        }]]];
 
 DefFn[
@@ -191,7 +224,7 @@ DefFn[
   InfoVariable[name_String] :=
   onceInGridLoop[
     {"char buffer[255];\n",
-     "sprintf(buffer,\"" , name , " == %f\", " , name , ");\n",
+     "snprintf(buffer, sizeof buffer, \"" , name , " == %f\", " , name , ");\n",
      "CCTK_INFO(buffer);\n"}]];
 
 (* Take an expression x and replace occurrences of Powers with the C

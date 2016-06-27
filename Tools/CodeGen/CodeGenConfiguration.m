@@ -39,6 +39,7 @@ CreateConfiguration[opts:OptionsPattern[]] :=
     If[OptionValue[UseLoopControl],
       If[OptionValue[UseVectors], 
         "REQUIRES LoopControl\n", "OPTIONAL LoopControl\n{\n}\n"],{}],
+   If[OptionValue[UseLoopControlQ], "REQUIRES FunHPC\n", {}],
    If[OptionValue[UseDGFE], DGFEConfigurationCCL[], {}],
    If[OptionValue[UseOpenCL], OpenCLConfigurationCCL[], {}],
    If[OptionValue[UseVectors], VectorisationConfigurationCCL[], {}],

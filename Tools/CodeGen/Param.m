@@ -111,6 +111,21 @@ tilingIntParameters[opts___] :=
     Default -> -1
    }};
 
+blockingIntParameters[opts___] :=
+  {{
+    Name -> "block_size_i",
+    Description -> "Loop block size",
+    Default -> 8
+   },{
+    Name -> "block_size_j",
+    Description -> "Loop block size",
+    Default -> 8
+   },{
+    Name -> "block_size_k",
+    Description -> "Loop block size",
+    Default -> 8
+   }};
+
 DefFn[ParameterDatabase[opts:OptionsPattern[]] :=
   Module[
     {realParams, intParams, keywordParams,
@@ -123,7 +138,8 @@ DefFn[ParameterDatabase[opts:OptionsPattern[]] :=
        realParams = Join[realParams,ConservationDifferencingRealParameters[]]];
     intParams = OptionValue[IntParameters];
 
-    intParams = Join[intParams, tilingIntParameters[opts]];
+    intParams = Join[intParams,
+                     tilingIntParameters[opts], blockingIntParameters[opts]];
 
     realParamDefs = MakeFullParamDefs[realParams];
     intParamDefs = MakeFullParamDefs[intParams];

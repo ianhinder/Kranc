@@ -101,6 +101,7 @@ ThornOptions =
   ReflectionSymmetries -> {},
   ZeroDimensions -> {},
   UseLoopControl -> True,
+  UseLoopControlQ -> False,
   UseDGFE -> False,
   Tile -> False,
   DGTile -> False,
@@ -160,6 +161,7 @@ I3D;
 (* KrancScript.m *)
 ScriptFlags =
   {"loopcontrol" -> UseLoopControl,
+   "loopcontrolq" -> UseLoopControlQ,
    "vectors" -> UseVectors,
    "opencl" -> UseOpenCL,
    "jacobian"-> UseJacobian,

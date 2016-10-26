@@ -1,11 +1,11 @@
 #ifndef KRANC_HH
 #define KRANC_HH
 
+#include <cctk.h>
+
 #include <cmath>
 #include <math.h>
 #include <sys/time.h>
-
-#include <cctk.h>
 
 namespace @THORN_NAME@ {
 
@@ -13,20 +13,20 @@ namespace @THORN_NAME@ {
  * Types
  *********************************************************************/
 
-struct KrancData{// Actual loop bounds
-                 int imin[3];
-int imax[3];
-// Region covered by this tile
-int tile_imin[3];
-int tile_imax[3];
-// Boundary information
-int dir;
-int face;
-CCTK_REAL normal[3];
-CCTK_REAL tangentA[3];
-CCTK_REAL tangentB[3];
-}
-;
+struct KrancData {
+  // Actual loop bounds
+  int imin[3];
+  int imax[3];
+  // Region covered by this tile
+  int tile_imin[3];
+  int tile_imax[3];
+  // Boundary information
+  int dir;
+  int face;
+  CCTK_REAL normal[3];
+  CCTK_REAL tangentA[3];
+  CCTK_REAL tangentB[3];
+};
 
 typedef void (*Kranc_Calculation)(cGH const *restrict cctkGH, int eir, int face,
                                   CCTK_REAL const normal[3],

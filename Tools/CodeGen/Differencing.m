@@ -133,7 +133,8 @@ BeginPackage["Differencing`", {"CodeGen`", "CodeGenC`", "CodeGenCactus`", "CodeG
 
 CreateDifferencingHeader::usage = "";
 PrecomputeDerivatives::usage = "";
-PrecomputeTiledDerivatives::usage = "";
+PrecomputeFDTiledDerivatives::usage = "";
+PrecomputeDGTiledDerivatives::usage = "";
 ReplaceDerivatives::usage = "";
 StandardCenteredDifferenceOperator::usage = "";
 StandardUpwindDifferenceOperator::usage = "";
@@ -204,7 +205,7 @@ DefFn[CountDerivativeOperations[derivOps_, expr_, zeroDims_] :=
 
 DefFn[
   PrecomputeDerivatives[derivOps_, expr_, intParams_, zeroDims_, macroPointer_,
-                        dgTile_] :=
+                        fdTile_, dgTile_] :=
   Module[{componentDerivOps, gfds, sortedgfds, opNames, intParamNames, paramsInOps,
           paramName, opsWithParam, opNamesWithParam, replace, param, pd, u},
 
@@ -222,7 +223,7 @@ DefFn[
 
     If[paramsInOps === {},
       Map[DerivativeOperatorVerify, derivOps];
-      Map[PrecomputeDerivative[#,Automatic,macroPointer,dgTile]&, sortedgfds],
+      Map[PrecomputeDerivative[#,Automatic,macroPointer,fdTile,dgTile]&, sortedgfds],
       (* else *)
       paramName = First[paramsInOps];
       opsWithParam = Select[derivOps, Cases[#, paramName, Infinity] =!= {} &];
@@ -235,17 +236,26 @@ DefFn[
       {Map[DeclareVariable[GridFunctionDerivativeName[#],DataType[]] &, sortedgfds],
        "\n",
        SwitchStatement[paramName,
-         Sequence@@Table[{value, Map[PrecomputeDerivative[# /. replace[value],#,macroPointer,dgTile] &, sortedgfds]}, 
+         Sequence@@Table[{value, Map[PrecomputeDerivative[# /. replace[value],#,macroPointer,fdTile,dgTile] &, sortedgfds]}, 
                          {value, lookup[param, AllowedValues]}]]}]]];
 
 DefFn[
-  PrecomputeTiledDerivatives[derivOps_, expr_, zeroDims_] :=
+  PrecomputeFDTiledDerivatives[derivOps_, expr_, zeroDims_] :=
   Module[
     {gfds, sortedgfds},
     CountDerivativeOperations[derivOps, expr, zeroDims];
     gfds = GridFunctionDerivativesInExpression[derivOps, expr, zeroDims];
     sortedgfds = Sort[gfds, ordergfds];
-    Map[PrecomputeTiledDerivative, sortedgfds]]];
+    Map[PrecomputeFDTiledDerivative, sortedgfds]]];
+
+DefFn[
+  PrecomputeDGTiledDerivatives[derivOps_, expr_, zeroDims_] :=
+  Module[
+    {gfds, sortedgfds},
+    CountDerivativeOperations[derivOps, expr, zeroDims];
+    gfds = GridFunctionDerivativesInExpression[derivOps, expr, zeroDims];
+    sortedgfds = Sort[gfds, ordergfds];
+    Map[PrecomputeDGTiledDerivative, sortedgfds]]];
 
 DefFn[
   ReplaceDerivatives[derivOps_, expr_, precompute_, zeroDims_, macroPointer_] :=
@@ -262,13 +272,13 @@ DefFn[
 (* Generate code to ensure that there are sufficient ghost and
    boundary points for the passed derivative operators used in eqs *)
 DefFn[
-  CheckStencil[derivOps_, eqs_, name_, zeroDims_, dgTile_] :=
+  CheckStencil[derivOps_, eqs_, name_, zeroDims_, fdTile_, dgTile_] :=
   Module[{gfds, rgzList, rgz},
     gfds = Map[GridFunctionDerivativesInExpression[{#}, eqs, zeroDims] &, derivOps];
     rgzList = MapThread[If[Length[#2] > 0, DerivativeOperatorStencilWidth[#1,zeroDims], {0,0,0}] &, {derivOps, gfds}];
     If[Length[rgzList] === 0, Return[{}]];
     rgz = Map[Max, Transpose[rgzList]];
-    If[dgTile, rgz = Map[1&, rgz]];
+    If[fdTile || dgTile, rgz = Map[1&, rgz]];
     If[Max[rgz] == 0, {},
     {"EnsureStencilFits(cctkGH, ", Quote@name, ", ", Riffle[rgz,", "], ");\n"}]]];
 
@@ -277,17 +287,18 @@ parametersUsedInOps[derivOps_, intParams_] :=
                     intParams], 1];
 
 DefFn[
-  CheckStencil[derivOps_, eqs_, name_, zeroDims_, dgTile_, intParams_] :=
+  CheckStencil[derivOps_, eqs_, name_, zeroDims_, fdTile_, dgTile_,
+               intParams_] :=
   Module[{psUsed, p},
     psUsed = parametersUsedInOps[derivOps, intParams];
     If[Length[psUsed] > 1, ThrowError["Too many parameters in partial derivatives"]];
     If[psUsed === {},
-      CheckStencil[derivOps,eqs,name,zeroDims,dgTile],
+      CheckStencil[derivOps,eqs,name,zeroDims,fdTile,dgTile],
       p = psUsed[[1]];
       SwitchStatement[getParamName[p],
         Sequence@@Table[{value,
                          CheckStencil[derivOps/.getParamName[p]->value, eqs,
-                                      name, zeroDims, dgTile]},
+                                      name, zeroDims, fdTile, dgTile]},
                         {value, lookup[p, AllowedValues]}]]]]];
 
 (* It would be good to refactor StencilSize and CheckStencil as much
@@ -330,14 +341,33 @@ DefFn[
 (*************************************************************)
 
 DefFn[
-  PrecomputeDerivative[d:pd_[gf_, inds___], vargfd_, macroPointer_, dgTile_] :=
+  PrecomputeDerivative[d:pd_[gf_, inds___], vargfd_, macroPointer_,
+                       fdTile_, dgTile_] :=
   Module[{},
     If[vargfd === Automatic,
-      DefineConstant[GridFunctionDerivativeName[d], DataType[], evaluateDerivative[d,macroPointer,dgTile]],
-      AssignVariable[GridFunctionDerivativeName[vargfd], evaluateDerivative[d,macroPointer,dgTile]]]]];
+      DefineConstant[GridFunctionDerivativeName[d], DataType[], evaluateDerivative[d,macroPointer,fdTile,dgTile]],
+      AssignVariable[GridFunctionDerivativeName[vargfd], evaluateDerivative[d,macroPointer,fdTile,dgTile]]]]];
 
 DefFn[
-  PrecomputeTiledDerivative[d:pd_[gf_, inds___]] :=
+  PrecomputeFDTiledDerivative[d:pd_[gf_, inds___]] :=
+  Module[
+    {
+      pdn = ToString[pd],
+      gfn = ToString[gf],
+      gfdn = ToString[GridFunctionDerivativeName[d]],
+      indstr = Apply[StringJoin, Map[ToString[#-1]&, {inds}]],
+      dxistr = Apply[StringJoin,
+                     Map[("kmul(" <> {"dxi","dyi","dzi"}[[#]] <> ", " <>
+                          "ToReal(1.0)), ")&,
+                         {inds}]]
+    },
+    {
+      "unsigned char "<>gfdn<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n",
+      "stencil_fd_odd_dim3_dir"<>indstr<>"<fdop_"<>pdn<>", npoints_i, npoints_j, npoints_k>(&((const unsigned char *)"<>gfn<>")[off1], "<>gfdn<>"T, "<>dxistr<>"dj, dk);\n"
+    }]];
+
+DefFn[
+  PrecomputeDGTiledDerivative[d:pd_[gf_, inds___]] :=
   Module[
     {
       pdn = ToString[pd],
@@ -355,12 +385,12 @@ DefFn[
     }]];
 
 DefFn[
-  evaluateDerivative[d:pd_[gf_, inds___], macroPointer_, dgTile_] :=
+  evaluateDerivative[d:pd_[gf_, inds___], macroPointer_, fdTile_, dgTile_] :=
   Module[{macroname},
     macroName = ComponentDerivativeOperatorMacroName[pd[inds] -> expr];
     (* Return[ToString[macroName] <> "(" <> ToString[gf] <> ", i, j, k)"] *)
     Which[
-      dgTile,
+      fdTile || dgTile,
       Return["vec_load(getelt(" <>
              ToString[macroName] <> ToString[gf] <> "T, off))"],
       macroPointer,

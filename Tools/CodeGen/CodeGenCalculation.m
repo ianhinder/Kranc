@@ -76,7 +76,8 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
   opts:OptionsPattern[]] :=
   Block[{$CodeGenTarget = NewObject[TargetC, {"UseVectors" -> OptionValue[UseVectors]}]},
     Module[{calc = First[calcs],
-            bodyFunction, tiledBodyFunction, dgTiledBodyFunction},
+            bodyFunction, tiledBodyFunction,
+            fdTiledBodyFunction, dgTiledBodyFunction},
 
   If[!MatchQ[include, _List],
     ThrowError["CreateSetterSource: Include should be a list but is in fact " <> ToString[include]]];
@@ -96,17 +97,23 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
           IncludeSystemFile["stdlib.h"],
           IncludeSystemFile["string.h"]}, {}],
 
-   Map[IncludeFile, Join[{"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h",
+   Map[IncludeFile, Join[{"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h"},
+                          (* This has to come before Kranc.hh, since
+                             Kranc.hh defines a macro "E" (bad idea)
+                             that leads to conflicts *)
+                          If[CalculationLoopControlQQ[calc],
+                             {"LoopControlQ.hpp", "RHSFutures.hh"},{}],
                           (* This has to be before anything which includes
                              vectors.h (including Differencing.h) *)
-                          "Kranc.hh"
+                         {"Kranc.hh"
                           (*"precomputations.h"*)},
-                         If[!OptionValue[DGTile], {"Differencing.h"}, {}],
+                         If[!(OptionValue[FDTile] || OptionValue[DGTile]),
+                            {"Differencing.h"}, {}],
                          include,
                          If[CalculationLoopControlQ[calc], {"loopcontrol.h"},{}],
-                         If[CalculationLoopControlQQ[calc], {"LoopControlQ.hpp", "RHSFutures.hh"},{}],
                          If[OptionValue[UseDGFE], {"hrscc.hh"}, {}],
-                         If[OptionValue[DGTile], {"StencilOps.hh"}, {}],
+                         If[OptionValue[FDTile] || OptionValue[DGTile],
+                            {"StencilOps.hh"}, {}],
                          If[OptionValue[UseOpenCL], OpenCLIncludeFiles[], {}],
                          If[OptionValue[UseVectors], VectorisationIncludeFiles[], {}]]]],
 
@@ -139,6 +146,65 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
 
     #
   }] &;
+
+   fdTiledBodyFunction = DefineFunction[
+     lookup[calc, Name] <> "_Body",
+     "static void",
+     "const cGH* restrict const cctkGH, const KrancData& restrict kd",
+     {
+       "DECLARE_CCTK_ARGUMENTS;\n",
+       "DECLARE_CCTK_PARAMETERS;\n",
+       "\n",
+       "// Define stencil family\n",
+       "constexpr ptrdiff_t order = "<>ToString[OptionValue[FDOrder]]<>";\n",
+       "\n",
+       "// Define stencil operators\n",
+       "typedef fdop_deriv<order> fdop_PD;\n",
+       "typedef fdop_deriv2<order> fdop_PD2;\n",
+       "static_assert(fdop_PD::order == order, \"\")\n";
+       "static_assert(fdop_PD2::order == order, \"\")\n";
+       "\n",
+       "// Define tile shape\n",
+       "constexpr ptrdiff_t npoints_i = "<>ToString[OptionValue[FDTileSize][[1]]]<>";\n",
+       "constexpr ptrdiff_t npoints_j = "<>ToString[OptionValue[FDTileSize][[2]]]<>";\n",
+       "constexpr ptrdiff_t npoints_k = "<>ToString[OptionValue[FDTileSize][[3]]]<>";\n",
+       "\n",
+       "// Check function arguments\n",
+       "assert(kd.tile_imax[0] - kd.tile_imin[0] == npoints_i);\n",
+       "assert(kd.tile_imax[1] - kd.tile_imin[1] == npoints_j);\n",
+       "assert(kd.tile_imax[2] - kd.tile_imin[2] == npoints_k);\n",
+       "\n",
+       "// Location of current tile in grid function (in grid points)\n",
+       "const ptrdiff_t i1 = kd.tile_imin[0];\n",
+       "const ptrdiff_t j1 = kd.tile_imin[1];\n",
+       "const ptrdiff_t k1 = kd.tile_imin[2];\n",
+       "\n",
+       "// Grid function strides (in bytes)\n",
+       "constexpr ptrdiff_t di = sizeof(CCTK_REAL);\n",
+       "const ptrdiff_t dj = di * cctk_ash[0];\n",
+       "const ptrdiff_t dk = dj * cctk_ash[1];\n",
+       "\n",
+       "// Calculate grid function offset (in bytes)\n",
+       "const ptrdiff_t off1 = i1 * di + j1 * dj + k1 * dk;\n",
+       "\n",
+       "// Vector size (in elements)\n",
+       "constexpr ptrdiff_t vs = CCTK_REAL_VEC_SIZE;\n",
+       "\n",
+       "// Padded tile shape (in grid points)\n",
+       "// constexpr ptrdiff_t tni = alignup(npoints_i, vs);\n",
+       "constexpr ptrdiff_t tni = npoints_i;\n",
+       "constexpr ptrdiff_t tnj = npoints_j;\n",
+       "constexpr ptrdiff_t tnk = npoints_k;\n",
+       "\n",
+       "// Padded tile strides (in bytes)\n",
+       "constexpr ptrdiff_t tdi = sizeof(CCTK_REAL);\n",
+       "constexpr ptrdiff_t tdj = tdi * tni;\n",
+       "constexpr ptrdiff_t tdk = tdj * tnj;\n",
+       "// constexpr ptrdiff_t tsz = tdk * tnk;\n",
+       "constexpr ptrdiff_t tsz = alignup(tdk * tnk, CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n",
+       "\n",
+       #
+     }] &;
 
    dgTiledBodyFunction = DefineFunction[
      lookup[calc, Name] <> "_Body",
@@ -214,6 +280,14 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
                                  (* Everywhere | *)
                                  Interior | InteriorNoSync] &&
                           OptionValue[Tile])];
+  (* Not all FDTile calculation are actually tiled.
+     Calculations that include the boundaries cannot be FD-tiled,
+     and are treated as regulare calculations.
+     We assume that they don't evaluate any derivatives. *)
+   calc = Append[calc,
+                 FDTile -> (MatchQ[GetCalculationWhere[calc],
+                                   Interior | InteriorNoSync] && 
+                            OptionValue[FDTile])];
   (* Not all DGTile calculation are actually tiled.
      Calculations that include the boundaries cannot be DG-tiled,
      and are treated as regulare calculations.
@@ -223,7 +297,9 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
                                    Interior | InteriorNoSync] && 
                             OptionValue[DGTile])];
 
-   calc = Join[calc, {BodyFunction -> Which[DGTileCalculationQ[calc],
+   calc = Join[calc, {BodyFunction -> Which[FDTileCalculationQ[calc],
+                                            fdTiledBodyFunction,
+                                            DGTileCalculationQ[calc],
                                             dgTiledBodyFunction,
                                             TileCalculationQ[calc],
                                             tiledBodyFunction,
@@ -232,11 +308,13 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
                       CallerFunction -> True,
                       LoopFunction -> (GenericGridLoop[lookup[calc,Name], #,
                                                        TileCalculationQ[calc],
+                                                       FDTileCalculationQ[calc],
                                                        DGTileCalculationQ[calc],
                                                        opts] &),
                       GFAccessFunction -> ReadGridFunctionInLoop,
                       InitFDVariables -> (InitialiseFDVariables
                                           [OptionValue[UseVectors],
+                                           FDTileCalculationQ[calc],
                                            DGTileCalculationQ[calc]]),
                       MacroPointer -> True}];
 
@@ -540,7 +618,8 @@ DefFn[
          "LoopOverEverything(cctkGH, " <> bodyFunctionName <> ");\n"], *)
       "LoopOverEverything(cctkGH, " <> bodyFunctionName <> ");\n",
       Interior | InteriorNoSync,
-      If[TileCalculationQ[cleancalc] || DGTileCalculationQ[cleancalc],
+      If[TileCalculationQ[cleancalc] ||
+         FDTileCalculationQ[cleancalc] || DGTileCalculationQ[cleancalc],
          "TiledLoopOverInterior(cctkGH, " <> bodyFunctionName <> ");\n",
          "LoopOverInterior(cctkGH, " <> bodyFunctionName <> ");\n"],
       Boundary | BoundaryNoSync,
@@ -637,6 +716,7 @@ DefFn[
 
              CheckStencil[pddefs, eqs, functionName,
                           OptionValue[ZeroDimensions],
+                          FDTileCalculationQ[calc],
                           DGTileCalculationQ[calc],
                           lookup[{opts}, IntParameters, {}]],
 
@@ -660,7 +740,8 @@ DefFn[
 
 (* Create definitions for the local copies of gridfunctions or arrays *)
 DefFn[
-  assignLocalFunctions[gs:{_Symbol...}, useVectors:Boolean, dgTile:Boolean,
+  assignLocalFunctions[gs:{_Symbol...},
+                       useVectors:Boolean, byteIndexing:Boolean,
                        useJacobian:Boolean, nameFunc_] :=
   Module[
     {conds, varPatterns, varsInConds, simpleVars, code},
@@ -684,7 +765,7 @@ DefFn[
     code = {
       (* Simple grid variables *)
       Map[AssignVariableFromExpression[localName[#], GFLocal[#],
-                                       True, useVectors, dgTile, True] &,
+                                       True, useVectors, byteIndexing, True] &,
           simpleVars],
       {
         (* Conditional grid variables *)
@@ -697,14 +778,14 @@ DefFn[
                  [#1,
                   Table[AssignVariableFromExpression
                         [localName[var], GFLocal[var],
-                         False, useVectors, dgTile],
+                         False, useVectors, byteIndexing],
                         {var, #2}],
                   Sequence@@
                   If[#3 =!= None,
                      {Table[AssignVariableFromExpression
                             [localName[var], #3,
                              False (*declare*), False (*useVectors*),
-                             False (*dgTile*)],
+                             False (*byteIndexing*)],
                             {var, #2}]},
                      {}]]},
              (* else *)
@@ -738,8 +819,8 @@ DefFn[
      groupedIfsArrays,
      calcCode, calcCodeArrays,
      assignLocalGridFunctions, assignLocalArrayFunctions,
-     generateTileDefinition,
-     generateTileLoad, generateTileStore,
+     generateFDTileDefinition, generateFDTileLoad, generateFDTileStore,
+     generateDGTileDefinition, generateDGTileLoad, generateDGTileStore,
      arraysInRHS, arraysInLHS, arraysOnlyInRHS},
 
     InfoMessage[InfoFull, "Equation loop"];
@@ -862,7 +943,8 @@ DefFn[
             SameQ[Head[eq2[[2]]], IfThen],
             ret = AssignVariableFromExpression[
               eq2[[1]], eq2[[2]], declare2,
-              OptionValue[UseVectors], OptionValue[DGTile],
+              OptionValue[UseVectors],
+              OptionValue[FDTile] || OptionValue[DGTile],
               noSimplify],
             SameQ[Head[eq2], IfThenGroup],
             vars = eq2[[2,All,1]];
@@ -877,18 +959,21 @@ DefFn[
                      Riffle[
                        AssignVariableFromExpression[#[[1]], #[[2]], False,
                                                     OptionValue[UseVectors],
+                                                    OptionValue[FDTile] ||
                                                     OptionValue[DGTile],
                                                     noSimplify]& /@ eq2[[2]],
                        "\n"],
                      Riffle[
                        AssignVariableFromExpression[#[[1]], #[[2]], False,
                                                     OptionValue[UseVectors],
+                                                    OptionValue[FDTile] ||
                                                     OptionValue[DGTile],
                                                     noSimplify]& /@ eq2[[3]],
                        "\n"]]},
             True,
             ret = AssignVariableFromExpression[eq2[[1]], eq2[[2]], declare2,
                                                OptionValue[UseVectors],
+                                               OptionValue[FDTile] ||
                                                OptionValue[DGTile],
                                                noSimplify]];
           ret];
@@ -902,15 +987,43 @@ DefFn[
       calcCodeArrays = Riffle[generateEquationCode /@ groupedIfsArrays, "\n"];
       InfoMessage[InfoFull, "Finished generating equation code"];
 
-      assignLocalGridFunctions[gs_, useVectors_, dgTile_, useJacobian_] :=
-        assignLocalFunctions[gs, useVectors, dgTile, useJacobian, gridName];
+      assignLocalGridFunctions[gs_, useVectors_, fdTile_, dgTile_,
+                               useJacobian_] :=
+        assignLocalFunctions[gs, useVectors, fdTile || dgTile,
+                             useJacobian, gridName];
       assignLocalArrayFunctions[gs_] :=
         assignLocalFunctions[gs, False, False, False, ArrayName];
 
-      generateTileDefinition[gf_] :=
+      generateFDTileDefinition[gf_] :=
+      "unsigned char "<>ToString[gf]<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n";
+      generateDGTileDefinition[gf_] :=
       "unsigned char "<>ToString[gf]<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n";
 
-      generateTileLoad[gf:(_String|_Symbol)] :=
+      generateFDTileLoad[gf:(_String|_Symbol)] :=
+      Module[
+        {gfn = ToString[gf],
+         jcgfs = JacobianConditionalGridFunctions[],
+         decl, load, isjac, jaccond, ishydro, hydrocond, maybeload},
+        decl = {"unsigned char "<>gfn<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n"};
+        load = {"assert("<>gfn<>"!=NULL);\n",
+                "load_fd_dim3<fdop_PD, npoints_i, npoints_j, npoints_k>(&((const unsigned char *)"<>gfn<>")[off1], "<>gfn<>"T, dj, dk);\n"};
+        isjac = StringMatchQ[gfn, jcgfs[[1]]];
+        jaccond = jcgfs[[2]];
+        ishydro = StringMatchQ[gfn, "eT" ~~ _ ~~ _];
+        hydrocond = ("assume_stress_energy_state>=0 ? "<>
+                     "assume_stress_energy_state : *stress_energy_state");
+        maybeload = Which[isjac,
+                          {"if ("<>jaccond<>") {\n",
+                           IndentBlock[load],
+                           "}\n"},
+                          ishydro,
+                          {"if ("<>hydrocond<>") {\n",
+                           IndentBlock[load],
+                           "}\n"},
+                          True,
+                          load];
+        {decl, maybeload}];
+      generateDGTileLoad[gf:(_String|_Symbol)] :=
       Module[
         {gfn = ToString[gf],
          jcgfs = JacobianConditionalGridFunctions[],
@@ -935,7 +1048,12 @@ DefFn[
                           load];
         {decl, maybeload}];
 
-      generateTileStore[gf:(_String|_Symbol)] :=
+      generateFDTileStore[gf:(_String|_Symbol)] :=
+      {
+        "assert("<>ToString[gf]<>"!=NULL);\n",
+        "store_fd_dim3<fdop_PD, npoints_i, npoints_j, npoints_k>(&((unsigned char *)"<>ToString[gf]<>")[off1], "<>ToString[gf]<>"T, dj, dk);\n"
+      };
+      generateDGTileStore[gf:(_String|_Symbol)] :=
       {
         "assert("<>ToString[gf]<>"!=NULL);\n",
         "store_dg_dim3<dgop_PD>(&((unsigned char *)"<>ToString[gf]<>")[off1], "<>ToString[gf]<>"T, dj, dk);\n"
@@ -963,23 +1081,42 @@ DefFn[
           "Copy local copies back to grid functions",
           Map[AssignVariableInLoop[ArrayName[#], localName[#]] &, arraysInLHS]],
 
-        If[DGTileCalculationQ[cleancalc],
+        If[FDTileCalculationQ[cleancalc],
            CommentedBlock[
-             "Load tiles",
-             generateTileLoad /@ gfsInRHS],
+             "Load FD tiles",
+             generateFDTileLoad /@ gfsInRHS],
            {}],
 
         If[DGTileCalculationQ[cleancalc],
            CommentedBlock[
-             "Calculate derivatives into tiles",
-             PrecomputeTiledDerivatives[defsWithoutShorts, eqsOrdered,
-                                        OptionValue[ZeroDimensions]]],
+             "Load DG tiles",
+             generateDGTileLoad /@ gfsInRHS],
+           {}],
+
+        If[FDTileCalculationQ[cleancalc],
+           CommentedBlock[
+             "Calculate FD derivatives into tiles",
+             PrecomputeFDTiledDerivatives[defsWithoutShorts, eqsOrdered,
+                                          OptionValue[ZeroDimensions]]],
            {}],
 
         If[DGTileCalculationQ[cleancalc],
            CommentedBlock[
-             "Declare result tiles",
-             generateTileDefinition /@ gfsOnlyInLHS],
+             "Calculate DG derivatives into tiles",
+             PrecomputeDGTiledDerivatives[defsWithoutShorts, eqsOrdered,
+                                          OptionValue[ZeroDimensions]]],
+           {}],
+
+        If[FDTileCalculationQ[cleancalc],
+           CommentedBlock[
+             "Declare FDresult tiles",
+             generateFDTileDefinition /@ gfsOnlyInLHS],
+           {}],
+
+        If[DGTileCalculationQ[cleancalc],
+           CommentedBlock[
+             "Declare DG result tiles",
+             generateDGTileDefinition /@ gfsOnlyInLHS],
            {}],
 
         lookup[cleancalc, LoopFunction][
@@ -991,6 +1128,7 @@ DefFn[
               "Assign local copies of grid functions",
               assignLocalGridFunctions[gfsInRHS,
                                        OptionValue[UseVectors],
+                                       FDTileCalculationQ[cleancalc],
                                        DGTileCalculationQ[cleancalc],
                                        useJacobian]],
 
@@ -1004,6 +1142,7 @@ DefFn[
                                     lookup[{opts}, IntParameters, {}],
                                     OptionValue[ZeroDimensions],
                                     lookup[cleancalc, MacroPointer],
+                                    FDTileCalculationQ[cleancalc],
                                     DGTileCalculationQ[cleancalc]]],
 
             CommentedBlock[
@@ -1015,7 +1154,8 @@ DefFn[
                ""],
 
             localsToGridFunctions[gfsInLHS, gridName,
-                                  Which[DGTileCalculationQ[cleancalc], "DGTile",
+                                  Which[FDTileCalculationQ[cleancalc], "FDTile",
+                                        DGTileCalculationQ[cleancalc], "DGTile",
                                         OptionValue[UseOpenCL], "OpenCL",
                                         OptionValue[UseVectors], "Vectors",
                                         True, "Default"]],
@@ -1026,10 +1166,16 @@ DefFn[
           },
           opts],                (* LoopFunction *)
 
+        If[FDTileCalculationQ[cleancalc],
+           CommentedBlock[
+             "Store FD tiles",
+             generateFDTileStore /@ gfsInLHS],
+           {}],
+
         If[DGTileCalculationQ[cleancalc],
            CommentedBlock[
-             "Store tiles",
-             generateTileStore /@ gfsInLHS],
+             "Store DG tiles",
+             generateDGTileStore /@ gfsInLHS],
            {}]
 
           },
@@ -1098,6 +1244,14 @@ DefFn[
   localsToGridFunctions2[gfsInLHS_List, gridName_, "Vectors"] :=
   VectorisationLocalsToGridFunctions[gridName /@ gfsInLHS,
                                      localName /@ gfsInLHS]];
+
+DefFn[
+  localsToGridFunctions2[gfsInLHS_List, gridName_, "FDTile"] :=
+  MapThread[
+    Function[
+      {gf,gfL},
+      "vec_store(getelt("<>ToString[gf]<>"T, off), "<>ToString[gfL]<>");\n"],
+    {gfsInLHS, localName /@ gfsInLHS}]];
 
 DefFn[
   localsToGridFunctions2[gfsInLHS_List, gridName_, "DGTile"] :=

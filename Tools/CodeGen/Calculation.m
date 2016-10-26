@@ -46,6 +46,7 @@ VerifyCalculation;
 CalculationSymbols;
 VerifyNewCalculation;
 TileCalculationQ;
+FDTileCalculationQ;
 DGTileCalculationQ;
 CalculationLoopControlQ;
 CalculationLoopControlQQ;
@@ -437,7 +438,7 @@ VerifyCalculation[calc_] :=
          SeparatedDerivatives, SeparatedDerivatives2,
          LocalGroups, NoSimplify, UseDGFE, SimpleCode, UseCaKernel,
          UseJacobian,
-         ScheduleGroups, TriggerGroups, ThornName, Tile, DGTile,
+         ScheduleGroups, TriggerGroups, ThornName, Tile, FDTile, DGTile,
          UseLoopControl, UseLoopControlQ};
 
     usedKeys = Map[First, calc];
@@ -496,6 +497,9 @@ VerifyNewCalculation[calc_] :=
 
 DefFn[TileCalculationQ[calc_] :=
   lookup[calc,Tile]];
+
+DefFn[FDTileCalculationQ[calc_] :=
+  lookup[calc,FDTile]];
 
 DefFn[DGTileCalculationQ[calc_] :=
   lookup[calc,DGTile]];

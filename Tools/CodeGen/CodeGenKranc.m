@@ -90,12 +90,12 @@ DefFn[
   ToString[x] <> "[0]"];
 
 DefFn[
-  InitialiseFDVariables[vectorise:Boolean, dgTile:Boolean] :=
+  InitialiseFDVariables[vectorise:Boolean, fdTile:Boolean, dgTile:Boolean] :=
   CommentedBlock[
     "Initialise finite differencing variables",
     {
-      If[!dgTile,
-        MapThread[Function[{dest,type,val}, AssignVariableFromExpression[dest,val,True,vectorise,dgTile,Const->True,Type->type]],
+      If[!(fdTile || dgTile),
+        MapThread[Function[{dest,type,val}, AssignVariableFromExpression[dest,val,True,vectorise,fdTile,dgTile,Const->True,Type->type]],
               Transpose@{{"di", "ptrdiff_t", "1"},
                {"dj", "ptrdiff_t", "CCTK_GFINDEX3D(cctkGH,0,1,0) - CCTK_GFINDEX3D(cctkGH,0,0,0)"},
                {"dk", "ptrdiff_t", "CCTK_GFINDEX3D(cctkGH,0,0,1) - CCTK_GFINDEX3D(cctkGH,0,0,0)"},
@@ -104,7 +104,7 @@ DefFn[
                {"cdk", "ptrdiff_t", "sizeof(CCTK_REAL) * dk"}}],
         {}],
 
-      MapThread[Function[{dest,type,val}, AssignVariableFromExpression[dest,val,True,vectorise,dgTile,Const->True,Type->type]],
+      MapThread[Function[{dest,type,val}, AssignVariableFromExpression[dest,val,True,vectorise,fdTile,dgTile,Const->True,Type->type]],
             Transpose@{{"cctkLbnd1", "ptrdiff_t", "cctk_lbnd[0]"},
              {"cctkLbnd2", "ptrdiff_t", "cctk_lbnd[1]"},
              {"cctkLbnd3", "ptrdiff_t", "cctk_lbnd[2]"},
@@ -130,12 +130,15 @@ DefFn[
       AssignVariableFromExpression["hdyi", 0.5 "dyi", True, vectorise, dgTile, Const -> True],
       AssignVariableFromExpression["hdzi", 0.5 "dzi", True, vectorise, dgTile, Const -> True]}]];
 
-Options[GenericGridLoop] = Join[ThornOptions, {Tile -> False, DGTile -> False}];
+Options[GenericGridLoop] = Join[ThornOptions, {Tile -> False,
+                                               FDTile -> False,
+                                               DGTile -> False}];
 
 DefFn[
-  GenericGridLoop[functionName_String, block:CodeGenBlock, tile_, dgtile_,
+  GenericGridLoop[functionName_String, block:CodeGenBlock,
+                  tile_, fdtile_,dgtile_,
                   opts:OptionsPattern[]] :=
-  If[dgtile,
+  If[fdtile || dgtile,
      CommentedBlock[
        "Loop over all grid points in the current tile",
        {
@@ -230,7 +233,7 @@ DefFn[
 (* Take an expression x and replace occurrences of Powers with the C
    macros SQR, CUB, QAD *)
 DefFn[
-  ProcessExpression[expr_, vectorise:Boolean, dgTile:Boolean,
+  ProcessExpression[expr_, vectorise:Boolean, byteIndexing:Boolean,
                     noSimplify:Boolean : False] :=
   Module[
     {rhs},
@@ -321,7 +324,7 @@ DefFn[
     If[Cases[rhs, _Power, Infinity] =!= {},
       ThrowError["Power found in "<>ToString[rhs,InputForm]]];
 
-    rhs = PostProcessExpression[$CodeGenTarget, rhs, dgTile];
+    rhs = PostProcessExpression[$CodeGenTarget, rhs, byteIndexing];
 
     If[Cases[rhs, _Power, Infinity] =!= {},
       ThrowError["Power found in "<>ToString[rhs,InputForm]]];
@@ -345,7 +348,8 @@ DefFn[PostProcessExpression[t_TargetC, expr_, byteIndexing:Boolean] :=
 (* Return a CodeGen block which assigns dest by evaluating expr *)
 Options[AssignVariableFromExpression] = {"Const" -> False, "Type" -> Automatic};
 DefFn[AssignVariableFromExpression[dest_, expr_, declare:Boolean,
-                                   vectorise:Boolean, dgTile:Boolean,
+                                   vectorise:Boolean,
+                                   byteIndexing:Boolean,
                                    noSimplify:Boolean : False,
                              OptionsPattern[]] :=
   Module[{type, exprCode, code},
@@ -353,7 +357,8 @@ DefFn[AssignVariableFromExpression[dest_, expr_, declare:Boolean,
     If[OptionValue[Type] === Automatic,
       If[StringMatchQ[ToString[dest], "dir*"], "ptrdiff_t", DataType[]],
       OptionValue[Type]];
-    exprCode = GenerateCodeFromExpression[expr, vectorise, dgTile, noSimplify];
+    exprCode = GenerateCodeFromExpression[expr, vectorise, byteIndexing,
+                                          noSimplify];
     CountOperations[expr];
     code = If[declare,
               If[OptionValue[Const],DefineConstant,DefineVariable][dest, type, exprCode],
@@ -364,10 +369,10 @@ DefFn[AssignVariableFromExpression[dest_, expr_, declare:Boolean,
 Format[CArray[id_, {args__}], CForm] :=
   SequenceForm[id, "[", Sequence @@ Riffle[{args}, ","], "]"];
 
-DefFn[GenerateCodeFromExpression[expr_, vectorise_, dgTile_,
+DefFn[GenerateCodeFromExpression[expr_, vectorise_, byteIndexing:Boolean,
                                  noSimplify:Boolean : False] :=
   Module[{cleanExpr, code},
-    cleanExpr = ProcessExpression[expr, vectorise, dgTile, noSimplify];
+    cleanExpr = ProcessExpression[expr, vectorise, byteIndexing, noSimplify];
     code = ToString[cleanExpr, CForm, PageWidth -> Infinity];
     code = StringReplace[code, "normal1"     -> "normal[0]"];
     code = StringReplace[code, "normal2"     -> "normal[1]"];

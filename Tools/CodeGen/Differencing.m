@@ -363,7 +363,7 @@ DefFn[
     },
     {
       "unsigned char "<>gfdn<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n",
-      "stencil_fd_odd_dim3_dir"<>indstr<>"<fdop_"<>pdn<>", npoints_i, npoints_j, npoints_k>(&((const unsigned char *)"<>gfn<>")[off1], "<>gfdn<>"T, "<>dxistr<>"dj, dk);\n"
+      "stencil_fd_dim3_dir"<>indstr<>"<fdop_"<>pdn<>", npoints_i, npoints_j, npoints_k>(&((const unsigned char *)"<>gfn<>")[off1], "<>gfdn<>"T, "<>dxistr<>"dj, dk);\n"
     }]];
 
 DefFn[

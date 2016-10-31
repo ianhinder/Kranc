@@ -161,8 +161,10 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
        "// Define stencil operators\n",
        "typedef fdop_deriv<order> fdop_PD;\n",
        "typedef fdop_deriv2<order> fdop_PD2;\n",
+       "typedef fdop_diss<order> fdop_PDDiss;\n",
        "static_assert(fdop_PD::order == order, \"\")\n";
        "static_assert(fdop_PD2::order == order, \"\")\n";
+       "static_assert(fdop_PDDiss::order == order, \"\")\n";
        "\n",
        "// Define tile shape\n",
        "constexpr ptrdiff_t npoints_i = "<>ToString[OptionValue[FDTileSize][[1]]]<>";\n",
@@ -219,9 +221,11 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
        "\n",
        "// Define stencil operators\n",
        "typedef dgop_derivs<order> dgop_PD;\n",
-       "typedef dgop_filter<order> dgop_Filter;\n",
+       "typedef dgop_trunc<order> dgop_PDTrunc;\n",
+       "// typedef dgop_filter<order> dgop_PDDiss;\n",
        "static_assert(dgop_PD::order == order, \"\")\n";
-       "static_assert(dgop_Filter::order == order, \"\")\n";
+       "static_assert(dgop_PDTrunc::order == order, \"\")\n";
+       "// static_assert(dgop_PDDiss::order == order, \"\")\n";
        "\n",
        "// Determine tile shape from stencil\n",
        "constexpr ptrdiff_t npoints_i = order + 1;\n",

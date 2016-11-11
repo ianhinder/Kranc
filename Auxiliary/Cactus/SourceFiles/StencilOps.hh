@@ -738,8 +738,7 @@ stencil_fd_dim3_dir01(const unsigned char *restrict const u,
                                       vec_loadu(getelt(u, offset - n * di))),
                     s);
         }
-        buf_di % vs == 0 ? vec_store_nta_partial(getelt(buf, buf_offset), s)
-                         : vec_storeu_partial(getelt(buf, buf_offset), s);
+        vec_store_nta_partial(getelt(buf, buf_offset), s);
       }
     }
     // adapted from stencil_fd_odd_dim3_dir1
@@ -845,8 +844,8 @@ stencil_fd_dim3_dir12(const unsigned char *restrict const u,
   constexpr ptrdiff_t ddj = ddi * dni;
   constexpr ptrdiff_t ddk = ddj * dnj;
   constexpr ptrdiff_t buf_ni = alignup(npoints_i, CCTK_REAL_VEC_SIZE);
-  constexpr ptrdiff_t buf_nj = npoints_j + 2 * fdop::stencil_radius;
-  constexpr ptrdiff_t buf_nk = npoints_k;
+  constexpr ptrdiff_t buf_nj = npoints_j;
+  constexpr ptrdiff_t buf_nk = npoints_k + 2 * fdop::stencil_radius;
   constexpr ptrdiff_t buf_di = di;
   constexpr ptrdiff_t buf_dj = buf_di * buf_ni;
   constexpr ptrdiff_t buf_dk = buf_dj * buf_nj;
@@ -856,40 +855,39 @@ stencil_fd_dim3_dir12(const unsigned char *restrict const u,
   // TODO: Ensure the inner i loop covers at most one cache line; add
   // outer i loop if necessary
   // adapted from stencil_odd_dim3_dir1
-  for (ptrdiff_t j = -fdop::stencil_radius;
-       j < npoints_j + fdop::stencil_radius; ++j) {
-    for (ptrdiff_t k = 0; k < npoints_k; ++k) {
+  for (ptrdiff_t k = -fdop::stencil_radius;
+       k < npoints_k + fdop::stencil_radius; ++k) {
+    for (ptrdiff_t j = 0; j < npoints_j; ++j) {
       for (ptrdiff_t i = 0; i < npoints_i; i += vs) {
         const ptrdiff_t offset = i * di + j * dj + k * dk;
         const ptrdiff_t buf_offset =
-            i * buf_di + (j + fdop::stencil_radius) * buf_dj + k * buf_dk;
+            i * buf_di + j * buf_dj + (k + fdop::stencil_radius) * buf_dk;
         vec_store_partial_prepare_fixed(i, 0, npoints_i);
         CCTK_REAL_VEC s = vec_set1(0.0);
         for (ptrdiff_t n = 1; n <= fdop::stencil_radius; ++n) {
           const CCTK_REAL c = fdop::coeff(n);
-          s = kmadd(vec_set1(c), ksub(vec_loadu(getelt(u, offset + n * dk)),
-                                      vec_loadu(getelt(u, offset - n * dk))),
+          s = kmadd(vec_set1(c), ksub(vec_loadu(getelt(u, offset + n * dj)),
+                                      vec_loadu(getelt(u, offset - n * dj))),
                     s);
         }
-        buf_di % vs == 0 ? vec_store_nta_partial(getelt(buf, buf_offset), s)
-                         : vec_storeu_partial(getelt(buf, buf_offset), s);
+        vec_store_nta_partial(getelt(buf, buf_offset), s);
       }
     }
   }
-  // adapted from stencil_odd_dim3_dir1
+  // adapted from stencil_odd_dim3_dir2
   for (ptrdiff_t k = 0; k < npoints_k; ++k) {
     for (ptrdiff_t j = 0; j < npoints_j; ++j) {
       for (ptrdiff_t i = 0; i < npoints_i; i += vs) {
-        const ptrdiff_t doffset = i * di + j * dj + k * dk;
+        const ptrdiff_t doffset = i * ddi + j * ddj + k * ddk;
         const ptrdiff_t buf_offset =
-            i * buf_di + (j + fdop::stencil_radius) * buf_dj + k * buf_dk;
+            i * buf_di + j * buf_dj + (k + fdop::stencil_radius) * buf_dk;
         vec_store_partial_prepare_fixed(i, 0, npoints_i);
         CCTK_REAL_VEC s = vec_set1(0.0);
         for (ptrdiff_t n = 1; n <= fdop::stencil_radius; ++n) {
           const CCTK_REAL c = fdop::coeff(n);
           s = kmadd(vec_set1(c),
-                    ksub(vec_load(getelt(buf, buf_offset + n * buf_dj)),
-                         vec_load(getelt(buf, buf_offset - n * buf_dj))),
+                    ksub(vec_load(getelt(buf, buf_offset + n * buf_dk)),
+                         vec_load(getelt(buf, buf_offset - n * buf_dk))),
                     s);
         }
         s = kmul(f, s);
@@ -1354,6 +1352,27 @@ stencil_dg_dim3_dir2(const unsigned char *restrict const u,
       }
     });
   }
+}
+
+template <typename dgop>
+CCTK_ATTRIBUTE_NOINLINE void
+stencil_dg_dim3_dir012(const unsigned char *restrict const u,
+                       unsigned char *restrict const du, const CCTK_REAL_VEC f,
+                       const ptrdiff_t dj, const ptrdiff_t dk) {
+  constexpr ptrdiff_t di = sizeof(CCTK_REAL);
+  // constexpr ptrdiff_t dni = alignup(dgop::npoints, CCTK_REAL_VEC_SIZE);
+  constexpr ptrdiff_t dni = dgop::npoints;
+  constexpr ptrdiff_t dnj = dgop::npoints;
+  constexpr ptrdiff_t dnk = dgop::npoints;
+  constexpr ptrdiff_t ddi = di;
+  constexpr ptrdiff_t ddj = ddi * dni;
+  constexpr ptrdiff_t ddk = ddj * dnj;
+  constexpr ptrdiff_t dsz = ddk * dnk;
+  unsigned char buf[dsz]
+      __attribute__((__aligned__(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL))));
+  stencil_dg_dim3_dir0<dgop>(u, du, f, dj, dk);
+  stencil_dg_dim3_dir1<dgop>(du, buf, CCTK_REAL_VEC(1.0), dj, dk);
+  stencil_dg_dim3_dir2<dgop>(buf, du, CCTK_REAL_VEC(1.0), dj, dk);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

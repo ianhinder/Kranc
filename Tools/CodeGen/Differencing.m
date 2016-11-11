@@ -356,14 +356,21 @@ DefFn[
       gfn = ToString[gf],
       gfdn = ToString[GridFunctionDerivativeName[d]],
       indstr = Apply[StringJoin, Map[ToString[#-1]&, {inds}]],
-      dxistr = Apply[StringJoin,
-                     Map[("kmul(" <> {"dxi","dyi","dzi"}[[#]] <> ", " <>
-                          "ToReal(1.0)), ")&,
-                         {inds}]]
+      dxistrs = Map[{"dxi","dyi","dzi"}[[#]]&, {inds}],
+      dxistr
     },
+    If[Length[{inds}]==2 && {inds}[[1]]=={inds}[[2]],
+       (* If both indices are the same, then we need to apply a single
+          stencil, which has only a single direction. Cut off the
+          second (identical) direction, and append "2" to the stencil
+          name. *)
+       indstr = StringDrop[indstr, -1];
+       pdn = pdn<>"2"
+      ];
+    dxistr = Fold[("kmul("<>#1<>", "<>#2<>")")&, dxistrs];
     {
       "unsigned char "<>gfdn<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n",
-      "stencil_fd_dim3_dir"<>indstr<>"<fdop_"<>pdn<>", npoints_i, npoints_j, npoints_k>(&((const unsigned char *)"<>gfn<>")[off1], "<>gfdn<>"T, "<>dxistr<>"dj, dk);\n"
+      "stencil_fd_dim3_dir"<>indstr<>"<fdop_"<>pdn<>", npoints_i, npoints_j, npoints_k>(&((const unsigned char *)"<>gfn<>")[off1], "<>gfdn<>"T, "<>dxistr<>", dj, dk);\n"
     }]];
 
 DefFn[

@@ -159,11 +159,11 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
        "constexpr ptrdiff_t order = "<>ToString[OptionValue[FDOrder]]<>";\n",
        "\n",
        "// Define stencil operators\n",
-       "typedef fdop_deriv<order> fdop_PD;\n",
-       "typedef fdop_deriv2<order> fdop_PD2;\n",
+       "typedef fdop_deriv<order> fdop_PDDeriv;\n",
+       "typedef fdop_deriv2<order> fdop_PDDeriv2;\n",
        "typedef fdop_diss<order> fdop_PDDiss;\n",
-       "static_assert(fdop_PD::order == order, \"\")\n";
-       "static_assert(fdop_PD2::order == order, \"\")\n";
+       "static_assert(fdop_PDDeriv::order == order, \"\")\n";
+       "static_assert(fdop_PDDeriv2::order == order, \"\")\n";
        "static_assert(fdop_PDDiss::order == order, \"\")\n";
        "\n",
        "// Define tile shape\n",
@@ -220,10 +220,10 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
        "constexpr ptrdiff_t order = "<>ToString[OptionValue[DGOrder]]<>";\n",
        "\n",
        "// Define stencil operators\n",
-       "typedef dgop_derivs<order> dgop_PD;\n",
+       "typedef dgop_derivs<order> dgop_PDDeriv;\n",
        "typedef dgop_trunc<order> dgop_PDTrunc;\n",
        "// typedef dgop_filter<order> dgop_PDDiss;\n",
-       "static_assert(dgop_PD::order == order, \"\")\n";
+       "static_assert(dgop_PDDeriv::order == order, \"\")\n";
        "static_assert(dgop_PDTrunc::order == order, \"\")\n";
        "// static_assert(dgop_PDDiss::order == order, \"\")\n";
        "\n",
@@ -1010,7 +1010,7 @@ DefFn[
          decl, load, isjac, jaccond, ishydro, hydrocond, maybeload},
         decl = {"unsigned char "<>gfn<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n"};
         load = {"assert("<>gfn<>"!=NULL);\n",
-                "load_fd_dim3<fdop_PD, npoints_i, npoints_j, npoints_k>(&((const unsigned char *)"<>gfn<>")[off1], "<>gfn<>"T, dj, dk);\n"};
+                "load_fd_dim3<fdop_PDDeriv, npoints_i, npoints_j, npoints_k>(&((const unsigned char *)"<>gfn<>")[off1], "<>gfn<>"T, dj, dk);\n"};
         isjac = StringMatchQ[gfn, jcgfs[[1]]];
         jaccond = jcgfs[[2]];
         ishydro = StringMatchQ[gfn, "eT" ~~ _ ~~ _];
@@ -1034,7 +1034,7 @@ DefFn[
          decl, load, isjac, jaccond, ishydro, hydrocond, maybeload},
         decl = {"unsigned char "<>gfn<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n"};
         load = {"assert("<>gfn<>"!=NULL);\n",
-                "load_dg_dim3<dgop_PD>(&((const unsigned char *)"<>gfn<>")[off1], "<>gfn<>"T, dj, dk);\n"};
+                "load_dg_dim3<dgop_PDDeriv>(&((const unsigned char *)"<>gfn<>")[off1], "<>gfn<>"T, dj, dk);\n"};
         isjac = StringMatchQ[gfn, jcgfs[[1]]];
         jaccond = jcgfs[[2]];
         ishydro = StringMatchQ[gfn, "eT" ~~ _ ~~ _];
@@ -1055,12 +1055,12 @@ DefFn[
       generateFDTileStore[gf:(_String|_Symbol)] :=
       {
         "assert("<>ToString[gf]<>"!=NULL);\n",
-        "store_fd_dim3<fdop_PD, npoints_i, npoints_j, npoints_k>(&((unsigned char *)"<>ToString[gf]<>")[off1], "<>ToString[gf]<>"T, dj, dk);\n"
+        "store_fd_dim3<fdop_PDDeriv, npoints_i, npoints_j, npoints_k>(&((unsigned char *)"<>ToString[gf]<>")[off1], "<>ToString[gf]<>"T, dj, dk);\n"
       };
       generateDGTileStore[gf:(_String|_Symbol)] :=
       {
         "assert("<>ToString[gf]<>"!=NULL);\n",
-        "store_dg_dim3<dgop_PD>(&((unsigned char *)"<>ToString[gf]<>")[off1], "<>ToString[gf]<>"T, dj, dk);\n"
+        "store_dg_dim3<dgop_PDDeriv>(&((unsigned char *)"<>ToString[gf]<>")[off1], "<>ToString[gf]<>"T, dj, dk);\n"
       };
 
       (* separate grid and array variables *)

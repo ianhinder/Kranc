@@ -905,7 +905,7 @@ DefFn[
          " assign_gf_axes("
          <> chemoraQuote[gf] <> ", "
          <> "AX_" <> StringJoin[Global`Sizes/.info]
-         <> ");\n"] ] ]& /@ gfsInRHS;
+         <> ");\n"] ] ]& /@ gfs;
 
     mapRefAppend[cleancalc,ChemoraContents, "// gfsInRHS:\n"];
     mapRefAppend[cleancalc,ChemoraContents,

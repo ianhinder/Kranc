@@ -157,11 +157,15 @@ DefFn[
            "const int imax1=imax[1];\n",
            "const int imax2=imax[2];\n",
            "#pragma omp parallel\n",
-           If[OptionValue[UseVectors], "CCTK_LOOP3STR", "CCTK_LOOP3"],
+           If[OptionValue[UseVectors], "CCTK_LOOP3STROFF", "CCTK_LOOP3"],
            "(", functionName, ",\n",
            "  i,j,k, imin0,imin1,imin2, imax0,imax1,imax2,\n",
            "  cctk_ash[0],cctk_ash[1],cctk_ash[2]",
-           If[OptionValue[UseVectors], {",\n", "  vecimin,vecimax, CCTK_REAL_VEC_SIZE"}, ""],
+           If[OptionValue[UseVectors],
+              {",\n",
+               "  cctk_alignment,cctk_alignment_offset,\n",
+               "  vecimin,vecimax, CCTK_REAL_VEC_SIZE"},
+              ""],
            ")\n"
          },
          { (* LoopControlQ enabled *)
@@ -172,6 +176,8 @@ DefFn[
            "  iamax[d] = imax[d];\n",
            "  iaash[d] = cctk_ash[d];\n",
            "}\n",
+           "const ptrdiff_t iaaln0 = cctk_alignment;\n",
+           "const ptrdiff_t iaoff0 = cctk_alignment_offset;\n",
            "iablock[0] = block_size_i;\n",
            "iablock[1] = block_size_j;\n",
            "iablock[2] = block_size_k;\n",
@@ -180,7 +186,7 @@ DefFn[
                 "rhs_loop(\n",
                 "  [=](const iarray3& ipos) {\n"
               }, {
-                "rhs_loop_str<CCTK_REAL_VEC_SIZE>(\n",
+                "rhs_loop_str<CCTK_REAL_VEC_SIZE, VECTORISE && VECTORISE_ALIGNED_ARRAYS>(\n",
                 "  [=](const iarray3& imin, const iarray3& imax, const iarray3& ipos) {\n",
                 "    const ptrdiff_t vecimin = imin[0];\n",
                 "    const ptrdiff_t vecimax = imax[0];\n"
@@ -209,11 +215,11 @@ DefFn[
          "}\n",
          If[!OptionValue[UseLoopControlQ],
          {
-           If[OptionValue[UseVectors], "CCTK_ENDLOOP3STR", "CCTK_ENDLOOP3"] <>
+           If[OptionValue[UseVectors], "CCTK_ENDLOOP3STROFF", "CCTK_ENDLOOP3"] <>
            "(", functionName, ");\n"
          }, {
            "  },\n",
-           "  cctkGH, iamin, iamax, iablock, iaash);\n"
+           "  cctkGH, iamin, iamax, iablock, iaash, iaaln0, iaoff0);\n"
          }]
        }]]];
 

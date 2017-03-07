@@ -531,8 +531,9 @@ DefFn[
                "\");\n"],
 
              ConditionalOnParameterTextual[
-               "cctk_iteration % " <> functionName <> "_calc_every != " <>
-               functionName <> "_calc_offset", "return;\n"],
+               "(cctk_iteration - " <> functionName <> "_calc_offset) % " <>
+               functionName <> "_calc_every != 0"
+               , "return;\n"],
   
              CheckGroupStorage[GroupsInCalculation[cleancalc, imp],
                                functionName],

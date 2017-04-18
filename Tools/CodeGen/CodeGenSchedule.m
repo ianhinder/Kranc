@@ -105,6 +105,7 @@ scheduleUnconditionalFunction[spec_] :=
                                     InteriorNoSync, "Interior",
                                     Boundary, "Boundary",
                                     BoundaryNoSync, "Boundary",
+                                    BoundaryWithGhosts, "BoundaryWithGhosts",
                                     _, "ERROR(" <> ToString[r] <> ")"];
       Map[{"READS: ", #, "(",
            translateRegion[lookupDefault[spec, RequiredRegion, "ERROR"]],

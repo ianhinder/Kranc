@@ -131,6 +131,7 @@ process[thorn:"thorn"[content___]] :=
     (* Print["Creating thorn ", name, " with options:"]; *)
     (* Print[options]; *)
     
+    Print["Calling CreateKrancThornTT2"];
     CreateKrancThornTT2[name,Sequence@@options]];
 
 process[calc:"calculation"[content___]] :=

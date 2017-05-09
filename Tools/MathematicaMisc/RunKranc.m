@@ -132,10 +132,12 @@ Kranc`Private`loadKrancInput[script_] :=
     _,        ThrowError["Unknown file extension for "<>script<>
       ".  Recognised extensions are .m and .kranc."]];
 
+Pr[xf__] := Module[{tmpv},tmpv = xf; Print["tmpv=",InputForm[tmpv]]; tmpv];
+
 exception =
   CatchKrancError[
-    Check[
-      Kranc`Private`loadKrancInput[script]; None,
+    Check[Pr[
+      Kranc`Private`loadKrancInput[script]; None],
       ThrowError["Messages were generated"]]];
 
 If[exception =!= None,

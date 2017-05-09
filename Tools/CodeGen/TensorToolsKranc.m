@@ -93,10 +93,12 @@ CreateGroupFromTensor[x_] :=
 
 CheckEquationTensors[eq_] :=
   Module[{},
+    Print["CheckEquationTensors:",InputForm[eq]];
     CheckTensors[eq]];
 
 CheckCalculationTensors[calc_] :=
   Module[{eqs},
+  Print["CheckCalcTensors:",InputForm[calc]];
 
   If[mapContains[calc, Shorthands],
   CheckTensors[lookup[calc, Shorthands]]];

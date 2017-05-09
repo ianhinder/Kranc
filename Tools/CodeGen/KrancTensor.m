@@ -52,11 +52,14 @@ Options[CreateKrancThornTT] = ThornOptions;
 
 CreateKrancThornTT[groups_, parentDirectory_, thornName_, opts:OptionsPattern[]] :=
   Module[{calcs, expCalcs, expGroups, options, derivs, expDerivs, reflectionSymmetries, declaredGroups, consCalcs, expConsCalcs, intParams, realParams, pds, nds},
+    Print["Called CreateKrancThornTT"];
     InfoMessage[Terse, "Creating thorn "<>thornName];
     InfoMessage[Terse, "Processing tensorial arguments"];
     calcs = lookup[{opts}, Calculations];
     consCalcs = lookupDefault[{opts}, ConservationCalculations, {}];
     derivs = lookupDefault[{opts}, PartialDerivatives, {}];
+    Print["derivs=",InputForm[derivs]];
+    Print["calcs1=",InputForm[calcs]];
 
     If[$KrancTensorPackage === "xTensor",
       intParams = lookupDefault[{opts}, IntParameters, {}] /. {___, Name -> name_, ___} :> name;
@@ -64,6 +67,9 @@ CreateKrancThornTT[groups_, parentDirectory_, thornName_, opts:OptionsPattern[]]
       Scan[DefineParameter, intParams];
       Scan[DefineParameter, realParams];
     ];
+    Print["package=",$KrancTensorPackage];
+    Print["realParams=",InputForm[realParams]];
+    Print["intParams=",InputForm[intParams]];
 
     nds = Union[derivs[[All,1,0]]];
     Which[
@@ -75,6 +81,7 @@ CreateKrancThornTT[groups_, parentDirectory_, thornName_, opts:OptionsPattern[]]
       {calcs, consCalcs} = {calcs, consCalcs} /. Thread[nds -> pds];
     ];
 
+    Print["calcs2=",InputForm[calcs]];
     Map[CheckCalculationTensors, calcs];
 
     If[OptionValue[GenerateScript], WriteScript[groups, parentDirectory, thornName, opts]];
@@ -108,6 +115,7 @@ CreateKrancThornTT[groups_, parentDirectory_, thornName_, opts:OptionsPattern[]]
     InfoMessage[Terse, "Creating (component-based) Kranc thorn"];
 
     (* It is necessary to include the KrancThorn context here due to some annoying Needs[] dependency issue *)
+    Print["Calling CreateKrancThorn"];
     KrancThorn`CreateKrancThorn[expGroups, parentDirectory, thornName,
       Apply[Sequence, options], ReflectionSymmetries -> reflectionSymmetries]];
 
@@ -128,6 +136,9 @@ makeCalculationExplicit[calc_] :=
      PrimitiveEquations -> MakeExplicit,
      ConservedEquations -> MakeExplicit,
      Primitives -> MakeExplicit}]];
+
+indexOne[{},tag_] := (Print["indexOne=",InputForm[tag]]; {});
+indexOne[f_,_] := f[[1]];
 
 (* DeleteDuplicates is not available in Mathematica before version 7 *)
 deleteDuplicates[l_] :=
@@ -172,7 +183,9 @@ DefFn[
     If[Length[results] === 0, 
        ThrowError[ToString@StringForm["Cannot find `1` in expression `2`", path, expr]]];
 
-    results[[1]]]];
+    (*results[[1]]*)
+    indexOne[results,results]
+    ]];
 
 DefFn[
   structMatchQ[expr_, path_List] :=
@@ -214,18 +227,18 @@ thornOfImplementation[imp_String] :=
   Module[
     {impThorns = Select[getAllThorns[], StringMatchQ[FileNameTake[#,-1],imp,IgnoreCase->True] &],
      impThorns2},
-    If[impThorns =!= {} && StringMatchQ[implementationOfThorn[impThorns[[1]]], imp, IgnoreCase->True],
-       impThorns[[1]],
+    If[impThorns =!= {} && StringMatchQ[implementationOfThorn[indexOne[impThorns,"impThorns"]], imp, IgnoreCase->True],
+       indexOne[impThorns,"impThorns++"],
        (* else *)
        Module[
          {impThorns2 = Select[getAllThorns[], StringMatchQ[implementationOfThorn[#], imp, IgnoreCase -> True] &]},
          Switch[Length[impThorns2],
                 0, ThrowError[ToString@StringForm["Cannot find a thorn with implementation `1`", imp]],
-                1, impThorns2[[1]],
+                1, indexOne[impThorns2,"impThorns2"],
                 _, Print[StringForm[
                   "WARNING: Found more than one thorn (`1`) providing implementation `2`.  Using `3`.",
-                  Map[FileNameTake[#,-1] &, impThorns], imp, FileNameTake[impThorns[[1]],-1]]];
-                impThorns2[[1]]]]]]];
+                  Map[FileNameTake[#,-1] &, impThorns], imp, FileNameTake[indexOne[impThorns,"impThornsT"],-1]]];
+                indexOne[impThorns2,"impThrons2++"]]]]]];
 
 DefFn[
   implementationOfThorn[thorn_String] :=
@@ -237,8 +250,20 @@ DefFn[
   parseInterfaceCCL[FileNameJoin[{thorn,"interface.ccl"}]]];
 
 DefFn[
+  paramTreeOfThorn[thorn_String] :=
+  parseParamCCL[FileNameJoin[{thorn,"param.ccl"}]]];
+
+DefFn[
   parseInterfaceCCL[interfaceFile_String] :=
   (ParsePEG["intrfccl.peg", "intr", interfaceFile] //.
+   {("startIndex" -> _) :> Sequence[],
+    ("endIndex" -> _) :> Sequence[]} )//.
+  {(XMLObject["Document"][_,data_,___]) :> data, 
+   XMLElement[s_,_,c_] :> s@@c}];
+
+DefFn[
+  parseParamCCL[paramFile_String] :=
+  (ParsePEG["param.peg", "pars", paramFile] //.
    {("startIndex" -> _) :> Sequence[],
     ("endIndex" -> _) :> Sequence[]} )//.
   {(XMLObject["Document"][_,data_,___]) :> data, 
@@ -267,6 +292,7 @@ tensorType[s_String] :=
 tagToOptions[s_] :=
   Module[
     {tag,val},
+    Print["StringSplit->",s,"<-"];
     {tag,val} = StringSplit[s,"="];
     Switch[
       tag,
@@ -279,27 +305,53 @@ groupOptionsFromTags[tags_] :=
   If[Length[tags] === 0, {},
      (* Print["tags = ", tags//InputForm]; *)
      (* Print["tags split = ", InputForm@StringSplit[tags[[1]]]]; *)
-     Flatten[tagToOptions/@StringSplit[tags[[1]]],1]];
+     Flatten[tagToOptions/@StringSplit[indexOne[tags,"tags"]],1]];
 
 DefFn[
   groupStructureOfGroupVar[groupVar_,imp_String] :=
-  {Cases[groupVar,"name"[n_] :> imp<>"::"<>n][[1]], Cases[groupVar,"VARS"[vs___] :> Map[First,{vs}]][[1]], 
-   Sequence@@groupOptionsFromTags[Cases[Print[groupVar//InputForm]; groupVar,"tags"[tags_] :> unquote[tags]]]}];
+  Module[{implDecl,vars,tags},Print["GroupVar=",groupVar];
+  implDecl=indexOne[Cases[groupVar,"name"[n_] :> imp<>"::"<>n],"impDecl"];
+  vars=indexOne[Cases[groupVar,"VARS"[vs___] :> Map[First,{vs}]],"vars"];
+  If[vars=={},vars=Cases[groupVar,"name"[n_] :> n]];
+  tags=Cases[Print[groupVar//InputForm]; groupVar,"tags"[tags_] :> unquote[tags]];
+  {implDecl, vars,
+   Sequence@@groupOptionsFromTags[tags]}]
+   ];
 
 DefFn[
   InheritedGroups[imp_String] :=
+  Module[{},
   Map[groupStructureOfGroupVar[#,imp] &,
-      gfGroupVarsOfInterfaceTree[interfaceTreeOfThorn[thornOfImplementation[imp]]]]];
+      gfGroupVarsOfInterfaceTree[interfaceTreeOfThorn[thornOfImplementation[imp]]]]]];
 
 Options[CreateKrancThornTT2] = ThornOptions;
 
+Arg2[a_List] := a[[2]];
+Umap[{a_List,b_List,c___}] := Umap[{Union[a,b],c}];
+Umap[{a_List}] := a;
+(* Umap[Map[Arg2,y]] *)
+
 DefFn[CreateKrancThornTT2[thornName_String, opts:OptionsPattern[]] :=
   Module[
-    {groups, pderivs, opts2, fdOrder = Global`fdOrder, PDstandard = Global`PDstandard},
+    {vars, groups, pderivs, opts2, fdOrder = Global`fdOrder, PDstandard = Global`PDstandard},
     groups = Map[CreateGroupFromTensor, OptionValue[Variables]];
 
-    Print["Searching for inherited groups..."];
+    Print["Called CreateKrancThornTT2"];
+    Print["Searching for inherited groups in ",thornName,"..."];
     inheritedGroups = Join@@Map[InheritedGroups, OptionValue[InheritedImplementations]];
+    Print["Impls=",InputForm[OptionValue[InheritedImplementations]]];
+    vars = Umap[Map[Arg2,inheritedGroups]];
+    Global`InheritedVars = vars;
+    Print["inherited vars=",InputForm[vars]];
+    params  = Map[paramTreeOfThorn[thornOfImplementation[#]] &,OptionValue[InheritedImplementations]];
+    (*
+    Print["params=",InputForm[params]];
+    spars = Cases[Flatten[Cases[params,"realpar"[___]] /. "realpar"[xx___] :> xx],"realguts"[___]];
+    *)
+    Print["Setting InheritedParams"];
+    Global`InheritedParams = {};
+    params /. "name_num"["name"[n_]] :> AppendTo[Global`InheritedParams,ToExpression[StringReplace[n,"_"->"UND"]]];
+    Print["spars=",InputForm[Global`InheritedParams]];
     Print["Done."];
 
     pderivs =
@@ -330,6 +382,7 @@ DefFn[CreateKrancThornTT2[thornName_String, opts:OptionsPattern[]] :=
 
     opts2 = opts2 /. PD -> PDstandard;
 
+    Print["Calling CreateKrancThornTT"];
     CreateKrancThornTT[groups,OptionValue[ParentDirectory],thornName,
                        DeclaredGroups -> Map[groupName, groups],
                        Sequence@@opts2]]];

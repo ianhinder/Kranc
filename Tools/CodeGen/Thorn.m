@@ -44,7 +44,6 @@ Begin["`Private`"];
    function does not automatically create any parent directories. *)
 CreateThorn[thorn_] :=
   Module[{thornDirectory, sourceDirectory, generatedFiles},
-    Print["CreateThorn called"];
 
     thornDirectory = lookup[thorn, Directory] <> "/" <> lookup[thorn, Name];
     sourceDirectory = thornDirectory <> "/src";
@@ -58,7 +57,6 @@ CreateThorn[thorn_] :=
 
     GenerateFile[thornDirectory <> "/configuration.ccl", lookup[thorn, Configuration]];
     GenerateFile[thornDirectory <> "/interface.ccl",     lookup[thorn, Interface]];
-    Print["Gen::Param=",InputForm[lookup[thorn,Param]]];
     GenerateFile[thornDirectory <> "/param.ccl",         lookup[thorn, Param]];
     GenerateFile[thornDirectory <> "/schedule.ccl",      lookup[thorn, Schedule]];
     If[lookup[thorn, CaKernel] =!= None,

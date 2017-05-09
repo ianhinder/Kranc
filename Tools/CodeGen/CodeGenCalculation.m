@@ -76,7 +76,6 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
   opts:OptionsPattern[]] :=
   Block[{$CodeGenTarget = NewObject[TargetC, {"UseVectors" -> OptionValue[UseVectors]}]},
     Module[{calc = First[calcs],bodyFunction,tiledBodyFunction},
-  Print["Called CreateSetterSource"];
 
   If[!MatchQ[include, _List],
     ThrowError["CreateSetterSource: Include should be a list but is in fact " <> ToString[include]]];
@@ -152,7 +151,6 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
                       InitFDVariables -> InitialiseFDVariables[OptionValue[UseVectors]],
                       MacroPointer -> True}];
 
-   Print["Calling CreateCalculationFunction"];
    CreateCalculationFunction[calc, opts]}]]}]}]]];
 
 (* --------------------------------------------------------------------------
@@ -493,8 +491,6 @@ DefFn[
           kernelCall, DGFEDefs, DGFEInit, DGFECallCode, debug, useJacobian,
           imp, gridName, singlePointStencil},
 
-  Print["Called CreateCalculationFunction"];
-  Print["gfs=",InputForm[gfs]," allSymbols=",InputForm[allSymbols]," knownSymbols=",InputForm[knownSymbols]];
   debug = OptionValue[Debug];
   useJacobian = OptionValue[UseJacobian] && lookupDefault[calcp, UseJacobian, True];
   imp = lookup[calcp, Implementation];
@@ -528,10 +524,6 @@ DefFn[
   VerifyCalculation[cleancalc];
 
   gfs = allGroupVariables[groups];
-  Print["gfs::=",InputForm[gfs]];
-  Print["groups::=",InputForm[groups]];
-  Print["odeGroups::=",InputForm[odeGroups]];
-  Print["parameters::=",InputForm[parameters]];
 
   InfoMessage[InfoFull, " " <> ToString[Length@shorts] <> " shorthands"];
   InfoMessage[InfoFull, " " <> ToString[Length@gfs] <> " grid functions"];
@@ -586,23 +578,12 @@ DefFn[
     normal3, tangentA1, tangentA2, tangentA3, tangentB1, tangentB2, tangentB3},
     If[useJacobian, JacobianSymbols[], {}]];
 
-  Print["global inherited vars=",InputForm[Map[ToExpression,Global`InheritedVars]]];
-
-  (*
-  allSymbols = Union[allSymbols,Global`InheritedVars];
-  knownSymbols = Union[knownSymbols,Global`InheritedVars];
-  *)
   inherited = Intersection[allSymbols,Map[ToExpression,Global`InheritedVars]];
   inheritedParams = Intersection[allSymbols,Map[(# /. Rule[from_,_]->from)&,Global`InheritedParams]];
   knownSymbols = Union[knownSymbols,inherited,inheritedParams];
   gfs = Union[gfs,inherited];
-  Print["Using InheritedParams"];
-  Print["inherited=",InputForm[inherited]];
-  Print["allSymbols=",InputForm[allSymbols]];
-  Print["knownSymbols=",knownSymbols];
 
   unknownSymbols = Complement[allSymbols, knownSymbols];
-  Print["unknownSymbols=",unknownSymbols];
 
   unknownSymbols /.
     {{} :> True,
@@ -820,9 +801,7 @@ DefFn[
         " not allowed with the option" <>
         " ProhibitAssignmentToGridFunctionsRead -> True."]];
 
-    Print["gfs:1=",InputForm[gfs]];
     localGFs = Map[localName, gfs];
-    Print["gfs:2=",InputForm[gfs]];
     localMap = Map[# -> localName[#] &, gfs];
 
     derivSwitch =
@@ -877,8 +856,6 @@ DefFn[
     declare = Block[{$RecursionLimit=Infinity},MarkFirst[First /@ eqsReplaced, Map[localName, gfsInRHS]]];
 
     (* Replace consecutive IfThen statements with the same condition by a single IfThenGroup *)
-    Print["declare=",InputForm[declare]];
-    Print["eqsReplaced=",InputForm[eqsReplaced]];
     groupedIfs = Thread[{declare, eqsReplaced}] //.
       {{x___, {deca_, a_->IfThen[cond_, at_, af_]}, {decb_, b_->IfThen[cond_, bt_, bf_]}, y___} :>
          {x, {{deca, decb}, IfThenGroup[cond, {a->at, b->bt}, {a->af, b->bf}]}, y} /; gridFunctionsFreeQ[cond],
@@ -912,14 +889,10 @@ DefFn[
         ret
     ];
 
-    Print["odeVars=",InputForm[odeVars]];
-    Print["localName",InputForm[localName]];
-    Print["groupedIfs=",InputForm[groupedIfs]];
     groupedIfsArrays = Select[groupedIfs, MemberQ[Map[localName, odeVars], #[[2]][[1]]]  &];
     groupedIfs = Select[groupedIfs, !MemberQ[Map[localName, odeVars], #[[2]][[1]]]  &];
 
     calcCode = Riffle[generateEquationCode /@ groupedIfs, "\n"];
-    Print["calcCode=",InputForm[calcCode]];
     calcCodeArrays = Riffle[generateEquationCode /@ groupedIfsArrays, "\n"];
     InfoMessage[InfoFull, "Finished generating equation code"];
 
@@ -1024,7 +997,7 @@ DefFn[
                               OptionValue[ZeroDimensions],
                               lookup[cleancalc, MacroPointer]]],
 
-      CommentedBlock["Calculate temporaries and grid functions (1)", calcCode],
+      CommentedBlock["Calculate temporaries and grid functions", calcCode],
 
       If[debugInLoop,
         Map[InfoVariable[#[[1]]] &, (eqs2 /. localMap)],
@@ -1070,7 +1043,7 @@ DefFn[
     lookup[cleancalc,LoopFunction][
       {
         CommentedBlock[
-          "Calculate temporaries and grid functions (2)", 
+          "Calculate temporaries and grid functions", 
           If[OptionValue[UseVectors],
              VectorisationSimpleAssign[FlattenBlock[gridName[#]] & /@ Map[First, eqs2],
                                        Map[Last, eqs2]],

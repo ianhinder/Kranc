@@ -191,20 +191,17 @@ DefFn[extendedKeywordParameterDefinitions[pdb_List] :=
    ------------------------------------------------------------------------ *)
 
 VerifyQualifiedName[name_] :=
-  Module[{},Print["VerifyQualifiedName",name," ",StringQ[name]," ",StringMatchQ[name, "*::*"]];
   If[! StringQ[name] || ! StringMatchQ[name, "*::*"],
-    ThrowError["Not a name with an implementation:", name]]];
+    ThrowError["Not a name with an implementation:", name]];
 
 implementationFromQualifiedName[name_] :=
   Module[{colon},
-    Print["impleFromQualName"];
     VerifyQualifiedName[name];
     colon = First[First[StringPosition[name, ":", 1]]];
     StringDrop[name, colon - 1 - StringLength[name]]];
 
 unqualifiedName[name_] :=
   Module[{colon},
-    Print["unqualName"];
     VerifyQualifiedName[name];
     colon = First[First[StringPosition[name, ":", 1]]];
     Return[StringDrop[name, colon + 1]]];
@@ -223,14 +220,10 @@ extendAllowedValue[val_] :=
 
 krancParamStruct[definition_, type_, inherited_] :=
   Module[{allowedValues, description, name},
-    Print["struct from def=",InputForm[definition]];
     name = lookup[definition, Name];
-    Print["struct name=",name];
     description = lookupDefault[definition, Description, name];
-    Print["struct desc=",description];
     allowedValues = extendAllowedValue /@
          lookupDefault[definition, AllowedValues, {"*:*"}];
-    Print["struct allowedValue=",allowedValues];
     Join[
     {Name        -> name,
      Type        -> type, 
@@ -281,9 +274,7 @@ inheritParameters[imp_, reals_, ints_, keywords_] :=
     theseReals = Select[reals, implementationFromQualifiedName[#] == imp &];
     theseInts = Select[ints, implementationFromQualifiedName[#] == imp &];
     theseKeywords = Select[keywords, implementationFromQualifiedName[#] == imp &];
-    Print["unqual theseReals"];
     theseRealsNoImp = MakeFullParamDefs[Map[unqualifiedName, theseReals]];
-    Print["unqual done"];
     theseIntsNoImp = MakeFullParamDefs[Map[unqualifiedName, theseInts]];
     theseKeywordsNoImp = MakeFullParamDefs[Map[unqualifiedName, theseKeywords]];
     realStructs = Map[krancParamStruct[#, "CCTK_REAL", True] &, theseRealsNoImp];
@@ -392,8 +383,6 @@ CreateKrancParam[declaredGroups_, groups_,
                  defaultEvolutionTimelevels_, calcs_, opts:OptionsPattern[]] :=
   Module[
     {params, paramspec, param},
-    Print["Called CreateKrancParam"];
-    Print["parameters=",InputForm[parameters]];
 
     params = Join[commonParameterStructures[evolutionTimelevels],
                   userParameterStructs[parameters],

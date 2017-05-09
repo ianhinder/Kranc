@@ -52,14 +52,11 @@ Options[CreateKrancThornTT] = ThornOptions;
 
 CreateKrancThornTT[groups_, parentDirectory_, thornName_, opts:OptionsPattern[]] :=
   Module[{calcs, expCalcs, expGroups, options, derivs, expDerivs, reflectionSymmetries, declaredGroups, consCalcs, expConsCalcs, intParams, realParams, pds, nds},
-    Print["Called CreateKrancThornTT"];
     InfoMessage[Terse, "Creating thorn "<>thornName];
     InfoMessage[Terse, "Processing tensorial arguments"];
     calcs = lookup[{opts}, Calculations];
     consCalcs = lookupDefault[{opts}, ConservationCalculations, {}];
     derivs = lookupDefault[{opts}, PartialDerivatives, {}];
-    Print["derivs=",InputForm[derivs]];
-    Print["calcs1=",InputForm[calcs]];
 
     If[$KrancTensorPackage === "xTensor",
       intParams = lookupDefault[{opts}, IntParameters, {}] /. {___, Name -> name_, ___} :> name;
@@ -67,9 +64,6 @@ CreateKrancThornTT[groups_, parentDirectory_, thornName_, opts:OptionsPattern[]]
       Scan[DefineParameter, intParams];
       Scan[DefineParameter, realParams];
     ];
-    Print["package=",$KrancTensorPackage];
-    Print["realParams=",InputForm[realParams]];
-    Print["intParams=",InputForm[intParams]];
 
     nds = Union[derivs[[All,1,0]]];
     Which[
@@ -81,7 +75,6 @@ CreateKrancThornTT[groups_, parentDirectory_, thornName_, opts:OptionsPattern[]]
       {calcs, consCalcs} = {calcs, consCalcs} /. Thread[nds -> pds];
     ];
 
-    Print["calcs2=",InputForm[calcs]];
     Map[CheckCalculationTensors, calcs];
 
     If[OptionValue[GenerateScript], WriteScript[groups, parentDirectory, thornName, opts]];
@@ -115,7 +108,6 @@ CreateKrancThornTT[groups_, parentDirectory_, thornName_, opts:OptionsPattern[]]
     InfoMessage[Terse, "Creating (component-based) Kranc thorn"];
 
     (* It is necessary to include the KrancThorn context here due to some annoying Needs[] dependency issue *)
-    Print["Calling CreateKrancThorn"];
     KrancThorn`CreateKrancThorn[expGroups, parentDirectory, thornName,
       Apply[Sequence, options], ReflectionSymmetries -> reflectionSymmetries]];
 
@@ -292,7 +284,6 @@ tensorType[s_String] :=
 tagToOptions[s_] :=
   Module[
     {tag,val},
-    Print["StringSplit->",s,"<-"];
     {tag,val} = StringSplit[s,"="];
     Switch[
       tag,
@@ -309,11 +300,11 @@ groupOptionsFromTags[tags_] :=
 
 DefFn[
   groupStructureOfGroupVar[groupVar_,imp_String] :=
-  Module[{implDecl,vars,tags},Print["GroupVar=",groupVar];
+  Module[{implDecl,vars,tags},
   implDecl=indexOne[Cases[groupVar,"name"[n_] :> imp<>"::"<>n],"impDecl"];
   vars=indexOne[Cases[groupVar,"VARS"[vs___] :> Map[First,{vs}]],"vars"];
   If[vars=={},vars=Cases[groupVar,"name"[n_] :> n]];
-  tags=Cases[Print[groupVar//InputForm]; groupVar,"tags"[tags_] :> unquote[tags]];
+  tags=Cases[groupVar,"tags"[tags_] :> unquote[tags]];
   {implDecl, vars,
    Sequence@@groupOptionsFromTags[tags]}]
    ];
@@ -343,30 +334,18 @@ PExtract[expr_,key_] :=
 
 MakeParRule[thorn_,var_] := ToExpression[StringReplace[var,"_"->"UND"]] -> Global`QualifiedName[thorn<>"::"<>var];
 MakeParMap[{thorn_,{vars___}}] := Map[MakeParRule[thorn,#]&,{vars}];
-Print[InputForm[Map[MakeParMap,params2]]];
 
 DefFn[CreateKrancThornTT2[thornName_String, opts:OptionsPattern[]] :=
   Module[
     {vars, groups, pderivs, opts2, fdOrder = Global`fdOrder, PDstandard = Global`PDstandard, i},
     groups = Map[CreateGroupFromTensor, OptionValue[Variables]];
 
-    Print["Called CreateKrancThornTT2"];
-    Print["Searching for inherited groups in ",thornName,"..."];
     inheritedGroups = Join@@Map[InheritedGroups, OptionValue[InheritedImplementations]];
-    Print["Impls=",InputForm[OptionValue[InheritedImplementations]]];
     vars = Umap[Map[Arg2,inheritedGroups]];
     Global`InheritedVars = vars;
-    Print["inherited vars=",InputForm[vars]];
-    Print["InheritedImpls=",InputForm[OptionValue[InheritedImplementations]]];
-    (* params = Map[paramTreeOfThorn[thornOfImplementation[#]] &,OptionValue[InheritedImplementations]]; *)
-    (* params =  Table[{i,paramTreeOfThorn[thornOfImplementation[i]]},{i,OptionValue[InheritedImplementations]}]; *)
     params2 = Table[{i,Flatten[PExtract[paramTreeOfThorn[thornOfImplementation[i]],"realpar","realguts","name"]]},{i,OptionValue[InheritedImplementations]}];
-    Print["params2=",InputForm[params2]];
     params = Flatten[Map[MakeParMap,params2]];
-    Print["params=",InputForm[params]];
-    Print["Setting InheritedParams"];
     Global`InheritedParams = params;
-    Print["Done."];
 
     pderivs =
     Join[OptionValue[PartialDerivatives],
@@ -396,7 +375,6 @@ DefFn[CreateKrancThornTT2[thornName_String, opts:OptionsPattern[]] :=
 
     opts2 = opts2 /. PD -> PDstandard;
 
-    Print["Calling CreateKrancThornTT"];
     CreateKrancThornTT[groups,OptionValue[ParentDirectory],thornName,
                        DeclaredGroups -> Map[groupName, groups],
                        Sequence@@opts2]]];

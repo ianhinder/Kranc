@@ -150,7 +150,6 @@ Options[CreateKrancThorn] = ThornOptions;
 
 DefFn[CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPattern[]] :=
   Module[{configuration, interface, schedule, param, make, cakernel, c},
-    Print["Called CreateKrancThorn"];
 
     InfoMessage[Terse, "Processing arguments to CreateKrancThorn"];
 
@@ -212,14 +211,12 @@ DefFn[CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPa
        ------------------------------------------------------------------------ *)
     pd = ParameterDatabase[opts];
     parList = {};
-    Print["pre pd"];
     (* Use Mathematica search and replace to identify all parameters 
        from inherited thorns used in expressions. *)
     (c /. Global`InheritedParams) /. Global`QualifiedName[name_] :> (parList=AppendTo[parList,name];name);
     (* Avoid duplicate declarations *)
     parList = Union[parList]; 
     pd = SetObjectField[pd,"InheritedReals",parList];
-    Print["pd=",InputForm[pd]];
 
     (* ------------------------------------------------------------------------ 
        Construct parameter database from named arguments
@@ -241,7 +238,6 @@ DefFn[CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPa
       (* TODO: Replace this with the parameter database, and change
          the code in CalculationStencilSize to get the list of integer
          parameters from the parameter database *)
-      Print["OptionValue[IntParameters]=",InputForm[OptionValue[IntParameters]]];
       calcs = Map[Append[#, IntParameters -> OptionValue[IntParameters]] &, calcs];
 
       SetObjectField[c, "Calculations", calcs]];
@@ -374,20 +370,13 @@ DefFn[CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPa
     interface = CreateKrancInterface[Sequence@@(GetObjectField[c,#]& /@ {"DeclaredGroups", "Groups",
       "Implementation", "InheritedImplementations", "IncludeFiles"}), opts];
 
-    (*
-    Print["Calling CreateKrancParam"];
-    val = GetObjectField[c,"Parameters"];
-    val2 = SetObjectField[val,"InheritedReals",{"Funwave::gamma1"}];
-    Print["val2=",InputForm[val2]];
-    c = SetObjectField[c,"Parameters",val2];
-    *)
+    InfoMessage[Terse, "Creating param file"];
     param = CreateKrancParam[
       Sequence@@
       (GetObjectField[c,#]& /@
        {"DeclaredGroups", "Groups", "Name", "Parameters",
         "EvolutionTimelevels", "DefaultEvolutionTimelevels",
         "Calculations"}), opts];
-    Print["Created param=",InputForm[param]];
 
     InfoMessage[Terse, "Creating schedule file"];
     schedule = CreateKrancScheduleFile[
@@ -411,7 +400,6 @@ DefFn[CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPa
     Module[{opCounts},
       opCounts=Reap[
 
-    Print["Calling CreateSetterSource"];
     c = JoinObjectField[
       c, "Sources", 
       Join[Map[{Filename -> lookup[#, Name] <> ".cc",
@@ -492,8 +480,6 @@ DefFn[CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPa
                    Sources       -> GetObjectField[c, "Sources"],
                    Files         -> GetObjectField[c, "Files"]};
       InfoMessage[Terse, "Creating thorn"];
-      Print["thornspec::param=",InputForm[param]];
-      Print["Calling CreateThorn"];
       CreateThorn[thornspec]]]];
 
 End[];

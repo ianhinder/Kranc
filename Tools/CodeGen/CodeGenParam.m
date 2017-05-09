@@ -92,8 +92,6 @@ parameterBlock[spec_] :=
 (* Given a particular implementation, return a CodeGen block defining
    which parameters are used or extended from that implementation *)
 parameterImplementationSection[spec_] :=
-  Module[{},
-  Print["Spec=",InputForm[spec]];
   {"\nshares: ", lookup[spec, Name], "\n", "\n",
 
     (* For each used parameter in the spec, output a line indicating
@@ -104,7 +102,7 @@ parameterImplementationSection[spec_] :=
     (* For each extended parameter in the spec, output a parameter
        block containing the specified extension prefixed with EXTENDS *)
     Map[{"EXTENDS ", parameterBlock[#], "\n"} &, 
-        lookupDefault[spec, ExtendedParameters, {}]]}];
+        lookupDefault[spec, ExtendedParameters, {}]]};
 
 (* Given a parameterFileSpec structure, return a CodeGen block for the
    param.ccl file *)

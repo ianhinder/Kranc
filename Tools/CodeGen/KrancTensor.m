@@ -331,9 +331,23 @@ Umap[{a_List,b_List,c___}] := Umap[{Union[a,b],c}];
 Umap[{a_List}] := a;
 (* Umap[Map[Arg2,y]] *)
 
+OneArg[expr_] := expr;
+OneArg[expr_,more__] := {expr,more};
+PExtract[expr_,key_,keys__] :=
+    PExtract[PExtract[expr,key],keys];
+PExtract[expr_,key_] :=
+    Module[{retval,match},
+        retval = {};
+        expr /. key[match___] :> (retval = AppendTo[retval,OneArg[match]]);
+        Return[retval]];
+
+MakeParRule[thorn_,var_] := ToExpression[StringReplace[var,"_"->"UND"]] -> Global`QualifiedName[thorn<>"::"<>var];
+MakeParMap[{thorn_,{vars___}}] := Map[MakeParRule[thorn,#]&,{vars}];
+Print[InputForm[Map[MakeParMap,params2]]];
+
 DefFn[CreateKrancThornTT2[thornName_String, opts:OptionsPattern[]] :=
   Module[
-    {vars, groups, pderivs, opts2, fdOrder = Global`fdOrder, PDstandard = Global`PDstandard},
+    {vars, groups, pderivs, opts2, fdOrder = Global`fdOrder, PDstandard = Global`PDstandard, i},
     groups = Map[CreateGroupFromTensor, OptionValue[Variables]];
 
     Print["Called CreateKrancThornTT2"];
@@ -343,15 +357,15 @@ DefFn[CreateKrancThornTT2[thornName_String, opts:OptionsPattern[]] :=
     vars = Umap[Map[Arg2,inheritedGroups]];
     Global`InheritedVars = vars;
     Print["inherited vars=",InputForm[vars]];
-    params  = Map[paramTreeOfThorn[thornOfImplementation[#]] &,OptionValue[InheritedImplementations]];
-    (*
+    Print["InheritedImpls=",InputForm[OptionValue[InheritedImplementations]]];
+    (* params = Map[paramTreeOfThorn[thornOfImplementation[#]] &,OptionValue[InheritedImplementations]]; *)
+    (* params =  Table[{i,paramTreeOfThorn[thornOfImplementation[i]]},{i,OptionValue[InheritedImplementations]}]; *)
+    params2 = Table[{i,Flatten[PExtract[paramTreeOfThorn[thornOfImplementation[i]],"realpar","realguts","name"]]},{i,OptionValue[InheritedImplementations]}];
+    Print["params2=",InputForm[params2]];
+    params = Flatten[Map[MakeParMap,params2]];
     Print["params=",InputForm[params]];
-    spars = Cases[Flatten[Cases[params,"realpar"[___]] /. "realpar"[xx___] :> xx],"realguts"[___]];
-    *)
     Print["Setting InheritedParams"];
-    Global`InheritedParams = {};
-    params /. "name_num"["name"[n_]] :> AppendTo[Global`InheritedParams,ToExpression[StringReplace[n,"_"->"UND"]]];
-    Print["spars=",InputForm[Global`InheritedParams]];
+    Global`InheritedParams = params;
     Print["Done."];
 
     pderivs =

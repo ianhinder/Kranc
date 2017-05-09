@@ -208,10 +208,23 @@ DefFn[CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPa
        c = JoinObjectField[c, "PartialDerivatives", ConservationDifferencingOperators[]]];
 
     (* ------------------------------------------------------------------------ 
+       Collect real parameters from inherited thorns and set them.
+       ------------------------------------------------------------------------ *)
+    pd = ParameterDatabase[opts];
+    parList = {};
+    Print["pre pd"];
+    (* Use Mathematica search and replace to identify all parameters 
+       from inherited thorns used in expressions. *)
+    (c /. Global`InheritedParams) /. Global`QualifiedName[name_] :> (parList=AppendTo[parList,name];name);
+    (* Avoid duplicate declarations *)
+    parList = Union[parList]; 
+    pd = SetObjectField[pd,"InheritedReals",parList];
+    Print["pd=",InputForm[pd]];
+
+    (* ------------------------------------------------------------------------ 
        Construct parameter database from named arguments
        ------------------------------------------------------------------------ *)
-
-    c = SetObjectField[c, "Parameters", ParameterDatabase[opts]];
+    c = SetObjectField[c, "Parameters", pd];
 
     (* ------------------------------------------------------------------------ 
        Add thorn-global options to calculations
@@ -361,12 +374,20 @@ DefFn[CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPa
     interface = CreateKrancInterface[Sequence@@(GetObjectField[c,#]& /@ {"DeclaredGroups", "Groups",
       "Implementation", "InheritedImplementations", "IncludeFiles"}), opts];
 
+    (*
+    Print["Calling CreateKrancParam"];
+    val = GetObjectField[c,"Parameters"];
+    val2 = SetObjectField[val,"InheritedReals",{"Funwave::gamma1"}];
+    Print["val2=",InputForm[val2]];
+    c = SetObjectField[c,"Parameters",val2];
+    *)
     param = CreateKrancParam[
       Sequence@@
       (GetObjectField[c,#]& /@
        {"DeclaredGroups", "Groups", "Name", "Parameters",
         "EvolutionTimelevels", "DefaultEvolutionTimelevels",
         "Calculations"}), opts];
+    Print["Created param=",InputForm[param]];
 
     InfoMessage[Terse, "Creating schedule file"];
     schedule = CreateKrancScheduleFile[

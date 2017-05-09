@@ -106,7 +106,7 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
                          If[OptionValue[UseOpenCL], OpenCLIncludeFiles[], {}],
                          If[OptionValue[UseVectors], VectorisationIncludeFiles[], {}]]]],
 
-   {"#ifndef\n","#define I3D(V,X,Y,Z) (*((&V)+di*X+dj*Y+dk*Z))\n","#endif\n"},
+   {"#ifndef I3D\n","#define I3D(V,X,Y,Z) (*((&V)+di*X+dj*Y+dk*Z))\n","#endif\n"},
 
    (* For each function structure passed, create the function and
       insert it *)
@@ -593,7 +593,7 @@ DefFn[
   knownSymbols = Union[knownSymbols,Global`InheritedVars];
   *)
   inherited = Intersection[allSymbols,Map[ToExpression,Global`InheritedVars]];
-  inheritedParams = Intersection[allSymbols,Map[ToExpression,Global`InheritedParams]];
+  inheritedParams = Intersection[allSymbols,Map[(# /. Rule[from_,_]->from)&,Global`InheritedParams]];
   knownSymbols = Union[knownSymbols,inherited,inheritedParams];
   gfs = Union[gfs,inherited];
   Print["Using InheritedParams"];

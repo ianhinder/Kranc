@@ -73,6 +73,12 @@ process["projected_var"["name"[nm_], "x"[xv___], "y"[yv___], "z"[zv___]]] :=
     Return[var];
   ];
 
+Clear[CombineInherited]
+CombineInherited[{InheritedImplementations->{b_},c___},f_List,r_List] :=
+    CombineInherited[{c},Join[f,{b}],r];
+CombineInherited[{a_,c___},f_List,r_List] := CombineInherited[{c},f,Join[r,{a}]];
+CombineInherited[{},f_,r_] := Join[{InheritedImplementations->f},r];
+
 process[thorn:"thorn"[content___]] :=
   Module[
     {calcs = {}, name, parameters = {}, variables = {}, temporaries = {Global`boundx,Global`boundy,Global`boundz}, tensors, kernels,
@@ -91,6 +97,7 @@ process[thorn:"thorn"[content___]] :=
               "option"[__], options = Join[options, process[el]],
               _, ThrowError["Unrecognised element '"<>Head[el]<>"' in thorn"]],
        {el, {content}}];
+    options=CombineInherited[options,{},{}];
     Map[GenOp,operators];
 
     bounds = {

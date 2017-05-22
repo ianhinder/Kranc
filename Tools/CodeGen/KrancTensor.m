@@ -332,7 +332,7 @@ PExtract[expr_,key_] :=
         expr /. key[match___] :> (retval = AppendTo[retval,OneArg[match]]);
         Return[retval]];
 
-MakeParRule[thorn_,var_] := ToExpression[StringReplace[var,"_"->"UND"]] -> Global`QualifiedName[thorn<>"::"<>var];
+MakeParRule[thorn_,var_] := ToExpression[StringReplace[var,"_"->"UND"]] -> Global`$QualifiedName[thorn<>"::"<>var];
 MakeParMap[{thorn_,{vars___}}] := Map[MakeParRule[thorn,#]&,{vars}];
 
 DefFn[CreateKrancThornTT2[thornName_String, opts:OptionsPattern[]] :=
@@ -342,10 +342,10 @@ DefFn[CreateKrancThornTT2[thornName_String, opts:OptionsPattern[]] :=
 
     inheritedGroups = Join@@Map[InheritedGroups, OptionValue[InheritedImplementations]];
     vars = Umap[Map[Arg2,inheritedGroups]];
-    Global`InheritedVars = vars;
+    Global`$InheritedVars = vars;
     params2 = Table[{i,Flatten[PExtract[paramTreeOfThorn[thornOfImplementation[i]],"realpar","realguts","name"]]},{i,OptionValue[InheritedImplementations]}];
     params = Flatten[Map[MakeParMap,params2]];
-    Global`InheritedParams = params;
+    Global`$InheritedParams = params;
 
     pderivs =
     Join[OptionValue[PartialDerivatives],

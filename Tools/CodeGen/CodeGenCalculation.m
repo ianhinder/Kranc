@@ -578,8 +578,8 @@ DefFn[
     normal3, tangentA1, tangentA2, tangentA3, tangentB1, tangentB2, tangentB3},
     If[useJacobian, JacobianSymbols[], {}]];
 
-  inherited = Intersection[allSymbols,Map[ToExpression,Global`InheritedVars]];
-  inheritedParams = Intersection[allSymbols,Map[(# /. Rule[from_,_]->from)&,Global`InheritedParams]];
+  inherited = Intersection[allSymbols,Map[ToExpression,Global`$InheritedVars]];
+  inheritedParams = Intersection[allSymbols,Map[(# /. Rule[from_,_]->from)&,Global`$InheritedParams]];
   knownSymbols = Union[knownSymbols,inherited,inheritedParams];
   gfs = Union[gfs,inherited];
 

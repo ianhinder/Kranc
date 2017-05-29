@@ -23,12 +23,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <vector>
+
 #include <cctk.h>
 #include <cctk_Arguments.h>
 #include <cctk_Parameters.h>
 #include <util_Table.h>
 
 #include <Symmetry.h>
+
+#ifdef HAVE_CAPABILITY_FunHPC
+#include <qthread/future.hpp>
+#endif
 
 #include "Kranc.hh"
 
@@ -39,37 +45,39 @@ namespace @THORN_NAME@ {
  *********************************************************************/
 
 void GetBoundaryWidths(cGH const *restrict const cctkGH,
-                       CCTK_INT nboundaryzones[6]){CCTK_INT is_internal[6];
-CCTK_INT is_staggered[6];
-CCTK_INT shiftout[6];
-int ierr = -1;
+                       CCTK_INT nboundaryzones[6]) {
+  CCTK_INT is_internal[6];
+  CCTK_INT is_staggered[6];
+  CCTK_INT shiftout[6];
+  int ierr = -1;
 
-if (CCTK_IsFunctionAliased("MultiPatch_GetBoundarySpecification")) {
-  int const map = MultiPatch_GetMap(cctkGH);
-  /* This doesn't make sense in level mode */
-  if (map < 0) {
-    static int have_warned = 0;
-    if (!have_warned) {
-      CCTK_WARN(1, "GetBoundaryWidths: Could not determine current map (can be "
-                   "caused by calling in LEVEL mode)");
-      have_warned = 1;
+  if (CCTK_IsFunctionAliased("MultiPatch_GetBoundarySpecification")) {
+    int const map = MultiPatch_GetMap(cctkGH);
+    /* This doesn't make sense in level mode */
+    if (map < 0) {
+      static int have_warned = 0;
+      if (!have_warned) {
+        CCTK_WARN(1,
+                  "GetBoundaryWidths: Could not determine current map (can be "
+                  "caused by calling in LEVEL mode)");
+        have_warned = 1;
+      }
+      for (int i = 0; i < 6; i++)
+        nboundaryzones[i] = 0;
+      return;
     }
-    for (int i = 0; i < 6; i++)
-      nboundaryzones[i] = 0;
-    return;
+    ierr = MultiPatch_GetBoundarySpecification(
+        map, 6, nboundaryzones, is_internal, is_staggered, shiftout);
+    if (ierr != 0)
+      CCTK_WARN(0, "Could not obtain boundary specification");
+  } else if (CCTK_IsFunctionAliased("GetBoundarySpecification")) {
+    ierr = GetBoundarySpecification(6, nboundaryzones, is_internal,
+                                    is_staggered, shiftout);
+    if (ierr != 0)
+      CCTK_WARN(0, "Could not obtain boundary specification");
+  } else {
+    CCTK_WARN(0, "Could not obtain boundary specification");
   }
-  ierr = MultiPatch_GetBoundarySpecification(
-      map, 6, nboundaryzones, is_internal, is_staggered, shiftout);
-  if (ierr != 0)
-    CCTK_WARN(0, "Could not obtain boundary specification");
-} else if (CCTK_IsFunctionAliased("GetBoundarySpecification")) {
-  ierr = GetBoundarySpecification(6, nboundaryzones, is_internal, is_staggered,
-                                  shiftout);
-  if (ierr != 0)
-    CCTK_WARN(0, "Could not obtain boundary specification");
-} else {
-  CCTK_WARN(0, "Could not obtain boundary specification");
-}
 }
 
 /*********************************************************************
@@ -591,6 +599,40 @@ void TiledLoop(cGH const *restrict const cctkGH,
     }
   }
 
+#ifdef HAVE_CAPABILITY_FunHPC
+
+  std::vector<qthread::future<void> > fs;
+  const int dti = tile_size_l[0];
+  const int dtj = tile_size_l[1];
+  const int dtk = tile_size_l[2];
+  for (int tk = tiled_imin[2]; tk < tiled_imax[2]; tk += dtk) {
+    for (int tj = tiled_imin[1]; tj < tiled_imax[1]; tj += dtj) {
+      for (int ti = tiled_imin[0]; ti < tiled_imax[0]; ti += dti) {
+        fs.push_back(
+            qthread::async(qthread::launch::async, [&, ti, tj, tk]() {
+              KrancData kd = kd_coarse;
+
+              kd.dir = 0;
+              kd.face = 0;
+              // TODO: initialise the rest, or use a constructor
+
+              kd.tile_imin[0] = ti;
+              kd.tile_imax[0] = ti + dti;
+              kd.tile_imin[1] = tj;
+              kd.tile_imax[1] = tj + dtj;
+              kd.tile_imin[2] = tk;
+              kd.tile_imax[2] = tk + dtk;
+
+              calc(cctkGH, kd);
+            }));
+      }
+    }
+  }
+  for (auto &f : fs)
+    f.get();
+
+#else
+
   const int dti = tile_size_l[0];
   const int dtj = tile_size_l[1];
   const int dtk = tile_size_l[2];
@@ -615,6 +657,8 @@ void TiledLoop(cGH const *restrict const cctkGH,
       }
     }
   }
+
+#endif
 }
 
 /*********************************************************************

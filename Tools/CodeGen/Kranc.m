@@ -18,6 +18,12 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
+(* KrancTensor.m:CreateKrancThornTT2, 
+   CodeGenCalculation.m:CreateCalculationFunction *)
+
+$InheritedVars = {};
+$InheritedParams = {};
+
 BeginPackage["Kranc`"];
 
 (* CodeGen.m *)

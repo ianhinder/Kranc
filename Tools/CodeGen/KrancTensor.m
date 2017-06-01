@@ -318,9 +318,7 @@ DefFn[
 Options[CreateKrancThornTT2] = ThornOptions;
 
 Arg2[a_List] := a[[2]];
-Umap[{a_List,b_List,c___}] := Umap[{Union[a,b],c}];
-Umap[{a_List}] := a;
-(* Umap[Map[Arg2,y]] *)
+Umap[a___] := Union @@ a;
 
 OneArg[expr_] := expr;
 OneArg[expr_,more__] := {expr,more};

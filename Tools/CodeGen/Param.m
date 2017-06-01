@@ -245,7 +245,6 @@ krancParamStructExtended[definition_, type_] :=
     {Name        -> name,
      Type        -> type, 
      Description -> description,
-     Default     -> "",
      Visibility  -> "restricted",
      AllowedValues -> allowedValues}];
 

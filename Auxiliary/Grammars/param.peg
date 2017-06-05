@@ -1,0 +1,149 @@
+# The grammar for the param.ccl file
+uses = (?i:uses|)
+
+# The skipper is a crucial sub-pattern
+# that is activated by any whitespace in the
+# grammar file
+skipper = \b([\ \t\n\r\b]|\#[^\n]*|\\[\r\n])*
+
+any = [^]
+name = (?i:[a-z_][a-z0-9_]*)
+kname = (?i:[a-z_][a-z0-9_-]*)
+accname = {-name}(::{-name})*
+steerable = (?i:never|always|recover)
+inparen = [^\(\)]+|\({inparen}+\)
+accumexpr = \({inparen}+\)
+
+# Note slop on shared
+access_spec = (?i:global|restricted|private)
+share = (?i:shares)[ \t]*:[ \t]*{name}
+access = {access_spec} :|{share}
+# TODO: remove old, commented lines?
+#access = (?i:global : |restricted : |private : |shares :([\ \t]*{name}|) )
+#access = (?i: global : | restricted : | private : | shares : {name} )
+
+quote = "(\\{any}|[^"])*"
+
+num = [+\-]?[0-9]+
+intbound = (\*|{num}|) 
+intrange = ({lbound}{intbound} :(?!:) {intbound}(:(?!:){intbound}|{rbound}) |{intbound} )
+
+real = [+\-]?([0-9]+\.[0-9]+|[0-9]+\.|\.[0-9]+|[0-9]+)([eEdD][+\-]?{num}|)
+realbound = (\*|{real}| )
+lbound = [\(\[]?
+rbound = [\)\]]?
+realrange = {lbound}{realbound} :(?!:) {realbound}{rbound} |{realbound}
+
+boolraw = (?i:true|t|yes|y|false|f|no|n|1|0)
+bool = {-boolraw}|"{-boolraw}"|:(?!:)
+
+char_seq = (?!::)(\\[^]|[^\\ \t\r\n\b}])+
+string = {quote}|{name}|{char_seq}
+
+name_num = {name}( \[{num}\]|)
+
+keyword = {kname}|{quote}
+
+as = (?i:as) {name}
+
+gutpars = (?i:steerable = {steerable} |accumulator = {accumexpr} |accumulator-base = {accname} |{as})*
+
+description = {quote}?
+
+intguts = (?i:
+	(CCTK_|)INT {name_num}
+	{description}
+  {gutpars}
+  )
+  
+intset = {intrange} (:: {quote}|)
+uses_or_extends = (?i:uses|extends)
+intpar = (?i:
+	{uses_or_extends} {intguts}
+    ( \{
+    	({intset} )*
+    \} |)|
+	{intguts} 
+    ( \{
+    	({intset} )*
+    \} {num}|)
+  )
+
+realguts = (?i:
+	(CCTK_|)REAL {name_num}
+	{description}
+  {gutpars}
+  )
+  
+realset = ("{realrange}"|{realrange}) (:: {quote} |)
+realpar = (?i:
+	{uses_or_extends} {realguts} 
+    (\{
+    	({realset} )*
+    \}|)|
+	{realguts}
+    (\{
+    	({realset} )*
+    \} {real}|)
+  )
+  
+keywordguts = (?i:
+	(CCTK_|)KEYWORD {name_num}
+	{description}
+  {gutpars}
+  )
+  
+keywordset = {keyword} (, {keyword})* (:: {quote}|)
+keywordpar = (?i:
+	{uses_or_extends} {keywordguts} 
+    (\{
+    	({keywordset} )*
+    \}|)|
+	{keywordguts} 
+    (\{
+    	({keywordset} )*
+    \} {keyword}|)
+  )
+  
+stringguts = (?i:
+	(CCTK_|)STRING {name_num}
+	{description}
+  {gutpars}
+  )
+  
+stringset = {string} (, {string})* (:: {quote}|)
+stringpar = (?i:
+	{uses_or_extends} {stringguts} 
+    (\{
+    	({stringset} )*
+    \}|)|
+	{stringguts}
+    (\{
+    	({stringset} )*
+    \} ({string}|$)|)
+  )
+
+boolguts = (?i:
+	(CCTK_|)BOOLEAN {name_num}
+	{description}
+  {gutpars}
+  )
+  
+boolset = {bool} (:: {quote}|)
+boolpar = (?i:
+	{uses_or_extends} {boolguts} 
+    (\{
+    ({boolset} )*
+    \}|)|
+	{boolguts} 
+    (\{
+    # TODO: remove old, commented lines?
+    # Note the weird slop here
+    #({bool} (:: {quote} |)|: :: {quote}|:: {quote})*
+    #(:: {quote}|{bool} (:: {quote} |) )*
+    #( : :: {quote} )*
+    ({boolset} )*
+    \} {bool}|)
+  )
+  
+pars = ^ ( {access}|{intpar}|{realpar}|{keywordpar}|{stringpar}|{boolpar})* $

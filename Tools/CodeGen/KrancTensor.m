@@ -189,7 +189,16 @@ DefFn[
 
 DefFn[
   getCactusDirectory[] :=
-  FileNameJoin[{KrancDirectory,"..",".."}]];
+  Catch[
+   Module[ { searchRoots = { KrancDirectory, Directory[] } },
+     Block[ {currDir = #1, iters = 0},
+       While[ iters < 100 && currDir =!= $RootDirectory,
+              If[ DirectoryQ[ FileNameJoin[{ currDir, "arrangements" } ] ],
+                  Throw[currDir],
+                  currDir = ParentDirectory[ currDir ] ]]
+     ] & /@ searchRoots;
+     ThrowError["Could not find a Cactus directory above "
+                <> StringJoin @@ Riffle[ searchRoots, ", "]]]]];
 
 DefFn[
   getAllInterfaceFiles[] :=

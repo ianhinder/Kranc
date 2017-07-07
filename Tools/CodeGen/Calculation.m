@@ -61,7 +61,8 @@ DefFn[
     rhss = Map[#[[2]] &, eqs];
     lhss = Map[#[[1]] &, eqs];
 
-    gfs = allGroupVariables[lookup[calc,Groups]];
+    gfs = Union[ allGroupVariables[lookup[calc,Groups]],
+                 lookupDefault[calc,InheritedVariables,{}] ];
 
     gfsInRHS = Union[Cases[rhss, _ ? (MemberQ[gfs,#] &), Infinity]];
     gfsInLHS = Union[Cases[lhss, _ ? (MemberQ[gfs,#] &), Infinity]];
@@ -100,7 +101,8 @@ DefFn[
     {syms,pdSyms,params},
     syms = Cases[GetEquations[calc], _?AtomQ|_String, {-1}];
     pdSyms = Cases[GetPartialDerivatives[calc], _?AtomQ|_String, {-1}];
-    params = lookup[calc,Parameters];
+    params = Union[ lookup[calc,Parameters],
+                    lookupDefault[calc,InheritedParameters,{}] ];
     Intersection[params,Join[syms,pdSyms]]]];
 
 DefFn[
@@ -440,6 +442,7 @@ VerifyCalculation[calc_] :=
 
     allowedKeys = {BodyFunction, CallerFunction, ExecuteOn,
          GFAccessFunction, Groups, Implementation, InitFDVariables,
+         InheritedVariables, InheritedParameters,
          LoopFunction, MacroPointer, Name, ODEGroups, Parameters, IntParameters,
          PartialDerivatives, PreDefinitions, Schedule,Equations,
          PreDefinitionsExpr,

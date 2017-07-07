@@ -228,7 +228,13 @@ DefFn[CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPa
        ------------------------------------------------------------------------ *)
 
     c = Module[
-      {calcs = GetObjectField[c, "Calculations"]},
+      { calcs = GetObjectField[c, "Calculations"],
+        inhVarSym = ToExpression /@ Global`$InheritedVars,
+        inhParSym = ToExpression[First[#1]]& /@ Global`$InheritedParams
+       },
+
+      calcs = Join[#, { InheritedVariables -> inhVarSym,
+                        InheritedParameters -> inhParSym } ]& /@ calcs;
 
       calcs = Map[mapReplaceAdd[#, Shorthands, Join[lookup[#,Shorthands,{}],OptionValue[Shorthands]]] &, calcs];
       calcs = Map[Append[#, Implementation -> GetObjectField[c, "Implementation"]] &, calcs];

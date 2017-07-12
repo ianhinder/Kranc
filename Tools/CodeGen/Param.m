@@ -301,7 +301,7 @@ DefFn[
   usedParameters[parameters_List, OptionsPattern[]] :=
   Module[
     {genericfdStruct, allInherited, allExtended, implementationNames,
-     userImplementations, userImplementations2},
+     userImplementations, userImplementations2, allImpsRaw },
 
     genericfdStruct =
     {
@@ -336,10 +336,11 @@ DefFn[
                               extendedKeywordParameterDefinitions[parameters]] &, 
              implementationNames];
 
-    userImplementations = If[userImplementations=={{}},{},userImplementations];
-    userImplementations2 = If[userImplementations2=={{}},{},userImplementations2];
+   allImpsRaw = 
+     Join[ userImplementations, userImplementations2, 
+           {genericfdStruct, MoLUsedParameters[]} ];
 
-    Join[userImplementations, userImplementations2, {genericfdStruct, MoLUsedParameters[]}]]];
+   Replace[ allImpsRaw, {} -> Sequence[], {1} ]  ]];
 
 DefFn[
   userParameterStructs[parameters_] :=

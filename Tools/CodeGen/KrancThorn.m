@@ -213,7 +213,7 @@ DefFn[CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPa
     parList = {};
     (* Use Mathematica search and replace to identify all parameters 
        from inherited thorns used in expressions. *)
-    (c /. Global`$InheritedParams) /. Global`$QualifiedName[name_] :> (parList=AppendTo[parList,name];name);
+    (c /. OptionValue[InheritedParameters]) /. QualifiedName[name_] :> (parList=AppendTo[parList,name];name);
     (* Avoid duplicate declarations *)
     parList = Union[parList]; 
     pd = SetObjectField[pd,"InheritedReals",parList];
@@ -229,11 +229,10 @@ DefFn[CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPa
 
     c = Module[
       { calcs = GetObjectField[c, "Calculations"],
-        inhVarSym = ToExpression /@ Global`$InheritedVars,
-        inhParSym = ToExpression[First[#1]]& /@ Global`$InheritedParams
+        inhParSym = ToExpression[First[#1]]& /@ OptionValue[InheritedParameters]
        },
 
-      calcs = Join[#, { InheritedVariables -> inhVarSym,
+      calcs = Join[#, { InheritedVariables -> OptionValue[InheritedVariables],
                         InheritedParameters -> inhParSym } ]& /@ calcs;
 
       calcs = Map[mapReplaceAdd[#, Shorthands, Join[lookup[#,Shorthands,{}],OptionValue[Shorthands]]] &, calcs];

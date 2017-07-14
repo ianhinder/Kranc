@@ -106,10 +106,10 @@ DefFn[CaKernelSchedule[thornName_] :=
 {
     {
       Name          -> thornName <> "_Init",
-      SchedulePoint -> "in CCTK_BASEGRID after Accelerator_SetDevice",
+      SchedulePoint -> "in CCTK_BASEGRID after CaCUDA_Startup",
       Language      -> "C",
       Options       -> "local",
-      Comment       -> "Initialize CUDA Device"
+      Comment       -> "Allocate GPU storage"
     }
 }]
 

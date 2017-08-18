@@ -23,6 +23,10 @@
 
 BeginPackage["Kranc`"];
 
+(* Param.m *)
+
+{ usedParameters };
+
 (* CodeGen.m *)
 
 {INV, SQR, CUB, QAD, ScalarINV, ScalarSQR, ScalarCUB, ScalarQAD,

@@ -438,6 +438,11 @@ DefFn[CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPa
             " set_parameter(" <> chemoraQuote[lookup[#,Name]] 
               <> ", \"CCTK_REAL\");\n" & 
               /@ lookup[GetObjectField[c,"Parameters"],"Reals"] ]
+           <> StringJoin[
+            " set_parameter(" <> chemoraQuote[lookup[#,Name]]
+              <> ", \"" <> lookup[#,Type] <> "\");\n" &
+            /@ Join @@ ( lookupDefault[#, UsedParameters, {}]& 
+                    /@ usedParameters[GetObjectField[c,"Parameters"],opts] ) ]
            <> lookup[#,ChemoraContents] &,
            Select[ GetObjectField[c, "Calculations"], 
                    CalculationOnDevice[#] &] ] ]

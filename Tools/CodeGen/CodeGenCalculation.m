@@ -719,7 +719,9 @@ DefFn[assignLocalFunctions[gs:{_Symbol...}, useVectors:Boolean, useJacobian:Bool
 
     code = {"\n",
       (* Simple grid variables *)
-      Map[AssignVariableFromExpression[localName[#],GFLocal[#],True,useVectors,True] &, simpleVars],
+      Map[AssignVariableFromExpression
+            [localName[#],GFLocal[#],True,useVectors,True,Reference->True] &,
+          simpleVars],
       {"\n",
         (* Conditional grid variables *)
         NewlineSeparated@

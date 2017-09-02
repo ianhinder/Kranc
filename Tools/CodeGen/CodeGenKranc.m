@@ -287,7 +287,8 @@ DefFn[PostProcessExpression[t_TargetC, expr_] :=
     expr2]];
 
 (* Return a CodeGen block which assigns dest by evaluating expr *)
-Options[AssignVariableFromExpression] = {"Const" -> False, "Type" -> Automatic};
+Options[AssignVariableFromExpression] =
+   {"Const" -> False, "Type" -> Automatic, "Reference" -> False};
 DefFn[AssignVariableFromExpression[dest_, expr_, declare_, vectorise_, noSimplify:Boolean : False,
                              OptionsPattern[]] :=
   Module[{type, exprCode, code},
@@ -297,8 +298,14 @@ DefFn[AssignVariableFromExpression[dest_, expr_, declare_, vectorise_, noSimplif
       OptionValue[Type]];
     exprCode = GenerateCodeFromExpression[expr, vectorise, noSimplify];
     CountOperations[expr];
+    If[ OptionValue[Const] && OptionValue[Reference],
+          ThrowError
+            ["Internal Error, cannot declare const reference variables."] ];
     code = If[declare,
-              If[OptionValue[Const],DefineConstant,DefineVariable][dest, type, exprCode],
+              If[OptionValue[Const],
+                   DefineConstant,
+                   If[OptionValue[Reference],DefineReference,DefineVariable]]
+              [dest, type, exprCode],
               AssignVariable[dest, exprCode]];
     code = LineBreak[FlattenBlock[code], 70] <> "\n";
     {code}]];

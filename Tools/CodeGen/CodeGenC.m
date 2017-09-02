@@ -45,6 +45,8 @@ DeclarePointers::usage = "DeclarePointers[names, type] returns a block of code "
   " of strings and 'type' should be a string string.";
 DefineVariable::usage = "DefineVariable[name, type, value] returns a block of " <>
   "code that declares and initialises a variable 'name' of type 'type' to value 'value'.";
+DefineReference::usage = "DefineReference[name, type, value] returns a block of " <>
+  "code that declares a reference named 'name' to lvalue of expression 'value' of type 'type'.";
 DefineConstant::usage = "DefineConstant[name, type, value] returns a block of " <>
   "code that declares and initialises a constant 'name' of type 'type' to value 'value'.";
 AssignVariable::usage = "AssignVariable[dest_, src_] returns a block of code " <>
@@ -94,6 +96,10 @@ DefFn[
 DefFn[
   DefineVariable[name:(_String|_Symbol), type_String, value:CodeGenBlock] :=
   {type, " ", name, " CCTK_ATTRIBUTE_UNUSED", " = ", value, ";\n"}];
+
+DefFn[
+  DefineReference[name:(_String|_Symbol), type_String, value:CodeGenBlock] :=
+  {type, "& ", name, " CCTK_ATTRIBUTE_UNUSED", " = ", value, ";\n"}];
 
 DefFn[
   DefineConstant[name:(_String|_Symbol), type_String, value:CodeGenBlock] :=

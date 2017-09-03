@@ -99,6 +99,13 @@ DefFn[
      "}\n"}];
 
 DefFn[
+  ConditionalOnParameter[name_String, value:(True|False), block:CodeGenBlock] :=
+    {"if ( " <> If[ value, "", "!" ] <> name <> " )\n",
+     "{\n",
+     IndentBlock[block],
+     "}\n"}];
+
+DefFn[
   ConditionalOnParameterTextual[text:CodeGenBlock, block:CodeGenBlock] :=
     {"if (", text, ")\n",
      "{\n",

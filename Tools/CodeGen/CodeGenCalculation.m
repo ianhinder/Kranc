@@ -75,13 +75,18 @@ Options[CreateSetterSource] = ThornOptions;
 DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
   opts:OptionsPattern[]] :=
   Block[{$CodeGenTarget = NewObject[TargetC, {"UseVectors" -> OptionValue[UseVectors]}]},
-    Module[{calc = First[calcs],bodyFunction,tiledBodyFunction},
+    Module[{calc = First[calcs],bodyFunction,tiledBodyFunction,
+            chemoraContentsSave, rv },
+
+  (* Ugly Hack: Make sure that ChemoraContents changes are discarded. *)
+  chemoraContentsSave = lookup[calc,ChemoraContents];
 
   If[!MatchQ[include, _List],
     ThrowError["CreateSetterSource: Include should be a list but is in fact " <> ToString[include]]];
 
   SetDataType[If[OptionValue[UseVectors],VectorisationType[], "CCTK_REAL"]];
 
+  rv = 
   {FileHeader["C"],
 
    NewlineSeparated[
@@ -151,7 +156,9 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
                       InitFDVariables -> InitialiseFDVariables[OptionValue[UseVectors]],
                       MacroPointer -> True}];
 
-   CreateCalculationFunction[calc, opts]}]]}]}]]];
+   CreateCalculationFunction[calc, opts]}]]}]};
+   mapRefSet[calc,ChemoraContents,chemoraContentsSave];
+   rv ]]];
 
 (* --------------------------------------------------------------------------
    Calculations

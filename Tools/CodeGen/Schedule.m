@@ -81,7 +81,7 @@ Options[scheduleCalc] = ThornOptions;
 scheduleCalc[calc_, groups_, thornName_, OptionsPattern[]] :=
   Module[{points, conditional, conditionals, keywordConditional,
           keywordConditionals, triggered, keyword, value, keywordvaluepairs,
-          groupsToSync, tags,
+          groupsToSync,
           prefixWithScope, groupsToRequire, groupsToProvide,
           groupName, userSchedule, groupSched, fnSched,
           selbcSched, appbcSched, bcGroupName, condParams, bcGroupSched, before, after, relStr,
@@ -104,7 +104,8 @@ scheduleCalc[calc_, groups_, thornName_, OptionsPattern[]] :=
 
       keywordvaluepairs =
         Map[# /. {keyword_, value_} -> {Parameter -> keyword, Value -> value} &,
-            keywordConditionals];
+            keywordConditionals],
+      keywordvaluepairs = {}
       ];
 
     groupsToSync = If[lookupDefault[calc, Where, Everywhere] === Interior || 
@@ -112,10 +113,6 @@ scheduleCalc[calc_, groups_, thornName_, OptionsPattern[]] :=
                       groupsSetInCalc[calc, groups],
                       {}];
 
-    (* TODO: Pass this as {keyword,value} pair instead of a string,
-       once Thorn.m understands this format *)
-    tags = If[OptionValue[UseOpenCL] || CalculationOnDevice[calc], "Device=1", ""];
-    
     prefixWithScope[group_] :=
       If[StringMatchQ[ToString[group], __~~"::"~~__],
          ToString[group],
@@ -141,28 +138,37 @@ scheduleCalc[calc_, groups_, thornName_, OptionsPattern[]] :=
     Return[Map[
       Join[
       {
-        Name               -> GetCalculationScheduleName[calc]<>If[GetCalculationScheduleName[calc] =!= GetCalculationName[calc], " as "<>GetCalculationName[calc],""],
-        SchedulePoint      -> # <> relStr,
-        SynchronizedGroups -> If[StringMatchQ[#, "*MoL_CalcRHS*", IgnoreCase -> True] || StringMatchQ[#, "*MoL_RHSBoundaries*", IgnoreCase -> True],
+        Name               ->
+           If[ #2, GetCalculationScheduleName[calc],
+               GetCalculationName[calc] ]
+           <> " as " <> GetCalculationName[calc],
+        SchedulePoint      -> #1 <> relStr,
+        SynchronizedGroups -> If[StringMatchQ[#1, "*MoL_CalcRHS*", IgnoreCase -> True] || StringMatchQ[#1, "*MoL_RHSBoundaries*", IgnoreCase -> True],
                                  {},
                                  groupsToSync],
         Language           -> CodeGenC`SOURCELANGUAGE, 
-        Tags               -> tags,
+        Tags               -> If[ #2 || OptionValue[UseOpenCL],
+                                  "Device=1", "" ],
         RequiredGroups     -> variablesToRead,
         RequiredRegion     -> Everywhere,   (* TODO: be more accurate *)
         ProvidedGroups     -> variablesToWrite,
         ProvidedRegion     -> lookupDefault[calc, Where, Everywhere],
-        Comment            -> lookup[calc, Name]
+        Comment            -> lookup[calc, Name],
+        Conditionals ->
+           Append[ keywordvaluepairs,
+                   If[ CalculationOnDevice[calc],
+                       { Parameter -> "use_kranc_c", Value -> Not[#2] },
+                       {} ] ]
       },
        If[triggered, {TriggerGroups -> lookup[calc, TriggerGroups]},
           {}],
        If[conditional, {Conditional -> {Parameter -> keyword, Value -> value}},
           {}],
-       If[conditionals, {Conditionals -> keywordvaluepairs},
-          {}],
         If[mapContains[calc, Conditional], {NewConditional -> lookup[calc,Conditional]}, {}]
-      ] &,
-      GetSchedule[calc]]],
+      ] & @@ # &,
+         Join @@ ( If[ CalculationOnDevice[calc],
+                       { {#,True}, {#,False} }, { {#,False} } ] &
+                   /@ GetSchedule[calc] ) ] ],
 
       (* Scheduling is automatic.  For the moment, all automatically
       scheduled functions are going to be performed in
@@ -195,7 +201,11 @@ scheduleCalc[calc_, groups_, thornName_, OptionsPattern[]] :=
         Name               -> lookup[calc, Name],
         SchedulePoint      -> "in " <> groupName,
         Language           -> CodeGenC`SOURCELANGUAGE,
-        Tags               -> tags,
+        Tags               -> 
+           (* TODO: Pass this as {keyword,value} pair instead of a string,
+           once Thorn.m understands this format *)
+           If[OptionValue[UseOpenCL] || CalculationOnDevice[calc],
+              "Device=1", ""],
         RequiredGroups     -> variablesToRead,
         RequiredRegion     -> Everywhere,   (* TODO: be more accurate *)
         ProvidedGroups     -> variablesToWrite,

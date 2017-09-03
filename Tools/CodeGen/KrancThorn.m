@@ -409,7 +409,7 @@ DefFn[CreateKrancThorn[groupsOrig_, parentDirectory_, thornName_, opts:OptionsPa
       c, "Sources", 
       Join[Map[{Filename -> lookup[#, Name] <> ".cc",
                 Contents -> CreateSetterSource[{#}, False, {}, thornName, opts]} &,
-               Select[GetObjectField[c, "Calculations"], !CalculationOnDevice[#] &]],
+               GetObjectField[c, "Calculations"]],
            Map[{Filename -> "CaKernel__"<>lookup[#, Name] <> ".code",
                 Contents -> CaKernelCode[#,opts]} &,
                Select[GetObjectField[c, "Calculations"], CalculationOnDevice]]]],

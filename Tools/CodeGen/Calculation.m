@@ -165,7 +165,7 @@ DefFn[
 
 DefFn[
   CalculationOnDevice[calc_List] :=
-  lookupDefault[calc, ExecuteOn, Automatic] === Device];
+  lookupDefault[calc, ExecuteOn, Automatic] =!= Host];
 
 partialCalculation[calc_, suffix_, updates_, evolVars_] :=
 Module[

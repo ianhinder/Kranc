@@ -129,6 +129,8 @@ ThornOptions =
   MergeFiles -> None,
   CountOperations -> False};
 
+CodeGenOptions = { CodeTarget -> Device };
+
 ExecuteOn;
 Device;
 Host;

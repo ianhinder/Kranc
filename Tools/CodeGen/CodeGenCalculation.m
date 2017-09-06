@@ -156,7 +156,7 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
                       InitFDVariables -> InitialiseFDVariables[OptionValue[UseVectors]],
                       MacroPointer -> True}];
 
-   CreateCalculationFunction[calc, opts]}]]}]};
+   CreateCalculationFunction[calc, opts, CodeTarget -> Host]}]]}]};
    mapRefSet[calc,ChemoraContents,chemoraContentsSave];
    rv ]]];
 
@@ -487,7 +487,8 @@ chemoraCSimpleExpression[c_, anything_]:=
 chemoraCExpression[c_,eqs_] :=
    chemoraCExpressionEQ[c,#] & /@ ( eqs //. chemoraExpandRules );
 
-Options[CreateCalculationFunction] = Join[ThornOptions,{Debug -> False}];
+Options[CreateCalculationFunction] =
+   Join[ThornOptions,CodeGenOptions, {Debug -> False}];
 
 DefFn[
   CreateCalculationFunction[calcp_, opts:OptionsPattern[]] :=
@@ -708,8 +709,10 @@ DefFn[
        ""]
   }]];
 
+Options[assignLocalFunctions] = Join[ThornOptions,CodeGenOptions];
+
 (* Create definitions for the local copies of gridfunctions or arrays *)
-DefFn[assignLocalFunctions[gs:{_Symbol...}, useVectors:Boolean, useJacobian:Boolean, nameFunc_] :=
+DefFn[assignLocalFunctions[gs:{_Symbol...}, useVectors:Boolean, useJacobian:Boolean, nameFunc_,opts:OptionsPattern[]] :=
   Module[{conds, varPatterns, varsInConds, simpleVars, code},
 
     (* Conditional access to grid variables *)
@@ -727,7 +730,8 @@ DefFn[assignLocalFunctions[gs:{_Symbol...}, useVectors:Boolean, useJacobian:Bool
     code = {"\n",
       (* Simple grid variables *)
       Map[AssignVariableFromExpression
-            [localName[#],GFLocal[#],True,useVectors,True,Reference->True] &,
+            [localName[#],GFLocal[#],True,useVectors,True,
+             Reference -> OptionValue[CodeTarget] === Host] &,
           simpleVars],
       {"\n",
         (* Conditional grid variables *)
@@ -743,7 +747,7 @@ DefFn[assignLocalFunctions[gs:{_Symbol...}, useVectors:Boolean, useJacobian:Bool
           {Map[#[[2]]&, conds], varsInConds, Map[#[[3]]&, conds]}]}};
   code]];
 
-Options[equationLoop] = ThornOptions;
+Options[equationLoop] = Join[ThornOptions, CodeGenOptions];
 
 HasBadDeriv[eqn_,shorts_] := 
     eqn /. Global`PDstandard[arg_,_,_] :>
@@ -766,8 +770,7 @@ gfMakeAssign[gf_] :=
 
 DefFn[
   equationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, odeGroups_, pddefs_,
-             where_, addToStencilWidth_,
-             opts:OptionsPattern[]] :=
+             where_, addToStencilWidth_, opts:OptionsPattern[]] :=
   Module[{rhss, lhss, gfsInRHS, gfsInLHS, gfsOnlyInRHS, localGFs,
           localMap, eqs2, derivSwitch, code, functionName, calcCode,
           gfsInBoth, gfsDifferentiated,
@@ -906,7 +909,7 @@ DefFn[
     calcCodeArrays = Riffle[generateEquationCode /@ groupedIfsArrays, "\n"];
     InfoMessage[InfoFull, "Finished generating equation code"];
 
-    assignLocalGridFunctions[gs_, useVectors_, useJacobian_] := assignLocalFunctions[gs, useVectors, useJacobian, gridName];
+    assignLocalGridFunctions[gs_, useVectors_, useJacobian_] := assignLocalFunctions[gs, useVectors, useJacobian, gridName, opts];
     assignLocalArrayFunctions[gs_] := assignLocalFunctions[gs, False, False, ArrayName];
 
     (* separate grid and array variables *)

@@ -220,7 +220,7 @@ DefFn[CaKernelCode[calc_List,opts___] :=
      "\n",
 
     "\n", CreateCalculationFunction[calc2, LoopName -> kernel<>"_Computations",
-                                    opts]}]]];
+                                    opts, CodeTarget -> Device]}]]];
 
 DefFn[
   splitHostCaKernel[calc_List] :=

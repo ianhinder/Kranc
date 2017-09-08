@@ -1030,7 +1030,7 @@ DefFn[
   
     allCode]];
 
-Options[simpleEquationLoop] = ThornOptions;
+Options[simpleEquationLoop] = Join[ThornOptions,CodeGenOptions]
 DefFn[
   simpleEquationLoop[eqs_, cleancalc_, gfs_, shorts_, incs_, groups_, odeGroups_, pddefs_,
                      where_, addToStencilWidth_,

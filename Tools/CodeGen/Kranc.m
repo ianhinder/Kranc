@@ -101,6 +101,7 @@ ThornOptions =
   InheritedParameters -> {},    (* Includes qualified name. *)
   InheritedRealParameters -> {},
   InheritedIntParameters -> {},
+  InheritedGroups -> {},
   InheritedKeywordParameters -> {},
   ExtendedRealParameters -> {},
   ExtendedIntParameters -> {},

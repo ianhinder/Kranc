@@ -383,6 +383,7 @@ DefFn[CreateKrancThornTT2[thornName_String, opts:OptionsPattern[]] :=
     CreateKrancThornTT[groups,OptionValue[ParentDirectory],thornName,
                        DeclaredGroups -> Map[groupName, groups],
                        InheritedVariables -> vars,
+                       InheritedGroups -> inheritedGroups,
                        InheritedParameters -> params,
                        Sequence@@opts2]]];
 

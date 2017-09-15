@@ -73,6 +73,8 @@ variablesReadInCalc[calc_, groups_] :=
   ];
 
 
+UnstringList[{gn_,gl_List}] := {gn,Map[If[StringQ[#],ToExpression[#],#]&,gl]}
+
 (* Each calculation can be scheduled at multiple points, so this
    function returns a LIST of schedule structures for each calculation
    *)
@@ -120,8 +122,9 @@ scheduleCalc[calc_, groups_, thornName_, OptionsPattern[]] :=
     (* groupsToRequire = prefixWithScope /@ groupsReadInCalc[calc, groups]; *)
     (* groupsToProvide = prefixWithScope /@ groupsSetInCalc[calc, groups]; *)
 
-    variablesToRead = qualifyGFName[#, groups, thornName] & /@ variablesReadInCalc[calc, groups];
-    variablesToWrite = qualifyGFName[#, groups, thornName] & /@ variablesSetInCalc[calc, groups];
+    allgroups=Union[groups,Map[UnstringList,OptionValue[InheritedGroups]]];
+    variablesToRead = qualifyGFName[#, allgroups, thornName] & /@ variablesReadInCalc[calc, allgroups];
+    variablesToWrite = qualifyGFName[#, allgroups, thornName] & /@ variablesSetInCalc[calc, allgroups];
 
 
     before = lookupDefault[calc, Before, None];

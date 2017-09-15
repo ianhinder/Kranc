@@ -239,8 +239,8 @@ qualifyGFName[gfname_, allgroups_, defaultImp_] :=
        imp = implementationFromGroupName[qualifyGroupName[groupName, defaultImp]];
        newGFname = imp <> "::" <> ToString[gfname];
        newGFname
-]
-  ];
+     ]
+];
 
 allGroupVariables[groups_] :=
   Flatten[Map[groupVariables, groups], 1];

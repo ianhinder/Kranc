@@ -64,7 +64,7 @@ CCTK_STRING jacobian_derivative_group "Name of group containing Jacobian derivat
   "" :: "String of the form <implementation>::<groupname>"
 } ""
 
-CCTK_INT  jacobian_identity_map "Map number on which the Jacobian should not be applied"
+CCTK_INT jacobian_identity_map "Map number on which the Jacobian should not be applied"
 {
   -1:* :: "Any integer"
 } -1

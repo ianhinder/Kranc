@@ -69,14 +69,14 @@ void GetBoundaryWidths(cGH const *restrict const cctkGH,
     ierr = MultiPatch_GetBoundarySpecification(
         map, 6, nboundaryzones, is_internal, is_staggered, shiftout);
     if (ierr != 0)
-      CCTK_WARN(0, "Could not obtain boundary specification");
+      CCTK_ERROR("Could not obtain boundary specification");
   } else if (CCTK_IsFunctionAliased("GetBoundarySpecification")) {
     ierr = GetBoundarySpecification(6, nboundaryzones, is_internal,
                                     is_staggered, shiftout);
     if (ierr != 0)
-      CCTK_WARN(0, "Could not obtain boundary specification");
+      CCTK_ERROR("Could not obtain boundary specification");
   } else {
-    CCTK_WARN(0, "Could not obtain boundary specification");
+    CCTK_ERROR("Could not obtain boundary specification");
   }
 }
 
@@ -92,7 +92,7 @@ int GetBoundaryWidth(cGH const *restrict const cctkGH) {
 
   for (int i = 1; i < 6; i++)
     if (nboundaryzones[i] != bw)
-      CCTK_WARN(0, "Number of boundary points is different on different faces");
+      CCTK_ERROR("Number of boundary points is different on different faces");
 
   return bw;
 }
@@ -135,7 +135,7 @@ void GetBoundaryInfo(
   if (CCTK_IsFunctionAliased("MultiPatch_GetBbox")) {
     ierr = MultiPatch_GetBbox(cctkGH, 6, bbox);
     if (ierr != 0)
-      CCTK_WARN(0, "Could not obtain bbox specification");
+      CCTK_ERROR("Could not obtain bbox specification");
   } else {
     for (dir = 0; dir < 6; dir++) {
       bbox[dir] = 0;
@@ -145,28 +145,28 @@ void GetBoundaryInfo(
   if (CCTK_IsFunctionAliased("MultiPatch_GetBoundarySpecification")) {
     int const map = MultiPatch_GetMap(cctkGH);
     if (map < 0)
-      CCTK_WARN(0, "Could not obtain boundary specification");
+      CCTK_ERROR("Could not obtain boundary specification");
     ierr = MultiPatch_GetBoundarySpecification(
         map, 6, nboundaryzones, is_internal, is_staggered, shiftout);
     if (ierr != 0)
-      CCTK_WARN(0, "Could not obtain boundary specification");
+      CCTK_ERROR("Could not obtain boundary specification");
   } else if (CCTK_IsFunctionAliased("GetBoundarySpecification")) {
     ierr = GetBoundarySpecification(6, nboundaryzones, is_internal,
                                     is_staggered, shiftout);
     if (ierr != 0)
-      CCTK_WARN(0, "Could not obtain boundary specification");
+      CCTK_ERROR("Could not obtain boundary specification");
   } else {
-    CCTK_WARN(0, "Could not obtain boundary specification");
+    CCTK_ERROR("Could not obtain boundary specification");
   }
 
   symtable = SymmetryTableHandleForGrid(cctkGH);
   if (symtable < 0) {
-    CCTK_WARN(0, "Could not obtain symmetry table");
+    CCTK_ERROR("Could not obtain symmetry table");
   }
 
   iret = Util_TableGetIntArray(symtable, 6, symbnd, "symmetry_handle");
   if (iret != 6)
-    CCTK_WARN(0, "Could not obtain symmetry information");
+    CCTK_ERROR("Could not obtain symmetry information");
 
   for (dir = 0; dir < 6; dir++) {
     is_ipbnd[dir] = (!cctk_bbox[dir]);
@@ -202,7 +202,7 @@ void GetBoundaryInfo(
         imax[dir] = cctk_lsh[dir] - npoints;
         break;
       default:
-        CCTK_WARN(0, "internal error");
+        CCTK_ERROR("internal error");
       }
     }
   }
@@ -440,13 +440,11 @@ void AssertGroupStorage(cGH const *restrict const cctkGH, const char *calc,
   for (int i = 0; i < ngroups; i++) {
     int result = CCTK_QueryGroupStorage(cctkGH, group_names[i]);
     if (result == 0) {
-      CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                 "Error in %s: Group \"%s\" does not have storage", calc,
-                 group_names[i]);
+      CCTK_VERROR("Error in %s: Group \"%s\" does not have storage", calc,
+                  group_names[i]);
     } else if (result < 0) {
-      CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                 "Error in %s: Invalid group name \"%s\"", calc,
-                 group_names[i]);
+      CCTK_VERROR("Error in %s: Invalid group name \"%s\"", calc,
+                  group_names[i]);
     }
   }
 }
@@ -463,20 +461,17 @@ void GroupDataPointers(cGH const *restrict const cctkGH, const char *group_name,
 
   group_index = CCTK_GroupIndex(group_name);
   if (group_index < 0)
-    CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-               "Error return %d trying to get group index for group \'%s\'",
-               group_index, group_name);
+    CCTK_VERROR("Error return %d trying to get group index for group \'%s\'",
+                group_index, group_name);
 
   status = CCTK_GroupData(group_index, &group_info);
   if (status < 0)
-    CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-               "Error return %d trying to get info for group \'%s\'", status,
-               group_name);
+    CCTK_VERROR("Error return %d trying to get info for group \'%s\'", status,
+                group_name);
 
   if (group_info.numvars != nvars) {
-    CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-               "Group \'%s\' has %d variables but %d were expected", group_name,
-               group_info.numvars, nvars);
+    CCTK_VERROR("Group \'%s\' has %d variables but %d were expected",
+                group_name, group_info.numvars, nvars);
   }
 
   int v1 = CCTK_FirstVarIndex(group_name);
@@ -507,167 +502,33 @@ void EnsureStencilFits(cGH const *restrict const cctkGH, const char *calc,
     for (int face = 0; face < 2; face++) {
       int bw = bws[2 * dir + face];
       if (bw < ns[dir]) {
-        CCTK_VInfo(CCTK_THORNSTRING, "The stencil for %s requires %d points, "
-                                     "but the %s %s boundary has only %d "
-                                     "points.",
+        CCTK_VINFO("The stencil for %s requires %d points, but the %s %s "
+                   "boundary has only %d points.",
                    calc, ns[dir], faces[face], dirs[dir], bw);
         abort = 1;
       }
     }
     int gz = cctk_nghostzones[dir];
     if (gz < ns[dir]) {
-      CCTK_VInfo(CCTK_THORNSTRING, "The stencil for %s requires %d points, but "
-                                   "there are only %d ghost zones in the %s "
-                                   "direction.",
+      CCTK_VINFO("The stencil for %s requires %d points, but there are only %d "
+                 "ghost zones in the %s direction.",
                  calc, ns[dir], gz, dirs[dir]);
       abort = 1;
     }
   }
 
   if (abort) {
-    CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-               "Insufficient ghost or boundary points for %s", calc);
+    CCTK_VERROR("Insufficient ghost or boundary points for %s", calc);
   }
 }
 
 /*********************************************************************
- * idiv
+ * TiledCalculationOnEverything
  *********************************************************************/
 
-// Divide, rounding to minus infinity
-static int idiv(int x, int y) {
-  // round down manually if the result is negative
-  return (x ^ y) >= 0 ? x / y : (x - y + 1) / y;
-}
-
-/*********************************************************************
- * imod
- *********************************************************************/
-
-// // Modulo, rounding to minus infinity
-// static int imod(int x, int y)
-// {
-//   return (x^y) >= 0 ? x%y : (x-y+1)%y + y-1;
-// }
-
-/*********************************************************************
- * ialign
- *********************************************************************/
-
-// Align x to a multiple of y
-static int ialign(int x, int y) { return idiv(x, y) * y; }
-
-/*********************************************************************
- * TiledLoop
- *********************************************************************/
-
-void TiledLoop(cGH const *restrict const cctkGH,
-               const KrancData &restrict kd_coarse,
-               void(calc)(const cGH *restrict const cctkGH,
-                          const KrancData &restrict kd)) {
-  DECLARE_CCTK_ARGUMENTS;
-  DECLARE_CCTK_PARAMETERS;
-
-  // Interior region
-  int imin[3], imax[3];
-  // Boundary types
-  int is_symbnd[6], is_physbnd[6], is_ipbnd[6];
-
-  GetBoundaryInfo(cctkGH, cctk_ash, cctk_lsh, cctk_bbox, cctk_nghostzones, imin,
-                  imax, is_symbnd, is_physbnd, is_ipbnd);
-
-  // Tile size
-  int tile_size_l[3];
-  // Loop bounds covered by tiles (may be larger)
-  int tiled_imin[3];
-  int tiled_imax[3];
-
-  if (tile_size == -1) {
-    for (int d = 0; d < 3; d++) {
-      // Loop in a single tile
-      tiled_imin[d] = kd_coarse.imin[d];
-      tiled_imax[d] = kd_coarse.imax[d];
-      tile_size_l[d] = tiled_imax[d] - tiled_imin[d];
-    }
-  } else {
-    for (int d = 0; d < 3; d++) {
-      tile_size_l[d] = tile_size;
-      // Align with beginning of interior of domain
-      tiled_imin[d] =
-          imin[d] + ialign(kd_coarse.imin[d] - imin[d], tile_size_l[d]);
-      tiled_imax[d] = kd_coarse.imax[d];
-    }
-  }
-
-#ifdef HAVE_CAPABILITY_FunHPC
-
-  std::vector<qthread::future<void> > fs;
-  const int dti = tile_size_l[0];
-  const int dtj = tile_size_l[1];
-  const int dtk = tile_size_l[2];
-  for (int tk = tiled_imin[2]; tk < tiled_imax[2]; tk += dtk) {
-    for (int tj = tiled_imin[1]; tj < tiled_imax[1]; tj += dtj) {
-      for (int ti = tiled_imin[0]; ti < tiled_imax[0]; ti += dti) {
-        fs.push_back(
-            qthread::async(qthread::launch::async, [&, ti, tj, tk]() {
-              KrancData kd = kd_coarse;
-
-              kd.dir = 0;
-              kd.face = 0;
-              // TODO: initialise the rest, or use a constructor
-
-              kd.tile_imin[0] = ti;
-              kd.tile_imax[0] = ti + dti;
-              kd.tile_imin[1] = tj;
-              kd.tile_imax[1] = tj + dtj;
-              kd.tile_imin[2] = tk;
-              kd.tile_imax[2] = tk + dtk;
-
-              calc(cctkGH, kd);
-            }));
-      }
-    }
-  }
-  for (auto &f : fs)
-    f.get();
-
-#else
-
-  const int dti = tile_size_l[0];
-  const int dtj = tile_size_l[1];
-  const int dtk = tile_size_l[2];
-#pragma omp parallel for collapse(3)
-  for (int tk = tiled_imin[2]; tk < tiled_imax[2]; tk += dtk) {
-    for (int tj = tiled_imin[1]; tj < tiled_imax[1]; tj += dtj) {
-      for (int ti = tiled_imin[0]; ti < tiled_imax[0]; ti += dti) {
-        KrancData kd = kd_coarse;
-
-        kd.dir = 0;
-        kd.face = 0;
-        // TODO: initialise the rest, or use a constructor
-
-        kd.tile_imin[0] = ti;
-        kd.tile_imax[0] = ti + dti;
-        kd.tile_imin[1] = tj;
-        kd.tile_imax[1] = tj + dtj;
-        kd.tile_imin[2] = tk;
-        kd.tile_imax[2] = tk + dtk;
-
-        calc(cctkGH, kd);
-      }
-    }
-  }
-
-#endif
-}
-
-/*********************************************************************
- * TiledLoopOverEverything
- *********************************************************************/
-
-void TiledLoopOverEverything(cGH const *restrict const cctkGH,
-                             void(calc)(const cGH *restrict const cctkGH,
-                                        const KrancData &restrict kd)) {
+void TiledCalculationOnEverything(cGH const *restrict const cctkGH,
+                                  void(calc)(const cGH *restrict const cctkGH,
+                                             const KrancData &restrict kd)) {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
 
@@ -678,16 +539,17 @@ void TiledLoopOverEverything(cGH const *restrict const cctkGH,
     kd_coarse.imax[d] = cctk_lsh[d];
   }
 
-  TiledLoop(cctkGH, kd_coarse, calc);
+  // TiledCalculation(cctkGH, kd_coarse, calc);
+  calc(cctkGH, kd_coarse);
 }
 
 /*********************************************************************
- * TiledLoopOverInterior
+ * TiledCalculationOnInterior
  *********************************************************************/
 
-void TiledLoopOverInterior(cGH const *restrict const cctkGH,
-                           void(calc)(const cGH *restrict const cctkGH,
-                                      const KrancData &restrict kd)) {
+void TiledCalculationOnInterior(cGH const *restrict const cctkGH,
+                                void(calc)(const cGH *restrict const cctkGH,
+                                           const KrancData &restrict kd)) {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
 
@@ -706,7 +568,8 @@ void TiledLoopOverInterior(cGH const *restrict const cctkGH,
     kd_coarse.imax[d] = imax[d];
   }
 
-  TiledLoop(cctkGH, kd_coarse, calc);
+  // TiledCalculation(cctkGH, kd_coarse, calc);
+  calc(cctkGH, kd_coarse);
 }
 
 } // namespace @THORN_NAME@

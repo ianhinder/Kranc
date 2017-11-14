@@ -3,8 +3,11 @@
 
 #include <cctk.h>
 
+#include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <math.h>
+#include <stdlib.h>
 #include <sys/time.h>
 
 namespace @THORN_NAME@ {
@@ -13,8 +16,7 @@ namespace @THORN_NAME@ {
  * Types
  *********************************************************************/
 
-struct KrancData {
-  // Actual loop bounds
+struct KrancData { // Actual loop bounds
   int imin[3];
   int imax[3];
   // Region covered by this tile
@@ -23,9 +25,11 @@ struct KrancData {
   // Boundary information
   int dir;
   int face;
+#if 0
   CCTK_REAL normal[3];
   CCTK_REAL tangentA[3];
   CCTK_REAL tangentB[3];
+#endif
 };
 
 typedef void (*Kranc_Calculation)(cGH const *restrict cctkGH, int eir, int face,
@@ -34,6 +38,32 @@ typedef void (*Kranc_Calculation)(cGH const *restrict cctkGH, int eir, int face,
                                   CCTK_REAL const tangentB[3], int const min[3],
                                   int const max[3], int n_subblock_gfs,
                                   CCTK_REAL *restrict const subblock_gfs[]);
+
+/*********************************************************************
+ * idiv
+ *********************************************************************/
+
+// Divide, rounding to minus infinity
+inline int idiv(int x, int y) {
+  // round down manually if the result is negative
+  return (x ^ y) >= 0 ? x / y : (x - y + 1) / y;
+}
+
+/*********************************************************************
+ * imod
+ *********************************************************************/
+
+// Modulo, rounding to minus infinity
+inline int imod(int x, int y) {
+  return (x ^ y) >= 0 ? x % y : (x - y + 1) % y + y - 1;
+}
+
+/*********************************************************************
+ * ialign
+ *********************************************************************/
+
+// Align x to a multiple of y
+inline int ialign(int x, int y) { return idiv(x, y) * y; }
 
 /*********************************************************************
  * Function declarations
@@ -60,6 +90,7 @@ void LoopOverInterior(cGH const *restrict cctkGH, Kranc_Calculation calc);
 
 // Tiled looping
 
+#if 0
 void TiledLoop(cGH const *restrict const cctkGH,
                const KrancData &restrict kd_coarse,
                void(calc)(const cGH *restrict const cctkGH,
@@ -72,11 +103,118 @@ void TiledLoopOverEverything(cGH const *restrict const cctkGH,
 void TiledLoopOverInterior(cGH const *restrict const cctkGH,
                            void(calc)(const cGH *restrict const cctkGH,
                                       const KrancData &restrict kd));
+#endif
 
-// void TiledLoopOverBoundary(
-//   cGH const * restrict const cctkGH,
-//   void (calc)(const cGH* restrict const cctkGH,
-//               const KrancData & restrict kd));
+/*********************************************************************
+ * TiledLoop
+ *********************************************************************/
+
+template <typename F>
+CCTK_ATTRIBUTE_NOINLINE void
+TiledLoop(cGH const *restrict const cctkGH, const KrancData &restrict kd_coarse,
+          const F &kernel
+          // void(kernel)(const cGH *restrict const cctkGH,
+          //              const KrancData &restrict kd)
+          ) {
+  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_PARAMETERS;
+
+  // Interior region
+  int imin[3], imax[3];
+  // Boundary types
+  int is_symbnd[6], is_physbnd[6], is_ipbnd[6];
+
+  GetBoundaryInfo(cctkGH, cctk_ash, cctk_lsh, cctk_bbox, cctk_nghostzones, imin,
+                  imax, is_symbnd, is_physbnd, is_ipbnd);
+
+  // Tile size
+  assert(tile_size == -1);
+  const int tile_size_l[3] = {tile_size_i, tile_size_j, tile_size_k};
+
+  // Loop bounds covered by tiles (may be larger)
+  int tiled_imin[3];
+  int tiled_imax[3];
+  for (int d = 0; d < 3; d++) {
+    // Align with beginning of interior of domain
+    tiled_imin[d] =
+        imin[d] + ialign(kd_coarse.imin[d] - imin[d], tile_size_l[d]);
+    tiled_imax[d] = kd_coarse.imax[d];
+  }
+
+#ifdef HAVE_CAPABILITY_FunHPC
+
+  std::vector<qthread::future<void> > fs;
+  const int dti = tile_size_l[0];
+  const int dtj = tile_size_l[1];
+  const int dtk = tile_size_l[2];
+  for (int tk = tiled_imin[2]; tk < tiled_imax[2]; tk += dtk) {
+    for (int tj = tiled_imin[1]; tj < tiled_imax[1]; tj += dtj) {
+      for (int ti = tiled_imin[0]; ti < tiled_imax[0]; ti += dti) {
+        fs.push_back(qthread::async(qthread::launch::async, [&, ti, tj, tk]() {
+          KrancData kd = kd_coarse;
+
+          kd.dir = 0;
+          kd.face = 0;
+          // TODO: initialise the rest, or use a constructor
+
+          kd.tile_imin[0] = ti;
+          kd.tile_imax[0] = ti + dti;
+          kd.tile_imin[1] = tj;
+          kd.tile_imax[1] = tj + dtj;
+          kd.tile_imin[2] = tk;
+          kd.tile_imax[2] = tk + dtk;
+
+          kernel(cctkGH, kd);
+        }));
+      }
+    }
+  }
+  for (auto &f : fs)
+    f.get();
+
+#else
+
+  const int dti = tile_size_l[0];
+  const int dtj = tile_size_l[1];
+  const int dtk = tile_size_l[2];
+#pragma omp parallel for collapse(3) schedule(dynamic)
+  for (int tk = tiled_imin[2]; tk < tiled_imax[2]; tk += dtk) {
+    for (int tj = tiled_imin[1]; tj < tiled_imax[1]; tj += dtj) {
+      for (int ti = tiled_imin[0]; ti < tiled_imax[0]; ti += dti) {
+        KrancData kd = kd_coarse;
+
+        kd.dir = 0;
+        kd.face = 0;
+        // TODO: initialise the rest, or use a constructor
+
+        kd.tile_imin[0] = ti;
+        kd.tile_imax[0] = ti + dti;
+        kd.tile_imin[1] = tj;
+        kd.tile_imax[1] = tj + dtj;
+        kd.tile_imin[2] = tk;
+        kd.tile_imax[2] = tk + dtk;
+
+        kernel(cctkGH, kd);
+      }
+    }
+  }
+
+#endif
+}
+
+void TiledCalculationOnEverything(cGH const *restrict const cctkGH,
+                                  void(calc)(const cGH *restrict const cctkGH,
+                                             const KrancData &restrict kd));
+
+void TiledCalculationOnInterior(cGH const *restrict const cctkGH,
+                                void(calc)(const cGH *restrict const cctkGH,
+                                           const KrancData &restrict kd));
+
+#if 0
+void TiledCalculationOnBoundary(cGH const *restrict const cctkGH,
+                                void (calc)(const cGH* restrict const cctkGH,
+                                            const KrancData & restrict kd));
+#endif
 
 // Runtime checks
 
@@ -86,6 +224,37 @@ void GroupDataPointers(cGH const *restrict const cctkGH, const char *group_name,
                        int nvars, CCTK_REAL const *restrict *ptrs);
 void AssertGroupStorage(cGH const *restrict const cctkGH, const char *calc,
                         int ngroups, const char *const group_names[]);
+
+/*********************************************************************
+ * Aligned memory allocation
+ *********************************************************************/
+
+template <typename T, size_t align> class aligned_vector {
+  T *data_;
+
+public:
+  aligned_vector() noexcept : data_(nullptr) {}
+  CCTK_ATTRIBUTE_NOINLINE aligned_vector(size_t size) {
+    // Increase alignment if necessary
+    size_t align1 = std::max(sizeof(void *), align);
+    void *ptr = nullptr;
+    int ierr = posix_memalign(&ptr, align1, size * sizeof(T));
+    if (ierr)
+      throw std::bad_alloc();
+    data_ = static_cast<T *>(ptr);
+    // for (size_t i = 0; i < size; ++i)
+    //   data_[i] = T(NAN);
+  }
+  ~aligned_vector() { free(data_); }
+
+  const T *data() const noexcept { return data_; }
+  T *data() noexcept { return data_; }
+
+  operator const T *() const noexcept { return data(); }
+  operator T *() noexcept { return data(); }
+  const T &operator[](ptrdiff_t ind) const { return data()[ind]; }
+  T &operator[](ptrdiff_t ind) { return data()[ind]; }
+};
 
 /*********************************************************************
  * Gridfunction access macros
@@ -101,7 +270,7 @@ void AssertGroupStorage(cGH const *restrict const cctkGH, const char *calc,
 #ifndef KRANC_GFOFFSET3D
 #define KRANC_GFOFFSET3D(var, i, j, k)                                         \
   (*(CCTK_REAL const *)&(                                                      \
-       (char const *)(var))[cdi * (i) + cdj * (j) + cdk * (k)])
+      (char const *)(var))[cdi * (i) + cdj * (j) + cdk * (k)])
 #endif
 
 #define GFOffset(u, di, dj, dk) KRANC_GFOFFSET3D(&(u)[index], di, dj, dk)
@@ -119,6 +288,23 @@ void AssertGroupStorage(cGH const *restrict const cctkGH, const char *calc,
                              0.5 * (fabs(x) + fabs(y))) *                      \
                         Sign((x) + (y))))
 #define StepFunction(x) ((x) > 0)
+
+static CCTK_REAL8 pown(CCTK_REAL8 x, int i) CCTK_ATTRIBUTE_UNUSED;
+static CCTK_REAL8 pown(CCTK_REAL8 x, int i) {
+  // return pow(x, i);
+  if (i < 0) {
+    x = 1 / x;
+    i = -i;
+  }
+  CCTK_REAL8 r = 1;
+  while (i != 0) {
+    if (i & 1)
+      r *= x;
+    x *= x;
+    i >>= 1;
+  }
+  return r;
+}
 
 /*********************************************************************
  * Numerical constants not defined in C++

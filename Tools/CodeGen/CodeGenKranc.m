@@ -120,7 +120,13 @@ DefFn[
              (* Note that dx is already a vector, so should not be wrapped in ToReal *)
              {"dxi", DataType[], 1/dx},
              {"dyi", DataType[], 1/dy},
-             {"dzi", DataType[], 1/dz}}],
+             {"dzi", DataType[], 1/dz},
+             {"dxxi", DataType[], "dxi" * "dxi"},
+             {"dxyi", DataType[], "dxi" * "dyi"},
+             {"dxzi", DataType[], "dxi" * "dzi"},
+             {"dyyi", DataType[], "dyi" * "dyi"},
+             {"dyzi", DataType[], "dyi" * "dzi"},
+             {"dzzi", DataType[], "dzi" * "dzi"}}],
 
       AssignVariableFromExpression["khalf", 0.5, True, vectorise, dgTile, Const -> True],
       AssignVariableFromExpression["kthird", 1/3, True, vectorise, dgTile, Const -> True],
@@ -288,8 +294,9 @@ DefFn[
     mathematicaToCRules = {
       Power[E, power_] -> exp[power],
       Log[x_] -> log[x],
-      (* Power[x_, n_Integer] -> pown[x,n], *)
+      Power[x_, n_Integer] -> pown[x,n],
       Power[x_, power_] -> pow[x,power],
+      PowerN[x_, n_] -> pown[x,n],
       Sin[x_] -> sin[x],
       Cos[x_] -> cos[x],
       Tan[x_] -> tan[x],

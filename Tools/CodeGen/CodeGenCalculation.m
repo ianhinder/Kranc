@@ -150,7 +150,7 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
    fdTiledBodyFunction = DefineFunction[
      lookup[calc, Name] <> "_Body",
      "static void",
-     "const cGH* restrict const cctkGH, const KrancData& restrict kd",
+     "const cGH* restrict const cctkGH, const KrancData& restrict kd_coarse",
      {
        "DECLARE_CCTK_ARGUMENTS;\n",
        "DECLARE_CCTK_PARAMETERS;\n",
@@ -168,26 +168,14 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
        "\n",
        "// Define tile shape\n",
        "constexpr ptrdiff_t npoints_i = "<>ToString[OptionValue[FDTileSize][[1]]]<>";\n",
+       "// constexpr ptrdiff_t npoints_i = alignup("<>ToString[OptionValue[FDTileSize][[1]]]<>", vs);\n",
        "constexpr ptrdiff_t npoints_j = "<>ToString[OptionValue[FDTileSize][[2]]]<>";\n",
        "constexpr ptrdiff_t npoints_k = "<>ToString[OptionValue[FDTileSize][[3]]]<>";\n",
-       "\n",
-       "// Check function arguments\n",
-       "assert(kd.tile_imax[0] - kd.tile_imin[0] == npoints_i);\n",
-       "assert(kd.tile_imax[1] - kd.tile_imin[1] == npoints_j);\n",
-       "assert(kd.tile_imax[2] - kd.tile_imin[2] == npoints_k);\n",
-       "\n",
-       "// Location of current tile in grid function (in grid points)\n",
-       "const ptrdiff_t i1 = kd.tile_imin[0];\n",
-       "const ptrdiff_t j1 = kd.tile_imin[1];\n",
-       "const ptrdiff_t k1 = kd.tile_imin[2];\n",
        "\n",
        "// Grid function strides (in bytes)\n",
        "constexpr ptrdiff_t di = sizeof(CCTK_REAL);\n",
        "const ptrdiff_t dj = di * cctk_ash[0];\n",
        "const ptrdiff_t dk = dj * cctk_ash[1];\n",
-       "\n",
-       "// Calculate grid function offset (in bytes)\n",
-       "const ptrdiff_t off1 = i1 * di + j1 * dj + k1 * dk;\n",
        "\n",
        "// Vector size (in elements)\n",
        "constexpr ptrdiff_t vs = CCTK_REAL_VEC_SIZE;\n",
@@ -211,7 +199,7 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
    dgTiledBodyFunction = DefineFunction[
      lookup[calc, Name] <> "_Body",
      "static void",
-     "const cGH* restrict const cctkGH, const KrancData& restrict kd",
+     "const cGH* restrict const cctkGH, const KrancData& restrict kd_coarse",
      {
        "DECLARE_CCTK_ARGUMENTS;\n",
        "DECLARE_CCTK_PARAMETERS;\n",
@@ -242,23 +230,10 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
        "assert((nj - 2) % npoints_j == 0);\n",
        "assert((nk - 2) % npoints_k == 0);\n",
        "\n",
-       "// Check function arguments\n",
-       "assert(kd.tile_imax[0] - kd.tile_imin[0] == npoints_i);\n",
-       "assert(kd.tile_imax[1] - kd.tile_imin[1] == npoints_j);\n",
-       "assert(kd.tile_imax[2] - kd.tile_imin[2] == npoints_k);\n",
-       "\n",
-       "// Location of current tile in grid function (in grid points)\n",
-       "const ptrdiff_t i1 = kd.tile_imin[0];\n",
-       "const ptrdiff_t j1 = kd.tile_imin[1];\n",
-       "const ptrdiff_t k1 = kd.tile_imin[2];\n",
-       "\n",
        "// Grid function strides (in bytes)\n",
        "constexpr ptrdiff_t di = sizeof(CCTK_REAL);\n",
        "const ptrdiff_t dj = di * cctk_ash[0];\n",
        "const ptrdiff_t dk = dj * cctk_ash[1];\n",
-       "\n",
-       "// Calculate grid function offset (in bytes)\n",
-       "const ptrdiff_t off1 = i1 * di + j1 * dj + k1 * dk;\n",
        "\n",
        "// Vector size (in elements)\n",
        "constexpr ptrdiff_t vs = CCTK_REAL_VEC_SIZE;\n",
@@ -618,13 +593,13 @@ DefFn[
       where,
       Everywhere,
       (* If[TileCalculationQ[cleancalc],
-         "TiledLoopOverEverything(cctkGH, " <> bodyFunctionName <> ");\n",
+         "TiledCalculationOnEverything(cctkGH, " <> bodyFunctionName <> ");\n",
          "LoopOverEverything(cctkGH, " <> bodyFunctionName <> ");\n"], *)
       "LoopOverEverything(cctkGH, " <> bodyFunctionName <> ");\n",
       Interior | InteriorNoSync,
       If[TileCalculationQ[cleancalc] ||
          FDTileCalculationQ[cleancalc] || DGTileCalculationQ[cleancalc],
-         "TiledLoopOverInterior(cctkGH, " <> bodyFunctionName <> ");\n",
+         "TiledCalculationOnInterior(cctkGH, " <> bodyFunctionName <> ");\n",
          "LoopOverInterior(cctkGH, " <> bodyFunctionName <> ");\n"],
       Boundary | BoundaryNoSync,
       "LoopOverBoundary(cctkGH, " <> bodyFunctionName <> ");\n",
@@ -998,17 +973,22 @@ DefFn[
       assignLocalArrayFunctions[gs_] :=
         assignLocalFunctions[gs, False, False, False, ArrayName];
 
-      generateFDTileDefinition[gf_] :=
-      "unsigned char "<>ToString[gf]<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n";
-      generateDGTileDefinition[gf_] :=
-      "unsigned char "<>ToString[gf]<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n";
+      allocateArray[name:_String] := 
+      "unsigned char "<>name<>"[tsz] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n";
+      (* {
+        "static thread_local aligned_vector<unsigned char, CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL)> "<>name<>"_base(tsz);\n",
+        "unsigned char *restrict const "<>name<>" = "<>name<>"_base.data();\n"
+      }; *)
+
+      generateFDTileDefinition[gf_] := allocateArray[ToString[gf]<>"T"];
+      generateDGTileDefinition[gf_] := allocateArray[ToString[gf]<>"T"];
 
       generateFDTileLoad[gf:(_String|_Symbol)] :=
       Module[
         {gfn = ToString[gf],
          jcgfs = JacobianConditionalGridFunctions[],
          decl, load, isjac, jaccond, ishydro, hydrocond, maybeload},
-        decl = {"unsigned char "<>gfn<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n"};
+        decl = {allocateArray[gfn<>"T"]};
         load = {"assert("<>gfn<>"!=NULL);\n",
                 "load_fd_dim3<fdop_PDDeriv, npoints_i, npoints_j, npoints_k>(&((const unsigned char *)"<>gfn<>")[off1], "<>gfn<>"T, dj, dk);\n"};
         isjac = StringMatchQ[gfn, jcgfs[[1]]];
@@ -1032,7 +1012,7 @@ DefFn[
         {gfn = ToString[gf],
          jcgfs = JacobianConditionalGridFunctions[],
          decl, load, isjac, jaccond, ishydro, hydrocond, maybeload},
-        decl = {"unsigned char "<>gfn<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n"};
+        decl = {allocateArray[gfn<>"T"]};
         load = {"assert("<>gfn<>"!=NULL);\n",
                 "load_dg_dim3<dgop_PDDeriv>(&((const unsigned char *)"<>gfn<>")[off1], "<>gfn<>"T, dj, dk);\n"};
         isjac = StringMatchQ[gfn, jcgfs[[1]]];
@@ -1072,6 +1052,34 @@ DefFn[
       gfsInLHS = Complement[gfsInLHS, odeVars];
       gfsOnlyInRHS = Complement[gfsInRHS, gfsInLHS];
 
+      generateTiledLoop[kernel_] :=
+        If[FDTileCalculationQ[cleancalc] || DGTileCalculationQ[cleancalc],
+           CommentedBlock[
+             "Loop over tiles",
+             {
+               "TiledLoop(cctkGH, kd_coarse,\n",
+               "  [&](cGH const *restrict const cctkGH, const KrancData &restrict kd)\n",
+               "    CCTK_ATTRIBUTE_ALWAYS_INLINE\n",
+               "{\n",
+               "  // Check function arguments\n",
+               "  assert(kd.tile_imax[0] - kd.tile_imin[0] == npoints_i);\n",
+               "  assert(kd.tile_imax[1] - kd.tile_imin[1] == npoints_j);\n",
+               "  assert(kd.tile_imax[2] - kd.tile_imin[2] == npoints_k);\n",
+               "\n",
+               "  // Location of current tile in grid function (in grid points)\n",
+               "  const ptrdiff_t i1 = kd.tile_imin[0];\n",
+               "  const ptrdiff_t j1 = kd.tile_imin[1];\n",
+               "  const ptrdiff_t k1 = kd.tile_imin[2];\n",
+               "\n",
+               "  // Calculate grid function offset (in bytes)\n",
+               "  const ptrdiff_t off1 = i1 * di + j1 * dj + k1 * dk;\n",
+               "\n",
+               kernel,
+               "});\n"
+             }],
+           kernel];
+
+      generateTiledLoop[
       {
         CommentedBlock[
           "Assign local copies of arrays functions",
@@ -1182,7 +1190,7 @@ DefFn[
              generateDGTileStore /@ gfsInLHS],
            {}]
 
-          },
+          }],
 
       CountOperations];         (* Reap *)
   

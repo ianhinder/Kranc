@@ -109,6 +109,18 @@ tilingIntParameters[opts___] :=
     Name -> "tile_size",
     Description -> "Loop tile size",
     Default -> -1
+   },{
+     Name -> "tile_size_i",
+     Description -> "Loop tile size",
+     Default -> -1
+   },{
+     Name -> "tile_size_j",
+     Description -> "Loop tile size",
+     Default -> -1
+   },{
+     Name -> "tile_size_k",
+     Description -> "Loop tile size",
+     Default -> -1
    }};
 
 blockingIntParameters[opts___] :=

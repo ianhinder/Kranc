@@ -47,8 +47,10 @@ DefFn[
       IfThen[cond_, x_, y_] :> IfThen[cond,
                                       x//.vectoriseRules, y//.vectoriseRules],
 
-      expr:kpow[x_,a_] -> expr,
-      pow[x_,a_]       :> kpow[x//.vectoriseRules, a],
+      expr:kpow[x_,a_]  -> expr,
+      expr:kpown[x_,a_] -> expr,
+      pow[x_,a_]        :> kpow[x//.vectoriseRules, a],
+      pown[x_,a_]       :> kpown[x//.vectoriseRules, a],
 
       expr:"vec_load"[___] -> expr,
       expr:CArray[id_, {args__}] -> "vec_load"[expr],
@@ -102,14 +104,16 @@ DefFn[
     (* Optimise *)
 
     optimiseRules = {
+      kpow[x_,n_Integer] -> kpown[x,n],
       kpow[ToReal[x_],y_] -> ToReal[pow[x,y]],
+      kpown[ToReal[x_],y_] -> ToReal[pown[x,y]],
       (* Handle division *)
-      kpow[x_,n_Integer] /; n<0 :> kdiv[ToReal[1],kpow[x,-n]],
+      kpown[x_,n_Integer] /; n<0 :> kdiv[ToReal[1],kpown[x,-n]],
       (* Implement integer powers efficiently *)
-      kpow[x_,0] -> 1,
-      kpow[x_,1] -> x,
-      kpow[x_,n_Integer] /; n>1 && Mod[n,2]==0 :> kmul[kpow[x,n/2],kpow[x,n/2]],
-      kpow[x_,n_Integer] /; n>1 && Mod[n,2]==1 :> kmul[x,kpow[x,n-1]],
+      kpown[x_,0] -> 1,
+      kpown[x_,1] -> x,
+      kpown[x_,n_Integer] /; n>1 && Mod[n,2]==0 :> kmul[kpown[x,n/2],kpown[x,n/2]],
+      kpown[x_,n_Integer] /; n>1 && Mod[n,2]==1 :> kmul[x,kpown[x,n-1]],
 
       (* kmul[x_,kpow[y_,ToReal[-1]]] -> kdiv[x,y], *)
       (* kmul[x_,kpow[y_,ToReal[-2]]] -> kdiv[x,kmul[y,y]], *)
@@ -265,6 +269,7 @@ DefFn[
       (* ToReal[x_] :> ToReal[x//.scalarRules], *)
       (* IfThen[cond_, x_, y_] :> IfThen[cond//.scalarRules, x, y], *)
       (* kpow[x_,y_] :> kpow[x, y//.scalarRules], *)
+      (* kpown[x_,y_] :> kpown[x, y//.scalarRules], *)
 
       (* Mod[ToReal[x_],ToReal[y_]] -> ToReal[Mod[x,y]], *)
       (* x_ ^ y_ :> pow[x//.scalarRules, y//.scalarRules], *)

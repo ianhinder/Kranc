@@ -242,11 +242,23 @@ DefFn[
 DefFn[
   PrecomputeFDTiledDerivatives[derivOps_, expr_, zeroDims_] :=
   Module[
-    {gfds, sortedgfds},
+    {gfds, sortedgfds, noindexgfds, highestgfds},
     CountDerivativeOperations[derivOps, expr, zeroDims];
     gfds = GridFunctionDerivativesInExpression[derivOps, expr, zeroDims];
     sortedgfds = Sort[gfds, ordergfds];
-    Map[PrecomputeFDTiledDerivative, sortedgfds]]];
+    
+    (* Replaces all derivative indices with 1 *)
+    noindexgfds = DeleteDuplicates[
+      Map[# //. {pd_[gf_, ind1_] :> pd[gf, 1],
+                 pd_[gf_, ind1_, ind2_] :> pd[gf, 1, 1]} &, sortedgfds]];
+    (* Remove all first derivatives for variables that have second derivatives
+       taken *)
+    highestgfds = Reverse[
+      DeleteDuplicates[
+        Reverse[noindexgfds],
+        MatchQ[{#1, #2}, {pd_[gf_, inds1__], pd_[gf_, inds2__]}]&]];
+
+    Map[PrecomputeFDTiledDerivative, highestgfds]]];
 
 DefFn[
   PrecomputeDGTiledDerivatives[derivOps_, expr_, zeroDims_] :=
@@ -359,6 +371,7 @@ DefFn[
       dxistrs = Map[{"dxi","dyi","dzi"}[[#]]&, {inds}],
       dxistr
     },
+    If[False,
     If[Length[{inds}]==2 && {inds}[[1]]=={inds}[[2]],
        (* If both indices are the same, then we need to apply a single
           stencil, which has only a single direction. Cut off the
@@ -370,8 +383,60 @@ DefFn[
     dxistr = Fold[("kmul("<>#1<>", "<>#2<>")")&, dxistrs];
     {
       "unsigned char "<>gfdn<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n",
+      (* "static thread_local aligned_vector<unsigned char, CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL)> "<>gfdn<>"T_base(tsz);\n",
+      "unsigned char *restrict const "<>gfdn<>"T = "<>gfdn<>"T_base.data();\n", *)
       "stencil_fd_dim3_dir"<>indstr<>"<fdop_"<>pdn<>", npoints_i, npoints_j, npoints_k>(&((const unsigned char *)"<>gfn<>")[off1], "<>gfdn<>"T, "<>dxistr<>", dj, dk);\n"
-    }]];
+    }];
+    Which[{inds} == {1},
+          {
+            "unsigned char "<>ToString[GridFunctionDerivativeName[pd[gf,1]]]<>"T[tsz]\n",
+            "  CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n",
+            "unsigned char "<>ToString[GridFunctionDerivativeName[pd[gf,2]]]<>"T[tsz]\n",
+            "  CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n",
+            "unsigned char "<>ToString[GridFunctionDerivativeName[pd[gf,3]]]<>"T[tsz]\n",
+            "  CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n",
+            "stencil_fd_dim3<fdop_"<>ToString[pd]<>", npoints_i, npoints_j, npoints_k>(\n",
+            "  &((const unsigned char *)"<>ToString[gf]<>")[off1],\n",
+            "  "<>ToString[GridFunctionDerivativeName[pd[gf,1]]]<>"T,\n",
+            "  "<>ToString[GridFunctionDerivativeName[pd[gf,2]]]<>"T,\n",
+            "  "<>ToString[GridFunctionDerivativeName[pd[gf,3]]]<>"T,\n",
+            "  dxi, dyi, dzi, dj, dk);\n"
+          },
+          {inds} == {1, 1},
+          {
+            "unsigned char "<>ToString[GridFunctionDerivativeName[pd[gf,1]]]<>"T[tsz]\n",
+            "  CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n",
+            "unsigned char "<>ToString[GridFunctionDerivativeName[pd[gf,2]]]<>"T[tsz]\n",
+            "  CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n",
+            "unsigned char "<>ToString[GridFunctionDerivativeName[pd[gf,3]]]<>"T[tsz]\n",
+            "  CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n",
+            "unsigned char "<>ToString[GridFunctionDerivativeName[pd[gf,1,1]]]<>"T[tsz]\n",
+            "  CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n",
+            "unsigned char "<>ToString[GridFunctionDerivativeName[pd[gf,1,2]]]<>"T[tsz]\n",
+            "  CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n",
+            "unsigned char "<>ToString[GridFunctionDerivativeName[pd[gf,1,3]]]<>"T[tsz]\n",
+            "  CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n",
+            "unsigned char "<>ToString[GridFunctionDerivativeName[pd[gf,2,2]]]<>"T[tsz]\n",
+            "  CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n",
+            "unsigned char "<>ToString[GridFunctionDerivativeName[pd[gf,2,3]]]<>"T[tsz]\n",
+            "  CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n",
+            "unsigned char "<>ToString[GridFunctionDerivativeName[pd[gf,3,3]]]<>"T[tsz]\n",
+            "  CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n",
+            "stencil_fd_dim3<fdop_"<>ToString[pd]<>", fdop_"<>ToString[pd]<>"2, npoints_i, npoints_j, npoints_k>(\n",
+            "  &((const unsigned char *)"<>ToString[gf]<>")[off1],\n",
+            "  "<>ToString[GridFunctionDerivativeName[pd[gf,1]]]<>"T,\n",
+            "  "<>ToString[GridFunctionDerivativeName[pd[gf,2]]]<>"T,\n",
+            "  "<>ToString[GridFunctionDerivativeName[pd[gf,3]]]<>"T,\n",
+            "  "<>ToString[GridFunctionDerivativeName[pd[gf,1,1]]]<>"T,\n",
+            "  "<>ToString[GridFunctionDerivativeName[pd[gf,1,2]]]<>"T,\n",
+            "  "<>ToString[GridFunctionDerivativeName[pd[gf,1,3]]]<>"T,\n",
+            "  "<>ToString[GridFunctionDerivativeName[pd[gf,2,2]]]<>"T,\n",
+            "  "<>ToString[GridFunctionDerivativeName[pd[gf,2,3]]]<>"T,\n",
+            "  "<>ToString[GridFunctionDerivativeName[pd[gf,3,3]]]<>"T,\n",
+            "  dxi, dyi, dzi, dxxi, dxyi, dxzi, dyyi, dyzi, dzzi, dj, dk);\n"
+          },
+          True,
+          {}]]];
 
 DefFn[
   PrecomputeDGTiledDerivative[d:pd_[gf_, inds___]] :=
@@ -388,6 +453,8 @@ DefFn[
     },
     {
       "unsigned char "<>gfdn<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n",
+      (* "static thread_local aligned_vector<unsigned char, CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL)> "<>gfdn<>"T_base(tsz);\n",
+      "unsigned char *restrict const "<>gfdn<>"T = "<>gfdn<>"T_base.data();\n", *)
       "stencil_dg_dim3_dir"<>indstr<>"<dgop_"<>pdn<>">(&((const unsigned char *)"<>gfn<>")[off1], "<>gfdn<>"T, "<>dxistr<>"dj, dk);\n"
     }]];
 

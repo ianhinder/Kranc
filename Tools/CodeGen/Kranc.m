@@ -23,13 +23,13 @@ BeginPackage["Kranc`"];
 (* CodeGen.m *)
 
 {INV, SQR, CUB, QAD, ScalarINV, ScalarSQR, ScalarCUB, ScalarQAD,
- IfThen, IfPositive, Parenthesis, ToReal,
- sqrt, exp, log, pow, atan2, cos, sin, tan, acos, asin, atan,
+ IfThen, IfPositive, Parenthesis, PowerN, ToReal,
+ sqrt, exp, log, pow, pown, atan2, cos, sin, tan, acos, asin, atan,
  cosh, sinh, tanh, acosh, asinh, atanh, fmax, fmin, fmod, fabs, isgn, sgn,
  kmadd, kmsub, knmadd, knmsub, kpos, kneg, kadd, ksub, kmul, kdiv,
  kacos, kacosh, kasin, kasinh, katan, katanh, kcopysign, kcos, kcosh, kfabs,
  kfmax, kfmin, kfmod, kifthen kisgn, ksignbit,
- ksqrt, kexp, klog, kpow, ksgn, ksin, ksinh, ktan, ktanh,
+ ksqrt, kexp, klog, kpow, kpown, ksgn, ksin, ksinh, ktan, ktanh,
  dir1, dir2, dir3, t, cctkOriginSpace1, cctkOriginSpace2, cctkOriginSpace3,
  dt, dx, dy, dz, cctkLbnd1, cctkLbnd2, cctkLbnd3, cctkIdx1, cctkIdx2, cctkIdx3,
  usejacobian,

@@ -228,7 +228,8 @@ stencil_odd_dim3_dir1(const unsigned char *restrict const u,
         CCTK_REAL_VEC s = vec_set1(0.0);
         for (ptrdiff_t n = 1; n <= fdop::stencil_radius; ++n) {
           const CCTK_REAL c = fdop::coeffs[n + fdop::stencil_radius];
-          s = kmadd(vec_set1(c), ksub(vec_load(getelt(u, offset + n * dj)),
+          s = kmadd(vec_set1(c),
+                    ksub(vec_load(getelt(u, offset + n * dj)),
                                       vec_load(getelt(u, offset - n * dj))),
                     s);
         }
@@ -255,7 +256,8 @@ stencil_even_dim3_dir1(const unsigned char *restrict const u,
                                vec_load(getelt(u, offset)));
         for (ptrdiff_t n = 1; n <= fdop::stencil_radius; ++n) {
           const CCTK_REAL c = fdop::coeffs[n + fdop::stencil_radius];
-          s = kmadd(vec_set1(c), kadd(vec_load(getelt(u, offset - n * dj)),
+          s = kmadd(vec_set1(c),
+                    kadd(vec_load(getelt(u, offset - n * dj)),
                                       vec_load(getelt(u, offset + n * dj))),
                     s);
         }
@@ -357,7 +359,8 @@ stencil_odd_dim3_dir12(const unsigned char *restrict const u,
         CCTK_REAL_VEC s = vec_set1(0.0);
         for (ptrdiff_t n = 1; n <= fdop::stencil_radius; ++n) {
           const CCTK_REAL c = fdop::coeffs[n + fdop::stencil_radius];
-          s = kmadd(vec_set1(c), ksub(vec_load(getelt(u, offset + n * dk)),
+          s = kmadd(vec_set1(c),
+                    ksub(vec_load(getelt(u, offset + n * dk)),
                                       vec_load(getelt(u, offset - n * dk))),
                     s);
         }
@@ -546,7 +549,8 @@ stencil_fd_dim3_dir0(const unsigned char *restrict const u,
 #else
         loop<1, fdop::stencil_radius + 1>([&](ptrdiff_t n) {
           const CCTK_REAL c = fdop::coeff(n);
-          s = kmadd(vec_set1(c), ksub(vec_loadu(getelt(u, offset + n * di)),
+          s = kmadd(vec_set1(c),
+                    ksub(vec_loadu(getelt(u, offset + n * di)),
                                       vec_loadu(getelt(u, offset - n * di))),
                     s);
         });
@@ -592,7 +596,8 @@ stencil_fd_dim3_dir1(const unsigned char *restrict const u,
 #else
         loop<1, fdop::stencil_radius + 1>([&](ptrdiff_t n) {
           const CCTK_REAL c = fdop::coeff(n);
-          s = kmadd(vec_set1(c), ksub(vec_loadu(getelt(u, offset + n * dj)),
+          s = kmadd(vec_set1(c),
+                    ksub(vec_loadu(getelt(u, offset + n * dj)),
                                       vec_loadu(getelt(u, offset - n * dj))),
                     s);
         });
@@ -648,7 +653,8 @@ stencil_fd_dim3_dir0(const unsigned char *restrict const u,
 #else
         loop<1, fdop::stencil_radius + 1>([&](ptrdiff_t n) {
           const CCTK_REAL c = fdop::coeff(n);
-          s = kmadd(vec_set1(c), kadd(vec_loadu(getelt(u, offset - n * di)),
+          s = kmadd(vec_set1(c),
+                    kadd(vec_loadu(getelt(u, offset - n * di)),
                                       vec_loadu(getelt(u, offset + n * di))),
                     s);
         });
@@ -695,7 +701,8 @@ stencil_fd_dim3_dir1(const unsigned char *restrict const u,
 #else
         loop<1, fdop::stencil_radius + 1>([&](ptrdiff_t n) {
           const CCTK_REAL c = fdop::coeff(n);
-          s = kmadd(vec_set1(c), kadd(vec_loadu(getelt(u, offset - n * dj)),
+          s = kmadd(vec_set1(c),
+                    kadd(vec_loadu(getelt(u, offset - n * dj)),
                                       vec_loadu(getelt(u, offset + n * dj))),
                     s);
         });
@@ -760,7 +767,8 @@ stencil_fd_dim3_dir01(const unsigned char *restrict const u,
 #else
         loop<1, fdop::stencil_radius + 1>([&](ptrdiff_t n) {
           const CCTK_REAL c = fdop::coeff(n);
-          s = kmadd(vec_set1(c), ksub(vec_loadu(getelt(u, offset + n * di)),
+          s = kmadd(vec_set1(c),
+                    ksub(vec_loadu(getelt(u, offset + n * di)),
                                       vec_loadu(getelt(u, offset - n * di))),
                     s);
         });
@@ -858,7 +866,8 @@ stencil_fd_dim3_dir12(const unsigned char *restrict const u,
 #else
         loop<1, fdop::stencil_radius + 1>([&](ptrdiff_t n) {
           const CCTK_REAL c = fdop::coeff(n);
-          s = kmadd(vec_set1(c), ksub(vec_loadu(getelt(u, offset + n * dj)),
+          s = kmadd(vec_set1(c),
+                    ksub(vec_loadu(getelt(u, offset + n * dj)),
                                       vec_loadu(getelt(u, offset - n * dj))),
                     s);
         });

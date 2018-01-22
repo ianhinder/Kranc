@@ -210,10 +210,10 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
        "// Define stencil operators\n",
        "typedef dgop_derivs<order> dgop_PDDeriv;\n",
        "typedef dgop_trunc<order> dgop_PDTrunc;\n",
-       "// typedef dgop_filter<order> dgop_PDDiss;\n",
+       "typedef dgop_diss<order> dgop_PDDiss;\n",
        "static_assert(dgop_PDDeriv::order == order, \"\")\n";
        "static_assert(dgop_PDTrunc::order == order, \"\")\n";
-       "// static_assert(dgop_PDDiss::order == order, \"\")\n";
+       "static_assert(dgop_PDDiss::order == order, \"\")\n";
        "\n",
        "// Determine tile shape from stencil\n",
        "constexpr ptrdiff_t npoints_i = order + 1;\n",

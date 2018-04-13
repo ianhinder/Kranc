@@ -43,7 +43,8 @@ ifexpr = if {cexpr} then {mexpr} else {mexpr}
 eqn = ({dtensor}|{tensor}) \= {expr}{-end}
 doper = {dname}{indices}
 deqn = {doper} {barename} \= {expr}{-end}
-eqns = {eqn}( {eqn})*
+ifblock = if \( {cexpr} \) \{ {eqns} \}( else \{ {eqns} \}|)|{eqn}
+eqns = {ifblock}( {ifblock})*
 deqns = {deqn}( {deqn})*
 at_or_in = (at|in)
 on_clause = on {uname}

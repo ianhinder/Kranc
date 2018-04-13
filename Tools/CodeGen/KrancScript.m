@@ -142,7 +142,7 @@ process[thorn:"thorn"[content___]] :=
 
 process[calc:"calculation"[content___]] :=
   Module[
-    {name,eqs,joinWord,where},
+    {name,eqs,joinWord,where,dbeq},
     name = Cases[calc, "uname"[n_]:>n][[1]];
     eqs = Cases[calc, "eqns"[es___]:>{es}][[1]];
 
@@ -160,10 +160,50 @@ process[calc:"calculation"[content___]] :=
                   StringMatchQ[schedule,"analysis",IgnoreCase->True],
                   "at","in"];
 
+    dbeq = process["eqns"[eqs]];
+
+    (*  Use IfThen operator for assignments in if/else blocks.  *)
+    Module[{ condstack = {True}, currPred = True, varsCondAs = {} },
+
+      (* Replace assignments delineated by ChemoraIfBlock markers with Kranc
+         IfThen things. *)
+      dbeq = 
+         ( # /. 
+           { ( v_ -> ChemoraIfBlockStart[e_] ) :> 
+                ( condstack = Join[condstack,{currPred,v}];
+                  currPred = ChemoraOpAnd[currPred, v];
+                  v -> e ),
+             ( _ -> ChemoraIfBlockElseMarker[] ) :>
+                ( currPred = ChemoraOpAnd[condstack[[-2]], ! condstack[[-1]]];
+                  {} ),
+             ( _ -> ChemoraIfBlockEnd[] ) :>
+                ( currPred = condstack[[-2]];
+                  condstack = Drop[condstack,-2];
+                  {} ),
+             ( v_ -> e_ ) :>
+                If[ currPred === True,
+                    v -> e,
+                    AppendTo[varsCondAs,v];
+                       v -> IfThen[currPred,e,v] ]
+             } )& /@ dbeq // Flatten;
+
+      (* Initialize variables assigned in if/else blocks to avoid
+         the use of an uninitialized variable in the first IfThen construct
+         for a variable. *)
+      dbeq = Join[ # -> 0 & /@ Union[varsCondAs], dbeq ];
+
+      dbeq = dbeq  //. ChemoraOpAnd[True,v_] -> v;
+      ];
+
     {Name -> name,
-     Equations -> Map[process,eqs],
+     Equations -> dbeq,
      Schedule -> {joinWord<>" "<>schedule},
      Where -> where}];
+
+process["eqns"[]] := {}
+process["eqns"[ifbl:"ifblock"[___],more___]] :=
+   { process[ifbl],process["eqns"[more]] }
+process["eqns"[eqs_List]] := Flatten[ process /@ eqs ];
 
 process["eqn"[lhs_,rhs_]] := Module[{name,eqs}, process[lhs] -> process[rhs]];
 (*
@@ -260,6 +300,24 @@ process["mexpr"[mul_]] := process[mul];
 process["mexpr"[]] := 0;
 process["ifexpr"[cond_, opt1_, opt2_]] :=
    IfThen[ process[cond], process[opt1], process[opt2] ];
+
+chemoraIntermediateCount = 0;
+chemoraMakeIntermediate[]:=
+     "chemoraIntermediate" <> ToString[chemoraIntermediateCount++];
+
+process["ifblock"[cexpr:"cexpr"[_],eqif:"eqns"[___],eqelse:"eqns"[___]]] :=
+   { chemoraMakeIntermediate[] -> ChemoraIfBlockStart[process[cexpr]],
+     process[eqif],
+     chemoraMakeIntermediate[] -> ChemoraIfBlockElseMarker[],
+     process[eqelse],
+     chemoraMakeIntermediate[] -> ChemoraIfBlockEnd[] }
+
+process["ifblock"[cexpr:"cexpr"[_],eqif:"eqns"[___]]] :=
+     { chemoraMakeIntermediate[] -> ChemoraIfBlockStart[process[cexpr]],
+       process[eqif],
+       chemoraMakeIntermediate[] -> ChemoraIfBlockEnd[] }
+
+process["ifblock"[eqn_]] := process[eqn];
 
 process["coexpr"["cexpr"[cexpr__]]] := process["cexpr"[cexpr]];
 

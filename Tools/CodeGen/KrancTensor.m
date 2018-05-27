@@ -50,6 +50,7 @@ Begin["`Private`"];
 
 Options[CreateKrancThornTT] = ThornOptions;
 
+DefFn[
 CreateKrancThornTT[groups_, parentDirectory_, thornName_, opts:OptionsPattern[]] :=
   Module[{calcs, expCalcs, expGroups, options, derivs, expDerivs, reflectionSymmetries, declaredGroups, consCalcs, expConsCalcs, intParams, realParams, pds, nds},
     InfoMessage[Terse, "Creating thorn "<>thornName];
@@ -109,7 +110,7 @@ CreateKrancThornTT[groups_, parentDirectory_, thornName_, opts:OptionsPattern[]]
 
     (* It is necessary to include the KrancThorn context here due to some annoying Needs[] dependency issue *)
     KrancThorn`CreateKrancThorn[expGroups, parentDirectory, thornName,
-      Apply[Sequence, options], ReflectionSymmetries -> reflectionSymmetries]];
+      Apply[Sequence, options], ReflectionSymmetries -> reflectionSymmetries]]];
 
 computeReflectionSymmetries[declaredGroups_, groups_] :=
   Module[{variables, syms},
@@ -117,6 +118,7 @@ computeReflectionSymmetries[declaredGroups_, groups_] :=
     syms = Flatten[Map[ReflectionSymmetries, variables], 1];
     syms];
 
+Defn[
 makeCalculationExplicit[calc_] :=
   Module[{splice},
   mapValueMapMultiple[calc, 
@@ -127,7 +129,7 @@ makeCalculationExplicit[calc_] :=
      Equations -> ExpandComponents,
      PrimitiveEquations -> MakeExplicit,
      ConservedEquations -> MakeExplicit,
-     Primitives -> MakeExplicit}]];
+     Primitives -> MakeExplicit}]]];
 
 indexOne[{},tag_] := (Print["indexOne=",InputForm[tag]]; {});
 indexOne[f_,_] := f[[1]];

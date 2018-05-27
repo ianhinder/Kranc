@@ -201,8 +201,9 @@ process[calc:"calculation"[content___]] :=
      Where -> where}];
 
 process["eqns"[]] := {}
-process["eqns"[ifbl:"ifblock"[___],more___]] :=
-   { process[ifbl],process["eqns"[more]] }
+process["eqns"[ifbl:"ifblock"[___]]] := process[ifbl]
+process["eqns"[ifbl:"ifblock"[___],more__]] :=
+   Flatten[{ process[ifbl], process["eqns"[more]] }]
 process["eqns"[eqs_List]] := Flatten[ process /@ eqs ];
 
 process["eqn"[lhs_,rhs_]] := Module[{name,eqs}, process[lhs] -> process[rhs]];
@@ -305,14 +306,14 @@ chemoraIntermediateCount = 0;
 chemoraMakeIntermediate[]:=
      "chemoraIntermediate" <> ToString[chemoraIntermediateCount++];
 
-process["ifblock"[cexpr:"cexpr"[_],eqif:"eqns"[___],eqelse:"eqns"[___]]] :=
+process["ifblock"[cexpr:"cexpr"[___],eqif:"eqns"[___],eqelse:"eqns"[___]]] :=
    { chemoraMakeIntermediate[] -> ChemoraIfBlockStart[process[cexpr]],
      process[eqif],
      chemoraMakeIntermediate[] -> ChemoraIfBlockElseMarker[],
      process[eqelse],
      chemoraMakeIntermediate[] -> ChemoraIfBlockEnd[] }
 
-process["ifblock"[cexpr:"cexpr"[_],eqif:"eqns"[___]]] :=
+process["ifblock"[cexpr:"cexpr"[___],eqif:"eqns"[___]]] :=
      { chemoraMakeIntermediate[] -> ChemoraIfBlockStart[process[cexpr]],
        process[eqif],
        chemoraMakeIntermediate[] -> ChemoraIfBlockEnd[] }

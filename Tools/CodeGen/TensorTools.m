@@ -1251,15 +1251,7 @@ Zero3[a_,b_,c_] := 0;
    Miscellaneous
    -------------------------------------------------------------------------- *)
 
-appendNonduplicates[l_, a_] :=
-  If[l == {},
-     a,
-     If[MemberQ[a, l[[1]]],
-        appendNonduplicates[Rest[l], a],
-        appendNonduplicates[Rest[l], Flatten[{l[[1]], a}]]]];
-
-RemoveDuplicates[l_] :=
-  Reverse[appendNonduplicates[l,{}]];
+RemoveDuplicates[l_] := DeleteDuplicates[Flatten[l]]
 
 extractMapDomain[m_] :=
   RemoveDuplicates[Map[#[[1]] &, m]];

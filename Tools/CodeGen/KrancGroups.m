@@ -57,6 +57,7 @@ VerifyGroups;
 EnsureInterfaceTimelevels;
 GroupExtras;
 DeleteGroupExtra;
+GroupsPrint;
 
 Begin["`Private`"];
 
@@ -275,6 +276,13 @@ EnsureInterfaceTimelevels[g_, n_] :=
        AddGroupExtra[g, InterfaceTimelevels -> n],
        (* else *)
        g /. {(InterfaceTimelevels -> x_) :> (InterfaceTimelevels -> Max[tls, n])}]];
+
+DefFn[GroupsPrint[groups_,msg_String]:=
+ Module[{},
+    Print["\n** Groups "<>msg];
+    Print["  "<>#1<>": "<>StringJoin@@Riffle[ToString/@#2,","]]
+      &@@#&/@groups;]];
+
 
 End[];
 

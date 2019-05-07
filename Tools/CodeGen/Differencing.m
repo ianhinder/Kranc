@@ -258,7 +258,7 @@ DefFn[
         Reverse[noindexgfds],
         MatchQ[{#1, #2}, {pd_[gf_, inds1__], pd_[gf_, inds2__]}]&]];
 
-    Map[PrecomputeFDTiledDerivative, highestgfds]]];
+    Map[PrecomputeFDTiledDerivative[#, zeroDims]&, highestgfds]]];
 
 DefFn[
   PrecomputeDGTiledDerivatives[derivOps_, expr_, zeroDims_] :=
@@ -290,7 +290,7 @@ DefFn[
     rgzList = MapThread[If[Length[#2] > 0, DerivativeOperatorStencilWidth[#1,zeroDims], {0,0,0}] &, {derivOps, gfds}];
     If[Length[rgzList] === 0, Return[{}]];
     rgz = Map[Max, Transpose[rgzList]];
-    If[fdTile || dgTile, rgz = Map[1&, rgz]];
+    If[fdTile || dgTile, rgz = Map[0&, rgz]];
     If[Max[rgz] == 0, {},
     {"EnsureStencilFits(cctkGH, ", Quote@name, ", ", Riffle[rgz,", "], ");\n"}]]];
 
@@ -361,9 +361,10 @@ DefFn[
       AssignVariable[GridFunctionDerivativeName[vargfd], evaluateDerivative[d,macroPointer,fdTile,dgTile]]]]];
 
 DefFn[
-  PrecomputeFDTiledDerivative[d:pd_[gf_, inds___]] :=
+  PrecomputeFDTiledDerivative[d:pd_[gf_, inds___], zeroDims_] :=
   Module[
     {
+      skipdir1 = If[zeroDims == {1}, "_skipdir1", ""],
       pdn = ToString[pd],
       gfn = ToString[gf],
       gfdn = ToString[GridFunctionDerivativeName[d]],
@@ -385,7 +386,7 @@ DefFn[
       "unsigned char "<>gfdn<>"T[tsz] CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n",
       (* "static thread_local aligned_vector<unsigned char, CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL)> "<>gfdn<>"T_base(tsz);\n",
       "unsigned char *restrict const "<>gfdn<>"T = "<>gfdn<>"T_base.data();\n", *)
-      "stencil_fd_dim3_dir"<>indstr<>"<fdop_"<>pdn<>", npoints_i, npoints_j, npoints_k>(&((const unsigned char *)"<>gfn<>")[off1], "<>gfdn<>"T, "<>dxistr<>", dj, dk);\n"
+      "stencil_fd_dim3_dir"<>indstr<>skipdir1<>"<fdop_"<>pdn<>", npoints_i, npoints_j, npoints_k>(&((const unsigned char *)"<>gfn<>")[off1], "<>gfdn<>"T, "<>dxistr<>", dj, dk);\n"
     }];
     Which[{inds} == {1},
           {
@@ -395,7 +396,7 @@ DefFn[
             "  CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n",
             "unsigned char "<>ToString[GridFunctionDerivativeName[pd[gf,3]]]<>"T[tsz]\n",
             "  CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n",
-            "stencil_fd_dim3<fdop_"<>ToString[pd]<>", npoints_i, npoints_j, npoints_k>(\n",
+            "stencil_fd_dim3"<>skipdir1<>"<fdop_"<>ToString[pd]<>", npoints_i, npoints_j, npoints_k>(\n",
             "  &((const unsigned char *)"<>ToString[gf]<>")[off1],\n",
             "  "<>ToString[GridFunctionDerivativeName[pd[gf,1]]]<>"T,\n",
             "  "<>ToString[GridFunctionDerivativeName[pd[gf,2]]]<>"T,\n",
@@ -422,7 +423,7 @@ DefFn[
             "  CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n",
             "unsigned char "<>ToString[GridFunctionDerivativeName[pd[gf,3,3]]]<>"T[tsz]\n",
             "  CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL));\n",
-            "stencil_fd_dim3<fdop_"<>ToString[pd]<>", fdop_"<>ToString[pd]<>"2, npoints_i, npoints_j, npoints_k>(\n",
+            "stencil_fd_dim3"<>skipdir1<>"<fdop_"<>ToString[pd]<>", fdop_"<>ToString[pd]<>"2, npoints_i, npoints_j, npoints_k>(\n",
             "  &((const unsigned char *)"<>ToString[gf]<>")[off1],\n",
             "  "<>ToString[GridFunctionDerivativeName[pd[gf,1]]]<>"T,\n",
             "  "<>ToString[GridFunctionDerivativeName[pd[gf,2]]]<>"T,\n",

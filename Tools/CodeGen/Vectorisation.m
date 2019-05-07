@@ -150,9 +150,11 @@ DefFn[
            ToReal[a_]]               -> kadd[ToReal[a],x],
       kadd[kadd[ToReal[a_],x_],y_]   -> kadd[ToReal[a],kadd[x,y]],
       kadd[kadd[ToReal[a_],x_],
-           kadd[ToReal[b_],y_]]      -> kadd[ToReal[kadd[a,b]],kadd[x,y]],
+           kadd[ToReal[b_],y_]]      -> kadd[ToReal[a+b],kadd[x,y]],
       kadd[x:Except[_ToReal],
            kadd[ToReal[a_],y_]]      -> kadd[ToReal[a],kadd[x,y]],
+      kadd[ToReal[a_],
+           kadd[ToReal[b_],x_]]      -> kadd[ToReal[a+b],x],
       
       (* expr:kadd[x_,y_] /; !OrderedQ[expr] :> Sort[expr], *)
       kmul[ToReal[0],x_]             -> ToReal[0],
@@ -192,6 +194,8 @@ DefFn[
            kmul[ToReal[b_],y_]]      -> kmul[ToReal[a*b],kmul[x,y]],
       kmul[x:Except[_ToReal],
            kmul[ToReal[a_],y_]]      -> kmul[ToReal[a],kmul[x,y]],
+      kmul[ToReal[a_],
+           kmul[ToReal[b_],x_]]      -> kmul[ToReal[a*b],x],
       
       kacos[ToReal[x_]]            -> ToReal[acos[x]],
       kacosh[ToReal[x_]]           -> ToReal[acosh[x]],

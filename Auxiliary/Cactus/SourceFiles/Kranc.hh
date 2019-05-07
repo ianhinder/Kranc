@@ -129,6 +129,9 @@ TiledLoop(cGH const *restrict const cctkGH, const KrancData &restrict kd_coarse,
 
   // Tile size
   assert(tile_size == -1);
+  assert(tile_size_i >= 0);
+  assert(tile_size_j >= 0);
+  assert(tile_size_k >= 0);
   const int tile_size_l[3] = {tile_size_i, tile_size_j, tile_size_k};
 
   // Loop bounds covered by tiles (may be larger)

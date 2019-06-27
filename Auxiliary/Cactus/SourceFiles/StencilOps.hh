@@ -104,12 +104,12 @@ constexpr size_t alignup(const size_t x, const size_t y) {
 // char. The index "idx" needs to be given in terms of unsigned char,
 // not CCTK_REAL. This generally leads to better code, since the
 // implicit multiplication by sizeof(CCTK_REAL) is avoided.
-constexpr const CCTK_REAL &getelt(const unsigned char *restrict const ptr,
-                                  const ptrdiff_t idx) {
+inline const CCTK_REAL &getelt(const unsigned char *restrict const ptr,
+                               const ptrdiff_t idx) {
   return *(const CCTK_REAL *restrict) & ptr[idx];
 }
-constexpr CCTK_REAL &getelt(unsigned char *restrict const ptr,
-                            const ptrdiff_t idx) {
+inline CCTK_REAL &getelt(unsigned char *restrict const ptr,
+                         const ptrdiff_t idx) {
   return *(CCTK_REAL * restrict) & ptr[idx];
 }
 

@@ -72,13 +72,7 @@ DefFn[
   {"extern \"C\" ", DefineSubroutine[
     name, "CCTK_ARGUMENTS", 
     {
-      (* Some of these functions aren't scheduled
-         so the macro doesn't get generated. *)
-      "#ifdef DECLARE_CCTK_ARGUMENTS_"<>name<>"\n"<>
       "DECLARE_CCTK_ARGUMENTS_"<>name<>";\n"<>
-      "#else\n"<>
-      "DECLARE_CCTK_ARGUMENTS;\n"<>
-      "#endif\n",
       "DECLARE_CCTK_PARAMETERS;\n\n",
       contents
     }]}];

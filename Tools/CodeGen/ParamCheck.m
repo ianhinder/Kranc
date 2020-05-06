@@ -30,7 +30,7 @@ Begin["`Private`"];
 DefFn[
   ParameterCheckSource[thornName_String, conditions_List] :=
   {Map[IncludeFile, 
-       {"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h"}],
+       {"cctk.h", "cctk_Arguments.h", "cctk_Arguments_Checked.h", "cctk_Parameters.h"}],
 
    DefineCCTKFunction[
      thornName<>"_ParamCheck", "void", 

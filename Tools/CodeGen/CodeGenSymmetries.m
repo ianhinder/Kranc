@@ -94,7 +94,7 @@ DefFn[
     tmp = {FileHeader["C"],
            
            NewlineSeparated[{Map[IncludeFile, 
-               {"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h", "Symmetry.h"}],
+               {"cctk.h", "cctk_Arguments.h", "cctk_Arguments_Checked.h", "cctk_Parameters.h", "Symmetry.h"}],
 
            DefineCCTKFunction[
              thornName <> "_RegisterSymmetries", "void", 

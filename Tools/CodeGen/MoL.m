@@ -99,7 +99,7 @@ DefFn[createMoLRegistrationSource[spec_, debug_] :=
 
     NewlineSeparated[{
     Map[IncludeFile, 
-        {"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h"}],
+        {"cctk.h", "cctk_Arguments.h", "cctk_Arguments_Checked.h", "cctk_Parameters.h"}],
 
     DefineCCTKFunction[lookup[spec,ThornName] <> "_RegisterVars", "void", 
       {DefineVariable["ierr", "CCTK_INT", "0"],
@@ -370,7 +370,7 @@ DefFn[CreateMoLBoundariesSource[spec_] :=
 
 
    Map[IncludeFile,
-        {"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h", 
+        {"cctk.h", "cctk_Arguments.h", "cctk_Arguments_Checked.h", "cctk_Parameters.h", 
          "cctk_Faces.h", "util_Table.h", "Symmetry.h"}],
 
    {"\n\n",
@@ -436,7 +436,7 @@ DefFn[CreateMoLExcisionSource[spec_] :=
   body = {FileHeader["Fortran"],
 
    Map[IncludeFile,
-        {"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h"}],
+        {"cctk.h", "cctk_Arguments.h", "cctk_Arguments_Checked.h", "cctk_Parameters.h"}],
 
    {"\n\n",
       "! the boundary treatment is split into 3 steps:    \n",

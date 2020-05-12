@@ -95,7 +95,7 @@ DefFn[CreateSetterSource[calcs_, debug_, include_, thornName_,
           IncludeSystemFile["stdlib.h"],
           IncludeSystemFile["string.h"]}, {}],
 
-   Map[IncludeFile, Join[{"cctk.h", "cctk_Arguments.h", "cctk_Arguments_Checked.h", "cctk_Parameters.h",
+   Map[IncludeFile, Join[{"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h",
                          "Kranc.hh", (* This has to be before anything which includes
                                         vectors.h (including Differencing.h) *)
                          (*"precomputations.h",*) "Differencing.h"},

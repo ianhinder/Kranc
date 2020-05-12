@@ -110,7 +110,7 @@ DefineFunction[funcName, "CCTK_INT", argString,
 headerComment2,
 "{\n",
 "  const cGH* restrict const cctkGH = cctkGH_;\n",
-"  DECLARE_CCTK_ARGUMENTS_"<>funcName<>";\n",
+"  DECLARE_CCTK_ARGUMENTS_CHECKED("<>funcName<>");\n",
 "  DECLARE_CCTK_PARAMETERS;\n\n",
 
 "  const CCTK_REAL* restrict prims["   <> ToString@numvars <> "];\n",
@@ -214,7 +214,7 @@ CreateMPCharSource[spec_, debug_] :=
 
 
    Map[IncludeFile,
-        {"cctk.h", "cctk_Arguments.h", "cctk_Arguments_Checked.h", "cctk_Parameters.h"}],
+        {"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h"}],
    Map[IncludeSystemFile,
         {"assert.h", "math.h"}],
 

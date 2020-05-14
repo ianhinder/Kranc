@@ -109,8 +109,13 @@ DefineFunction[funcName, "CCTK_INT", argString,
 "/*       CCTK_INT              num_modes...              */\n",
 headerComment2,
 "{\n",
+(* #ifdef only present to support older versions of the flesh *)
 "  const cGH* restrict const cctkGH = cctkGH_;\n",
-"  DECLARE_CCTK_ARGUMENTS_CHECKED("<>funcName<>");\n",
+"#ifdef DECLARE_CCTK_ARGUMENTS_"<>name<>"\n"<>
+"  DECLARE_CCTK_ARGUMENTS_CHECKED("<>name<>");\n"<>
+"#else\n"<>
+"  DECLARE_CCTK_ARGUMENTS;\n"<>
+"#endif\n"
 "  DECLARE_CCTK_PARAMETERS;\n\n",
 
 "  const CCTK_REAL* restrict prims["   <> ToString@numvars <> "];\n",

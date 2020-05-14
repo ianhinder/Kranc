@@ -72,7 +72,12 @@ DefFn[
   {"extern \"C\" ", DefineSubroutine[
     name, "CCTK_ARGUMENTS", 
     {
+      (* ifdef only present to support older versions of the flesh *)
+      "#ifdef DECLARE_CCTK_ARGUMENTS_"<>name<>"\n"<>
       "DECLARE_CCTK_ARGUMENTS_CHECKED("<>name<>");\n"<>
+      "#else\n"<>
+      "DECLARE_CCTK_ARGUMENTS;\n"<>
+      "#endif\n"<>
       "DECLARE_CCTK_PARAMETERS;\n\n",
       contents
     }]}];

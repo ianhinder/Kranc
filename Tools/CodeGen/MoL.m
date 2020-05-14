@@ -371,7 +371,7 @@ DefFn[CreateMoLBoundariesSource[spec_] :=
 
    Map[IncludeFile,
         {"cctk.h", "cctk_Arguments.h", "cctk_Parameters.h", 
-         "cctk_Faces.h", "util_Table.h", "Symmetry.h","Kranc.hh}],
+         "cctk_Faces.h", "util_Table.h", "Symmetry.h", "Kranc.hh"}],
 
    {"\n\n",
       "/* the boundary treatment is split into 3 steps:    */\n",

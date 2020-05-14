@@ -113,10 +113,10 @@ static CCTK_INT KrancBdy_SelectGroupForBC(
 
     int ierr;
 
-    if(!use_psync || (use_psync && !psync_only))
+    if(presync_mode <= 3)
         ierr = Boundary_SelectGroupForBC(cctkGH_,faces,width,table_handle,group_name,bc_name);
 
-    if(ierr == 0 && use_psync)
+    if(ierr == 0 && presync_mode >= 2)
         ierr = Driver_SelectGroupForBC(cctkGH_,faces,width,table_handle,group_name,bc_name);
 
     return ierr;

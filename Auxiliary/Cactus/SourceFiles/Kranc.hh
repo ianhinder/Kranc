@@ -46,6 +46,48 @@ typedef void(*Kranc_Calculation)(cGH const * restrict cctkGH,
 
 // Boundary information
 
+CCTK_ATTRIBUTE_UNUSED
+static CCTK_INT KrancBdy_SelectVarForBC(
+    const CCTK_POINTER_TO_CONST cctkGH_,
+    const CCTK_INT faces,
+    const CCTK_INT width,
+    const CCTK_INT table_handle,
+    const CCTK_STRING var_name,
+    const CCTK_STRING bc_name) {
+
+    static bool is_aliased = CCTK_IsFunctionAliased("Driver_SelectGroupForBC");
+
+    int ierr = 0;
+
+    ierr = Boundary_SelectVarForBC(cctkGH_,faces,width,table_handle,var_name,bc_name);
+
+    if(ierr == 0 && is_aliased)
+        ierr = Driver_SelectVarForBC(cctkGH_,faces,width,table_handle,var_name,bc_name);
+
+    return ierr;
+}
+
+CCTK_ATTRIBUTE_UNUSED
+static CCTK_INT KrancBdy_SelectGroupForBC(
+    const CCTK_POINTER_TO_CONST cctkGH_,
+    const CCTK_INT faces,
+    const CCTK_INT width,
+    const CCTK_INT table_handle,
+    const CCTK_STRING group_name,
+    const CCTK_STRING bc_name) {
+
+    static bool is_aliased = CCTK_IsFunctionAliased("Driver_SelectGroupForBC");
+
+    int ierr;
+
+    ierr = Boundary_SelectGroupForBC(cctkGH_,faces,width,table_handle,group_name,bc_name);
+
+    if(ierr == 0 && is_aliased)
+        ierr = Driver_SelectGroupForBC(cctkGH_,faces,width,table_handle,group_name,bc_name);
+
+    return ierr;
+}
+
 int GetBoundaryWidth(cGH const * restrict const cctkGH);
 
 void GetBoundaryInfo(cGH const * restrict cctkGH,
@@ -172,5 +214,8 @@ KRANC_WHERE static inline int isgn(CCTK_REAL x)
 }
 
 } // namespace @THORN_NAME@
+
+using @THORN_NAME@::KrancBdy_SelectVarForBC;
+using @THORN_NAME@::KrancBdy_SelectGroupForBC;
 
 #endif  // #ifndef KRANC_HH

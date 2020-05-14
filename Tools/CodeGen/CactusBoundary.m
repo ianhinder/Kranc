@@ -58,7 +58,15 @@ GetUsedFunctions[] :=
    Type      -> "CCTK_INT",
    ArgString -> "CCTK_POINTER_TO_CONST IN GH, CCTK_INT IN faces, CCTK_INT IN boundary_width, CCTK_INT IN table_handle, CCTK_STRING IN group_name, CCTK_STRING IN bc_name"},
 
+  {Name      -> "Driver_SelectGroupForBC",
+   Type      -> "CCTK_INT",
+   ArgString -> "CCTK_POINTER_TO_CONST IN GH, CCTK_INT IN faces, CCTK_INT IN boundary_width, CCTK_INT IN table_handle, CCTK_STRING IN group_name, CCTK_STRING IN bc_name"},
+
   {Name      -> "Boundary_SelectVarForBC",
+   Type      -> "CCTK_INT",
+   ArgString -> "CCTK_POINTER_TO_CONST IN GH, CCTK_INT IN faces, CCTK_INT IN boundary_width, CCTK_INT IN table_handle, CCTK_STRING IN var_name, CCTK_STRING IN bc_name"},
+
+  {Name      -> "Driver_SelectVarForBC",
    Type      -> "CCTK_INT",
    ArgString -> "CCTK_POINTER_TO_CONST IN GH, CCTK_INT IN faces, CCTK_INT IN boundary_width, CCTK_INT IN table_handle, CCTK_STRING IN var_name, CCTK_STRING IN bc_name"}
 };

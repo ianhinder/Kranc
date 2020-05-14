@@ -46,6 +46,82 @@ typedef void(*Kranc_Calculation)(cGH const * restrict cctkGH,
 
 // Boundary information
 
+
+static bool init = false;
+static driver_bc_aliased;
+static const int presync_mode;
+
+static void init_parameters() {
+    if(init)
+        return;
+
+    init = false;
+    int type;
+    const CCTK_INT *tmp;
+
+    const CCTK_STRING *tmp = (const CCTK_STRING *)CCTK_ParameterGet("presync_mode", "Cactus", &type);
+    if(tmp == 0 or *tmp == 0)
+        presync_mode = 0;
+    else if(CCTK_EQUALS(tmp, "off"))
+        presync_mode = 0;
+    else if(CCTK_EQUALS(tmp, "warn-only"))
+        presync_mode = 1;
+    else if(CCTK_EQUALS(tmp, "mixed-warn"))
+        presync_mode = 2;
+    else if(CCTK_EQUALS(tmp, "mixed-error"))
+        presync_mode = 3;
+    else if(CCTK_EQUALS(tmp, "presync-only"))
+        presync_mode = 4;
+
+    if(CCTK_IsFunctionAliased("Driver_SelectVarForBC")) {
+        driver_bc_aliased = true;
+    } else {
+        driver_bc_aliased = false;
+    }
+}
+
+static CCTK_INT KrancBdy_SelectVarForBC(
+    const CCTK_POINTER_TO_CONST cctkGH_,
+    const CCTK_INT faces,
+    const CCTK_INT width,
+    const CCTK_INT table_handle,
+    const CCTK_STRING var_name,
+    const CCTK_STRING bc_name) {
+
+    init_parameters();
+
+    int ierr = 0;
+
+    if(presync_mode <= 3)
+        ierr = Boundary_SelectVarForBC(cctkGH_,faces,width,table_handle,var_name,bc_name);
+
+    if(ierr == 0 && presync_mode >= 2)
+        ierr = Driver_SelectVarForBC(cctkGH_,faces,width,table_handle,var_name,bc_name);
+
+    return ierr;
+}
+
+static CCTK_INT KrancBdy_SelectGroupForBC(
+    const CCTK_POINTER_TO_CONST cctkGH_,
+    const CCTK_INT faces,
+    const CCTK_INT width,
+    const CCTK_INT table_handle,
+    const CCTK_STRING group_name,
+    const CCTK_STRING bc_name) {
+
+    init_parameters();
+
+    int ierr;
+
+    if(!use_psync || (use_psync && !psync_only))
+        ierr = Boundary_SelectGroupForBC(cctkGH_,faces,width,table_handle,group_name,bc_name);
+
+    if(ierr == 0 && use_psync)
+        ierr = Driver_SelectGroupForBC(cctkGH_,faces,width,table_handle,group_name,bc_name);
+
+    return ierr;
+}
+
 int GetBoundaryWidth(cGH const * restrict const cctkGH);
 
 void GetBoundaryInfo(cGH const * restrict cctkGH,
@@ -172,5 +248,8 @@ KRANC_WHERE static inline int isgn(CCTK_REAL x)
 }
 
 } // namespace @THORN_NAME@
+
+using @THORN_NAME@::KrancBdy_SelectVarForBC;
+using @THORN_NAME@::KrancBdy_SelectGroupForBC;
 
 #endif  // #ifndef KRANC_HH

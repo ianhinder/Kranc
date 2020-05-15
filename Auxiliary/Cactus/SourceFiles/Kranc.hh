@@ -46,6 +46,8 @@ typedef void(*Kranc_Calculation)(cGH const * restrict cctkGH,
 
 // Boundary information
 
+static bool is_aliased = CCTK_IsFunctionAliased("Driver_SelectGroupForBC");
+
 static CCTK_INT KrancBdy_SelectVarForBC(
     const CCTK_POINTER_TO_CONST cctkGH_,
     const CCTK_INT faces,
@@ -58,7 +60,7 @@ static CCTK_INT KrancBdy_SelectVarForBC(
 
     ierr = Boundary_SelectVarForBC(cctkGH_,faces,width,table_handle,var_name,bc_name);
 
-    if(ierr == 0)
+    if(ierr == 0 && is_aliased)
         ierr = Driver_SelectVarForBC(cctkGH_,faces,width,table_handle,var_name,bc_name);
 
     return ierr;
@@ -76,7 +78,7 @@ static CCTK_INT KrancBdy_SelectGroupForBC(
 
     ierr = Boundary_SelectGroupForBC(cctkGH_,faces,width,table_handle,group_name,bc_name);
 
-    if(ierr == 0)
+    if(ierr == 0 && is_aliased)
         ierr = Driver_SelectGroupForBC(cctkGH_,faces,width,table_handle,group_name,bc_name);
 
     return ierr;

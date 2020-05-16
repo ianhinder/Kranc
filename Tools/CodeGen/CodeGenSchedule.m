@@ -79,48 +79,60 @@ groupStorage[spec_] :=
 (* Given a function scheduling specification as defined above, return
    a CodeGen block to schedule the function for the schedule.ccl file *)
 scheduleUnconditionalFunction[spec_] :=
-  {"schedule ", lookup[spec, Name], " ", lookup[spec,SchedulePoint], "\n",
-   SuffixedCBlock[
-     {If[lookup[spec, Language] != "None",
-         "LANG: " <> lookup[spec, Language] <> "\n",
-         ""],
+  Module[{translateRegion, ignoredGroups},
+    {"schedule ", lookup[spec, Name], " ", lookup[spec,SchedulePoint], "\n",
+     SuffixedCBlock[
+       {If[lookup[spec, Language] != "None",
+           "LANG: " <> lookup[spec, Language] <> "\n",
+           ""],
 
-      If[lookupDefault[spec, Options, ""] != "",
-         "OPTIONS: " <> lookup[spec, Options] <> "\n",
-         ""],
+        If[lookupDefault[spec, Options, ""] != "",
+           "OPTIONS: " <> lookup[spec, Options] <> "\n",
+           ""],
 
-      (* Insert a SYNC line for each group we want to synchronize. *)
-      Map[{"SYNC: ", #, "\n"}     &, lookupDefault[spec, SynchronizedGroups, {}]],
+        (* Insert a SYNC line for each group we want to synchronize. *)
+        Map[{"SYNC: ", #, "\n"}     &, lookupDefault[spec, SynchronizedGroups, {}]],
 
-      Map[{"TRIGGERS: ", #, "\n"} &, lookupDefault[spec, TriggerGroups, {}]],
+        Map[{"TRIGGERS: ", #, "\n"} &, lookupDefault[spec, TriggerGroups, {}]],
 
-      (* TODO: Expect a set of keyword/value pairs instead of a string *)
-      If[lookupDefault[spec, Tags, ""] != "",
-         "TAGS: " <> lookup[spec, Tags] <> "\n",
-         ""],
+        (* TODO: Expect a set of keyword/value pairs instead of a string *)
+        If[lookupDefault[spec, Tags, ""] != "",
+           "TAGS: " <> lookup[spec, Tags] <> "\n",
+           ""],
 
-      translateRegion[r_] := Switch[r,
-                                    Everywhere, "Everywhere",
-                                    Interior, "Interior",
-                                    InteriorNoSync, "Interior",
-                                    Boundary, "Boundary",
-                                    BoundaryNoSync, "Boundary",
-                                    BoundaryWithGhosts, "BoundaryWithGhosts",
-                                    _, "ERROR(" <> ToString[r] <> ")"];
-      Map[{"READS: ", #, "(",
-           translateRegion[lookupDefault[spec, RequiredRegion, "ERROR"]],
-           ")\n"} &,
-          lookupDefault[spec, RequiredGroups, {}]],
-      Map[{"WRITES: ", #, "(",
-           translateRegion[lookupDefault[spec, ProvidedRegion, "ERROR"]],
-           ")\n"} &,
-          lookupDefault[spec, ProvidedGroups, {}]],
+        translateRegion[r_] := Switch[r,
+                                      Everywhere, "Everywhere",
+                                      Interior, "Interior",
+                                      InteriorNoSync, "Interior",
+                                      Boundary, "Boundary",
+                                      BoundaryNoSync, "Boundary",
+                                      BoundaryWithGhosts, "BoundaryWithGhosts",
+                                      _, "ERROR(" <> ToString[r] <> ")"];
 
-      (* Insert a storage block for each group we want to allocate
-         storage for *)
-      Map[groupStorage, lookupDefault[spec, StorageGroups, {}]]},
+        (* must match list in CodeGenCalculation.m *)
+        ignoreGroups = {"TmunuBase::eTtt", "TmunuBase::eTxx", "TmunuBase::eTxy",
+                        "TmunuBase::eTxz", "TmunuBase::eTyy", "TmunuBase::eTyz",
+                        "TmunuBase::eTzz", "TmunuBase::eTtx", "TmunuBase::eTty",
+                        "TmunuBase::eTtz"};
+        If[ContainsAny[lookupDefault[spec, RequiredGroups, {}], ignoreGroups],
+           "READS: " <> "TmunuBase::stress_energy_state" <> "\n",
+           ""],
 
-      Quote[lookup[spec, Comment]]]};
+        Map[{"READS: ", #, "(",
+             translateRegion[lookupDefault[spec, RequiredRegion, "ERROR"]],
+             ")\n"} &,
+            lookupDefault[spec, RequiredGroups, {}]],
+        Map[{"WRITES: ", #, "(",
+             translateRegion[lookupDefault[spec, ProvidedRegion, "ERROR"]],
+             ")\n"} &,
+            lookupDefault[spec, ProvidedGroups, {}]],
+
+        (* Insert a storage block for each group we want to allocate
+           storage for *)
+        Map[groupStorage, lookupDefault[spec, StorageGroups, {}]]},
+
+        Quote[lookup[spec, Comment]]]}
+     ];
 
 (* Handle the aspect of scheduling the function conditionally *)
 scheduleFunction[spec_,params_] :=

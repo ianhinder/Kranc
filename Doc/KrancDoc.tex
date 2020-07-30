@@ -1,6 +1,7 @@
 \documentclass{report}
 
 \usepackage{tabularx}
+\usepackage{ltablex}
 \usepackage{graphicx}
 \usepackage{alltt}
 \usepackage{hyperref}
@@ -38,7 +39,7 @@
 \newcommand{\fixme}[1]{\textcolor{red}{#1}}
 
 \title{Kranc User Guide}
-\author{Sascha Husa and Ian Hinder}
+\author{Sascha Husa, Ian Hinder, and Jonah Miller}
 
 
 \begin{document}
@@ -1117,7 +1118,7 @@ have chosen to define several types of thorn (setter, evaluator, {\em
 etc.}) but the mechanics of producing a thorn implemented in Thorn and
 CodeGen are completely independent of this decision.
 
-\subsection{Package: CodeGen}
+\section{Package: CodeGen}
 
 During the development of the Kranc system, we explored two different
 approaches to generating Cactus files using Mathematica as a
@@ -1154,7 +1155,7 @@ over.  For this reason, it was decided that CodeGen functions could
 take as arguments any blocks of code which needed to be inserted on
 the inside of such a structure.
 
-\subsection{Package: Thorn}
+\section{Package: Thorn}
 
 The Thorn package is used by all the different thorn generators to
 construct the final Cactus thorn.  It takes care of the mechanics of
@@ -1162,5 +1163,250 @@ writing files to storage and parsing the Kranc structures necessary
 for writing parameter configuration files, grid function definitions
 etc.
 
+\chapter{Reference}
+\label{ch:ref}
+
+This is a reference document for many functions available in Kranc and
+TensorTools. It is mostly aimed at people extending Kranc or writing
+code generation scripts in Kranc. \textbf{Please be aware that none of
+  the functions listed are guaranteed to be supported or included in
+  future versions of Kranc. Use this reference at your own risk.}
+
+\section{User-Level Kranc Commands}
+\label{ch:ref:sec:kranc}
+
+The following is an incomplete reference for user-visible commands in
+Kranc
+\begin{center}
+  \begin{tabularx}{\tablewidth}{|l|X|}
+    \hline
+    \bf Function Prototype & \bf Description\\
+    \hline
+    CreateThorn[thorn] & 
+    Create a general Cactus thorn from a thorn specification structure\\
+    \hline
+    TensorName[g[la, lb]] &
+    get the base name of a tensor object\\
+    \hline
+    EnsureDirectory[] & 
+    create a directory if it does not already exist\\
+    \hline
+    SafeDelete[filename] & 
+    deletes a file only after checking that the file actually exists
+    and is a normal file\\
+    \hline
+    AddSuffix[object,suffixString] &
+    adds a suffix to an object\\
+    \hline
+    GFsFromGroupList[g] &
+    gives the GFs from a group list in the form \{``group'', \{gf1, gf2, ...\}\}\\
+    \hline
+    IsNotEmptyString[x] & 
+    returns False if x == ``'' and True otherwise\\
+    \hline
+    PickMatch[x, form] &
+    returns string x if it matches form, and ``'' otherwise\\
+    \hline
+    SafeStringReplace[x, string1, string2] &
+    replaces string1 in x by string2 if x is a string and otherwise
+    returns x\\
+    \hline
+    String2Char[string] &
+    splits a string into a list of characters\\
+    \hline
+    SortString[string] &
+    returns a string where the characters in the original string have
+    been sorted lexicographically\\
+    \hline
+    GroupStruct[g] &
+    returns a group structure the from \{``group'', \{gf1, gf2, ...\}\}\\
+    \hline
+    ComponentList[T[index]] &
+    creates a list of tensor components\\
+    \hline
+    TextComponentList[T[index]] &
+    call ComponentList and converts to plain text format (no sub-
+    or superscripts)\\
+    \hline
+  \end{tabularx}
+\end{center}
+
+\section{TensorTools Commands}
+\label{ch:ref:sec:tensortools}
+
+The following commands are independent of Kranc. Very similar commands
+are available for the xTensor package of xAct.
+
+\begin{center}
+  \begin{tabularx}{\tablewidth}{|l|X|}
+    \hline
+    \bf Function Prototype & \bf Description\\
+    \hline
+    DefineTensor[kernel] &
+    registers kernel as a TensorTools tensor kernel\\
+    \hline DefineDerivative[pd] &
+    registers a symbol to be used as a derivative operator\\
+    \hline MakeExplicit[x] & converts an expression x containing
+    abstract indices into one containing
+    components instead\\
+    \hline AssertSymmetricIncreasing[tensor] & indicates that when the
+    two-component tensor (e.g. T[la,lb]) is represented as components,
+    no distinction should be made between the two orderings of the
+    indices, and the decreasing order is to
+    be preferred\\
+    \hline
+    AssertSymmetricDecreasing[tensor] & 
+    indicates that when the two-component tensor (e.g. T[la,lb]) is
+    represented as components, no distinction should be made between
+    the two orderings of the indices, and the increasing order is to
+    be preferred.\\
+    \hline 
+    PD[x,i1, i2, ...] & 
+    represents the partial derivative of x with respect to the indices
+    i1, i2, ...\\
+    \hline 
+    Lie[x,V] & 
+    is the Lie derivative of expression x with respect to the
+    TensorTools vector V (specified without an index)\\
+    \hline 
+    FD[x,i1, i2, ...] & 
+    represents the local partial derivative of x with respect to the
+    indices i1, i2, ...\\
+    \hline 
+    MatrixOfComponents[tensor] &
+    returns a matrix of the components of a two-tensor\\
+    \hline
+    Tensor[kernel, index, ...] &
+    represents a TensorTools tensor\\
+    \hline
+    TensorIndex[type, label] &
+    represents a TensorTools tensor index\\
+    \hline
+    TTTensorProduct[x, y, ...] &
+    represents a product of expressions which has already been checked 
+    for duplicated dummy indices\\
+    \hline
+    MakeLocalSymbol[s] &
+    creates a symbol in the current context consisting of the symbol s 
+    suffixed with the letter L\\
+    \hline
+    MatrixInverse[tensor] &
+    converts a tensor component (eg T[1,3]) into the 1,3 component of $T^{-1}$\\
+    \hline
+    CDtoPD[x] &
+    converts all covariant derivatives in x registered using 
+    DefineConnection into partial derivatives\\
+    \hline
+    LieToPD[x] &
+    converts all Lie derivatives in x\\
+    \hline
+    PDtoFD[x] &
+    converts all partial derivatives in x into local partial derivatives\\
+    \hline
+    DefineConnection[cd, pd, ch] &
+    registers a connection with TensorTools.  The covariant derivative
+    operator will be cd, the partial derivative operator will be pd,
+    and the Christoffel symbol will be ch\\
+    \hline
+    DefineJacobian[pd, fd, J, iJ, dJ] &
+    registers a Jacobian with TensorTools.  The partial derivative
+    operator will be pd, the local partial derivative operator will be
+    fd, and the Jacobian, its inverse, and its derivative will be J,
+    iJ, and dJ, respectively\\
+    \hline
+    ResetJacobians & unregisters all Jacobians\\
+    \hline
+    KD[x,y] &
+    is the Kronecker delta symbol.  It can be given tensorial or
+    numerical indices\\
+    \hline
+    Eps[i,j,...] &
+    is the alternating symbol.  It can be given tensorial or numerical
+    indices\\
+    \hline
+    Zero3[i,j,k] &
+    is zero\\
+    \hline
+    Euc[i,j] &
+    is the Euclidian metric.  It can be given tensorial or numerical
+    indices\\
+    \hline
+    SetEnhancedTime[boolean] &
+    enables or disabled automatic checking and relabelling of products
+    for duplicated dummy indices\\
+    \hline
+    RemoveDuplicates[list] &
+    removes any duplicated elements from list.  Useful with
+    MakeExplicit where some of the tensor symmetries cause duplicates
+    to be created\\
+    \hline
+  \end{tabularx}
+\end{center}
+
+The following commands are Kranc-specific additions to TensorTools
+
+\begin{center}
+  \begin{tabularx}{\tablewidth}{|l|X|}
+    \hline
+    \bf Function Prototype & \bf Description\\
+    \hline
+    ReflectionSymmetries & 
+    produces a list of reflection symmetries of a tensor\\
+    \hline
+    ExpandComponents[expr] &
+    converts an expression containing abstract indices into one
+    containing components instead\\
+    \hline
+    IncludeCharacter & 
+    an option for makeExplicit which specifies whether the character
+    should also be included in the generated variable names\\
+    \hline
+    TensorCharacterString[tensor[inds]] &
+    returns a string consisting of a sequence of U's and D's
+    representing the character of tensor\\
+    \hline
+  \end{tabularx}
+\end{center}
+
+% Section incomplete. TODO: make a complete code reference.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% \section{Internal Kranc Commands}
+%% \label{ch:reference:sec:internal}
+%% 
+%% The following is an incomplete list of Kranc commands that can be used
+%% to change the implementation details of the auto-generated code.
+%% 
+%% \begin{center}
+%%   \begin{tabularx}{\tablewidth}{|l|X|}
+%%     \hline
+%%     \bf Function Prototype & \bf Description\\
+%%     \hline
+%%     DefineCCTKFunction[name, type, block] &
+%%     returns a block of code that defines a CCTK function of name
+%%     ``name'' returning type ``type'' with body ``block''\\
+%%     \hline
+%%     DefineCCTKSubroutine[name, block] &
+%%     returns a block of code that defines a CCTK Fortran subroutine of
+%%     name ``name'' with body ``block'''\\
+%%     \hline
+%%     DeclareGridLoopVariables[] &
+%%     returns a block that defines the variables needed during a grid loop\\
+%%     \hline
+%%     InitialiseGridLoopVariables[] & 
+%%     returns a block that initialises variables needed by a grid loop
+%%     using the evolution stencils
+%%     \hline
+%%     ConditionalOnParameter[name, value, block] & 
+%%     returns a block that introduces a conditional expression whereby
+%%     ``block'' is only executed if the Cactus parameter ``name'' has
+%%     value ``value''\\
+%%     \hline
+%%     GridLoop[block] &
+%%     returns a block that is looped over for every 
+%%     grid point.  Must have previously set up the grid loop variables (see 
+%%     InitialiseGridLoopVariables\\
+%%     \hline
+%%   \end{tabularx}
+%% \end{center}
 
 \end{document}

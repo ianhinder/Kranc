@@ -1,7 +1,9 @@
 skipper = \b([ \t\n\r]+|\#.*)*
 int = [0-9]+
 end = ([ \t]+|\#.*)*\r*\n
-name = [A-Za-z][A-Za-z0-9]*
+
+keywords = to
+name = (?!D|{keywords}\b)[A-Za-z][A-Za-z0-9]*
 uname = [A-Za-z][A-Za-z0-9_]*
 lower_index = ({index_symbol}|\({index_expr}(,{index_expr})*\))
 upper_index = ({index_symbol}|\({index_expr}(,{index_expr})*\))
@@ -19,10 +21,11 @@ neg = -
 value = {func}|{dtensor}|{tensor}|{number}|\( {expr} \)
 pow = {value}( \*\* {value}|)
 mulop = [*/%]
-mul = {pow}( {mulop} {pow})*
+mulimp = [ \t]*
+mul = {pow}( {mulop} {pow}|{mulimp}{pow})*
 addop = [+-]
 mexpr = {mul}( {addop} {mul})*
-expr = {neg}?{mexpr}( \? {mexpr} : {mexpr})?
+expr = {neg}?{mexpr}
 eqn = ({dtensor}|{tensor}) \= {expr}{-end}
 deqn = {dtensor} \= {expr}{-end}
 eqns = {eqn}( {eqn})*
@@ -39,7 +42,7 @@ desc = ((?!default:)[^])*
 infinity = infinity
 parlo = - {infinity}|{expr}
 parhi = {infinity}|{expr}
-parameter = name:  {name} description: {desc} default: {expr} range: {parlo} to {parhi}
+parameter = name:  {name} description: {desc} default: {expr} range: {parlo}[ \t]+to[ \t]+{parhi}
 temporaries = begin[ \t]+temporaries{-end} ( end[ \t]+temporaries\b{brk}| {tensor})*{-end}
 option = {inherit}|{use}|{disable}|{implement}
 inherit = inherit[ \t]+({uname}[ \t]*)+{-end}

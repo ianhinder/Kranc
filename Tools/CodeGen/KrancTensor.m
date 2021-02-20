@@ -297,6 +297,7 @@ DefFn[CreateKrancThornTT2[thornName_String, opts:OptionsPattern[]] :=
   Module[
     {groups, pderivs, opts2, fdOrder = Global`fdOrder, PDstandard = Global`PDstandard},
     groups = Map[CreateGroupFromTensor, OptionValue[Variables]];
+    groups = Join[groups,OptionValue[DeclaredGroups]];
 
     Print["Searching for inherited groups..."];
     inheritedGroups = Join@@Map[InheritedGroups, OptionValue[InheritedImplementations]];
@@ -320,8 +321,9 @@ DefFn[CreateKrancThornTT2[thornName_String, opts:OptionsPattern[]] :=
 
     opts2 = opts2 /. PD -> PDstandard;
 
+    opts2 = opts2 /. (DeclaredGroups-> ar__)->DeclaredGroups->Map[groupName,groups];
+
     CreateKrancThornTT[groups,OptionValue[ParentDirectory],thornName,
-                       DeclaredGroups -> Map[groupName, groups],
                        Sequence@@opts2]]];
 
 End[];

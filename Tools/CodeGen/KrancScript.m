@@ -53,7 +53,7 @@ process[h_[args___]] :=
 process[thorn:"thorn"[content___]] :=
   Module[
     {calcs = {}, name, parameters = {}, variables = {}, temporaries = {}, tensors, kernels,
-     nonScalars, tensorRule, withInds, options = {}, derivatives = {}},
+     nonScalars, tensorRule, withInds, options = {}, derivatives = {}, groups = {}},
 
     (* Print["thorn = ", thorn]; *)
     (* KrancTensor`printStruct[thorn]; *)
@@ -67,8 +67,9 @@ process[thorn:"thorn"[content___]] :=
               "parameters"[__], parameters = Join[parameters,List@@Map[process,el]],
               "variables"[__], variables = Join[variables,List@@Map[process,el]],
               "temporaries"[__], temporaries = Join[temporaries,List@@Map[process,el]],
-              "derivatives"[__], derivatives = Join[derivatives,process[el]],
+              "derivatives"[__], (*derivatives =*) Join[derivatives,process[el]],
               "option"[__], options = Join[options, process[el]],
+              "groups"[__], groups = Join[groups, process[el]],
               _, ThrowError["Unrecognised element '"<>Head[el]<>"' in thorn"]],
        {el, {content}}];
 
@@ -83,9 +84,14 @@ process[thorn:"thorn"[content___]] :=
 
     SetEnhancedTimes[False];
 
-    options = Join[{RealParameters -> parameters, Calculations -> calcs, Variables -> variables, Shorthands -> temporaries} /. tensorRule,
-                   {PartialDerivatives -> derivatives},
-                   options];
+    options = Join[{
+      DeclaredGroups -> groups,
+      RealParameters -> parameters,
+      Calculations -> calcs,
+      Variables -> variables,
+      Shorthands -> temporaries} /. tensorRule,
+      {PartialDerivatives -> derivatives},
+      options];
 
     (* Print["Creating thorn ", name, " with options:"]; *)
     (* Print[options]; *)
@@ -174,6 +180,7 @@ process["expr"["neg"[_],m:"mexpr"[___]]] := -process[m];
 process["mul"[pow_]] := process[pow];
 process["mul"[]] := 1;
 process["mul"[cs___, a_, "mulop"["*"], b_]] := process["mul"[cs,a]] * process[b];
+process["mul"[cs___, a_, "mulimp"[___], b_]] := process["mul"[cs,a]] * process[b];
 process["mul"[cs___, a_, "mulop"["/"], b_]] := process["mul"[cs,a]] / process[b];
 
 process["pow"[a_,b_]] := process[a]^process[b];
@@ -196,22 +203,40 @@ process["number"[num_],"rightenc"[sym_]] := num <> sym;
 process["infinity"[_]] := "*";
 
 processRange[value_,minOrMax_,paramName_] :=
-  If[StringQ[value] && value == "*",value,
+  If[StringQ[value] && value === "*",value,
     Module[{tmp},
       tmp = N[value];
       If[NumberQ[tmp],1,ThrowError[minOrMax<>" value for parameter "<>paramName<>" is not a number"]];
       Return[tmp]]]
 
-process["parameter"["name"[nm_],"desc"[desc_],"expr"[def_],"parlo"[le__],"parhi"[re__]]] := 
+process["parameter"["name"[nm_],"type"[desc_],"quote"[def_]]] :=
+Module[{dtmp,lotmp,hitmp},
+  dtmp = 1.0;
+  lotmp = "*";
+  hitmp = "*";
+  {Name -> ToExpression[nm],
+   Description -> StringTake[desc,{2,StringLength[desc]-1}],
+   AllowedValues -> {{Value->ToString[lotmp] <> ":" <> ToString[hitmp]}},
+   Default -> dtmp}]
+
+process["parameter"["name"[nm_],"type"["real"],"quote"[desc_],"expr"[def_],"parlo"[le__],"parhi"[re__]]] := 
 Module[{dtmp,lotmp,hitmp},
   dtmp = N[process[def]];
   lotmp = processRange[process[le],"Minimum",nm];
   hitmp = processRange[process[re],"Maximum",nm];
   If[NumberQ[dtmp],1,ThrowError["Default value for parameter "<>nm<>" is not a number"]];
   {Name -> ToExpression[nm],
-   Description -> desc,
+   Description -> StringTake[desc,{2,StringLength[desc]-1}],
    AllowedValues -> {{Value->ToString[lotmp] <> ":" <> ToString[hitmp]}},
    Default -> dtmp}]
+
+process["groupdef"["name"[nm_], "quote"[desc_]]] := nm;
+process["groupdef"["name"[nm_]]] := nm;
+process["groupdef"["name"[nm_], "indices"[ind__], "quote"[desc_]]] := nm<>StringJoin[Map[(#;"[3]")&,{ind}]];
+process["groupdef"["name"[nm_], "indices"[ind__]]] := nm<>StringJoin[Map[(#;"[3]")&,{ind}]];
+
+process["groups"["name"[nm_],"groupdefs"[groups__]]] := {
+  {nm,Map[process,{groups}]}};
 
 flags = ScriptFlags;
 
@@ -231,6 +256,7 @@ process[d:"deqn"[___]] :=
     Print["(deqn) No handler for ", d];
     ThrowError["Failed to parse script"]];
 
+process["deqn"["doper"["dname"[dn_],"indices"[ind__]],"expr"[ex_]]] := "";
 process["deqn"[("dtensor"["dname"[dname_],
                           "tensor"["name"[tName_],
                                    "indices"[tinds___]]]),

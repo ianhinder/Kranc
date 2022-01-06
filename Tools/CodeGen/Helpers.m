@@ -82,7 +82,7 @@ String2Char[x_?StringQ] := Table[StringTake[x, {n}], {n, 1, StringLength@x}];
 
 SortString[x_?StringQ] := StringJoin@Sort@String2Char@x;
 
-If[ValueQ@Global`tensorNames2componentNames[dummy_tensor],
+If[ValueQLegacy@Global`tensorNames2componentNames[dummy_tensor],
 (* we assume DecomposeTools.m is loaded -- need to load DecomposeTools before Helpers.m ! *)
 
 (* ComponentList creates a list of independent tensor components                 *)

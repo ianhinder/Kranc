@@ -166,7 +166,7 @@ upper = "u";
 lower = "l";
 delta = \[Delta]
 
-If[!ValueQ[$Derivatives], $Derivatives = {PD}];
+If[!ValueQLegacy[$Derivatives], $Derivatives = {PD}];
 
 SwapIndices[x_, i1_, i2_] := 
   Module[{temp, unique},
@@ -301,7 +301,7 @@ DefineTensor[T_] :=
       Module[
         {c},
         c = tensorCharacter[{is}];
-        If[!ValueQ[TensorCharacter[T]],
+        If[!ValueQLegacy[TensorCharacter[T]],
            TensorCharacter[T] = c,
            (* else *)
            If[!charactersMatch[c,TensorCharacter[T]],

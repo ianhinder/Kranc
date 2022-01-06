@@ -77,7 +77,7 @@ SetAttributes[ValueQLegacy, HoldAll]
 ValueQLegacy[x_] := If[$VersionNumber >= 12.2, ValueQ[x, Method -> "Legacy"], ValueQ[x]]
 
 (* Work around bug in Mathematica 10.0.0 where z is a symbol in the global context *)
-If[NameQ["Global`z"] && !ValueQ[Global`z], Remove[Global`z]];
+If[NameQ["Global`z"] && !ValueQLegacy[Global`z], Remove[Global`z]];
 
 {x, y, z, r};
 

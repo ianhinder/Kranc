@@ -151,7 +151,7 @@ SetTensorAttribute[t_, attr_, val_] :=
   t /: KrancTensorAttribute[t, attr] = val;
 
 HasTensorAttribute[t_, attr_] :=
-  ValueQ[KrancTensorAttribute[t, attr]];
+  ValueQLegacy[KrancTensorAttribute[t, attr]];
 
 GetTensorAttribute[t_, attr_] :=
  Module[{},

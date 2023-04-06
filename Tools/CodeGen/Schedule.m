@@ -78,14 +78,15 @@ variablesReadInCalc[calc_, groups_] :=
    *)
 
 Options[scheduleCalc] = ThornOptions;
-scheduleCalc[calc_, groups_, thornName_, OptionsPattern[]] :=
-  Module[{points, conditional, conditionals, keywordConditional,
+scheduleCalc[calc0_, groups_, thornName_, OptionsPattern[]] :=
+  Module[{calc, points, conditional, conditionals, keywordConditional,
           keywordConditionals, triggered, keyword, value, keywordvaluepairs,
           groupsToSync, tags,
           prefixWithScope, groupsToRequire, groupsToProvide,
           groupName, userSchedule, groupSched, fnSched,
           selbcSched, appbcSched, bcGroupName, condParams, bcGroupSched, before, after, relStr,
           variablesToRead, variablesToWrite},
+    calc = RemoveUnusedShorthands[calc0];
     conditional = mapContains[calc, ConditionalOnKeyword];
     conditionals = mapContains[calc, ConditionalOnKeywords];
     triggered = mapContains[calc, TriggerGroups];
